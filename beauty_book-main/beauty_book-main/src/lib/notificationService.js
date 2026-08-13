@@ -7,6 +7,12 @@ import { supabase } from '@/api/supabaseClient';
 
 const VALID_TYPES = ["message", "reservation", "promo", "avis", "commande", "system"];
 
+function emailToName(email) {
+  if (!email) return "Utilisateur";
+  const name = email.split("@")[0].replace(/[._-]/g, " ");
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 /**
  * Crée une ou plusieurs notifications dans la table Notification.
  * @param {Object|Object[]} payloads - Un seul objet ou un tableau d'objets.
@@ -128,7 +134,7 @@ export async function notifyNewReservation({ proEmail, clientEmail, serviceName,
     user_email: proEmail,
     type: "reservation",
     title: "📅 Nouvelle réservation",
-    body: `${clientEmail} a réservé "${serviceName}" le ${date} à ${time || "00:00"}.`,
+    body: `${emailToName(clientEmail)} a réservé "${serviceName}" le ${date} à ${time || "00:00"}.`,
     action_url: "/pro/gestion-agenda",
     data: { reservation_type: "new" },
   });
@@ -151,9 +157,9 @@ export async function notifyMessageReceived({ receiverEmail, senderName, senderE
   return createNotification({
     user_email: receiverEmail,
     type: "message",
-    title: `💬 Nouveau message de ${senderName || senderEmail}`,
+    title: `💬 Nouveau message de ${senderName || emailToName(senderEmail)}`,
     body: preview || "Vous avez reçu un nouveau message.",
-    action_url: `/messages?to=${encodeURIComponent(senderEmail)}&name=${encodeURIComponent(senderName || senderEmail)}`,
+    action_url: `/messages?to=${encodeURIComponent(senderEmail)}&name=${encodeURIComponent(senderName || emailToName(senderEmail))}`,
     data: { conversation_id: conversationId, sender_email: senderEmail, sender_name: senderName },
   });
 }

@@ -125,6 +125,7 @@ export default function Profil() {
   const [demandeStatus, setDemandeStatus] = useState(null); // null | 'en_attente' | 'approuvee' | 'refusee'
   const [shareOpen, setShareOpen] = useState(false);
   const [stats, setStats] = useState({ commandes: 0, rdv: 0, points: 0, solde: 0 });
+  const [followersCount, setFollowersCount] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -268,12 +269,18 @@ export default function Profil() {
         }
       } catch { setDemandeStatus(null); }
     }
+
+    // Fetch followers count
+    try {
+      const { count } = await supabase.from("user_follow").select("*", { count: "exact", head: true }).eq("followed_email", user.email);
+      setFollowersCount(count || 0);
+    } catch (e) { console.error("Followers count error:", e); }
+
     } catch (e) { console.error('[Profil] loadData error:', e); }
     setLoading(false);
   };
 
   const postsCount = publications.length;
-  const repubsCount = repubsList.length;
   const totalLikes = favorisList.length;
   const totalFavoris = favorisList.length;
 
@@ -341,7 +348,7 @@ export default function Profil() {
       <div className="mx-5 bg-gray-50 rounded-2xl px-4 py-4 grid grid-cols-3 divide-x divide-gray-200 mb-4">
         {[
           { value: postsCount, label: "PUBLICATIONS" },
-          { value: repubsCount, label: "REPUBS" },
+          { value: followersCount, label: "ABONNÉS" },
           { value: totalLikes, label: "LIKES", highlight: true },
         ].map((s) => (
           <div key={s.label} className="flex flex-col items-center gap-1 px-2">
@@ -414,7 +421,7 @@ export default function Profil() {
         <div className="flex">
           {[
             { id: "publications", label: "PUBLICATIONS", Icon: Grid },
-            { id: "repubs", label: `REPUB (${repubsCount})`, Icon: Repeat2 },
+            { id: "repubs", label: `REPUB (${repubsList.length})`, Icon: Repeat2 },
             { id: "favoris", label: "FAVORIS", Icon: Bookmark },
           ].map((tab) => {
             const Icon = tab.Icon;
@@ -435,7 +442,7 @@ export default function Profil() {
         <div className="flex items-center justify-between px-4 py-2">
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">
             {activeTab === "publications" ? `${postsCount} publication${postsCount !== 1 ? "s" : ""}` :
-             activeTab === "repubs" ? `${repubsCount} publication${repubsCount !== 1 ? "s" : ""}` : "Favoris"}
+              activeTab === "repubs" ? `${repubsList.length} publication${repubsList.length !== 1 ? "s" : ""}` : "Favoris"}
           </p>
           {activeTab === "publications" && (
             <button onClick={() => navigate("/pro/publication")}

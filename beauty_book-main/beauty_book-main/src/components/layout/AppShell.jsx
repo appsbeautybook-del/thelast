@@ -3,6 +3,8 @@ import { useRef, useEffect, useState } from "react";
 import MainHeader from "./MainHeader";
 import BottomNav from "./BottomNav";
 import { CallManager } from "@/components/call/CallManager";
+import { useNativeNotifications } from "@/hooks/useNativeNotifications";
+import { useAuth } from "@/lib/AuthContext";
 
 const THEME_BG = {
   light: "#f8f9fa",
@@ -36,6 +38,10 @@ export default function AppShell() {
   const showHeader = location.pathname === "/";
   const selfScroll = SELF_SCROLL_PAGES.includes(location.pathname);
   const [bgColor, setBgColor] = useState(getThemeBg);
+  const { user } = useAuth();
+  
+  // Activer les notifications natives
+  useNativeNotifications(user?.email);
 
   useEffect(() => {
     const handler = () => setBgColor(getThemeBg());

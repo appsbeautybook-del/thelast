@@ -18,6 +18,26 @@ applyTheme(localStorage.getItem("bb_theme") || "light");
 import { setGlobalLang } from "@/hooks/useLocale";
 setGlobalLang(localStorage.getItem("bb_lang") || "fr");
 
+// Enregistrer le Service Worker pour les notifications push
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      console.log('[SW] Registered:', registration.scope);
+    } catch (error) {
+      console.error('[SW] Registration failed:', error);
+    }
+  });
+}
+
+// Demander la permission pour les notifications au démarrage
+if ('Notification' in window && Notification.permission === 'default') {
+  // On attend 2 secondes avant de demander pour ne pas être intrusif
+  setTimeout(() => {
+    Notification.requestPermission();
+  }, 2000);
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
 )

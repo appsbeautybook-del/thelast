@@ -8,6 +8,12 @@ import {
   notifyReservationCancelled,
   notifyNewReservation,
 } from '@/lib/notificationService';
+
+function emailToDisplayName(email) {
+  if (!email) return "Client";
+  const name = email.split("@")[0].replace(/[._-]/g, " ");
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
 import { useState, useEffect, useRef } from "react";
 import {
   Plus, X, Search, ChevronRight, Lightbulb, Rocket,
@@ -171,11 +177,10 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Client</p>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
-              <span className="text-[18px] font-black text-primary">{(rdv.client_email || "?")[0].toUpperCase()}</span>
+              <span className="text-[18px] font-black text-primary">{(rdv.client_name || emailToDisplayName(rdv.client_email) || "?")[0].toUpperCase()}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[18px] font-black text-gray-900">{rdv.client_name || rdv.client_email}</p>
-              <p className="text-[12px] text-gray-400 font-medium">{rdv.client_email}</p>
+              <p className="text-[18px] font-black text-gray-900">{rdv.client_name || emailToDisplayName(rdv.client_email)}</p>
               {rdv.client_phone && <p className="text-[12px] text-gray-400 font-medium">{rdv.client_phone}</p>}
             </div>
           </div>
@@ -330,7 +335,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
                 </div>
                 <div>
                   <h2 className="text-[18px] font-black text-gray-900">Score de Fiabilite</h2>
-                  <p className="text-[11px] text-gray-400">{rdv.client_email} · {rdv.service_name}</p>
+                  <p className="text-[11px] text-gray-400">{rdv.client_name || emailToDisplayName(rdv.client_email)} · {rdv.service_name}</p>
                 </div>
               </div>
               <button onClick={() => { setShowReliability(false); onClose(); }} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">

@@ -1,7 +1,10 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Home, Scissors, CalendarDays, User, Bot, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuth } from "@/lib/AuthContext";
+import { supabase } from "@/api/supabaseClient";
 // Note: /reseau-social also maps to Reels component
 
 // Pages où la nav ne doit PAS s'afficher (parcours internes)
@@ -55,6 +58,46 @@ export default function BottomNav() {
   const path = location.pathname;
   const isPro = !!localStorage.getItem("bb_is_pro");
   const { theme } = useTheme();
+  const { user } = useAuth();
+  const [hasNewEvents, setHasNewEvents] = useState(false);
+
+  // Check for new reservations/events since last visit
+  useEffect(() => {
+    if (!user?.email) return;
+    const checkNewEvents = async () => {
+      try {
+        const lastVisitKey = isPro ? "bb_agenda_last_visit" : "bb_rdv_last_visit";
+        const lastVisit = localStorage.getItem(lastVisitKey) || new Date(0).toISOString();
+        
+        const table = isPro ? "Reservation" : "Reservation";
+        const emailField = isPro ? "pro_email" : "client_email";
+        
+        const { count } = await supabase
+          .from(table)
+          .select("*", { count: "exact", head: true })
+          .eq(emailField, user.email)
+          .gt("created_at", lastVisit);
+        
+        if (count && count > 0) {
+          setHasNewEvents(true);
+        }
+      } catch (e) {
+        console.error("Check new events error:", e);
+      }
+    };
+    checkNewEvents();
+    const interval = setInterval(checkNewEvents, 30000);
+    return () => clearInterval(interval);
+  }, [user?.email, isPro]);
+
+  // Mark as visited when navigating to the page
+  useEffect(() => {
+    if (path === "/rendez-vous" || path === "/pro/gestion-agenda") {
+      const lastVisitKey = isPro ? "bb_agenda_last_visit" : "bb_rdv_last_visit";
+      localStorage.setItem(lastVisitKey, new Date().toISOString());
+      setHasNewEvents(false);
+    }
+  }, [path, isPro]);
 
   const shouldHide = HIDDEN_PATHS.some(p => path.startsWith(p));
   if (shouldHide) return null;
@@ -121,8 +164,11 @@ export default function BottomNav() {
 
       <button
         onClick={() => handleTabPress("rendezvous", isPro ? "/pro/gestion-agenda" : "/rendez-vous")}
-        className="flex-1 flex flex-col items-center justify-center gap-1 active:scale-90 transition-all"
+        className="flex-1 flex flex-col items-center justify-center gap-1 active:scale-90 transition-all relative"
       >
+        {hasNewEvents && (
+          <div className="absolute top-1 right-1/2 translate-x-4 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+        )}
         {isPro
           ? <LayoutDashboard className={iconClass(currentTab === "rendezvous")} strokeWidth={currentTab === "rendezvous" ? 2.5 : 1.8} />
           : <CalendarDays className={iconClass(currentTab === "rendezvous")} strokeWidth={currentTab === "rendezvous" ? 2.5 : 1.8} />

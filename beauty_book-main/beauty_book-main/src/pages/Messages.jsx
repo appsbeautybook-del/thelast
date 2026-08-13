@@ -8,6 +8,12 @@ import usePullToRefresh from "@/hooks/usePullToRefresh";
 import { useCall } from "@/components/call/CallManager";
 import { notifyMessageReceived } from '@/lib/notificationService';
 
+function emailToDisplayName(email) {
+  if (!email) return "Utilisateur";
+  const name = email.split("@")[0].replace(/[._-]/g, " ");
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 // ── Maria AI Toggle ───────────────────────────────────────────────────────────
 const MARIA_AI_KEY = "bb_maria_ai_active";
 
@@ -102,7 +108,7 @@ function ConversationList({ conversations, loading, onSelect, onDelete }) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <p className={`text-[14px] font-black truncate ${conv.unread > 0 ? "text-gray-900" : "text-gray-700"}`}>
-                    {conv.other_name || conv.other_email}
+                    {conv.other_name || emailToDisplayName(conv.other_email)}
                   </p>
                   <span className="text-[10px] text-gray-400 font-medium shrink-0 ml-2">
                     {conv.last_date ? timeAgo(conv.last_date) : ""}
@@ -375,7 +381,7 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
     try {
       await notifyMessageReceived({
         receiverEmail: conversation.other_email,
-        senderName: currentUser.user_metadata?.full_name || currentUser.email,
+        senderName: currentUser.user_metadata?.full_name || emailToDisplayName(currentUser.email),
         senderEmail: currentUser.email,
         conversationId: convId,
         preview: content || (fileUrl ? "📷 Image" : ""),
@@ -434,7 +440,7 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-black text-gray-900 truncate">{conversation.other_name || conversation.other_email}</p>
+          <p className="text-[14px] font-black text-gray-900 truncate">{conversation.other_name || emailToDisplayName(conversation.other_email)}</p>
           {otherTyping ? (
             <p className="text-[10px] text-primary font-bold">en train d'écrire...</p>
           ) : (
@@ -633,7 +639,7 @@ function CallHistory({ user }) {
       {calls.map((call) => {
         const isCaller = call.caller_email === user.email;
         const otherEmail = isCaller ? call.callee_email : call.caller_email;
-        const otherName  = isCaller ? (call.callee_name || call.callee_email) : (call.caller_name || call.caller_email);
+        const otherName  = isCaller ? (call.callee_name || emailToDisplayName(call.callee_email)) : (call.caller_name || emailToDisplayName(call.caller_email));
         const otherAvatar = isCaller ? call.callee_avatar : call.caller_avatar;
 
         // Status du point de vue de l'utilisateur courant
@@ -746,7 +752,7 @@ function FollowersList({ user, onSelectConversation }) {
         
         setFollowing(myFollowing.map(f => ({
           email: f.followed_email,
-          name: profileMap[f.followed_email]?.full_name || f.follower_name || f.followed_email,
+          name: profileMap[f.followed_email]?.full_name || emailToDisplayName(f.followed_email),
           avatar: profileMap[f.followed_email]?.avatar_url || f.follower_avatar || null,
           since: f.created_at,
         })));
@@ -781,7 +787,7 @@ function FollowersList({ user, onSelectConversation }) {
         
         setFollowers(myFollowers.map(f => ({
           email: f.follower_email,
-          name: profileMap[f.follower_email]?.full_name || f.follower_name || f.follower_email,
+          name: profileMap[f.follower_email]?.full_name || emailToDisplayName(f.follower_email),
           avatar: profileMap[f.follower_email]?.avatar_url || f.follower_avatar || null,
           since: f.created_at,
         })));
@@ -867,7 +873,7 @@ function FollowersList({ user, onSelectConversation }) {
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-black text-gray-900 truncate">{person.name}</p>
-                <p className="text-[11px] text-gray-400 font-medium truncate">{person.email}</p>
+                <p className="text-[11px] text-gray-400 font-medium truncate">{person.role === "pro" ? "Professionnel" : "Client"}</p>
               </div>
               <button
                 onClick={() => handleMessage(person)}
@@ -998,7 +1004,7 @@ export default function Messages() {
 
       const convs = Object.entries(convMap).map(([otherEmail, m]) => {
         const isMe = m.sender_email === user.email;
-        const otherName = isMe ? (m.receiver_name || otherEmail) : (m.sender_name || otherEmail);
+        const otherName = isMe ? (m.receiver_name || emailToDisplayName(otherEmail)) : (m.sender_name || emailToDisplayName(otherEmail));
         const otherAvatar = isMe ? (m.receiver_avatar || null) : (m.sender_avatar || null);
         
         // Count unread messages from this person

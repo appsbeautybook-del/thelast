@@ -26,6 +26,7 @@ export default defineConfig({
   define: extraDefines,
   server: {
     port: 5173,
+    host: true,
     open: '/',
     proxy: {
       '/ai-proxy': {

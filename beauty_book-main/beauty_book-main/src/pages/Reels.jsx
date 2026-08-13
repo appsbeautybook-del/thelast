@@ -798,18 +798,24 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
 
       {/* ── Bottom info ── */}
       <div className="absolute left-4 right-20 z-20 space-y-2" style={{ bottom: "calc(80px + env(safe-area-inset-bottom, 16px))" }}>
-        {(reel.author_name || reel.author_handle) && (
-          <div className="flex items-center gap-2">
-            <button onClick={() => onAuthorClick?.(reel)} className="text-white text-[14px] font-bold truncate flex-1 text-left">{reel.author_name || reel.author_handle}</button>
-            {reel.author_email && reel.author_email !== currentUser?.email && (
-              <button onClick={onFollow} className={`shrink-0 border rounded-full px-3 py-1 text-[11px] font-black transition-all ${followed ? "border-white/40 text-white/60" : "border-white text-white"}`}>
-                {followed ? "Abonné" : "SUIVRE"}
-              </button>
-            )}
+        {/* Profile photo + username above legend */}
+        <div className="flex items-center gap-2.5">
+          <button onClick={() => onAuthorClick?.(reel)} className="shrink-0">
+            <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/80 shadow-lg">
+              <img src={reel.author_avatar || "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=100"} alt={reel.author_name} className="w-full h-full object-cover" />
+            </div>
+          </button>
+          <div className="flex-1 min-w-0">
+            <button onClick={() => onAuthorClick?.(reel)} className="text-white text-[13px] font-bold truncate text-left block">{reel.author_name || reel.author_handle || "Utilisateur"}</button>
           </div>
-        )}
+          {reel.author_email && reel.author_email !== currentUser?.email && (
+            <button onClick={onFollow} className={`shrink-0 border rounded-full px-3 py-1 text-[11px] font-black transition-all ${followed ? "border-white/40 text-white/60" : "border-white text-white"}`}>
+              {followed ? "Abonné" : "SUIVRE"}
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-2">
-          <p className="text-white text-[16px] font-black leading-tight flex-1 line-clamp-2">{reel.title}</p>
+          <p className="text-white text-[15px] font-medium leading-tight flex-1 line-clamp-2">{reel.title}</p>
         </div>
         <div className="flex items-center gap-2">
           {reel.sound && (
