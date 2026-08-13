@@ -927,40 +927,47 @@ export default function Messages() {
   // Écouter les nouveaux messages entrants pour Maria AI
   useEffect(() => {
     if (!user) return;
-    const unsub = entities.MessageChat.subscribe(async (event) => {
-      if (event.type !== "create") return;
-      const m = event.data;
-      // Seulement les messages reçus par le pro (user courant), pas les siens
-      if (m.receiver_email !== user.email) return;
-      if (m.type === "typing") return;
-      if (m.is_maria) return;
-      if (processedMsgIds.current.has(event.id)) return;
-      if (!mariaAIRef.current) return;
-      if (deletedConvIds.current.has(m.conversation_id)) return;
+    const channel = supabase
+      .channel(`maria-ai-${user.email}`)
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'MessageChat' },
+        async (payload) => {
+          const m = payload.new;
+          if (!m) return;
+          if (m.receiver_email !== user.email) return;
+          if (m.type === "typing") return;
+          if (m.is_maria) return;
+          if (processedMsgIds.current.has(m.id)) return;
+          if (!mariaAIRef.current) return;
+          if (deletedConvIds.current.has(m.conversation_id)) return;
 
-      processedMsgIds.current.add(event.id);
+          processedMsgIds.current.add(m.id);
 
-      // Délai naturel (~2s) avant que Maria réponde
-      setTimeout(async () => {
-        try {
-          const convId = m.conversation_id;
-          const clientName = m.sender_name || m.sender_email;
-          const mariaReply = `Merci ${clientName} ! Je prends note de votre message. Je vous réponds très rapidement 😊`;
-          await supabase.from("MessageChat").insert({
-            conversation_id: convId,
-            sender_email: user.email,
-            receiver_email: m.sender_email,
-            content: mariaReply,
-            is_read: false,
-            read: false,
-            is_maria: true,
-          });
-        } catch (e) {
-          console.error("Maria AI reply error:", e);
+          setTimeout(async () => {
+            try {
+              const convId = m.conversation_id;
+              const clientName = m.sender_name || emailToDisplayName(m.sender_email);
+              const mariaReply = `Merci ${clientName} ! Je prends note de votre message. Je vous réponds très rapidement 😊`;
+              const { error } = await supabase.from("MessageChat").insert({
+                conversation_id: convId,
+                sender_email: user.email,
+                receiver_email: m.sender_email,
+                sender_name: user.user_metadata?.full_name || user.full_name || "Maria AI",
+                content: mariaReply,
+                is_read: false,
+                read: false,
+                is_maria: true,
+              });
+              if (error) console.error("Maria AI reply error:", error);
+            } catch (e) {
+              console.error("Maria AI reply error:", e);
+            }
+          }, 1800 + Math.random() * 1200);
         }
-      }, 1800 + Math.random() * 1200);
-    });
-    return () => unsub();
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const loadConversations = async () => {
