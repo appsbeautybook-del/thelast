@@ -210,7 +210,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="bg-gray-50 rounded-2xl p-4">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Date</p>
-            <p className="text-[15px] font-black text-gray-900">{rdv.date}</p>
+            <p className="text-[13px] font-black text-gray-900 capitalize">{rdv.date ? format(parseISO(rdv.date), "EEEE d MMMM yyyy", { locale: fr }) : "—"}</p>
           </div>
           <div className="bg-gray-50 rounded-2xl p-4">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Heure</p>
@@ -882,6 +882,14 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
   const [filterStatus, setFilterStatus] = useState("all");
   const [clientScores, setClientScores] = useState({});
 
+  // ── Format date long en français ──
+  const formatLongDate = (dateStr) => {
+    if (!dateStr) return "";
+    try {
+      return format(parseISO(dateStr), "EEEE d MMMM yyyy", { locale: fr });
+    } catch { return dateStr; }
+  };
+
   // Charger les scores de fiabilite des clients
   useEffect(() => {
     const clientEmails = [...new Set(reservations.map(r => r.client_email).filter(Boolean))];
@@ -924,6 +932,15 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
     const matchStatus = filterStatus === "all" || r.status === filterStatus;
     return matchSearch && matchStatus;
   }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+  // ── Grouper par date ──
+  const groupedByDate = {};
+  filtered.forEach(r => {
+    const key = r.date || "sans-date";
+    if (!groupedByDate[key]) groupedByDate[key] = [];
+    groupedByDate[key].push(r);
+  });
+  const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
   const handleAction = async (id, status) => {
     setUpdating(id);
@@ -997,75 +1014,85 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
           </p>
         </div>
       ) : (
-        filtered.map(r => (
-          <div key={r.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 relative">
-            <span className={`absolute top-4 right-4 text-[10px] font-black uppercase px-3 py-1 rounded-full ${statusBadgeColors[r.status] || "bg-gray-100 text-gray-500"}`}>
-              {statusLabels[r.status] || r.status}
-            </span>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
-                <span className="text-[18px] font-black text-primary">{(r.client_email || "?")[0].toUpperCase()}</span>
-              </div>
-              <div>
-                <p className="text-[16px] font-black text-gray-900">{r.client_name || r.client_email}</p>
-                <p className="text-[12px] font-medium text-gray-500">{r.service_name}</p>
-              </div>
+        sortedDates.map(dateKey => (
+          <div key={dateKey} className="space-y-3">
+            {/* En-tête date */}
+            <div className="flex items-center gap-3 pt-2">
+              <div className="w-1 h-8 bg-primary rounded-full" />
+              <p className="text-[13px] font-black text-gray-900 capitalize">{formatLongDate(dateKey)}</p>
+              <span className="text-[10px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full">{groupedByDate[dateKey].length}</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 mb-4">
-              <div>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Date & Heure</p>
-                <p className="text-[14px] font-black text-gray-900">{r.date} • {r.time || r.time_slot}</p>
-              </div>
-              <div>
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Durée & Prix</p>
-                <p className="text-[14px] font-black text-gray-900">{r.duration_min || 60}min • {r.total_price || r.service_price}€</p>
-              </div>
-            </div>
-            {/* Score de fiabilite client */}
-            {r.status === "en_attente" && clientScores[r.client_email] !== undefined && (
-              <div className="flex items-center gap-2 mb-3 bg-gray-50 rounded-xl px-3 py-2">
-                <div className={`w-2 h-2 rounded-full ${clientScores[r.client_email] >= 80 ? "bg-green-500" : clientScores[r.client_email] >= 50 ? "bg-yellow-500" : "bg-red-500"}`} />
-                <span className="text-[11px] font-bold text-gray-600">Score de fiabilité</span>
-                <span className={`text-[13px] font-black ml-auto ${clientScores[r.client_email] >= 80 ? "text-green-600" : clientScores[r.client_email] >= 50 ? "text-yellow-600" : "text-red-500"}`}>
-                  {clientScores[r.client_email]}%
+            {/* RDVs de cette date */}
+            {groupedByDate[dateKey].map(r => (
+              <div key={r.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 relative">
+                <span className={`absolute top-4 right-4 text-[10px] font-black uppercase px-3 py-1 rounded-full ${statusBadgeColors[r.status] || "bg-gray-100 text-gray-500"}`}>
+                  {statusLabels[r.status] || r.status}
                 </span>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
+                    <span className="text-[18px] font-black text-primary">{(r.client_email || "?")[0].toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <p className="text-[16px] font-black text-gray-900">{r.client_name || r.client_email}</p>
+                    <p className="text-[12px] font-medium text-gray-500">{r.service_name}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Heure</p>
+                    <p className="text-[14px] font-black text-gray-900">{r.time || r.time_slot}</p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Durée & Prix</p>
+                    <p className="text-[14px] font-black text-gray-900">{r.duration_min || 60}min • {r.total_price || r.service_price}€</p>
+                  </div>
+                </div>
+                {r.status === "en_attente" && clientScores[r.client_email] !== undefined && (
+                  <div className="flex items-center gap-2 mb-3 bg-gray-50 rounded-xl px-3 py-2">
+                    <div className={`w-2 h-2 rounded-full ${clientScores[r.client_email] >= 80 ? "bg-green-500" : clientScores[r.client_email] >= 50 ? "bg-yellow-500" : "bg-red-500"}`} />
+                    <span className="text-[11px] font-bold text-gray-600">Score de fiabilité</span>
+                    <span className={`text-[13px] font-black ml-auto ${clientScores[r.client_email] >= 80 ? "text-green-600" : clientScores[r.client_email] >= 50 ? "text-yellow-600" : "text-red-500"}`}>
+                      {clientScores[r.client_email]}%
+                    </span>
+                  </div>
+                )}
+                {r.status === "en_attente" && (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleAction(r.id, "annule")}
+                      disabled={updating === r.id}
+                      className="flex-1 py-3 rounded-2xl text-[12px] font-black text-gray-500 uppercase tracking-widest border border-gray-200 active:scale-95 transition-all"
+                    >
+                      Refuser
+                    </button>
+                    <button
+                      onClick={() => handleAction(r.id, "confirme")}
+                      disabled={updating === r.id}
+                      className="flex-1 bg-[#1a2035] text-white py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      {updating === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Accepter"}
+                    </button>
+                  </div>
+                )}
+                {r.status === "confirme" && (
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => handleAction(r.id, "annule")}
+                      disabled={updating === r.id}
+                      className="flex-1 py-3 rounded-2xl text-[12px] font-black text-red-400 uppercase tracking-widest border border-red-100 active:scale-95 transition-all"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={() => onSelectRdv(r)}
+                      className="flex-1 bg-primary text-white py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+                    >
+                      Réservation
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-            {r.status === "en_attente" && (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleAction(r.id, "annule")}
-                  disabled={updating === r.id}
-                  className="flex-1 py-3 rounded-2xl text-[12px] font-black text-gray-500 uppercase tracking-widest border border-gray-200 active:scale-95 transition-all"
-                >
-                  Refuser
-                </button>
-                <button
-                  onClick={() => handleAction(r.id, "confirme")}
-                  disabled={updating === r.id}
-                  className="flex-1 bg-[#1a2035] text-white py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  {updating === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Accepter"}
-                </button>
-              </div>
-            )}
-            {r.status === "confirme" && (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleAction(r.id, "annule")}
-                  disabled={updating === r.id}
-                  className="flex-1 py-3 rounded-2xl text-[12px] font-black text-red-400 uppercase tracking-widest border border-red-100 active:scale-95 transition-all"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={() => onSelectRdv(r)}
-                  className="flex-1 bg-primary text-white py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
-                >
-                  Réservation
-                </button>
-              </div>
-            )}
+            ))}
           </div>
         ))
       )}
@@ -1200,7 +1227,7 @@ function CrmTab({ reservations, proEmail }) {
           <div key={r.id} className="bg-white rounded-2xl px-4 py-3.5 flex items-center gap-3 shadow-sm border border-gray-100">
             <div className="flex-1">
               <p className="text-[14px] font-black text-gray-900">{r.service_name}</p>
-              <p className="text-[11px] text-gray-400 font-medium">{r.date} • {r.time || r.time_slot}</p>
+              <p className="text-[11px] text-gray-400 font-medium capitalize">{r.date ? format(parseISO(r.date), "EEEE d MMMM", { locale: fr }) : ""} • {r.time || r.time_slot}</p>
             </div>
             <div className="text-right">
               <p className="text-[14px] font-black text-primary">{r.total_price || r.service_price}€</p>

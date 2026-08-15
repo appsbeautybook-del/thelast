@@ -4,6 +4,8 @@ import { ArrowLeft, Package, Clock, CheckCircle, XCircle, ChevronRight, Shopping
 import { useAuth } from "@/lib/AuthContext";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
+import { format, parseISO } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const STATUS_COMMANDE = {
   en_attente: { label: "En attente", color: "text-orange-500", bg: "bg-orange-50", Icon: Clock },
@@ -70,7 +72,11 @@ export default function MesCommandes() {
 
   const formatDate = (d) => {
     if (!d) return "";
-    return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+    try {
+      return format(new Date(d), "EEEE d MMMM yyyy", { locale: fr });
+    } catch {
+      return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    }
   };
 
   const getStatus = (item) => {
@@ -105,7 +111,16 @@ export default function MesCommandes() {
   };
 
   const getDate = (item) => {
-    if (item._type === "rdv") return item.date ? new Date(item.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" }) : formatDate(item.created_date || item.created_at);
+    if (item._type === "rdv") {
+      if (item.date) {
+        try {
+          return format(parseISO(item.date), "EEEE d MMMM yyyy", { locale: fr });
+        } catch {
+          return new Date(item.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+        }
+      }
+      return formatDate(item.created_date || item.created_at);
+    }
     if (item._type === "abonnement") return formatDate(item.starts_at || item.created_at);
     return formatDate(item.created_date || item.created_at);
   };
