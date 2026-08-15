@@ -1541,10 +1541,13 @@ export default function GestionAgenda() {
 
   useEffect(() => {
     loadReservations();
-    // Subscribe aux changements en temps réel
+    // Subscribe aux changements en temps réel via entities
     const unsub = entities.Reservation.subscribe((event) => {
       if (event.type === "create" && event.data?.pro_email === proEmail) {
-        setReservations(prev => [event.data, ...prev]);
+        setReservations(prev => {
+          if (prev.some(r => r.id === event.data.id)) return prev;
+          return [event.data, ...prev];
+        });
       } else if (event.type === "update") {
         setReservations(prev => prev.map(r => r.id === event.id ? { ...r, ...event.data } : r));
       } else if (event.type === "delete") {
@@ -1557,12 +1560,33 @@ export default function GestionAgenda() {
         setTravailNuit(event.data.travail_nuit || false);
       }
     });
+    // Direct Supabase channel for more reliable real-time
+    const rtChannel = supabase
+      .channel("pro-rdv-" + proEmail)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "Reservation",
+        filter: `pro_email=eq.${proEmail}`,
+      }, (payload) => {
+        if (payload.eventType === "INSERT") {
+          setReservations(prev => {
+            if (prev.some(r => r.id === payload.new.id)) return prev;
+            return [payload.new, ...prev];
+          });
+        } else if (payload.eventType === "UPDATE") {
+          setReservations(prev => prev.map(r => r.id === payload.new.id ? { ...r, ...payload.new } : r));
+        } else if (payload.eventType === "DELETE") {
+          setReservations(prev => prev.filter(r => r.id !== payload.old.id));
+        }
+      })
+      .subscribe();
     // Listen for pro-profile-updated events (from ProfilPro page)
     const onProfileUpdated = (e) => {
       const d = e.detail || {};
     };
     window.addEventListener('pro-profile-updated', onProfileUpdated);
-    return () => { unsub(); unsubProfil(); window.removeEventListener('pro-profile-updated', onProfileUpdated); };
+    return () => { unsub(); unsubProfil(); if (rtChannel) supabase.removeChannel(rtChannel); window.removeEventListener('pro-profile-updated', onProfileUpdated); };
   }, [proEmail]);
 
   // Auto-accept new reservations

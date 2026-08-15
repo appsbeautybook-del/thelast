@@ -345,13 +345,9 @@ export default function RendezVous() {
       const isFullRefund = hoursUntil >= 24;
       const refundAmount = isFullRefund ? rdv.total_price : Math.round((rdv.total_price || 0) * 0.5 * 100) / 100;
 
-      await entities.Reservation.update(rdv.id, {
-        status: "annule",
-        cancel_reason: "client",
-        refund_amount: refundAmount,
-        refund_type: isFullRefund ? "full" : "partial",
-      });
-      setReservations(prev => prev.map(r => r.id === rdv.id ? { ...r, status: "annule", refund_amount: refundAmount, refund_type: isFullRefund ? "full" : "partial" } : r));
+      const { error } = await supabase.from("Reservation").update({ status: "annule" }).eq("id", rdv.id);
+      if (error) throw error;
+      setReservations(prev => prev.map(r => r.id === rdv.id ? { ...r, status: "annule" } : r));
       setSelectedReservation(null);
       setShowCancelConfirm(null);
     } catch (e) { console.error("Cancel error:", e); }
