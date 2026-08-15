@@ -92,26 +92,6 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
       await entities.Reservation.update(rdv.id, { status });
     }
 
-    // Ajouter a Google Calendar quand accepte
-    if (status === "confirme") {
-      try {
-        const pad = (n) => String(n).padStart(2, "0");
-        const [y, mo, d] = (rdv.date || "").split("-").map(Number);
-        const [sh, sm] = (rdv.time || rdv.time_slot || "00:00").split(":").map(Number);
-        const dur = rdv.duration_min || 60;
-        const endMin = sh * 60 + sm + dur;
-        const eh = Math.floor(endMin / 60) % 24, em = endMin % 60;
-        const fmt = (yy, mm, dd, hh, mi) => `${yy}${pad(mm)}${pad(dd)}T${pad(hh)}${pad(mi)}00`;
-        const dtStart = fmt(y, mo, d, sh, sm);
-        const dtEnd = fmt(y, mo, d, eh, em);
-        const title = encodeURIComponent(rdv.service_name || "Rendez-vous");
-        const details = encodeURIComponent(`${rdv.client_name || ""} - ${rdv.salon_name || ""}`);
-        const location = encodeURIComponent(rdv.salon_address || "");
-        const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dtStart}/${dtEnd}&details=${details}&location=${location}`;
-        window.open(gcalUrl, "_blank");
-      } catch (e) { console.error("Google Calendar error:", e); }
-    }
-
     // Envoyer notification au client
     try {
       const serviceName = rdv.service_name || rdv.service || "votre rendez-vous";
