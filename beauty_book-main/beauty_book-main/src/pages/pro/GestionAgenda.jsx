@@ -923,7 +923,6 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [clientScores, setClientScores] = useState({});
 
   // ── Format date long en français ──
   const formatLongDate = (dateStr) => {
@@ -932,26 +931,6 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
       return format(parseISO(dateStr), "EEEE d MMMM yyyy", { locale: fr });
     } catch { return dateStr; }
   };
-
-  // Charger les scores de fiabilite des clients
-  useEffect(() => {
-    const clientEmails = [...new Set(reservations.map(r => r.client_email).filter(Boolean))];
-    if (clientEmails.length === 0) return;
-    Promise.all(clientEmails.map(email =>
-      supabase.from("Reservation").select("status").eq("client_email", email).then(({ data }) => {
-        const total = (data || []).length;
-        const noShows = (data || []).filter(r => r.status === "no_show").length;
-        const annules = (data || []).filter(r => r.status === "annule").length;
-        const completes = (data || []).filter(r => r.status === "termine").length;
-        const score = total === 0 ? 100 : Math.max(0, Math.round(100 - (noShows * 20) - (annules * 5) + (completes * 2)));
-        return { email, score: Math.min(100, score) };
-      }).catch(() => ({ email, score: 100 }))
-    )).then(results => {
-      const map = {};
-      results.forEach(r => { map[r.email] = r.score; });
-      setClientScores(map);
-    });
-  }, [reservations]);
 
   const statusLabels = {
     en_attente: "En attente",
@@ -1090,15 +1069,6 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
                     <p className="text-[14px] font-black text-gray-900">{r.duration_min || 60}min • {r.total_price || r.service_price}€</p>
                   </div>
                 </div>
-                {r.status === "en_attente" && clientScores[r.client_email] !== undefined && (
-                  <div className="flex items-center gap-2 mb-3 bg-gray-50 rounded-xl px-3 py-2">
-                    <div className={`w-2 h-2 rounded-full ${clientScores[r.client_email] >= 80 ? "bg-green-500" : clientScores[r.client_email] >= 50 ? "bg-yellow-500" : "bg-red-500"}`} />
-                    <span className="text-[11px] font-bold text-gray-600">Score de fiabilité</span>
-                    <span className={`text-[13px] font-black ml-auto ${clientScores[r.client_email] >= 80 ? "text-green-600" : clientScores[r.client_email] >= 50 ? "text-yellow-600" : "text-red-500"}`}>
-                      {clientScores[r.client_email]}%
-                    </span>
-                  </div>
-                )}
                 {r.status === "en_attente" && (
                   <div className="flex gap-3" onClick={e => e.stopPropagation()}>
                     <button
