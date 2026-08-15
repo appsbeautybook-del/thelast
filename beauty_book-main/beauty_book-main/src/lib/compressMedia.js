@@ -1,20 +1,20 @@
 /**
  * Compresse les médias (images ET vidéos) côté client avant upload.
- * Objectif : pour les fichiers > 1 Go, compresser intelligemment sans perte visuelle.
+ * Objectif : passer sous la barre des 50 Mo sans perte visuelle.
  *
  * Images → Canvas API (resize + JPEG quality adaptatif)
  * Vidéos → MediaRecorder (re-encodage bitrate adaptatif)
  */
 
-const COMPRESS_THRESHOLD = 1 * 1024 * 1024 * 1024; // 1 Go – en dessous, pas de compression
-const IMAGE_TARGET_MAX = 200 * 1024 * 1024;  // 200 Mo cible pour images compressées
-const VIDEO_TARGET_MAX = 500 * 1024 * 1024;  // 500 Mo cible pour vidéos compressées
+const COMPRESS_THRESHOLD = 40 * 1024 * 1024; // 40 Mo – compresser au-delà pour rester sous 50 Mo
+const IMAGE_TARGET_MAX = 45 * 1024 * 1024;   // 45 Mo cible pour images
+const VIDEO_TARGET_MAX = 45 * 1024 * 1024;   // 45 Mo cible pour vidéos
 
 // ─── IMAGES ──────────────────────────────────────────────────────────────────
 
 /**
  * Compresse une image avec qualité adaptative.
- * Seulement si > 1 Go. Conserve la qualité maximale possible.
+ * Seulement si > 40 Mo. Conserve la qualité maximale possible.
  */
 export async function compressImage(file, opts = {}) {
   const {
@@ -31,7 +31,7 @@ export async function compressImage(file, opts = {}) {
     return file;
   }
 
-  // Si sous le seuil de 1 Go, ne pas compresser
+  // Si sous le seuil de 40 Mo, ne pas compresser (mais redimensionner si trop grand)
   if (file.size <= COMPRESS_THRESHOLD) {
     // Mais on redimensionne si trop grand en dimensions
     const bitmap = await createImageBitmap(file);
@@ -94,7 +94,7 @@ function canvasToBlob(canvas, type, quality) {
 
 /**
  * Compresse une vidéo via MediaRecorder (re-encodage canvas + stream).
- * Seulement si > 1 Go. Conserve la qualité maximale possible.
+ * Seulement si > 40 Mo. Conserve la qualité maximale possible.
  */
 export async function compressVideo(file, opts = {}) {
   const {
@@ -107,7 +107,7 @@ export async function compressVideo(file, opts = {}) {
   if (!file || !(file instanceof File)) return file;
   if (!file.type.startsWith('video/')) return file;
 
-  // Si sous le seuil de 1 Go, pas de compression
+  // Si sous le seuil de 40 Mo, pas de compression
   if (file.size <= COMPRESS_THRESHOLD) return file;
 
   return new Promise((resolve, reject) => {
