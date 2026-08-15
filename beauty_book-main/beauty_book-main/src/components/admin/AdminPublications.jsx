@@ -71,8 +71,15 @@ export default function AdminPublications() {
     setSaving(true);
     try {
       const data = {
-        ...form,
+        title: form.title,
+        description: form.description,
+        category: form.category,
+        video_url: form.video_url,
+        thumbnail_url: form.thumbnail_url,
+        images: form.images,
         author_email: "borisnana955@gmail.com",
+        author_name: form.author_name,
+        author_handle: form.author_handle,
         status: "publie",
         likes: 0,
         comments: 0,
@@ -83,7 +90,7 @@ export default function AdminPublications() {
       const created = res.data?.reel;
       setReels(prev => [created, ...prev]);
       setCreating(false);
-      setForm({ title: "", description: "", category: "Réels", video_url: "", thumbnail_url: "", images: [], sound: "Son original - BeautyBook", author_name: "BeautyBook", author_handle: "@beautybook" });
+      setForm({ title: "", description: "", category: "Réels", video_url: "", thumbnail_url: "", images: [], author_name: "BeautyBook", author_handle: "@beautybook" });
     } catch {}
     setSaving(false);
   };

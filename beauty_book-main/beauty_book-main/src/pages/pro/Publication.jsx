@@ -2490,11 +2490,6 @@ export default function Publication() {
         created_by_id: user?.id || undefined,
         category: pubTypeToCategory[form.pubType] || "Réels",
         status: "publie",
-        sound: form.sound || null,
-        sound_preview_url: form.soundPreviewUrl || null,
-        sound_duration: form.soundDuration || 0,
-        sound_trim_start: form.soundTrimStart || 0,
-        sound_trim_end: form.soundTrimEnd || 0,
       };
 
       let reel;
