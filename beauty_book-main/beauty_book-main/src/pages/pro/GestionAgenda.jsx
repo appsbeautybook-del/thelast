@@ -733,7 +733,7 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
 }
 
 // ── Demandes Tab ──────────────────────────────────────────────────────────────
-function DemandesTab({ proEmail, reservations, setReservations }) {
+function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -916,11 +916,10 @@ function DemandesTab({ proEmail, reservations, setReservations }) {
                   Annuler
                 </button>
                 <button
-                  onClick={() => handleAction(r.id, "termine")}
-                  disabled={updating === r.id}
-                  className="flex-1 bg-green-500 text-white py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+                  onClick={() => onSelectRdv(r)}
+                  className="flex-1 bg-primary text-white py-3 rounded-2xl text-[12px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  {updating === r.id ? <Loader2 className="w-4 h-4 animate-spin" /> : "Terminé"}
+                  Réservation
                 </button>
               </div>
             )}
@@ -1407,7 +1406,7 @@ export default function GestionAgenda() {
               <PlanningTab proEmail={proEmail} reservations={reservations} onSelectRdv={setSelectedRdv} />
             )}
             {activeTab === "demandes" && (
-              <DemandesTab proEmail={proEmail} reservations={reservations} setReservations={setReservations} />
+              <DemandesTab proEmail={proEmail} reservations={reservations} setReservations={setReservations} onSelectRdv={setSelectedRdv} />
             )}
             {activeTab === "crm" && (
               <CrmTab reservations={reservations} proEmail={proEmail} />

@@ -3,7 +3,7 @@ import { Calendar, Clock, MapPin, CheckCircle2, Plus, Star, ChevronLeft, Chevron
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
-import LaisserAvisModal from "@/components/avis/LaisserAvisModal";
+import PostServiceReview from "@/components/reservation/PostServiceReview";
 import RoutineModal from "@/components/routine/RoutineModal";
 import RoutineDashboard from "@/components/routine/RoutineDashboard";
 
@@ -303,7 +303,7 @@ function EventCard({ event }) {
 
 export default function RendezVous() {
   const [activeTab, setActiveTab] = useState(0);
-  const [avisModal, setAvisModal] = useState(null);
+  const [reviewModal, setReviewModal] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -533,7 +533,7 @@ export default function RendezVous() {
                 <p className="text-[11px] font-bold text-gray-400">{r.salon_name || r.pro_name} · {r.date}</p>
               </div>
               <button
-                onClick={() => setAvisModal(r)}
+                onClick={() => setReviewModal(r)}
                 className="shrink-0 flex items-center gap-1.5 bg-primary/10 text-primary text-[11px] font-black px-3 py-2 rounded-xl active:scale-95 transition-all uppercase tracking-widest"
               >
                 <Star className="w-3.5 h-3.5 fill-primary" />
@@ -544,11 +544,13 @@ export default function RendezVous() {
         </div>
       )}
 
-      {avisModal && (
-        <LaisserAvisModal
-          reservation={avisModal}
-          onClose={() => setAvisModal(null)}
-          onSuccess={() => setAvisModal(null)}
+      {reviewModal && (
+        <PostServiceReview
+          reservation={reviewModal}
+          proEmail={reviewModal.pro_email}
+          proName={reviewModal.pro_name || reviewModal.salon_name}
+          onClose={() => setReviewModal(null)}
+          onSubmitted={() => setReviewModal(null)}
         />
       )}
 
