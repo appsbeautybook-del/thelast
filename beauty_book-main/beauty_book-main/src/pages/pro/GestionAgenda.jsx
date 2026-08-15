@@ -922,7 +922,7 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
 function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, autoAccept, toggleAutoAccept }) {
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState(null);
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("en_attente");
   const [clientScores, setClientScores] = useState({});
 
   // ── Format date long en français ──
@@ -972,7 +972,7 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
     const matchSearch = r.client_email?.toLowerCase().includes(search.toLowerCase()) ||
       r.service_name?.toLowerCase().includes(search.toLowerCase()) ||
       r.date?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = filterStatus === "all" || r.status === filterStatus;
+    const matchStatus = r.status === filterStatus;
     return matchSearch && matchStatus;
   }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
@@ -1030,7 +1030,7 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
 
       {/* Filter chips */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {[{ id: "all", label: "Tous" }, { id: "en_attente", label: "En attente" }, { id: "confirme", label: "Confirmés" }, { id: "termine", label: "Terminés" }, { id: "annule", label: "Annulés" }].map(f => (
+        {[{ id: "en_attente", label: "En attente" }, { id: "confirme", label: "Confirmés" }, { id: "termine", label: "Terminés" }, { id: "annule", label: "Annulés" }].map(f => (
           <button
             key={f.id}
             onClick={() => setFilterStatus(f.id)}
