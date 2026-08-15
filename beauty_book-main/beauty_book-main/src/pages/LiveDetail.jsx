@@ -702,7 +702,7 @@ export default function LiveDetail() {
           {isHost && featuredItem && <FeaturedProductOverlay item={featuredItem} onClose={() => setFeaturedItem(null)} />}
 
           {/* ── Comments ── */}
-          <div style={{ position: "absolute", left: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", zIndex: 20, bottom: 68, maxHeight: "30vh", right: isHost ? 72 : 12 }}>
+          <div style={{ position: "absolute", left: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", zIndex: 20, bottom: 72, maxHeight: "30vh", right: isHost ? 72 : 12 }}>
             {comments.map((c, i) => {
               const isHostComment = c.sender_email === session?.host_email;
               return (
@@ -729,7 +729,7 @@ export default function LiveDetail() {
           </div>
 
           {/* ── Chat input ── */}
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", paddingTop: 8, paddingBottom: "calc(8px + env(safe-area-inset-bottom, 12px))", zIndex: 20, paddingRight: isHost ? 72 : 12 }}>
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", paddingTop: 8, paddingBottom: "calc(8px + env(safe-area-inset-bottom, 12px))", zIndex: 100, background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)", paddingRight: isHost ? 72 : 12 }}>
             <div style={{ flex: 1, background: "rgba(255,255,255,0.15)", borderRadius: 999, padding: "8px 16px", backdropFilter: "blur(8px)" }}>
               <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && send()}
                 placeholder={user ? "Écrire un commentaire..." : "Connectez-vous pour commenter"}
