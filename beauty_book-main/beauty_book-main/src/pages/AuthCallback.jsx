@@ -96,9 +96,26 @@ export default function AuthCallback() {
         const fromSignup = sessionStorage.getItem('bb_social_signup');
 
         if (fromSignup) {
-          // Vient de l'onboarding → continuer
-          console.log('[AuthCallback] → Onboarding (depuis inscription)');
-          navigate('/onboarding', { replace: true });
+          // Vient de l'onboarding → créer le profil et aller directement à l'accueil
+          console.log('[AuthCallback] → Accueil (inscription Google)');
+
+          const { error: insertError } = await supabase.from('profiles').upsert({
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
+            role: 'user',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
+
+          if (insertError) {
+            console.error('[AuthCallback] Profile insert error:', insertError);
+          }
+
+          localStorage.setItem('bb_onboarded', '1');
+          sessionStorage.removeItem('bb_social_signup');
+          navigate('/', { replace: true });
         } else {
           // Vient de la connexion → le compte n'existe pas encore dans profiles
           // MAIS l'utilisateur a un compte Supabase Auth → créer le profil et aller à l'accueil
