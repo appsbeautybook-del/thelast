@@ -368,11 +368,11 @@ export const uploadFile = async (fileOrObj, bucket = 'uploads') => {
     file = rawFile;
   }
 
-  // Vérifier la taille après compression (Supabase limite = 50 Mo par défaut)
-  const MAX_UPLOAD = 50 * 1024 * 1024;
+  // Vérifier la taille après compression (Supabase limite configurée à 500 Mo)
+  const MAX_UPLOAD = 500 * 1024 * 1024;
   if (file.size > MAX_UPLOAD) {
     const sizeMB = Math.round(file.size / 1024 / 1024);
-    throw new Error(`Le fichier (${sizeMB} Mo) est trop volumineux. Essayez de réduire la durée de la vidéo ou d'utiliser une résolution plus basse.`);
+    throw new Error(`Le fichier (${sizeMB} Mo) est trop volumineux. Limite : 500 Mo.`);
   }
 
   const safeName = file.name

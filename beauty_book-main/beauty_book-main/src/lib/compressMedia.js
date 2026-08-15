@@ -1,20 +1,20 @@
 /**
  * Compresse les médias (images ET vidéos) côté client avant upload.
- * Objectif : passer sous la barre des 50 Mo sans perte visuelle.
+ * Objectif : passer sous la barre des 500 Mo sans perte visuelle.
  *
  * Images → Canvas API (resize + JPEG quality adaptatif)
  * Vidéos → MediaRecorder (re-encodage bitrate adaptatif)
  */
 
-const COMPRESS_THRESHOLD = 40 * 1024 * 1024; // 40 Mo – compresser au-delà pour rester sous 50 Mo
-const IMAGE_TARGET_MAX = 45 * 1024 * 1024;   // 45 Mo cible pour images
-const VIDEO_TARGET_MAX = 45 * 1024 * 1024;   // 45 Mo cible pour vidéos
+const COMPRESS_THRESHOLD = 400 * 1024 * 1024; // 400 Mo – compresser au-delà pour rester sous 500 Mo
+const IMAGE_TARGET_MAX = 450 * 1024 * 1024;   // 450 Mo cible pour images
+const VIDEO_TARGET_MAX = 450 * 1024 * 1024;   // 450 Mo cible pour vidéos
 
 // ─── IMAGES ──────────────────────────────────────────────────────────────────
 
 /**
  * Compresse une image avec qualité adaptative.
- * Seulement si > 40 Mo. Conserve la qualité maximale possible.
+ * Seulement si > 400 Mo. Conserve la qualité maximale possible.
  */
 export async function compressImage(file, opts = {}) {
   const {
@@ -31,7 +31,7 @@ export async function compressImage(file, opts = {}) {
     return file;
   }
 
-  // Si sous le seuil de 40 Mo, ne pas compresser (mais redimensionner si trop grand)
+  // Si sous le seuil de 400 Mo, ne pas compresser (mais redimensionner si trop grand)
   if (file.size <= COMPRESS_THRESHOLD) {
     // Mais on redimensionne si trop grand en dimensions
     const bitmap = await createImageBitmap(file);
@@ -94,13 +94,13 @@ function canvasToBlob(canvas, type, quality) {
 
 /**
  * Compresse une vidéo via MediaRecorder (re-encodage canvas + stream).
- * Seulement si > 40 Mo. Conserve la qualité maximale possible.
+ * Seulement si > 400 Mo. Conserve la qualité maximale possible.
  */
 export async function compressVideo(file, opts = {}) {
   const {
     maxBytes = VIDEO_TARGET_MAX,
-    maxWidth = 1280,
-    maxHeight = 720,
+    maxWidth = 1920,
+    maxHeight = 1080,
     onProgress = null,
   } = opts;
 
@@ -158,7 +158,7 @@ export async function compressVideo(file, opts = {}) {
 
       const canvasStream = canvas.captureStream(24);
 
-      const videoBitrate = Math.min(targetBitrate, 6_000_000);
+      const videoBitrate = Math.min(targetBitrate, 20_000_000);
 
       let mimeType = 'video/webm';
       if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {

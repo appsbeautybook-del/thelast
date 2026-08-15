@@ -1024,7 +1024,7 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
             </div>
             {/* RDVs de cette date */}
             {groupedByDate[dateKey].map(r => (
-              <div key={r.id} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 relative">
+              <div key={r.id} onClick={() => onSelectRdv(r)} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 relative cursor-pointer active:scale-[0.98] transition-all">
                 <span className={`absolute top-4 right-4 text-[10px] font-black uppercase px-3 py-1 rounded-full ${statusBadgeColors[r.status] || "bg-gray-100 text-gray-500"}`}>
                   {statusLabels[r.status] || r.status}
                 </span>
@@ -1057,7 +1057,7 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
                   </div>
                 )}
                 {r.status === "en_attente" && (
-                  <div className="flex gap-3">
+                  <div className="flex gap-3" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => handleAction(r.id, "annule")}
                       disabled={updating === r.id}
@@ -1075,7 +1075,7 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
                   </div>
                 )}
                 {r.status === "confirme" && (
-                  <div className="flex gap-3">
+                  <div className="flex gap-3" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => handleAction(r.id, "annule")}
                       disabled={updating === r.id}
