@@ -1259,10 +1259,11 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
 
       <button
         onClick={() => navigate("/pro/publication")}
-        className="fixed right-0 z-50 active:scale-90 transition-all"
+        className="fixed right-0 z-50 active:scale-90 transition-all flex items-center gap-1"
         style={{ top: "65%", transform: "translateY(-50%)" }}
       >
-        <div className="bg-gray-900 border-2 border-sky-400 rounded-l-full rounded-r-none flex items-center justify-center shadow-xl w-10 h-10">
+        <span className="text-[10px] font-black text-white bg-gray-900 border border-sky-400 border-r-0 rounded-l-full px-3 py-2.5 uppercase tracking-widest">Créer</span>
+        <div className="bg-gray-900 border-2 border-sky-400 rounded-l-none rounded-r-full flex items-center justify-center shadow-xl w-10 h-10">
           <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
         </div>
       </button>

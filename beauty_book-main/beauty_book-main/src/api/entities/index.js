@@ -367,6 +367,14 @@ export const uploadFile = async (fileOrObj, bucket = 'uploads') => {
     console.warn('[uploadFile] Compression échouée, upload du fichier original:', compressErr);
     file = rawFile;
   }
+
+  // Vérifier la taille après compression (Supabase limite = 50 Mo par défaut)
+  const MAX_UPLOAD = 50 * 1024 * 1024;
+  if (file.size > MAX_UPLOAD) {
+    const sizeMB = Math.round(file.size / 1024 / 1024);
+    throw new Error(`Le fichier fait ${sizeMB} Mo et dépasse la limite de 50 Mo. Réessayez avec un fichier plus petit.`);
+  }
+
   const safeName = file.name
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z0-9._-]/g, '_')

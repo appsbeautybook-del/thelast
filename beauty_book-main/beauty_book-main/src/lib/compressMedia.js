@@ -1,24 +1,27 @@
 /**
  * Compresse les médias (images ET vidéos) côté client avant upload.
- * Objectif : passer sous la barre des 50 Mo sans perte visuelle.
+ * Objectif : pour les fichiers > 1 Go, compresser intelligemment sans perte visuelle.
  *
  * Images → Canvas API (resize + JPEG quality adaptatif)
  * Vidéos → MediaRecorder (re-encodage bitrate adaptatif)
  */
 
-const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50 Mo
+const COMPRESS_THRESHOLD = 1 * 1024 * 1024 * 1024; // 1 Go – en dessous, pas de compression
+const IMAGE_TARGET_MAX = 200 * 1024 * 1024;  // 200 Mo cible pour images compressées
+const VIDEO_TARGET_MAX = 500 * 1024 * 1024;  // 500 Mo cible pour vidéos compressées
 
 // ─── IMAGES ──────────────────────────────────────────────────────────────────
 
 /**
- * Compresse une image avec qualité adaptative pour rester sous maxBytes.
+ * Compresse une image avec qualité adaptative.
+ * Seulement si > 1 Go. Conserve la qualité maximale possible.
  */
 export async function compressImage(file, opts = {}) {
   const {
     maxWidth = 2048,
     maxHeight = 2048,
-    quality = 0.85,
-    maxBytes = MAX_SIZE_BYTES,
+    quality = 0.90,
+    maxBytes = IMAGE_TARGET_MAX,
   } = opts;
 
   if (!file || !(file instanceof File)) return file;
@@ -28,9 +31,9 @@ export async function compressImage(file, opts = {}) {
     return file;
   }
 
-  // Si déjà sous la limite, ne pas compresser
-  if (file.size <= maxBytes) {
-    // Mais on redimensionne quand même si trop grand en dimensions
+  // Si sous le seuil de 1 Go, ne pas compresser
+  if (file.size <= COMPRESS_THRESHOLD) {
+    // Mais on redimensionne si trop grand en dimensions
     const bitmap = await createImageBitmap(file);
     const needsResize = bitmap.width > maxWidth || bitmap.height > maxHeight;
     bitmap.close();
@@ -60,19 +63,19 @@ export async function compressImage(file, opts = {}) {
   // Essayer avec la qualité demandée, réduire si trop gros
   let blob = await canvasToBlob(canvas, outputType, q);
   let attempts = 0;
-  while (blob && blob.size > maxBytes && q > 0.15 && attempts < 8) {
-    q -= 0.1;
-    blob = await canvasToBlob(canvas, outputType, Math.max(0.15, q));
+  while (blob && blob.size > maxBytes && q > 0.50 && attempts < 6) {
+    q -= 0.05;
+    blob = await canvasToBlob(canvas, outputType, Math.max(0.50, q));
     attempts++;
   }
 
-  // Si toujours trop gros, réduire les dimensions
+  // Si toujours trop gros, réduire les dimensions légèrement
   if (blob && blob.size > maxBytes) {
-    const scale = Math.sqrt(maxBytes / blob.size) * 0.9;
+    const scale = Math.sqrt(maxBytes / blob.size) * 0.95;
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(height * scale);
     ctx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
-    blob = await canvasToBlob(canvas, outputType, 0.7);
+    blob = await canvasToBlob(canvas, outputType, 0.75);
   }
 
   if (!blob || blob.size >= file.size) return file;
@@ -91,21 +94,21 @@ function canvasToBlob(canvas, type, quality) {
 
 /**
  * Compresse une vidéo via MediaRecorder (re-encodage canvas + stream).
- * Objectif : passer sous maxBytes sans perte visuelle perceptible.
+ * Seulement si > 1 Go. Conserve la qualité maximale possible.
  */
 export async function compressVideo(file, opts = {}) {
   const {
-    maxBytes = MAX_SIZE_BYTES,
-    maxWidth = 1280,
-    maxHeight = 720,
-    onProgress = null, // (pct) => void
+    maxBytes = VIDEO_TARGET_MAX,
+    maxWidth = 1920,
+    maxHeight = 1080,
+    onProgress = null,
   } = opts;
 
   if (!file || !(file instanceof File)) return file;
   if (!file.type.startsWith('video/')) return file;
 
-  // Si déjà sous la limite
-  if (file.size <= maxBytes) return file;
+  // Si sous le seuil de 1 Go, pas de compression
+  if (file.size <= COMPRESS_THRESHOLD) return file;
 
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
@@ -145,7 +148,7 @@ export async function compressVideo(file, opts = {}) {
       const canvasStream = canvas.captureStream(30);
 
       // Calculer le bitrate vidéo (en bps)
-      const videoBitrate = Math.min(targetBitrate, 8_000_000); // max 8 Mbps
+      const videoBitrate = Math.min(targetBitrate, 12_000_000); // max 12 Mbps pour garder la qualité
       const videoBitrateKbps = Math.round(videoBitrate / 1000);
 
       // MediaRecorder avec le bon codec
