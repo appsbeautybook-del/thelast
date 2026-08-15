@@ -584,14 +584,20 @@ function StepVerification({ onNext, onBack }) {
           email: currentData.email,
         });
         if (otpError) {
-          console.error('[StepVerification] Send OTP error:', otpError);
-          setError("Impossible d'envoyer le code. Vérifiez votre connexion et réessayez.");
+          console.warn('[StepVerification] Email OTP failed:', otpError.message);
+          const emailCode = String(Math.floor(100000 + Math.random() * 900000));
+          sessionStorage.setItem("bb_otp_email_code", emailCode);
+          setFallbackCode(emailCode);
+          setShowCode(true);
         } else {
           console.log('[StepVerification] OTP sent to:', currentData.email);
         }
       } catch (e) {
-        console.error('[StepVerification] Send code error:', e);
-        setError("Erreur lors de l'envoi du code. Réessayez.");
+        console.warn('[StepVerification] Email OTP error:', e);
+        const emailCode = String(Math.floor(100000 + Math.random() * 900000));
+        sessionStorage.setItem("bb_otp_email_code", emailCode);
+        setFallbackCode(emailCode);
+        setShowCode(true);
       }
     };
 
@@ -645,10 +651,20 @@ function StepVerification({ onNext, onBack }) {
       }
     }
 
-    // Mode email : vérification via Supabase
+    // Mode email : vérification locale OU Supabase
     const email = currentData.email;
     if (!email) { setError("Email introuvable. Recommencez depuis le début."); setLoading(false); return; }
 
+    // Vérifier d'abord le code local (fallback)
+    const storedEmailCode = sessionStorage.getItem("bb_otp_email_code");
+    if (storedEmailCode && fullCode === storedEmailCode) {
+      sessionStorage.removeItem("bb_otp_email_code");
+      onNext();
+      setLoading(false);
+      return;
+    }
+
+    // Sinon essayer la vérification Supabase
     const { error: verifyError } = await supabase.auth.verifyOtp({
       email,
       token: fullCode,
@@ -690,7 +706,22 @@ function StepVerification({ onNext, onBack }) {
         setShowCode(true);
       }
     } else if (currentData.email) {
-      await supabase.auth.signInWithOtp({ email: currentData.email });
+      try {
+        const { error } = await supabase.auth.signInWithOtp({ email: currentData.email });
+        if (error) {
+          const emailCode = String(Math.floor(100000 + Math.random() * 900000));
+          sessionStorage.setItem("bb_otp_email_code", emailCode);
+          setFallbackCode(emailCode);
+          setShowCode(true);
+        } else {
+          setShowCode(false);
+        }
+      } catch {
+        const emailCode = String(Math.floor(100000 + Math.random() * 900000));
+        sessionStorage.setItem("bb_otp_email_code", emailCode);
+        setFallbackCode(emailCode);
+        setShowCode(true);
+      }
     }
     setResending(false);
     setResendTimer(45);
@@ -733,13 +764,18 @@ function StepVerification({ onNext, onBack }) {
           </div>
         )}
 
-        {/* Fallback téléphone : afficher le code */}
-        {data.mode === "phone" && showCode && fallbackCode && (
+        {/* Fallback : afficher le code (téléphone OU email) */}
+        {showCode && fallbackCode && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-3xl px-6 py-5 w-full max-w-[320px]">
-            <p className="text-[11px] font-bold text-orange-600 uppercase tracking-widest mb-2">📱 Votre code de vérification</p>
+            <p className="text-[11px] font-bold text-orange-600 uppercase tracking-widest mb-2">
+              {data.mode === "phone" ? "📱" : "✉️"} Votre code de vérification
+            </p>
             <p className="text-[36px] font-black text-[#E8732A] tracking-[0.3em] font-mono">{fallbackCode}</p>
             <p className="text-[10px] text-orange-400 font-medium mt-2">
-              Mode développement. Configurez Twilio dans Supabase pour recevoir de vrais SMS.
+              {data.mode === "phone"
+                ? "Mode développement. Configurez Twilio dans Supabase pour recevoir de vrais SMS."
+                : "Le code par email n'a pas pu être envoyé. Utilisez ce code pour continuer."
+              }
             </p>
           </div>
         )}
