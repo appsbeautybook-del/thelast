@@ -102,6 +102,11 @@ export const apiClient = {
       // --- Payments / Commerce ---
       createCheckoutSession:       { path: '/payments/checkout-session',      method: 'POST' },
       createSubscriptionCheckout:  { path: '/payments/subscription-checkout', method: 'POST' },
+      createSetupIntent:           { path: '/payments/setup-intent',          method: 'POST' },
+      getPaymentMethods:           { path: '/payments/payment-methods',       method: 'GET'  },
+      deletePaymentMethod:         { path: '/payments/payment-methods',       method: 'DELETE' },
+      setDefaultPaymentMethod:     { path: '/payments/payment-methods',       method: 'POST'  },
+      chargeSavedCard:             { path: '/payments/charge-saved',          method: 'POST' },
       createCommande:              { path: '/commandes',                       method: 'POST' },
       getCommandes:                { path: '/commandes/list',                  method: 'POST' },
       trackOrder:                  { path: '/commandes/track',                 method: 'POST' },

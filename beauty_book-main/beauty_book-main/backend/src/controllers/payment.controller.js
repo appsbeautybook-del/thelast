@@ -3,6 +3,146 @@ import { supabaseAdmin } from '../config/supabase.js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+async function getOrCreateStripeCustomer(email, userId) {
+  // Check if user already has a stripe_customer_id in profiles
+  const { data: profile } = await supabaseAdmin
+    .from('profiles')
+    .select('stripe_customer_id')
+    .eq('id', userId)
+    .single();
+
+  if (profile?.stripe_customer_id) {
+    return profile.stripe_customer_id;
+  }
+
+  // Create new Stripe customer
+  const customer = await stripe.customers.create({
+    email,
+    metadata: { user_id: userId },
+  });
+
+  // Save stripe_customer_id to profiles
+  await supabaseAdmin
+    .from('profiles')
+    .update({ stripe_customer_id: customer.id })
+    .eq('id', userId);
+
+  return customer.id;
+}
+
+// POST /api/payments/setup-intent
+export const createSetupIntent = async (req, res) => {
+  try {
+    const customerId = await getOrCreateStripeCustomer(req.user.email, req.user.id);
+
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customerId,
+      payment_method_types: ['card'],
+      usage: 'off_session',
+    });
+
+    return res.json({ clientSecret: setupIntent.client_secret, customerId });
+  } catch (error) {
+    console.error('[SetupIntent Error]', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// GET /api/payments/payment-methods
+export const getPaymentMethods = async (req, res) => {
+  try {
+    const customerId = await getOrCreateStripeCustomer(req.user.email, req.user.id);
+
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: customerId,
+      type: 'card',
+    });
+
+    const cards = paymentMethods.data.map(pm => ({
+      id: pm.id,
+      brand: pm.card.brand,
+      last4: pm.card.last4,
+      exp_month: pm.card.exp_month,
+      exp_year: pm.card.exp_year,
+      cardholder_name: pm.billing_details?.name || '',
+      is_default: pm.metadata?.is_default === 'true',
+    }));
+
+    return res.json({ cards });
+  } catch (error) {
+    console.error('[GetPaymentMethods Error]', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// DELETE /api/payments/payment-methods/:id
+export const deletePaymentMethod = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await stripe.paymentMethods.detach(id);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('[DeletePaymentMethod Error]', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// POST /api/payments/payment-methods/:id/default
+export const setDefaultPaymentMethod = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const customerId = await getOrCreateStripeCustomer(req.user.email, req.user.id);
+
+    // Update all payment methods metadata
+    const existing = await stripe.paymentMethods.list({ customer: customerId, type: 'card' });
+    for (const pm of existing.data) {
+      await stripe.paymentMethods.update(pm.id, {
+        metadata: { is_default: pm.id === id ? 'true' : 'false' },
+      });
+    }
+
+    // Set as default on customer
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: id },
+    });
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('[SetDefaultPaymentMethod Error]', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+// POST /api/payments/charge-saved
+export const chargeSavedCard = async (req, res) => {
+  try {
+    const { payment_method_id, amount, currency, description, metadata } = req.body;
+
+    if (!payment_method_id || !amount) {
+      return res.status(400).json({ error: 'payment_method_id et amount requis' });
+    }
+
+    const customerId = await getOrCreateStripeCustomer(req.user.email, req.user.id);
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100),
+      currency: currency || 'eur',
+      customer: customerId,
+      payment_method: payment_method_id,
+      description: description || 'Paiement BeautyBook',
+      confirm: true,
+      off_session: true,
+      metadata: metadata || {},
+    });
+
+    return res.json({ success: true, paymentIntentId: paymentIntent.id });
+  } catch (error) {
+    console.error('[ChargeSavedCard Error]', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 // POST /api/payments/checkout-session
 export const createCheckoutSession = async (req, res) => {
   try {
