@@ -665,14 +665,14 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
     try { return isSameDay(parseISO(r.date), selectedDate); } catch { return false; }
   }).sort((a, b) => (a.time || a.time_slot || "").localeCompare(b.time || b.time_slot || ""));
 
-  // Stats for the selected week
+  // Stats for the selected week — CA = uniquement les réservations terminées
   const weekRdvs = reservations.filter(r => {
     try {
       const d = parseISO(r.date);
       return d >= week[0] && d <= week[6] && (r.status === "confirme" || r.status === "termine");
     } catch { return false; }
   });
-  const weekRevenue = weekRdvs.reduce((s, r) => s + (r.total_price || r.service_price || 0), 0);
+  const weekRevenue = weekRdvs.filter(r => r.status === "termine").reduce((s, r) => s + (r.total_price || r.service_price || 0), 0);
   const weekDone = weekRdvs.filter(r => r.status === "termine").length;
   const weekPending = weekRdvs.filter(r => r.status === "confirme").length;
   const completionRate = weekRdvs.length > 0 ? Math.round((weekDone / weekRdvs.length) * 100) : 0;
@@ -1124,7 +1124,10 @@ function CrmTab({ reservations, proEmail }) {
       };
     }
     clientMap[r.client_email].rdvs.push(r);
-    clientMap[r.client_email].totalSpent += (r.total_price || r.service_price || 0);
+    // CA = uniquement les réservations terminées
+    if (r.status === "termine") {
+      clientMap[r.client_email].totalSpent += (r.total_price || r.service_price || 0);
+    }
     if (!clientMap[r.client_email].lastDate || r.date > clientMap[r.client_email].lastDate) {
       clientMap[r.client_email].lastDate = r.date;
     }
