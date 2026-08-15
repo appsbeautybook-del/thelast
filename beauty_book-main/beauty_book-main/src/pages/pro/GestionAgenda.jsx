@@ -876,43 +876,11 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
 }
 
 // ── Demandes Tab ──────────────────────────────────────────────────────────────
-function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
+function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, autoAccept, toggleAutoAccept }) {
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [clientScores, setClientScores] = useState({});
-  const [autoAccept, setAutoAccept] = useState(() => {
-    return localStorage.getItem(`bb_auto_accept_${proEmail}`) === "true";
-  });
-
-  // Auto-accept new reservations
-  useEffect(() => {
-    if (!autoAccept || !proEmail) return;
-    const channel = supabase
-      .channel("auto-accept-" + proEmail)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "Reservation",
-        filter: `pro_email=eq.${proEmail}`,
-      }, async (payload) => {
-        const newRdv = payload.new;
-        if (newRdv.status === "en_attente") {
-          try {
-            await entities.Reservation.update(newRdv.id, { status: "confirme" });
-            setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, status: "confirme" } : r));
-          } catch (e) { console.error("Auto-accept error:", e); }
-        }
-      })
-      .subscribe();
-    return () => { if (channel) supabase.removeChannel(channel); };
-  }, [autoAccept, proEmail, setReservations]);
-
-  const toggleAutoAccept = () => {
-    const next = !autoAccept;
-    setAutoAccept(next);
-    localStorage.setItem(`bb_auto_accept_${proEmail}`, String(next));
-  };
 
   // ── Format date long en français ──
   const formatLongDate = (dateStr) => {
@@ -1017,15 +985,8 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
         />
       </div>
 
-      {/* Filter chips + Auto toggle */}
+      {/* Filter chips */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        <button
-          onClick={toggleAutoAccept}
-          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${autoAccept ? "bg-green-500 text-white shadow-md shadow-green-500/30" : "bg-gray-100 text-gray-400"}`}
-        >
-          <div className={`w-2 h-2 rounded-full ${autoAccept ? "bg-white animate-pulse" : "bg-gray-300"}`} />
-          Auto
-        </button>
         {[{ id: "all", label: "Tous" }, { id: "en_attente", label: "En attente" }, { id: "confirme", label: "Confirmés" }, { id: "termine", label: "Terminés" }, { id: "annule", label: "Annulés" }].map(f => (
           <button
             key={f.id}
@@ -1435,8 +1396,8 @@ function GestionTab({ onNavigate, travailNuit = false, onToggleNuit }) {
           <p className={`text-[11px] font-medium mt-0.5 ${travailNuit ? "text-indigo-400" : "text-indigo-400"}`}>
             Horaires : {travailNuit ? "21h – 07h ✓ Actif" : "09h – 19h — Désactivé"}
           </p>
-        </div>
-        <button
+          </div>
+          <button
           onClick={() => onToggleNuit && onToggleNuit(!travailNuit)}
           className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${travailNuit ? "bg-indigo-500" : "bg-gray-200"}`}
         >
@@ -1476,6 +1437,9 @@ export default function GestionAgenda() {
   const [selectedRdv, setSelectedRdv] = useState(null);
   const [travailNuit, setTravailNuit] = useState(false);
   const [profilId, setProfilId] = useState(null);
+  const [autoAccept, setAutoAccept] = useState(() => {
+    return localStorage.getItem(`bb_auto_accept_${user?.email}`) === "true";
+  });
 
   const proEmail = user?.email;
 
@@ -1538,6 +1502,35 @@ export default function GestionAgenda() {
     return () => { unsub(); unsubProfil(); window.removeEventListener('pro-profile-updated', onProfileUpdated); };
   }, [proEmail]);
 
+  // Auto-accept new reservations
+  useEffect(() => {
+    if (!autoAccept || !proEmail) return;
+    const channel = supabase
+      .channel("auto-accept-" + proEmail)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "Reservation",
+        filter: `pro_email=eq.${proEmail}`,
+      }, async (payload) => {
+        const newRdv = payload.new;
+        if (newRdv.status === "en_attente") {
+          try {
+            await entities.Reservation.update(newRdv.id, { status: "confirme" });
+            setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, status: "confirme" } : r));
+          } catch (e) { console.error("Auto-accept error:", e); }
+        }
+      })
+      .subscribe();
+    return () => { if (channel) supabase.removeChannel(channel); };
+  }, [autoAccept, proEmail]);
+
+  const toggleAutoAccept = () => {
+    const next = !autoAccept;
+    setAutoAccept(next);
+    localStorage.setItem(`bb_auto_accept_${proEmail}`, String(next));
+  };
+
   const demandesCount = reservations.filter(r => r.status === "en_attente").length;
 
   const TABS = [
@@ -1582,6 +1575,13 @@ export default function GestionAgenda() {
             </p>
           </div>
           <button
+            onClick={toggleAutoAccept}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0 ${autoAccept ? "bg-green-500 text-white shadow-md shadow-green-500/30" : "bg-gray-100 text-gray-400"}`}
+          >
+            <div className={`w-2 h-2 rounded-full ${autoAccept ? "bg-white animate-pulse" : "bg-gray-300"}`} />
+            Auto
+          </button>
+          <button
             onClick={() => setShowModal(true)}
             className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/40 active:scale-95 transition-all shrink-0"
           >
@@ -1618,7 +1618,7 @@ export default function GestionAgenda() {
               <PlanningTab proEmail={proEmail} reservations={reservations} onSelectRdv={setSelectedRdv} />
             )}
             {activeTab === "demandes" && (
-              <DemandesTab proEmail={proEmail} reservations={reservations} setReservations={setReservations} onSelectRdv={setSelectedRdv} />
+              <DemandesTab proEmail={proEmail} reservations={reservations} setReservations={setReservations} onSelectRdv={setSelectedRdv} autoAccept={autoAccept} toggleAutoAccept={toggleAutoAccept} />
             )}
             {activeTab === "crm" && (
               <CrmTab reservations={reservations} proEmail={proEmail} />

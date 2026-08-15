@@ -7,7 +7,7 @@ import {
   ArrowLeft, RefreshCw, Loader2, Download,
   TrendingUp, TrendingDown, Users, Crown,
   BarChart3, Sparkles, ArrowUpRight, ArrowDownRight,
-  Calendar, DollarSign, Star, Repeat, ChevronRight
+  Calendar, DollarSign, Star, Repeat, ChevronRight, Gift
 } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -81,6 +81,24 @@ export default function Analytics() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([name, count]) => ({ name, count, revenue: serviceRevenue[name] || 0 }));
+
+  const totalTips = inPeriod.filter(r => r.status === "termine").reduce((s, r) => s + (Number(r.tip_amount) || 0), 0);
+  const totalTipsPrev = inPrevPeriod.filter(r => r.status === "termine").reduce((s, r) => s + (Number(r.tip_amount) || 0), 0);
+  const tipsPct = totalTipsPrev > 0 ? Math.round(((totalTips - totalTipsPrev) / totalTipsPrev) * 100) : totalTips > 0 ? 100 : 0;
+  const tipsCount = inPeriod.filter(r => r.status === "termine" && Number(r.tip_amount) > 0).length;
+  const avgTip = tipsCount > 0 ? Math.round(totalTips / tipsCount) : 0;
+
+  const serviceTips = {};
+  const serviceTipsCount = {};
+  inPeriod.filter(r => r.status === "termine" && Number(r.tip_amount) > 0).forEach(r => {
+    if (!r.service_name) return;
+    serviceTips[r.service_name] = (serviceTips[r.service_name] || 0) + Number(r.tip_amount);
+    serviceTipsCount[r.service_name] = (serviceTipsCount[r.service_name] || 0) + 1;
+  });
+  const topTippedServices = Object.entries(serviceTips)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, total]) => ({ name, total, count: serviceTipsCount[name] || 0, avg: Math.round(total / (serviceTipsCount[name] || 1)) }));
 
   if (loading) {
     return (
@@ -256,6 +274,70 @@ export default function Analytics() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pourboires par Service */}
+        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center">
+                <Gift className="w-4 h-4 text-amber-500" />
+              </div>
+              <h3 className="text-[15px] font-black text-gray-900">Pourboires</h3>
+            </div>
+            {totalTips > 0 && (
+              <span className={`flex items-center gap-1 text-[11px] font-black px-2.5 py-1 rounded-full ${tipsPct >= 0 ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"}`}>
+                {tipsPct >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                {tipsPct >= 0 ? "+" : ""}{tipsPct}%
+              </span>
+            )}
+          </div>
+
+          {/* Resume rapide */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-amber-50/60 rounded-2xl p-3 text-center">
+              <p className="text-[22px] font-black text-amber-600 leading-none">{totalTips}<span className="text-[12px]">EUR</span></p>
+              <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mt-1">Total</p>
+            </div>
+            <div className="bg-amber-50/60 rounded-2xl p-3 text-center">
+              <p className="text-[22px] font-black text-amber-600 leading-none">{tipsCount}</p>
+              <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mt-1">Fois</p>
+            </div>
+            <div className="bg-amber-50/60 rounded-2xl p-3 text-center">
+              <p className="text-[22px] font-black text-amber-600 leading-none">{avgTip}<span className="text-[12px]">EUR</span></p>
+              <p className="text-[9px] font-black text-amber-400 uppercase tracking-widest mt-1">Moyen</p>
+            </div>
+          </div>
+
+          {topTippedServices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-6 gap-2">
+              <Gift className="w-8 h-8 text-gray-200" />
+              <p className="text-[12px] text-gray-400 font-medium">Aucun pourboire pour cette periode</p>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              {topTippedServices.map((s, i) => {
+                const pct = totalTips > 0 ? Math.round((s.total / totalTips) * 100) : 0;
+                return (
+                  <div key={s.name} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${i === 0 ? "bg-amber-100" : "bg-gray-100"}`}>
+                      <span className={`text-[11px] font-black ${i === 0 ? "text-amber-600" : "text-gray-400"}`}>{i + 1}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-bold text-gray-900 truncate">{s.name}</p>
+                      <div className="h-1 bg-gray-100 rounded-full mt-1.5">
+                        <div className="h-full bg-gradient-to-r from-amber-400 to-amber-500 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[13px] font-black text-amber-600">{s.total} EUR</p>
+                      <p className="text-[10px] text-gray-400">{s.count}x · {s.avg} EUR moy.</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
