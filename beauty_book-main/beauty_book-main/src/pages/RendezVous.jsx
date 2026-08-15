@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, MapPin, CheckCircle2, Plus, Star, ChevronLeft, ChevronRight, Scissors, LayoutGrid, X, Hash, Phone, User, CreditCard } from "lucide-react";
+import { Calendar, Clock, MapPin, CheckCircle2, Plus, Star, ChevronLeft, ChevronRight, Scissors, LayoutGrid, X, Hash, Phone, User, CreditCard, MessageSquare, AlertTriangle, Loader2 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -331,8 +331,32 @@ export default function RendezVous() {
   const [showRoutineModal, setShowRoutineModal] = useState(false);
   const [showRoutineDashboard, setShowRoutineDashboard] = useState(false);
   const [calendarSuggestion, setCalendarSuggestion] = useState(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const handleCancelReservation = async (rdv) => {
+    setCancelling(true);
+    try {
+      const rdvDate = new Date(`${rdv.date}T${rdv.time || rdv.time_slot || "00:00"}`);
+      const now = new Date();
+      const hoursUntil = (rdvDate - now) / (1000 * 60 * 60);
+      const isFullRefund = hoursUntil >= 24;
+      const refundAmount = isFullRefund ? rdv.total_price : Math.round((rdv.total_price || 0) * 0.5 * 100) / 100;
+
+      await entities.Reservation.update(rdv.id, {
+        status: "annule",
+        cancel_reason: "client",
+        refund_amount: refundAmount,
+        refund_type: isFullRefund ? "full" : "partial",
+      });
+      setReservations(prev => prev.map(r => r.id === rdv.id ? { ...r, status: "annule", refund_amount: refundAmount, refund_type: isFullRefund ? "full" : "partial" } : r));
+      setSelectedReservation(null);
+      setShowCancelConfirm(null);
+    } catch (e) { console.error("Cancel error:", e); }
+    setCancelling(false);
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -900,6 +924,86 @@ export default function RendezVous() {
                   );
                 })()}
               </div>
+
+              {/* Contacter le professionnel */}
+              {(selectedReservation.status === "confirme" || selectedReservation.status === "en_attente") && (
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => { setSelectedReservation(null); navigate(`/messages?to=${encodeURIComponent(selectedReservation.pro_email || selectedReservation.salon_email || "")}&name=${encodeURIComponent(selectedReservation.salon_name || selectedReservation.pro_name || "Pro")}`); }}
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary/10 text-primary rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Message
+                  </button>
+                  {selectedReservation.pro_phone && (
+                    <a
+                      href={`tel:${selectedReservation.pro_phone}`}
+                      className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-600 rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                    >
+                      <Phone className="w-4 h-4" />
+                      Appeler
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Annuler le RDV */}
+              {(selectedReservation.status === "confirme" || selectedReservation.status === "en_attente") && (
+                <div className="pt-2">
+                  <button
+                    onClick={() => setShowCancelConfirm(selectedReservation)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-500 rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all border border-red-100"
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                    Annuler le rendez-vous
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmation annulation */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-[400] flex items-center justify-center px-5" onClick={() => setShowCancelConfirm(null)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative bg-white w-full max-w-sm rounded-3xl p-6 z-10" onClick={e => e.stopPropagation()}>
+            <div className="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="w-7 h-7 text-red-500" />
+            </div>
+            <h3 className="text-[18px] font-black text-gray-900 text-center mb-2">Annuler ce RDV ?</h3>
+            {(() => {
+              const rdvDate = new Date(`${showCancelConfirm.date}T${showCancelConfirm.time || showCancelConfirm.time_slot || "00:00"}`);
+              const now = new Date();
+              const hoursUntil = (rdvDate - now) / (1000 * 60 * 60);
+              const isFullRefund = hoursUntil >= 24;
+              const refundAmount = isFullRefund ? showCancelConfirm.total_price : Math.round((showCancelConfirm.total_price || 0) * 0.5 * 100) / 100;
+              return (
+                <div className="text-center mb-5">
+                  {isFullRefund ? (
+                    <p className="text-[13px] text-gray-500 font-medium">Annulation <span className="font-black text-green-600">remboursement intégral</span> de {showCancelConfirm.total_price}€</p>
+                  ) : (
+                    <p className="text-[13px] text-gray-500 font-medium">Annulation <span className="font-black text-orange-500">-50%</span> — vous récupérerez {refundAmount}€</p>
+                  )}
+                  <p className="text-[11px] text-gray-400 mt-1">Moins de 24h avant le RDV = pénalité de 50%</p>
+                </div>
+              );
+            })()}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCancelConfirm(null)}
+                className="flex-1 py-3 rounded-2xl border border-gray-200 text-[12px] font-black text-gray-500 uppercase tracking-widest active:scale-95 transition-all"
+              >
+                Garder
+              </button>
+              <button
+                onClick={() => handleCancelReservation(showCancelConfirm)}
+                disabled={cancelling}
+                className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-[12px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                {cancelling ? <Loader2 className="w-4 h-4 animate-spin" /> : "Annuler"}
+              </button>
             </div>
           </div>
         </div>
