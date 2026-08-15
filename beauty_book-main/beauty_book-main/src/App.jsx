@@ -123,6 +123,25 @@ const AuthenticatedApp = () => {
 
   const isSpecialRoute = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/vendeur');
 
+  // Sync avec localStorage — AuthCallback peut setter bb_onboarded après le montage
+  useEffect(() => {
+    const check = () => {
+      if (localStorage.getItem("bb_onboarded") && !onboarded) {
+        setOnboarded(true);
+      }
+    };
+    // Vérifier immédiatement
+    check();
+    // Écouter les changements de route (navigate déclenche popstate)
+    window.addEventListener('popstate', check);
+    // Poll léger au cas où
+    const interval = setInterval(check, 500);
+    return () => {
+      window.removeEventListener('popstate', check);
+      clearInterval(interval);
+    };
+  }, [onboarded]);
+
   // Redirections automatiques selon le port local
   useEffect(() => {
     const port = window.location.port;
