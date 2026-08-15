@@ -881,6 +881,38 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
   const [updating, setUpdating] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
   const [clientScores, setClientScores] = useState({});
+  const [autoAccept, setAutoAccept] = useState(() => {
+    return localStorage.getItem(`bb_auto_accept_${proEmail}`) === "true";
+  });
+
+  // Auto-accept new reservations
+  useEffect(() => {
+    if (!autoAccept || !proEmail) return;
+    const channel = supabase
+      .channel("auto-accept-" + proEmail)
+      .on("postgres_changes", {
+        event: "INSERT",
+        schema: "public",
+        table: "Reservation",
+        filter: `pro_email=eq.${proEmail}`,
+      }, async (payload) => {
+        const newRdv = payload.new;
+        if (newRdv.status === "en_attente") {
+          try {
+            await entities.Reservation.update(newRdv.id, { status: "confirme" });
+            setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, status: "confirme" } : r));
+          } catch (e) { console.error("Auto-accept error:", e); }
+        }
+      })
+      .subscribe();
+    return () => { if (channel) supabase.removeChannel(channel); };
+  }, [autoAccept, proEmail, setReservations]);
+
+  const toggleAutoAccept = () => {
+    const next = !autoAccept;
+    setAutoAccept(next);
+    localStorage.setItem(`bb_auto_accept_${proEmail}`, String(next));
+  };
 
   // ── Format date long en français ──
   const formatLongDate = (dateStr) => {
@@ -985,8 +1017,15 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv }) {
         />
       </div>
 
-      {/* Filter chips */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      {/* Filter chips + Auto toggle */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={toggleAutoAccept}
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${autoAccept ? "bg-green-500 text-white shadow-md shadow-green-500/30" : "bg-gray-100 text-gray-400"}`}
+        >
+          <div className={`w-2 h-2 rounded-full ${autoAccept ? "bg-white animate-pulse" : "bg-gray-300"}`} />
+          Auto
+        </button>
         {[{ id: "all", label: "Tous" }, { id: "en_attente", label: "En attente" }, { id: "confirme", label: "Confirmés" }, { id: "termine", label: "Terminés" }, { id: "annule", label: "Annulés" }].map(f => (
           <button
             key={f.id}

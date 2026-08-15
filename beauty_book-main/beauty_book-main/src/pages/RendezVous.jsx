@@ -330,6 +330,7 @@ export default function RendezVous() {
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [showRoutineModal, setShowRoutineModal] = useState(false);
   const [showRoutineDashboard, setShowRoutineDashboard] = useState(false);
+  const [calendarSuggestion, setCalendarSuggestion] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -371,8 +372,15 @@ export default function RendezVous() {
           filter: `client_email=eq.${user.email}`,
         }, (payload) => {
           const newRdv = payload.new;
-          if (newRdv.status === "termine" && !newRdv.tip_amount && !newRdv.review_done) {
+          // Update local reservations state so badge changes
+          setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, ...newRdv } : r));
+          // Auto-open PostServiceReview when status → termine
+          if (newRdv.status === "termine" && !newRdv.review_done) {
             setReviewModal(newRdv);
+          }
+          // Auto-open calendar suggestion when status → confirme
+          if (newRdv.status === "confirme") {
+            setCalendarSuggestion(newRdv);
           }
         })
         .subscribe();
@@ -617,6 +625,68 @@ export default function RendezVous() {
           onSubmitted={() => setReviewModal(null)}
         />
       )}
+
+      {/* Calendar suggestion modal */}
+      {calendarSuggestion && (() => {
+        const r = calendarSuggestion;
+        const pad = (n) => String(n).padStart(2, "0");
+        const [y, mo, d] = (r.date || "2000-01-01").split("-").map(Number);
+        const [sh, sm] = (r.time || r.time_slot || "00:00").split(":").map(Number);
+        const endT = sh * 60 + sm + (r.duration_min || 60);
+        const eh = Math.floor(endT / 60) % 24, em = endT % 60;
+        const fmt = (yy, mm, dd, hh, min) => `${yy}${pad(mm)}${pad(dd)}T${pad(hh)}${pad(min)}00`;
+        const gCalUrl = `https://calendar.google.com/calendar/render?${new URLSearchParams({
+          action: "TEMPLATE",
+          text: `💆 BeautyBook – ${r.service_name || "RDV"}`,
+          dates: `${fmt(y, mo, d, sh, sm)}/${fmt(y, mo, d, eh, em)}`,
+          details: `Prestataire: ${r.salon_name || r.pro_name || ""}\nCode: ${r.crg_code || ""}`,
+          location: r.salon_address || r.salon_name || "",
+        }).toString()}`;
+        const dtStart = new Date(y, mo-1, d, sh, sm);
+        const dtEnd = new Date(y, mo-1, d, eh, em);
+        const ics = [
+          "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BeautyBook//FR",
+          "BEGIN:VEVENT",
+          `DTSTART:${fmt(dtStart.getFullYear(), dtStart.getMonth()+1, dtStart.getDate(), dtStart.getHours(), dtStart.getMinutes())}`,
+          `DTEND:${fmt(dtEnd.getFullYear(), dtEnd.getMonth()+1, dtEnd.getDate(), dtEnd.getHours(), dtEnd.getMinutes())}`,
+          `SUMMARY:💆 ${r.service_name || "RDV"}`,
+          `DESCRIPTION:Prestataire: ${r.salon_name || ""}\\nCode: ${r.crg_code || ""}`,
+          `LOCATION:${r.salon_address || r.salon_name || ""}`,
+          "STATUS:CONFIRMED",
+          "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:Rappel: votre RDV BeautyBook demain","END:VALARM",
+          "END:VEVENT","END:VCALENDAR"
+        ].join("\r\n");
+        const blob = new Blob([ics], { type: "text/calendar" });
+        const appleUrl = URL.createObjectURL(blob);
+        return (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => { setCalendarSuggestion(null); URL.revokeObjectURL(appleUrl); }}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="relative bg-white w-[90%] max-w-sm rounded-3xl p-6 z-10 text-center" onClick={e => e.stopPropagation()}>
+              <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Calendar className="w-7 h-7 text-green-500" />
+              </div>
+              <h3 className="text-[18px] font-black text-gray-900 mb-1">Réservation confirmée !</h3>
+              <p className="text-[13px] text-gray-500 font-medium mb-1">{r.service_name}</p>
+              <p className="text-[12px] text-gray-400 font-medium mb-5 capitalize">{formatLongDate(r.date)} · {r.time || r.time_slot}</p>
+              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Ajouter à votre agenda</p>
+              <div className="space-y-2">
+                <a href={gCalUrl} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#4285F4] text-white rounded-2xl text-[13px] font-black active:scale-95 transition-all">
+                  <Calendar className="w-4 h-4" /> Google Calendar
+                </a>
+                <button onClick={() => { window.open(appleUrl, "_blank"); }}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl text-[13px] font-black active:scale-95 transition-all">
+                  <Calendar className="w-4 h-4" /> Apple Calendar
+                </button>
+              </div>
+              <button onClick={() => { setCalendarSuggestion(null); URL.revokeObjectURL(appleUrl); }}
+                className="mt-4 text-[12px] font-black text-gray-400 uppercase tracking-widest">
+                Plus tard
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Annulés */}
       {activeTab === 2 && (
