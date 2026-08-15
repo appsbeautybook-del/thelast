@@ -30,17 +30,24 @@ export async function signInWithOAuthMobile(provider) {
     const { Browser } = await import('@capacitor/browser');
     await Browser.open({ url: data.url, presentationStyle: 'popover' });
 
-    const poll = setInterval(async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        clearInterval(poll);
-        Browser.close().catch(() => {});
-        window.location.href = '/#/';
-        setTimeout(() => window.location.reload(), 200);
-      }
-    }, 1500);
+    // Attendre 5s avant de poller pour laisser le temps à l'utilisateur de sélectionner un compte
+    await new Promise(r => setTimeout(r, 5000));
 
-    setTimeout(() => clearInterval(poll), 60000);
+    const poll = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          clearInterval(poll);
+          await Browser.close().catch(() => {});
+          window.location.href = '/#/';
+          setTimeout(() => window.location.reload(), 300);
+        }
+      } catch (e) {
+        console.warn('[OAuth] Poll error:', e);
+      }
+    }, 3000);
+
+    setTimeout(() => clearInterval(poll), 120000);
   }
 }
 
