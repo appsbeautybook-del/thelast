@@ -508,8 +508,6 @@ function StepVerification({ onNext, onBack }) {
   }, []);
 
   const [smsSent, setSmsSent] = useState(false);
-  const [fallbackCode, setFallbackCode] = useState("");
-  const [showCode, setShowCode] = useState(false);
 
   // Envoyer le code automatiquement à l'arrivée sur cette étape
   useEffect(() => {
@@ -534,26 +532,18 @@ function StepVerification({ onNext, onBack }) {
 
       const isPhone = currentData.mode === "phone";
 
-      // Mode téléphone : essayer SMS réel, fallback code client
+      // Mode téléphone : envoyer SMS via Supabase
       if (isPhone && currentData.phone) {
         try {
           const { error } = await supabase.auth.signInWithOtp({ phone: currentData.phone });
           if (error) {
             console.warn('[Verification] SMS failed:', error.message);
-            const code = String(Math.floor(100000 + Math.random() * 900000));
-            sessionStorage.setItem("bb_otp_phone_code", code);
-            setFallbackCode(code);
-            setShowCode(true);
           } else {
             setSmsSent(true);
             console.log('[Verification] SMS envoyé à:', currentData.phone);
           }
         } catch (e) {
           console.warn('[Verification] SMS error:', e);
-          const code = String(Math.floor(100000 + Math.random() * 900000));
-          sessionStorage.setItem("bb_otp_phone_code", code);
-          setFallbackCode(code);
-          setShowCode(true);
         }
         return;
       }
@@ -585,19 +575,11 @@ function StepVerification({ onNext, onBack }) {
         });
         if (otpError) {
           console.warn('[StepVerification] Email OTP failed:', otpError.message);
-          const emailCode = String(Math.floor(100000 + Math.random() * 900000));
-          sessionStorage.setItem("bb_otp_email_code", emailCode);
-          setFallbackCode(emailCode);
-          setShowCode(true);
         } else {
           console.log('[StepVerification] OTP sent to:', currentData.email);
         }
       } catch (e) {
         console.warn('[StepVerification] Email OTP error:', e);
-        const emailCode = String(Math.floor(100000 + Math.random() * 900000));
-        sessionStorage.setItem("bb_otp_email_code", emailCode);
-        setFallbackCode(emailCode);
-        setShowCode(true);
       }
     };
 
@@ -634,37 +616,30 @@ function StepVerification({ onNext, onBack }) {
     setError("");
     const currentData = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
 
-    // Mode téléphone : vérification locale (code généré côté client)
+    // Mode téléphone : vérification Supabase
     if (currentData.mode === "phone") {
-      const storedCode = sessionStorage.getItem("bb_otp_phone_code");
-      if (storedCode && fullCode === storedCode) {
-        sessionStorage.removeItem("bb_otp_phone_code");
-        onNext();
-        setLoading(false);
-        return;
-      } else {
-        setError("Code incorrect. Réessayez.");
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        phone: currentData.phone,
+        token: fullCode,
+        type: 'sms',
+      });
+
+      if (verifyError) {
+        setError("Code incorrect ou expiré. Réessayez.");
         setCode(["", "", "", "", "", ""]);
         inputs.current[0]?.focus();
         setLoading(false);
         return;
       }
-    }
-
-    // Mode email : vérification locale OU Supabase
-    const email = currentData.email;
-    if (!email) { setError("Email introuvable. Recommencez depuis le début."); setLoading(false); return; }
-
-    // Vérifier d'abord le code local (fallback)
-    const storedEmailCode = sessionStorage.getItem("bb_otp_email_code");
-    if (storedEmailCode && fullCode === storedEmailCode) {
-      sessionStorage.removeItem("bb_otp_email_code");
       onNext();
       setLoading(false);
       return;
     }
 
-    // Sinon essayer la vérification Supabase
+    // Mode email : vérification Supabase
+    const email = currentData.email;
+    if (!email) { setError("Email introuvable. Recommencez depuis le début."); setLoading(false); return; }
+
     const { error: verifyError } = await supabase.auth.verifyOtp({
       email,
       token: fullCode,
@@ -672,7 +647,6 @@ function StepVerification({ onNext, onBack }) {
     });
 
     if (verifyError) {
-      console.error('[StepVerification] verifyOtp error:', verifyError);
       setError("Code incorrect ou expiré. Vérifiez le code reçu par email.");
       setCode(["", "", "", "", "", ""]);
       inputs.current[0]?.focus();
@@ -690,37 +664,17 @@ function StepVerification({ onNext, onBack }) {
     if (currentData.mode === "phone") {
       try {
         const { error } = await supabase.auth.signInWithOtp({ phone: currentData.phone });
-        if (error) {
-          const phoneCode = String(Math.floor(100000 + Math.random() * 900000));
-          sessionStorage.setItem("bb_otp_phone_code", phoneCode);
-          setFallbackCode(phoneCode);
-          setShowCode(true);
-        } else {
+        if (!error) {
           setSmsSent(true);
-          setShowCode(false);
         }
       } catch {
-        const phoneCode = String(Math.floor(100000 + Math.random() * 900000));
-        sessionStorage.setItem("bb_otp_phone_code", phoneCode);
-        setFallbackCode(phoneCode);
-        setShowCode(true);
+        // Erreur silencieuse
       }
     } else if (currentData.email) {
       try {
-        const { error } = await supabase.auth.signInWithOtp({ email: currentData.email });
-        if (error) {
-          const emailCode = String(Math.floor(100000 + Math.random() * 900000));
-          sessionStorage.setItem("bb_otp_email_code", emailCode);
-          setFallbackCode(emailCode);
-          setShowCode(true);
-        } else {
-          setShowCode(false);
-        }
+        await supabase.auth.signInWithOtp({ email: currentData.email });
       } catch {
-        const emailCode = String(Math.floor(100000 + Math.random() * 900000));
-        sessionStorage.setItem("bb_otp_email_code", emailCode);
-        setFallbackCode(emailCode);
-        setShowCode(true);
+        // Erreur silencieuse
       }
     }
     setResending(false);
@@ -764,24 +718,8 @@ function StepVerification({ onNext, onBack }) {
           </div>
         )}
 
-        {/* Fallback : afficher le code (téléphone OU email) */}
-        {showCode && fallbackCode && (
-          <div className="bg-orange-50 border-2 border-orange-200 rounded-3xl px-6 py-5 w-full max-w-[320px]">
-            <p className="text-[11px] font-bold text-orange-600 uppercase tracking-widest mb-2">
-              {data.mode === "phone" ? "📱" : "✉️"} Votre code de vérification
-            </p>
-            <p className="text-[36px] font-black text-[#E8732A] tracking-[0.3em] font-mono">{fallbackCode}</p>
-            <p className="text-[10px] text-orange-400 font-medium mt-2">
-              {data.mode === "phone"
-                ? "Mode développement. Configurez Twilio dans Supabase pour recevoir de vrais SMS."
-                : "Le code par email n'a pas pu être envoyé. Utilisez ce code pour continuer."
-              }
-            </p>
-          </div>
-        )}
-
         {/* SMS envoyé avec succès */}
-        {data.mode === "phone" && smsSent && !showCode && (
+        {data.mode === "phone" && smsSent && (
           <div className="flex items-center gap-2 text-green-600 bg-green-50 rounded-2xl px-4 py-3">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
             <span className="text-[13px] font-bold">SMS envoyé avec succès</span>
