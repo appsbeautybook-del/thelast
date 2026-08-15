@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Clock, CheckCircle2, Loader, Users, Download, CreditCard, Banknote, Share2, Pencil, X, Check, Tag, Lock, Shield } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, CheckCircle2, Loader, Users, Download, CreditCard, Banknote, Share2, Pencil, X, Check, Tag, Lock, Shield, Moon } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -915,6 +915,20 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
             </div>
           )}
         </div>
+
+        {/* ── Banner Majoration nocturne ── */}
+        {isNightSlot && (
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+              <Moon className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[13px] font-black text-white">Majoration nocturne active</p>
+              <p className="text-[11px] text-white/70 font-medium">Créneau entre 21h et 07h → +50% appliqué</p>
+            </div>
+            <span className="text-[16px] font-black text-white">+{nightSurcharge}€</span>
+          </div>
+        )}
 
         {/* ── Détail du prix ── */}
         <div className="bg-white border border-gray-100 rounded-3xl p-5">
