@@ -741,11 +741,13 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
         </div>
       </div>
 
-      {/* ── Today Indicator ── */}
+      {/* ── Day Progress Indicator ── */}
       {todayRdvs > 0 && (
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Aujourd'hui</p>
+            <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">
+              {isSameDay(selectedDate, new Date()) ? "Aujourd'hui" : format(selectedDate, "EEEE", { locale: fr })}
+            </p>
             <span className="text-[11px] font-black text-primary">{todayDone}/{todayRdvs} prestations</span>
           </div>
           <div className="flex gap-1.5">
@@ -805,8 +807,8 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
 
       {/* Date header */}
       <div className="flex items-center justify-between">
-        <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-          {format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })}
+        <p className="text-[13px] font-black text-gray-900 capitalize">
+          {format(selectedDate, "EEEE 'le' d MMMM yyyy", { locale: fr })}
         </p>
         <span className="text-[10px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">{dayRdvs.length} rdv</span>
       </div>
