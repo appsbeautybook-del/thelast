@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Calendar, Clock, MapPin, CheckCircle2, Plus, Star, ChevronLeft, ChevronRight, Scissors, LayoutGrid, X, Hash, Phone, User, CreditCard, MessageSquare, AlertTriangle, Loader2 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { entities } from '@/api/entities';
@@ -379,6 +379,11 @@ export default function RendezVous() {
   }, []);
 
   // ── Real-time: auto-open PostServiceReview when pro validates code ──
+  const prevStatusRef = useRef({});
+  useEffect(() => {
+    // Snapshot current statuses so we only trigger on actual transitions
+    reservations.forEach(r => { prevStatusRef.current[r.id] = r.status; });
+  }, [reservations]);
   useEffect(() => {
     let channel;
     supabase.auth.getUser().then(({ data }) => data?.user).then(user => {
@@ -392,14 +397,16 @@ export default function RendezVous() {
           filter: `client_email=eq.${user.email}`,
         }, (payload) => {
           const newRdv = payload.new;
+          const prevStatus = prevStatusRef.current[newRdv.id];
+          prevStatusRef.current[newRdv.id] = newRdv.status;
           // Update local reservations state so badge changes
           setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, ...newRdv } : r));
           // Auto-open PostServiceReview when status → termine
-          if (newRdv.status === "termine" && !newRdv.review_done) {
+          if (newRdv.status === "termine" && !newRdv.review_done && prevStatus !== "termine") {
             setReviewModal(newRdv);
           }
-          // Auto-open calendar suggestion when status → confirme
-          if (newRdv.status === "confirme") {
+          // Auto-open calendar suggestion ONLY when status transitions TO confirme
+          if (newRdv.status === "confirme" && prevStatus !== "confirme") {
             setCalendarSuggestion(newRdv);
           }
         })
