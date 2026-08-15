@@ -30,24 +30,31 @@ export async function signInWithOAuthMobile(provider) {
     const { Browser } = await import('@capacitor/browser');
     await Browser.open({ url: data.url, presentationStyle: 'popover' });
 
-    // Attendre 5s avant de poller pour laisser le temps à l'utilisateur de sélectionner un compte
-    await new Promise(r => setTimeout(r, 5000));
-
-    const poll = setInterval(async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          clearInterval(poll);
-          await Browser.close().catch(() => {});
-          window.location.href = '/#/';
-          setTimeout(() => window.location.reload(), 300);
+    // Attendre que appUrlOpen handle le callback via deep link
+    // Poll en arrière-plan comme filet de sécurité
+    await new Promise((resolve) => {
+      let attempts = 0;
+      const maxAttempts = 40;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            clearInterval(poll);
+            await Browser.close().catch(() => {});
+            window.location.href = '/#/';
+            setTimeout(() => window.location.reload(), 500);
+            resolve();
+          }
+        } catch (e) {
+          console.warn('[OAuth] Poll error:', e);
         }
-      } catch (e) {
-        console.warn('[OAuth] Poll error:', e);
-      }
-    }, 3000);
-
-    setTimeout(() => clearInterval(poll), 120000);
+        if (attempts >= maxAttempts) {
+          clearInterval(poll);
+          resolve();
+        }
+      }, 3000);
+    });
   }
 }
 
@@ -64,7 +71,6 @@ export async function signInWithOAuthWeb(provider) {
 
   if (error) {
     console.error(`[OAuth] ${provider} error:`, error.message);
-    // Messages d'erreur clairs pour chaque provider
     if (error.message?.includes('provider') || error.message?.includes('not enabled')) {
       throw new Error(`Le provider ${provider === 'google' ? 'Google' : 'Apple'} n'est pas activé. Activez-le dans le dashboard Supabase > Authentication > Providers.`);
     }
