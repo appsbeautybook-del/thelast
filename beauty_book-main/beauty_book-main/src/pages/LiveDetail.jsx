@@ -266,19 +266,30 @@ export default function LiveDetail() {
             delete hostPeersRef.current[viewerEmail];
           }
 
-          const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+          const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS, bundlePolicy: "max-bundle" });
           hostPeersRef.current[viewerEmail] = pc;
 
           (localStreamRef.current?.getTracks() || []).forEach(track => {
             pc.addTrack(track, localStreamRef.current);
           });
 
-          pc.onicecandidate = async (e) => {
+          const iceCandidates = [];
+          let iceSendTimer = null;
+          pc.onicecandidate = (e) => {
             if (!e.candidate) return;
-            await entities.CallSignal.create({
-              call_id: sig.call_id, caller_email: user.email, callee_email: viewerEmail,
-              type: "ice-candidate", payload: JSON.stringify(e.candidate), status: "accepted",
-            }).catch(() => {});
+            iceCandidates.push(e.candidate);
+            if (!iceSendTimer) {
+              iceSendTimer = setTimeout(async () => {
+                const batch = iceCandidates.splice(0);
+                for (const c of batch) {
+                  await entities.CallSignal.create({
+                    call_id: sig.call_id, caller_email: user.email, callee_email: viewerEmail,
+                    type: "ice-candidate", payload: JSON.stringify(c), status: "accepted",
+                  }).catch(() => {});
+                }
+                iceSendTimer = null;
+              }, 200);
+            }
           };
 
           pc.onconnectionstatechange = () => {
@@ -328,7 +339,7 @@ export default function LiveDetail() {
           const liveOffers = (recent || []).filter(s => s.call_id?.startsWith("live_" + id) && s.type === "offer");
           for (const sig of liveOffers) await handleSignal(sig);
         } catch {}
-      }, 3000);
+      }, 2000);
 
       const signalUnsub = entities.CallSignal.subscribe(async (event) => {
         if (event.type !== "create") return;
@@ -417,12 +428,23 @@ export default function LiveDetail() {
         }
       };
 
-      pc.onicecandidate = async (e) => {
+      const iceCandidates = [];
+      let iceSendTimer = null;
+      pc.onicecandidate = (e) => {
         if (!e.candidate) return;
-        await entities.CallSignal.create({
-          call_id: callId, caller_email: myEmail, callee_email: hostEmail,
-          type: "ice-candidate", payload: JSON.stringify(e.candidate), status: "ringing",
-        }).catch(() => {});
+        iceCandidates.push(e.candidate);
+        if (!iceSendTimer) {
+          iceSendTimer = setTimeout(async () => {
+            const batch = iceCandidates.splice(0);
+            for (const c of batch) {
+              await entities.CallSignal.create({
+                call_id: callId, caller_email: myEmail, callee_email: hostEmail,
+                type: "ice-candidate", payload: JSON.stringify(c), status: "ringing",
+              }).catch(() => {});
+            }
+            iceSendTimer = null;
+          }, 200);
+        }
       };
 
       try {
@@ -487,6 +509,7 @@ export default function LiveDetail() {
     return () => {
       clearInterval(retryTimerRef.current);
       clearInterval(answerPoller);
+      clearTimeout(iceSendTimer);
       if (viewerPcRef.current) { viewerPcRef.current.close(); viewerPcRef.current = null; }
       if (signalUnsubRef.current) { signalUnsubRef.current(); signalUnsubRef.current = null; }
       entities.CallSignal.create({
@@ -500,6 +523,18 @@ export default function LiveDetail() {
   useEffect(() => {
     if (videoRef.current && !isHost) videoRef.current.muted = muted;
   }, [muted, isHost]);
+
+  // Lock body scroll when live is open
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
+    document.body.style.width = "100%";
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    };
+  }, []);
 
   const toggleCamera = () => {
     if (localStreamRef.current) {
@@ -535,7 +570,14 @@ export default function LiveDetail() {
   const videoVisible = connStatus === "connected";
 
   const content = (
-    <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", background: "#000", zIndex: 9999, overflow: "hidden", touchAction: "none" }}>
+    <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", background: "#000", zIndex: 9999, overflow: "hidden", touchAction: "none" }}
+      ref={(el) => {
+        if (el) {
+          document.body.style.overflow = "hidden";
+          document.body.style.position = "fixed";
+          document.body.style.width = "100%";
+        }
+      }}>
 
       {/* Background blur */}
       {session?.host_avatar
@@ -606,7 +648,7 @@ export default function LiveDetail() {
       {session && (
         <>
           {/* ── Top bar ── */}
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 12, padding: "12px 12px 8px", paddingTop: "calc(12px + env(safe-area-inset-top, 0px))", zIndex: 20 }}>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, display: "flex", alignItems: "center", gap: 10, padding: "16px 12px 10px", paddingTop: "max(16px, env(safe-area-inset-top, 16px))", background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)", zIndex: 20 }}>
             {!isHost && (
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
@@ -661,20 +703,28 @@ export default function LiveDetail() {
 
           {/* ── Comments ── */}
           <div style={{ position: "absolute", left: 12, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", zIndex: 20, bottom: 68, maxHeight: "30vh", right: isHost ? 72 : 12 }}>
-            {comments.map((c, i) => (
+            {comments.map((c, i) => {
+              const isHostComment = c.sender_email === session?.host_email;
+              return (
               <div key={c.id || i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                 {c.sender_avatar
                   ? <img src={c.sender_avatar} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0, marginTop: 2 }} />
-                  : <div style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,0.2)", flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  : <div style={{ width: 24, height: 24, borderRadius: "50%", background: isHostComment ? PRIMARY : "rgba(255,255,255,0.2)", flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <span style={{ color: "#fff", fontSize: 9, fontWeight: 900 }}>{(c.sender_name || "?")[0]}</span>
                     </div>
                 }
-                <div style={{ backdropFilter: "blur(8px)", borderRadius: 16, borderTopLeftRadius: 4, padding: "6px 12px", maxWidth: "75%", background: c.type === "system" ? `${PRIMARY_ALPHA}0.3)` : "rgba(0,0,0,0.4)" }}>
-                  <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 900, lineHeight: 1, marginBottom: 2 }}>{c.sender_name || "Utilisateur"}</p>
+                <div style={{ backdropFilter: "blur(8px)", borderRadius: 16, borderTopLeftRadius: 4, padding: "6px 12px", maxWidth: "75%", background: c.type === "system" ? `${PRIMARY_ALPHA}0.3)` : isHostComment ? "rgba(249,115,22,0.25)" : "rgba(0,0,0,0.4)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+                    <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 900, lineHeight: 1 }}>{c.sender_name || "Utilisateur"}</p>
+                    {isHostComment && (
+                      <span style={{ fontSize: 8, fontWeight: 900, color: PRIMARY, background: "rgba(249,115,22,0.3)", padding: "1px 5px", borderRadius: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Hôte</span>
+                    )}
+                  </div>
                   <p style={{ color: "#fff", fontSize: 12, lineHeight: 1.4 }}>{c.content}</p>
                 </div>
               </div>
-            ))}
+              );
+            })}
             <div ref={bottomRef} />
           </div>
 
