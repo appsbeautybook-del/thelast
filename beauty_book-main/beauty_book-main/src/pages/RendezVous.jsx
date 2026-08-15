@@ -18,6 +18,17 @@ const formatLongDate = (dateStr) => {
   catch { return dateStr; }
 };
 
+function groupReservationsByDate(reservations) {
+  const groups = {};
+  const sorted = [...reservations].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  sorted.forEach(r => {
+    const key = r.date || "sans-date";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+  return Object.entries(groups).map(([date, rdvs]) => ({ date, rdvs }));
+}
+
 const MAIN_TABS = ["À venir", "Passés", "Annulés", "Calendrier"];
 
 // Convertit une réservation BDD en event calendrier
@@ -509,7 +520,15 @@ export default function RendezVous() {
               <p className="text-[15px] font-black text-gray-400">Aucun RDV à venir</p>
               <Link to="/services" className="mt-3 inline-block bg-primary text-white text-[11px] font-black uppercase tracking-widest px-5 py-2.5 rounded-2xl">Réserver</Link>
             </div>
-          ) : upcoming.map((r) => (
+          ) : groupReservationsByDate(upcoming).map(({ date, rdvs }) => (
+            <div key={date}>
+              <div className="flex items-center gap-3 px-1 mb-2 mt-1">
+                <div className="w-1 h-6 bg-primary rounded-full" />
+                <p className="text-[13px] font-black text-gray-900 capitalize">{formatLongDate(date)}</p>
+                <span className="ml-auto shrink-0 text-[9px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full">{rdvs.length}</span>
+              </div>
+              <div className="space-y-2">
+                {rdvs.map((r) => (
             <div key={r.id} onClick={() => setSelectedReservation(r)} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 flex active:scale-[0.99] transition-all cursor-pointer">
               <div className="w-20 shrink-0 bg-primary/10 flex flex-col items-center justify-center py-4">
                 <span className="text-[9px] font-black text-primary uppercase">{DAYS_FR[new Date(r.date).getDay()]}</span>
@@ -523,7 +542,7 @@ export default function RendezVous() {
                     {r.status === "confirme" ? "Confirmé" : "En attente"}
                   </span>
                 </div>
-                <p className="text-[11px] font-bold text-gray-400 capitalize mt-0.5">{r.salon_name || r.pro_name} · {formatLongDate(r.date)}</p>
+                <p className="text-[11px] font-bold text-gray-400 capitalize mt-0.5">{r.salon_name || r.pro_name}</p>
                 <div className="flex items-center gap-3 mt-2">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3 text-primary" />
@@ -541,6 +560,9 @@ export default function RendezVous() {
                 )}
               </div>
             </div>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -554,14 +576,22 @@ export default function RendezVous() {
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <p className="text-[15px] font-black text-gray-400">Aucun RDV passé</p>
             </div>
-          ) : past.map((r) => (
+          ) : groupReservationsByDate(past).map(({ date, rdvs }) => (
+            <div key={date}>
+              <div className="flex items-center gap-3 px-1 mb-2 mt-1">
+                <div className="w-1 h-6 bg-green-500 rounded-full" />
+                <p className="text-[13px] font-black text-gray-900 capitalize">{formatLongDate(date)}</p>
+                <span className="ml-auto shrink-0 text-[9px] font-black bg-green-50 text-green-600 px-2 py-0.5 rounded-full">{rdvs.length}</span>
+              </div>
+              <div className="space-y-2">
+                {rdvs.map((r) => (
             <div key={r.id} className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-3 shadow-sm">
               <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5 text-green-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-black text-gray-900 truncate">{r.service_name}</p>
-                <p className="text-[11px] font-bold text-gray-400 capitalize">{r.salon_name || r.pro_name} · {formatLongDate(r.date)}</p>
+                <p className="text-[11px] font-bold text-gray-400 capitalize">{r.salon_name || r.pro_name}</p>
               </div>
               <button
                 onClick={() => setReviewModal(r)}
@@ -570,6 +600,9 @@ export default function RendezVous() {
                 <Star className="w-3.5 h-3.5 fill-primary" />
                 Avis
               </button>
+            </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
@@ -595,16 +628,27 @@ export default function RendezVous() {
               </div>
               <p className="text-[15px] font-black text-gray-400">Aucun RDV annulé</p>
             </div>
-          ) : cancelled.map((r) => (
+          ) : groupReservationsByDate(cancelled).map(({ date, rdvs }) => (
+            <div key={date}>
+              <div className="flex items-center gap-3 px-1 mb-2 mt-1">
+                <div className="w-1 h-6 bg-red-400 rounded-full" />
+                <p className="text-[13px] font-black text-gray-900 capitalize">{formatLongDate(date)}</p>
+                <span className="ml-auto shrink-0 text-[9px] font-black bg-red-50 text-red-400 px-2 py-0.5 rounded-full">{rdvs.length}</span>
+              </div>
+              <div className="space-y-2">
+                {rdvs.map((r) => (
             <div key={r.id} className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-3 shadow-sm opacity-60">
               <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
                 <Calendar className="w-5 h-5 text-red-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-black text-gray-900 truncate">{r.service_name}</p>
-                <p className="text-[11px] font-bold text-gray-400 capitalize">{r.salon_name} · {formatLongDate(r.date)}</p>
+                <p className="text-[11px] font-bold text-gray-400 capitalize">{r.salon_name}</p>
               </div>
               <span className="text-[9px] font-black text-red-400 uppercase bg-red-50 px-2 py-1 rounded-full">Annulé</span>
+            </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
