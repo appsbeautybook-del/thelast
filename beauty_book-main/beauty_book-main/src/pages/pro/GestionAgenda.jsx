@@ -1521,26 +1521,13 @@ export default function GestionAgenda() {
 
   useEffect(() => {
     loadReservations();
-    // Subscribe aux changements en temps réel via entities
-    const unsub = entities.Reservation.subscribe((event) => {
-      if (event.type === "create" && event.data?.pro_email === proEmail) {
-        setReservations(prev => {
-          if (prev.some(r => r.id === event.data.id)) return prev;
-          return [event.data, ...prev];
-        });
-      } else if (event.type === "update") {
-        setReservations(prev => prev.map(r => r.id === event.id ? { ...r, ...event.data } : r));
-      } else if (event.type === "delete") {
-        setReservations(prev => prev.filter(r => r.id !== event.id));
-      }
-    });
     // Subscribe aux changements du profil pro (mode nuit)
     const unsubProfil = entities.ProfilPro.subscribe((event) => {
       if (event.data?.user_email === proEmail) {
         setTravailNuit(event.data.travail_nuit || false);
       }
     });
-    // Direct Supabase channel for more reliable real-time
+    // Un seul channel Supabase pour tout le real-time + auto-accept
     const rtChannel = supabase
       .channel("pro-rdv-" + proEmail)
       .on("postgres_changes", {
@@ -1548,12 +1535,29 @@ export default function GestionAgenda() {
         schema: "public",
         table: "Reservation",
         filter: `pro_email=eq.${proEmail}`,
-      }, (payload) => {
+      }, async (payload) => {
         if (payload.eventType === "INSERT") {
+          const newRdv = payload.new;
           setReservations(prev => {
-            if (prev.some(r => r.id === payload.new.id)) return prev;
-            return [payload.new, ...prev];
+            if (prev.some(r => r.id === newRdv.id)) return prev;
+            return [newRdv, ...prev];
           });
+          // Auto-accept: si le toggle est activé et le RDV est en_attente
+          if (autoAccept && newRdv.status === "en_attente") {
+            try {
+              await entities.Reservation.update(newRdv.id, { status: "confirme" });
+              setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, status: "confirme" } : r));
+              try {
+                await notifyReservationConfirmed({
+                  clientEmail: newRdv.client_email,
+                  serviceName: newRdv.service_name || "Rendez-vous",
+                  date: newRdv.date || "",
+                  time: newRdv.time || newRdv.time_slot || "",
+                  proName: newRdv.salon_name || newRdv.pro_name || proEmail,
+                });
+              } catch (e) { console.error("Auto-accept notification error:", e); }
+            } catch (e) { console.error("Auto-accept error:", e); }
+          }
         } else if (payload.eventType === "UPDATE") {
           setReservations(prev => prev.map(r => r.id === payload.new.id ? { ...r, ...payload.new } : r));
         } else if (payload.eventType === "DELETE") {
@@ -1566,48 +1570,8 @@ export default function GestionAgenda() {
       const d = e.detail || {};
     };
     window.addEventListener('pro-profile-updated', onProfileUpdated);
-    return () => { unsub(); unsubProfil(); if (rtChannel) supabase.removeChannel(rtChannel); window.removeEventListener('pro-profile-updated', onProfileUpdated); };
-  }, [proEmail]);
-
-  // Auto-accept new reservations
-  useEffect(() => {
-    if (!autoAccept || !proEmail) return;
-    const channel = supabase
-      .channel("auto-accept-" + proEmail)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "Reservation",
-        filter: `pro_email=eq.${proEmail}`,
-      }, async (payload) => {
-        const newRdv = payload.new;
-        if (newRdv.status === "en_attente") {
-          try {
-            await entities.Reservation.update(newRdv.id, { status: "confirme" });
-            // Add to state if not already present, then update status
-            setReservations(prev => {
-              const exists = prev.some(r => r.id === newRdv.id);
-              if (exists) {
-                return prev.map(r => r.id === newRdv.id ? { ...r, status: "confirme" } : r);
-              }
-              return [{ ...newRdv, status: "confirme" }, ...prev];
-            });
-            // Notify client
-            try {
-              await notifyReservationConfirmed({
-                clientEmail: newRdv.client_email,
-                serviceName: newRdv.service_name || "Rendez-vous",
-                date: newRdv.date || "",
-                time: newRdv.time || newRdv.time_slot || "",
-                proName: newRdv.salon_name || newRdv.pro_name || proEmail,
-              });
-            } catch (e) { console.error("Auto-accept notification error:", e); }
-          } catch (e) { console.error("Auto-accept error:", e); }
-        }
-      })
-      .subscribe();
-    return () => { if (channel) supabase.removeChannel(channel); };
-  }, [autoAccept, proEmail]);
+    return () => { unsubProfil(); if (rtChannel) supabase.removeChannel(rtChannel); window.removeEventListener('pro-profile-updated', onProfileUpdated); };
+  }, [proEmail, autoAccept]);
 
   const toggleAutoAccept = async () => {
     const next = !autoAccept;
