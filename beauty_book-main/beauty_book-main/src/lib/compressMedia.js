@@ -99,8 +99,8 @@ function canvasToBlob(canvas, type, quality) {
 export async function compressVideo(file, opts = {}) {
   const {
     maxBytes = VIDEO_TARGET_MAX,
-    maxWidth = 1920,
-    maxHeight = 1080,
+    maxWidth = 1280,
+    maxHeight = 720,
     onProgress = null,
   } = opts;
 
@@ -110,26 +110,38 @@ export async function compressVideo(file, opts = {}) {
   // Si sous le seuil de 40 Mo, pas de compression
   if (file.size <= COMPRESS_THRESHOLD) return file;
 
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const video = document.createElement('video');
     video.muted = true;
     video.playsInline = true;
+    video.preload = 'auto';
     const url = URL.createObjectURL(file);
 
-    video.onloadedmetadata = async () => {
+    const cleanup = () => {
+      URL.revokeObjectURL(url);
+      video.pause();
+      video.src = '';
+    };
+
+    const timeout = setTimeout(() => {
+      cleanup();
+      console.warn('[compressVideo] Timeout after 60s, using original');
+      resolve(file);
+    }, 60000);
+
+    video.onloadedmetadata = () => {
       const vWidth = video.videoWidth;
       const vHeight = video.videoHeight;
       const duration = video.duration;
 
-      if (!duration || duration === Infinity) {
-        URL.revokeObjectURL(url);
+      if (!duration || duration === Infinity || !vWidth || !vHeight) {
+        clearTimeout(timeout);
+        cleanup();
         resolve(file);
         return;
       }
 
-      // Calculer le bitrate cible pour rester sous la limite
-      // bitrate = (maxBytes * 8) / duration, mais on laisse 10% de marge pour l'audio
-      const targetBitrate = (maxBytes * 0.9 * 8) / duration;
+      const targetBitrate = (maxBytes * 0.85 * 8) / duration;
       const maxDim = Math.max(vWidth, vHeight);
       let scale = 1;
       if (maxDim > Math.max(maxWidth, maxHeight)) {
@@ -144,67 +156,86 @@ export async function compressVideo(file, opts = {}) {
       canvas.height = outH;
       const ctx = canvas.getContext('2d');
 
-      // Capturer le stream du canvas
-      const canvasStream = canvas.captureStream(30);
+      const canvasStream = canvas.captureStream(24);
 
-      // Calculer le bitrate vidéo (en bps)
-      const videoBitrate = Math.min(targetBitrate, 12_000_000); // max 12 Mbps pour garder la qualité
-      const videoBitrateKbps = Math.round(videoBitrate / 1000);
+      const videoBitrate = Math.min(targetBitrate, 6_000_000);
 
-      // MediaRecorder avec le bon codec
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-        ? 'video/webm;codecs=vp9'
-        : MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
-          ? 'video/webm;codecs=vp8'
-          : 'video/webm';
+      let mimeType = 'video/webm';
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) {
+        mimeType = 'video/webm;codecs=vp9';
+      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+        mimeType = 'video/webm;codecs=vp8';
+      }
 
-      const recorder = new MediaRecorder(canvasStream, {
-        mimeType,
-        videoBitsPerSecond: videoBitrate,
-      });
+      let recorder;
+      try {
+        recorder = new MediaRecorder(canvasStream, {
+          mimeType,
+          videoBitsPerSecond: videoBitrate,
+        });
+      } catch (e) {
+        clearTimeout(timeout);
+        cleanup();
+        console.warn('[compressVideo] MediaRecorder init failed:', e);
+        resolve(file);
+        return;
+      }
 
       const chunks = [];
       recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
+        if (e.data && e.data.size > 0) chunks.push(e.data);
       };
 
       recorder.onstop = () => {
-        URL.revokeObjectURL(url);
+        clearTimeout(timeout);
+        cleanup();
         const blob = new Blob(chunks, { type: mimeType });
-        if (blob.size >= file.size || blob.size <= 0) {
-          resolve(file); // Si pas d'amélioration, garder l'original
+        if (blob.size <= 0 || blob.size >= file.size) {
+          resolve(file);
           return;
         }
-        const ext = mimeType.includes('vp9') ? 'webm' : 'webm';
         const baseName = file.name.replace(/\.[^.]+$/, '');
-        resolve(new File([blob], `${baseName}.${ext}`, { type: mimeType, lastModified: Date.now() }));
+        resolve(new File([blob], `${baseName}.webm`, { type: mimeType, lastModified: Date.now() }));
       };
 
       recorder.onerror = () => {
-        URL.revokeObjectURL(url);
+        clearTimeout(timeout);
+        cleanup();
         resolve(file);
       };
 
-      recorder.start(100);
-      video.currentTime = 0;
-      video.play().catch(() => {});
+      try {
+        recorder.start(100);
+      } catch (e) {
+        clearTimeout(timeout);
+        cleanup();
+        resolve(file);
+        return;
+      }
 
+      video.currentTime = 0;
+
+      const tryPlay = () => {
+        video.play().catch(() => {
+          setTimeout(tryPlay, 500);
+        });
+      };
+      tryPlay();
+
+      let frameCount = 0;
       const drawFrame = () => {
         if (video.ended || video.paused || video.currentTime >= duration) {
-          recorder.stop();
-          video.pause();
+          if (recorder.state !== 'inactive') recorder.stop();
           return;
         }
-
-        ctx.drawImage(video, 0, 0, outW, outH);
-
-        if (onProgress) {
+        try {
+          ctx.drawImage(video, 0, 0, outW, outH);
+        } catch {}
+        frameCount++;
+        if (onProgress && frameCount % 30 === 0) {
           onProgress(Math.round((video.currentTime / duration) * 100));
         }
-
-        // Synchroniser avec le timestamp de la vidéo
-        const delay = Math.max(0, (1 / 30) * 1000);
-        setTimeout(drawFrame, delay);
+        requestAnimationFrame(drawFrame);
       };
 
       video.onseeked = () => drawFrame();
@@ -212,7 +243,8 @@ export async function compressVideo(file, opts = {}) {
     };
 
     video.onerror = () => {
-      URL.revokeObjectURL(url);
+      clearTimeout(timeout);
+      cleanup();
       resolve(file);
     };
 

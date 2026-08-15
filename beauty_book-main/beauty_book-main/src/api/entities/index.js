@@ -372,7 +372,7 @@ export const uploadFile = async (fileOrObj, bucket = 'uploads') => {
   const MAX_UPLOAD = 50 * 1024 * 1024;
   if (file.size > MAX_UPLOAD) {
     const sizeMB = Math.round(file.size / 1024 / 1024);
-    throw new Error(`Le fichier fait ${sizeMB} Mo et dépasse la limite de 50 Mo. Réessayez avec un fichier plus petit.`);
+    throw new Error(`Le fichier (${sizeMB} Mo) est trop volumineux. Essayez de réduire la durée de la vidéo ou d'utiliser une résolution plus basse.`);
   }
 
   const safeName = file.name
