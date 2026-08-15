@@ -20,7 +20,7 @@ import {
   Scissors, Users, Clock, Megaphone, TrendingUp, UserPlus,
   MoreVertical, Calendar, CheckCircle, ArrowLeft, Phone,
   Mail, Download, ChevronLeft, ChevronDown, Star, MapPin,
-  AlertCircle, Loader2, KeyRound, Shield, XCircle
+  AlertCircle, Loader2, KeyRound, Shield, XCircle, Pencil, Save
 } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -41,6 +41,31 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
   const [reliabilityChoice, setReliabilityChoice] = useState(null);
   const [savingScore, setSavingScore] = useState(false);
   const codeRefs = [useRef(), useRef(), useRef(), useRef()];
+
+  const [editing, setEditing] = useState(false);
+  const [editDate, setEditDate] = useState(rdv.date || "");
+  const [editTime, setEditTime] = useState(rdv.time || rdv.time_slot || "");
+  const [editAddress, setEditAddress] = useState(rdv.salon_address || "");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const handleSaveEdit = async () => {
+    setSavingEdit(true);
+    try {
+      await entities.Reservation.update(rdv.id, {
+        date: editDate,
+        time: editTime,
+        time_slot: editTime,
+        salon_address: editAddress,
+      });
+      onUpdateStatus(rdv.id, rdv.status);
+      rdv.date = editDate;
+      rdv.time = editTime;
+      rdv.time_slot = editTime;
+      rdv.salon_address = editAddress;
+      setEditing(false);
+    } catch (e) { console.error("Edit RDV error:", e); }
+    setSavingEdit(false);
+  };
 
   const statusColors = {
     en_attente: "bg-orange-100 text-orange-600",
@@ -164,7 +189,30 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[20px] font-black text-gray-900">Détail du RDV</h2>
-          <button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
+          <div className="flex items-center gap-2">
+            {rdv.status !== "termine" && rdv.status !== "annule" && (
+              editing ? (
+                <>
+                  <button onClick={() => { setEditing(false); setEditDate(rdv.date || ""); setEditTime(rdv.time || rdv.time_slot || ""); setEditAddress(rdv.salon_address || ""); }}
+                    className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                    <X className="w-4 h-4 text-gray-500" />
+                  </button>
+                  <button onClick={handleSaveEdit} disabled={savingEdit}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white rounded-full text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all">
+                    {savingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    Sauver
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => setEditing(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-[11px] font-black uppercase tracking-widest active:scale-95 transition-all">
+                  <Pencil className="w-3.5 h-3.5" />
+                  Modifier
+                </button>
+              )
+            )}
+            <button onClick={onClose}><X className="w-5 h-5 text-gray-400" /></button>
+          </div>
         </div>
 
         {/* Status badge */}
@@ -210,11 +258,21 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="bg-gray-50 rounded-2xl p-4">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Date</p>
-            <p className="text-[13px] font-black text-gray-900 capitalize">{rdv.date ? format(parseISO(rdv.date), "EEEE d MMMM yyyy", { locale: fr }) : "—"}</p>
+            {editing ? (
+              <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)}
+                className="w-full text-[13px] font-black text-gray-900 bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-primary" />
+            ) : (
+              <p className="text-[13px] font-black text-gray-900 capitalize">{rdv.date ? format(parseISO(rdv.date), "EEEE d MMMM yyyy", { locale: fr }) : "—"}</p>
+            )}
           </div>
           <div className="bg-gray-50 rounded-2xl p-4">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Heure</p>
-            <p className="text-[15px] font-black text-gray-900">{rdv.time || rdv.time_slot}</p>
+            {editing ? (
+              <input type="time" value={editTime} onChange={e => setEditTime(e.target.value)}
+                className="w-full text-[15px] font-black text-gray-900 bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-primary" />
+            ) : (
+              <p className="text-[15px] font-black text-gray-900">{rdv.time || rdv.time_slot}</p>
+            )}
           </div>
         </div>
 
@@ -226,10 +284,15 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
         )}
 
         {/* Adresse salon */}
-        {rdv.salon_address && (
+        {(rdv.salon_address || editing) && (
           <div className="bg-gray-50 rounded-2xl p-4 mb-3">
             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Adresse</p>
-            <p className="text-[13px] font-black text-gray-900">{rdv.salon_address}</p>
+            {editing ? (
+              <input type="text" value={editAddress} onChange={e => setEditAddress(e.target.value)} placeholder="Adresse du salon"
+                className="w-full text-[13px] font-black text-gray-900 bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-primary" />
+            ) : (
+              <p className="text-[13px] font-black text-gray-900">{rdv.salon_address}</p>
+            )}
           </div>
         )}
 
