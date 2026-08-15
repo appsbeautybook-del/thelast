@@ -22,7 +22,7 @@ const SCAN_IMG = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q
 const STYLE_IMG = "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400";
 
 // ─── Side Drawer ──────────────────────────────────────────────────────────────
-function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, onOpenSimulator, onScanCapillaire, onStylisteIA }) {
+function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, onOpenSimulator, onScanCapillaire, onStylisteIA, isPro }) {
   const navigate = useNavigate();
   return (
     <>
@@ -34,20 +34,22 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="px-4 mb-2">
-          <button
-            onClick={() => { navigate("/social-media"); onClose(); }}
-            className="w-full flex items-center gap-3 bg-gradient-to-r from-orange-500/10 to-pink-500/10 rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-all border border-orange-200/50"
-          >
-            <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center shrink-0 shadow-md">
-              <Globe className="w-4.5 h-4.5 text-white" />
-            </div>
-            <div className="text-left">
-              <span className="text-[15px] font-black text-gray-800 block leading-tight">Réseaux Sociaux</span>
-              <span className="text-[11px] text-gray-400 font-medium">Instagram, Facebook, TikTok…</span>
-            </div>
-          </button>
-        </div>
+        {isPro && (
+          <div className="px-4 mb-2">
+            <button
+              onClick={() => { navigate("/social-media"); onClose(); }}
+              className="w-full flex items-center gap-3 bg-gradient-to-r from-orange-500/10 to-pink-500/10 rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-all border border-orange-200/50"
+            >
+              <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center shrink-0 shadow-md">
+                <Globe className="w-4.5 h-4.5 text-white" />
+              </div>
+              <div className="text-left">
+                <span className="text-[15px] font-black text-gray-800 block leading-tight">Réseaux Sociaux</span>
+                <span className="text-[11px] text-gray-400 font-medium">Instagram, Facebook, TikTok…</span>
+              </div>
+            </button>
+          </div>
+        )}
         <div className="px-4 mb-2">
           <button
             onClick={() => { onNewChat(); onClose(); }}
@@ -886,7 +888,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
   if (view === "chat") {
     return (
       <div className={`font-display flex flex-col h-full relative overflow-hidden ${isDark ? "bg-gray-950" : "bg-white"}`}>
-        <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onNewChat={handleNewChat} recentChats={recentChats} savedSimulations={savedSimulations} onOpenSimulator={() => setShowSimulator(true)} onScanCapillaire={() => navigate("/scan-capillaire")} onStylisteIA={() => navigate("/sh-ai")} />
+        <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onNewChat={handleNewChat} recentChats={recentChats} savedSimulations={savedSimulations} onOpenSimulator={() => setShowSimulator(true)} onScanCapillaire={() => navigate("/scan-capillaire")} onStylisteIA={() => navigate("/sh-ai")} isPro={isPro} />
         {showSimulator && <FiltreAIModal styleTitle="" onClose={() => setShowSimulator(false)} onResultSaved={handleSimulationSaved} />}
 
         <div className={`px-4 pt-5 pb-4 flex items-center justify-between border-b ${headerBorder}`} style={{ background: headerBg }}>
@@ -1116,7 +1118,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
   // ── HOME VIEW ──────────────────────────────────────────────────────────────
   return (
     <div className={`font-display flex flex-col h-full relative overflow-hidden ${homeBodyBg}`}>
-      <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onNewChat={handleNewChat} recentChats={recentChats} savedSimulations={savedSimulations} onOpenSimulator={() => setShowSimulator(true)} onScanCapillaire={() => navigate("/scan-capillaire")} onStylisteIA={() => navigate("/sh-ai")} />
+      <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onNewChat={handleNewChat} recentChats={recentChats} savedSimulations={savedSimulations} onOpenSimulator={() => setShowSimulator(true)} onScanCapillaire={() => navigate("/scan-capillaire")} onStylisteIA={() => navigate("/sh-ai")} isPro={isPro} />
       {showSimulator && <FiltreAIModal styleTitle="" onClose={() => setShowSimulator(false)} onResultSaved={handleSimulationSaved} />}
 
       <div className={`px-4 pt-5 pb-3 flex items-center justify-between border-b ${homeHeaderBg}`}>
