@@ -309,16 +309,16 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
                 disabled={loading || codeInput.some(d => !d)}
                 className="w-full bg-primary text-white py-3.5 rounded-2xl text-[13px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-40"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "✓ Valider & Débloquer les fonds"}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Valider"}
               </button>
             </div>
-            {/* No Show */}
+            {/* Annuler */}
             <button
-              onClick={() => handleStatus("no_show")}
+              onClick={() => handleStatus("annule")}
               disabled={loading}
               className="w-full py-3.5 rounded-2xl border border-red-100 text-[12px] font-black text-red-400 uppercase tracking-widest active:scale-95 transition-all"
             >
-              No Show
+              Annuler
             </button>
           </div>
         )}
