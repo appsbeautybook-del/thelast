@@ -3,12 +3,20 @@ import { Calendar, Clock, MapPin, CheckCircle2, Plus, Star, ChevronLeft, Chevron
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
+import { format, parseISO } from "date-fns";
+import { fr } from "date-fns/locale";
 import PostServiceReview from "@/components/reservation/PostServiceReview";
 import RoutineModal from "@/components/routine/RoutineModal";
 import RoutineDashboard from "@/components/routine/RoutineDashboard";
 
 const DAYS_FR = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 const MONTHS_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+
+const formatLongDate = (dateStr) => {
+  if (!dateStr) return "";
+  try { return format(parseISO(dateStr), "EEEE d MMMM yyyy", { locale: fr }); }
+  catch { return dateStr; }
+};
 
 const MAIN_TABS = ["À venir", "Passés", "Annulés", "Calendrier"];
 
@@ -479,8 +487,8 @@ export default function RendezVous() {
               <div>
                 <p className="text-[11px] font-black text-white/70 uppercase tracking-widest">Prochain RDV</p>
                 <p className="text-[15px] font-black text-white mt-0.5">{next.service_name}</p>
-                <p className="text-[11px] text-white/80 font-medium mt-0.5">
-                  {DAYS_FR[new Date(next.date).getDay()]} {new Date(next.date).getDate()} {MONTHS_FR[new Date(next.date).getMonth()].slice(0,3)} · {next.time || next.time_slot}
+                <p className="text-[11px] text-white/80 font-medium mt-0.5 capitalize">
+                  {formatLongDate(next.date)} · {next.time || next.time_slot}
                 </p>
               </div>
             </div>
@@ -515,7 +523,7 @@ export default function RendezVous() {
                     {r.status === "confirme" ? "Confirmé" : "En attente"}
                   </span>
                 </div>
-                <p className="text-[11px] font-bold text-gray-400 mt-0.5">{r.salon_name || r.pro_name}</p>
+                <p className="text-[11px] font-bold text-gray-400 capitalize mt-0.5">{r.salon_name || r.pro_name} · {formatLongDate(r.date)}</p>
                 <div className="flex items-center gap-3 mt-2">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3 text-primary" />
@@ -553,7 +561,7 @@ export default function RendezVous() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-black text-gray-900 truncate">{r.service_name}</p>
-                <p className="text-[11px] font-bold text-gray-400">{r.salon_name || r.pro_name} · {r.date}</p>
+                <p className="text-[11px] font-bold text-gray-400 capitalize">{r.salon_name || r.pro_name} · {formatLongDate(r.date)}</p>
               </div>
               <button
                 onClick={() => setReviewModal(r)}
@@ -594,7 +602,7 @@ export default function RendezVous() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-black text-gray-900 truncate">{r.service_name}</p>
-                <p className="text-[11px] font-bold text-gray-400">{r.salon_name} · {r.date}</p>
+                <p className="text-[11px] font-bold text-gray-400 capitalize">{r.salon_name} · {formatLongDate(r.date)}</p>
               </div>
               <span className="text-[9px] font-black text-red-400 uppercase bg-red-50 px-2 py-1 rounded-full">Annulé</span>
             </div>
@@ -643,8 +651,8 @@ export default function RendezVous() {
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Date</p>
-                    <p className="text-[13px] font-black text-gray-900">
-                      {DAYS_FR[new Date(selectedReservation.date).getDay()]} {new Date(selectedReservation.date).getDate()} {MONTHS_FR[new Date(selectedReservation.date).getMonth()]}
+                    <p className="text-[13px] font-black text-gray-900 capitalize">
+                      {formatLongDate(selectedReservation.date)}
                     </p>
                   </div>
                 </div>
