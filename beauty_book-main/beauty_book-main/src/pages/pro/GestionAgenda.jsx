@@ -1609,10 +1609,30 @@ export default function GestionAgenda() {
     return () => { if (channel) supabase.removeChannel(channel); };
   }, [autoAccept, proEmail]);
 
-  const toggleAutoAccept = () => {
+  const toggleAutoAccept = async () => {
     const next = !autoAccept;
     setAutoAccept(next);
     localStorage.setItem(`bb_auto_accept_${proEmail}`, String(next));
+
+    // Si on active l'auto-accept, confirmer toutes les réservations en_attente
+    if (next) {
+      const pending = reservations.filter(r => r.status === "en_attente");
+      for (const rdv of pending) {
+        try {
+          await entities.Reservation.update(rdv.id, { status: "confirme" });
+          setReservations(prev => prev.map(r => r.id === rdv.id ? { ...r, status: "confirme" } : r));
+          try {
+            await notifyReservationConfirmed({
+              clientEmail: rdv.client_email,
+              serviceName: rdv.service_name || "Rendez-vous",
+              date: rdv.date || "",
+              time: rdv.time || rdv.time_slot || "",
+              proName: rdv.salon_name || rdv.pro_name || proEmail,
+            });
+          } catch (e) { console.error("Auto-accept notify error:", e); }
+        } catch (e) { console.error("Auto-accept bulk confirm error:", e); }
+      }
+    }
   };
 
   const demandesCount = reservations.filter(r => r.status === "en_attente").length;
