@@ -10,6 +10,7 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { uploadFile } from "@/api/entities";
+import { apiClient } from "@/lib/apiClient";
 import { useTheme, useThemeBg } from "@/hooks/useTheme";
 import AddressInput from "@/components/ui/AddressInput";
 
@@ -165,9 +166,9 @@ export default function ModifierProfilPro() {
     const addr = [address, city].filter(Boolean).join(", ");
     if (!addr) return { latitude: null, longitude: null };
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1&countrycodes=fr,be,ch`, { headers: { "Accept-Language": "fr" } });
-      const data = await res.json();
-      if (data.length > 0) return { latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) };
+      const res = await apiClient.callFunction('geocode', { addresses: [addr] });
+      const data = res?.data?.results || res?.results || [];
+      if (data.length > 0 && data[0].lat) return { latitude: data[0].lat, longitude: data[0].lng };
     } catch {}
     return { latitude: null, longitude: null };
   };

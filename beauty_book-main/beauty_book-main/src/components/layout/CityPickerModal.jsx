@@ -76,10 +76,11 @@ export default function CityPickerModal({ currentCity, onSelect, onClose }) {
         try {
           const { latitude, longitude } = pos.coords;
           setMarkerPos([latitude, longitude]);
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+          const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
+          const res = await fetch(`${API_BASE}/maps/reverse?lat=${latitude}&lng=${longitude}`);
           const data = await res.json();
-          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || "Ma ville";
-          const country = data.address?.country_code?.toUpperCase() || "";
+          const city = data.city || "Ma ville";
+          const country = data.country || "";
           const label = country ? `${city}, ${country}` : city;
           setInput(label);
           localStorage.setItem("bb_user_city", label);

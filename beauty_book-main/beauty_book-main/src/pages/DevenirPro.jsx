@@ -21,11 +21,8 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
     if (input.length < 3) { setSuggestions([]); return; }
     setLoading(true);
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&format=json&addressdetails=1&countrycodes=fr&limit=6`,
-        { headers: { 'Accept': 'application/json', 'User-Agent': 'BeautyBook/1.0' } }
-      );
-      const data = await res.json();
+      const res = await apiClient.callFunction('placesAutocomplete', { input });
+      const data = res?.data?.predictions || res?.predictions || [];
       setSuggestions(data);
       setOpen(data.length > 0);
     } catch { setSuggestions([]); }

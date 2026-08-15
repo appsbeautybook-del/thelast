@@ -589,15 +589,14 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       }
       setTransportLoading(true);
       try {
-        // Géocoder les deux adresses via Nominatim
-        const [res1, res2] = await Promise.all([
-          fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(savedLieu.address)}&format=json&limit=1&countrycodes=fr,be,ch`),
-          fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(customAddress)}&format=json&limit=1&countrycodes=fr,be,ch`),
-        ]);
-        const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
-        if (data1.length > 0 && data2.length > 0) {
-          const lat1 = parseFloat(data1[0].lat), lng1 = parseFloat(data1[0].lon);
-          const lat2 = parseFloat(data2[0].lat), lng2 = parseFloat(data2[0].lon);
+        // Géocoder les deux adresses via le backend proxy
+        const geoRes = await apiClient.callFunction('geocode', {
+          addresses: [savedLieu.address, customAddress]
+        });
+        const geoData = geoRes?.data?.results || geoRes?.results || [];
+        if (geoData.length === 2 && geoData[0].lat && geoData[1].lat) {
+          const lat1 = geoData[0].lat, lng1 = geoData[0].lng;
+          const lat2 = geoData[1].lat, lng2 = geoData[1].lng;
           // Haversine
           const R = 6371;
           const dLat = ((lat2 - lat1) * Math.PI) / 180;

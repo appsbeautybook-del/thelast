@@ -87,6 +87,7 @@ export const apiClient = {
       vendeurLogin: { path: '/auth/vendeur/login', method: 'POST' },
       vendeurRegister: { path: '/auth/vendeur/register', method: 'POST' },
       placesAutocomplete: { path: '/maps/places-autocomplete', method: 'POST' },
+      geocode: { path: '/maps/geocode', method: 'POST' },
 
       // --- Sellers / Pro (Phase 3) ---
       getProfilPro: { path: '/pro/profile/get', method: 'POST' },
