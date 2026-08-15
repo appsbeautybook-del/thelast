@@ -338,6 +338,29 @@ export default function RendezVous() {
     loadReservations();
   }, []);
 
+  // ── Real-time: auto-open PostServiceReview when pro validates code ──
+  useEffect(() => {
+    let channel;
+    supabase.auth.getUser().then(({ data }) => data?.user).then(user => {
+      if (!user) return;
+      channel = supabase
+        .channel("reservation-status-" + user.email)
+        .on("postgres_changes", {
+          event: "UPDATE",
+          schema: "public",
+          table: "Reservation",
+          filter: `client_email=eq.${user.email}`,
+        }, (payload) => {
+          const newRdv = payload.new;
+          if (newRdv.status === "termine" && !newRdv.tip_amount && !newRdv.review_done) {
+            setReviewModal(newRdv);
+          }
+        })
+        .subscribe();
+    }).catch(() => {});
+    return () => { if (channel) supabase.removeChannel(channel); };
+  }, []);
+
   const today = new Date().toISOString().slice(0, 10);
   const upcoming = reservations.filter(r => r.date >= today && !["annule"].includes(r.status));
   const past = reservations.filter(r => r.date < today || r.status === "termine");

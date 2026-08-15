@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Star, X, Loader, Heart, Coffee, Gift, MessageSquare, PenLine } from "lucide-react";
+import { Star, X, Loader, Heart, Coffee, Gift, MessageSquare, PenLine, CreditCard, Lock, CheckCircle2, ChevronLeft } from "lucide-react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 
 const TIP_PRESETS = [0, 2, 5, 10];
 
 export default function PostServiceReview({ reservation, proEmail, proName, onClose, onSubmitted }) {
-  const [step, setStep] = useState("tip"); // "tip" → "review" → "done"
+  const [step, setStep] = useState("tip"); // "tip" → "payment" → "review" → "done"
   const [tipAmount, setTipAmount] = useState(0);
   const [customTip, setCustomTip] = useState("");
   const [note, setNote] = useState(0);
@@ -15,18 +15,50 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
 
-  const handleTipConfirm = async () => {
-    const amount = customTip ? Number(customTip) : tipAmount;
-    if (amount > 0) {
-      try {
-        await entities.Reservation.update(reservation.id, { tip_amount: amount });
-      } catch (e) { console.error("Tip save error:", e); }
-    }
-    setStep("review");
+  // Payment form
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCVC, setCardCVC] = useState("");
+  const [cardName, setCardName] = useState("");
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
+
+  const totalAmount = (Number(reservation.total_price || reservation.service_price || 0)) + (customTip ? Number(customTip) : tipAmount);
+
+  const handleTipConfirm = () => {
+    setStep("payment");
   };
 
   const handleSkipTip = () => {
-    setStep("review");
+    setStep("payment");
+  };
+
+  const formatCardNumber = (val) => {
+    const cleaned = val.replace(/\D/g, "").slice(0, 16);
+    return cleaned.replace(/(\d{4})(?=\d)/g, "$1 ");
+  };
+
+  const formatExpiry = (val) => {
+    const cleaned = val.replace(/\D/g, "").slice(0, 4);
+    if (cleaned.length >= 3) return cleaned.slice(0, 2) + "/" + cleaned.slice(2);
+    return cleaned;
+  };
+
+  const handlePayment = async () => {
+    if (!cardNumber || !cardExpiry || !cardCVC || !cardName) return;
+    setPaymentProcessing(true);
+    // Simulate payment processing
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Save tip if any
+    const tip = customTip ? Number(customTip) : tipAmount;
+    if (tip > 0) {
+      try {
+        await entities.Reservation.update(reservation.id, { tip_amount: tip });
+      } catch (e) { console.error("Tip save error:", e); }
+    }
+    setPaymentProcessing(false);
+    setPaymentDone(true);
+    setTimeout(() => setStep("review"), 1500);
   };
 
   const handleSubmitReview = async () => {
@@ -54,6 +86,11 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
     setSaving(false);
     setDone(true);
     setTimeout(() => { onSubmitted?.(); onClose?.(); }, 2000);
+  };
+
+  const handleSkipReview = () => {
+    setDone(true);
+    setTimeout(() => { onSubmitted?.(); onClose?.(); }, 1500);
   };
 
   if (done) {
@@ -137,6 +174,109 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
           </>
         )}
 
+        {/* ── ÉTAPE PAIEMENT ── */}
+        {step === "payment" && (
+          <>
+            {paymentDone ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+                </div>
+                <p className="text-[18px] font-black text-gray-900">Paiement validé !</p>
+                <p className="text-[13px] text-gray-400 font-medium mt-1">Transaction en cours de traitement...</p>
+              </div>
+            ) : (
+              <>
+                <button onClick={() => setStep("tip")} className="flex items-center gap-1 text-[12px] font-black text-gray-400 mb-4">
+                  <ChevronLeft className="w-4 h-4" /> Retour
+                </button>
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <CreditCard className="w-7 h-7 text-blue-600" />
+                  </div>
+                  <h3 className="text-[20px] font-black text-gray-900 leading-tight">
+                    Informations de paiement
+                  </h3>
+                  <p className="text-[13px] text-gray-400 font-medium mt-1">
+                    Total à payer : <span className="font-black text-primary">{totalAmount.toFixed(2)}€</span>
+                  </p>
+                </div>
+
+                <div className="space-y-3 mb-5">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Nom sur la carte</p>
+                    <input
+                      type="text"
+                      value={cardName}
+                      onChange={e => setCardName(e.target.value)}
+                      placeholder="JEAN DUPONT"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-[14px] font-bold text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 uppercase"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Numéro de carte</p>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={cardNumber}
+                        onChange={e => setCardNumber(formatCardNumber(e.target.value))}
+                        placeholder="1234 5678 9012 3456"
+                        maxLength={19}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-[14px] font-bold text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 tracking-wider"
+                      />
+                      <CreditCard className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Expiration</p>
+                      <input
+                        type="text"
+                        value={cardExpiry}
+                        onChange={e => setCardExpiry(formatExpiry(e.target.value))}
+                        placeholder="MM/AA"
+                        maxLength={5}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-[14px] font-bold text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 tracking-wider"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">CVC</p>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={cardCVC}
+                          onChange={e => setCardCVC(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                          placeholder="123"
+                          maxLength={4}
+                          className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-[14px] font-bold text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 tracking-wider"
+                        />
+                        <Lock className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 flex items-center gap-3 mb-5">
+                  <Lock className="w-5 h-5 text-green-600 shrink-0" />
+                  <p className="text-[11px] text-green-700 font-medium">Paiement sécurisé et chiffré</p>
+                </div>
+
+                <button
+                  onClick={handlePayment}
+                  disabled={!cardNumber || !cardExpiry || !cardCVC || !cardName || paymentProcessing}
+                  className="w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest text-white bg-primary flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40"
+                >
+                  {paymentProcessing ? (
+                    <><Loader className="w-5 h-5 animate-spin" /> Traitement en cours...</>
+                  ) : (
+                    <><Lock className="w-5 h-5" /> Payer {totalAmount.toFixed(2)}€</>
+                  )}
+                </button>
+              </>
+            )}
+          </>
+        )}
+
         {/* ── ÉTAPE AVIS ── */}
         {step === "review" && (
           <>
@@ -212,7 +352,7 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
               {saving ? <><Loader className="w-4 h-4 animate-spin" />Envoi...</> : <>Publier mon avis →</>}
             </button>
 
-            <button onClick={onClose} className="w-full text-center text-[11px] font-black text-gray-300 mt-3 uppercase tracking-widest">Plus tard</button>
+            <button onClick={handleSkipReview} className="w-full text-center text-[11px] font-black text-gray-300 mt-3 uppercase tracking-widest">Plus tard</button>
           </>
         )}
       </div>
