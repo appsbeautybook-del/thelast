@@ -164,6 +164,8 @@ export default function LiveDetail() {
   const signalUnsubRef = useRef(null);
   const retryTimerRef = useRef(null);
   const viewersCountRef = useRef(0);
+  const retryCountRef = useRef(0);
+  const connectFnRef = useRef(null);
 
   // ── Load session ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -320,6 +322,14 @@ export default function LiveDetail() {
         for (const sig of liveOffers) await handleSignal(sig);
       } catch {}
 
+      const offerPoller = setInterval(async () => {
+        try {
+          const recent = await entities.CallSignal.filter({ callee_email: user.email }, "created_at", 20);
+          const liveOffers = (recent || []).filter(s => s.call_id?.startsWith("live_" + id) && s.type === "offer");
+          for (const sig of liveOffers) await handleSignal(sig);
+        } catch {}
+      }, 3000);
+
       const signalUnsub = entities.CallSignal.subscribe(async (event) => {
         if (event.type !== "create") return;
         await handleSignal(event.data);
@@ -330,6 +340,7 @@ export default function LiveDetail() {
     startHost();
 
     return () => {
+      clearInterval(offerPoller);
       if (stream) stream.getTracks().forEach(t => t.stop());
       if (signalUnsubRef.current) signalUnsubRef.current();
       Object.values(hostPeersRef.current).forEach(pc => pc.close());
@@ -363,8 +374,8 @@ export default function LiveDetail() {
     callIdRef.current = callId;
 
     let pc = null;
-    let retryCount = 0;
-    const maxRetries = 5;
+    retryCountRef.current = 0;
+    const maxRetries = 10;
 
     const connect = async () => {
       if (viewerPcRef.current) {
@@ -397,9 +408,9 @@ export default function LiveDetail() {
         if (state === "connected") setConnStatus("connected");
         if (state === "failed" || state === "disconnected") {
           setConnStatus("connecting");
-          if (retryCount < maxRetries) {
-            retryCount++;
-            retryTimerRef.current = setTimeout(connect, 2000);
+          if (retryCountRef.current < maxRetries) {
+            retryCountRef.current++;
+            retryTimerRef.current = setTimeout(connect, 1500);
           } else {
             setConnStatus("error");
           }
@@ -442,19 +453,31 @@ export default function LiveDetail() {
       });
       signalUnsubRef.current = signalUnsub;
 
-      const pollAnswer = async () => {
-        if (viewerPcRef.current?.signalingState !== "have-local-offer") return;
+      const pollAnswerFiltered = async () => {
+        if (!viewerPcRef.current || viewerPcRef.current.signalingState === "closed") return;
         try {
           const sigs = await entities.CallSignal.filter({ call_id: callId, callee_email: myEmail }, "created_at", 20);
-          for (const sig of (sigs || [])) await applyHostSignal(sig);
+          const answerSigs = (sigs || []).filter(s => s.type === "answer" || s.type === "ice-candidate");
+          for (const sig of answerSigs) await applyHostSignal(sig);
         } catch {}
       };
-      setTimeout(pollAnswer, 1000);
-      setTimeout(pollAnswer, 3000);
-      setTimeout(pollAnswer, 6000);
+
+      const answerPoller = setInterval(() => {
+        if (viewerPcRef.current?.signalingState === "have-local-offer") {
+          pollAnswerFiltered();
+        } else {
+          clearInterval(answerPoller);
+        }
+      }, 2000);
+
+      setTimeout(pollAnswerFiltered, 1000);
+      setTimeout(pollAnswerFiltered, 3000);
+      setTimeout(pollAnswerFiltered, 5000);
+      setTimeout(pollAnswerFiltered, 8000);
     };
 
     setConnStatus("connecting");
+    connectFnRef.current = connect;
     connect();
 
     const nextViewers = (session?.viewers || 0) + 1;
@@ -462,7 +485,8 @@ export default function LiveDetail() {
     entities.LiveSession.update(id, { viewers: nextViewers }).catch(() => {});
 
     return () => {
-      clearTimeout(retryTimerRef.current);
+      clearInterval(retryTimerRef.current);
+      clearInterval(answerPoller);
       if (viewerPcRef.current) { viewerPcRef.current.close(); viewerPcRef.current = null; }
       if (signalUnsubRef.current) { signalUnsubRef.current(); signalUnsubRef.current = null; }
       entities.CallSignal.create({
@@ -511,7 +535,7 @@ export default function LiveDetail() {
   const videoVisible = connStatus === "connected";
 
   const content = (
-    <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", background: "#000", zIndex: 9999, overflow: "auto", touchAction: "none" }}>
+    <div style={{ position: "fixed", inset: 0, width: "100vw", height: "100dvh", background: "#000", zIndex: 9999, overflow: "hidden", touchAction: "none" }}>
 
       {/* Background blur */}
       {session?.host_avatar
@@ -555,6 +579,12 @@ export default function LiveDetail() {
               {connStatus === "error" ? "Connexion impossible" : "Connexion au live..."}
             </span>
           </div>
+          {connStatus === "error" && (
+            <button onClick={() => { setConnStatus("connecting"); retryCountRef.current = 0; if (connectFnRef.current) connectFnRef.current(); }}
+              style={{ background: PRIMARY, color: "#fff", borderRadius: 16, padding: "8px 16px", fontSize: 12, fontWeight: 900, border: "none", cursor: "pointer", pointerEvents: "auto" }}>
+              Réessayer
+            </button>
+          )}
         </div>
       )}
 
