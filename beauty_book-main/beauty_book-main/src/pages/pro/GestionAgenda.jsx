@@ -649,25 +649,114 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
     try { return isSameDay(parseISO(r.date), selectedDate); } catch { return false; }
   }).sort((a, b) => (a.time || a.time_slot || "").localeCompare(b.time || b.time_slot || ""));
 
-  const statusColor = {
-    en_attente: "bg-orange-100 border-l-4 border-orange-400",
-    confirme: "bg-green-50 border-l-4 border-green-400",
-    annule: "bg-red-50 border-l-4 border-red-300",
-    termine: "bg-gray-50 border-l-4 border-gray-300",
-    no_show: "bg-red-50 border-l-4 border-red-200",
-  };
+  // Stats for the selected week
+  const weekRdvs = reservations.filter(r => {
+    try {
+      const d = parseISO(r.date);
+      return d >= week[0] && d <= week[6] && (r.status === "confirme" || r.status === "termine");
+    } catch { return false; }
+  });
+  const weekRevenue = weekRdvs.reduce((s, r) => s + (r.total_price || r.service_price || 0), 0);
+  const weekDone = weekRdvs.filter(r => r.status === "termine").length;
+  const weekPending = weekRdvs.filter(r => r.status === "confirme").length;
+  const completionRate = weekRdvs.length > 0 ? Math.round((weekDone / weekRdvs.length) * 100) : 0;
+
+  // Progress for today
+  const todayRdvs = dayRdvs.length;
+  const todayDone = dayRdvs.filter(r => r.status === "termine").length;
+  const todayProgress = todayRdvs > 0 ? Math.round((todayDone / todayRdvs) * 100) : 0;
 
   return (
     <div className="space-y-4">
+      {/* ── AI Slope Stats Header ── */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-5">
+        {/* Slope decorative shapes */}
+        <div className="absolute top-0 right-0 w-40 h-40 opacity-10">
+          <svg viewBox="0 0 200 200" fill="none">
+            <path d="M0 100 Q50 20 100 80 T200 60 V200 H0Z" fill="url(#slope1)" />
+            <defs>
+              <linearGradient id="slope1" x1="0" y1="0" x2="200" y2="200">
+                <stop offset="0%" stopColor="#E8732A" />
+                <stop offset="100%" stopColor="#f97316" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div className="absolute bottom-0 left-0 w-32 h-32 opacity-10">
+          <svg viewBox="0 0 200 200" fill="none">
+            <path d="M0 150 Q80 80 160 120 T200 100 V200 H0Z" fill="url(#slope2)" />
+            <defs>
+              <linearGradient id="slope2" x1="0" y1="0" x2="200" y2="200">
+                <stop offset="0%" stopColor="#E8732A" />
+                <stop offset="100%" stopColor="#fb923c" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+
+        <div className="relative z-10">
+          <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">📈 Résumé de la semaine</p>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div className="text-center">
+              <p className="text-[28px] font-black text-white leading-none">{weekRdvs.length}</p>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">RDV</p>
+            </div>
+            <div className="text-center border-x border-white/10">
+              <p className="text-[28px] font-black text-primary leading-none">{weekRevenue}€</p>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">CA</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[28px] font-black text-green-400 leading-none">{completionRate}%</p>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">Complétion</p>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="bg-white/10 rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-primary to-green-400 rounded-full transition-all duration-700"
+              style={{ width: `${completionRate}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-2">
+            <span className="text-[9px] font-bold text-gray-400">{weekDone} terminés</span>
+            <span className="text-[9px] font-bold text-gray-400">{weekPending} en cours</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Today Indicator ── */}
+      {todayRdvs > 0 && (
+        <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Aujourd'hui</p>
+            <span className="text-[11px] font-black text-primary">{todayDone}/{todayRdvs} prestations</span>
+          </div>
+          <div className="flex gap-1.5">
+            {dayRdvs.map((r, i) => (
+              <div
+                key={r.id}
+                className={`flex-1 h-3 rounded-full transition-all duration-500 ${
+                  r.status === "termine"
+                    ? "bg-gradient-to-r from-green-400 to-green-500"
+                    : "bg-gray-200"
+                }`}
+                title={`${r.service_name} — ${r.status === "termine" ? "✓ Terminé" : "⏳ En cours"}`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Week navigator */}
       <div className="flex items-center justify-between">
-        <button onClick={() => setWeekBase(d => addDays(d, -7))} className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+        <button onClick={() => setWeekBase(d => addDays(d, -7))} className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 active:scale-95 transition-all">
           <ChevronLeft className="w-4 h-4 text-gray-600" />
         </button>
         <p className="text-[12px] font-black text-gray-500 uppercase tracking-widest">
           {format(week[0], "d MMM", { locale: fr })} – {format(week[6], "d MMM yyyy", { locale: fr })}
         </p>
-        <button onClick={() => setWeekBase(d => addDays(d, 7))} className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100">
+        <button onClick={() => setWeekBase(d => addDays(d, 7))} className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-sm border border-gray-100 active:scale-95 transition-all">
           <ChevronRight className="w-4 h-4 text-gray-600" />
         </button>
       </div>
@@ -678,54 +767,90 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
           const isSelected = isSameDay(day, selectedDate);
           const isToday = isSameDay(day, new Date());
           const hasRdv = reservations.some(r => { try { return isSameDay(parseISO(r.date), day); } catch { return false; } });
+          const dayCount = reservations.filter(r => { try { return isSameDay(parseISO(r.date), day) && (r.status === "confirme" || r.status === "termine"); } catch { return false; } }).length;
           return (
             <button
               key={i}
               onClick={() => setSelectedDate(day)}
-              className={`flex flex-col items-center py-2 rounded-2xl transition-all active:scale-95 ${isSelected ? "bg-primary text-white shadow-md shadow-primary/30" : isToday ? "bg-orange-50 text-primary" : "bg-gray-100 text-gray-500"}`}
+              className={`relative flex flex-col items-center py-2 rounded-2xl transition-all active:scale-95 ${isSelected ? "bg-primary text-white shadow-md shadow-primary/30" : isToday ? "bg-orange-50 text-primary" : "bg-gray-100 text-gray-500"}`}
             >
               <span className="text-[8px] font-black uppercase tracking-widest">{format(day, "EEE", { locale: fr })}</span>
               <span className="text-[18px] font-black leading-tight">{format(day, "d")}</span>
-              {hasRdv && <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${isSelected ? "bg-white" : "bg-primary"}`} />}
+              {hasRdv && (
+                <div className="flex items-center gap-0.5 mt-0.5">
+                  <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? "bg-white" : "bg-primary"}`} />
+                  {dayCount > 1 && <span className={`text-[7px] font-black ${isSelected ? "text-white" : "text-primary"}`}>{dayCount}</span>}
+                </div>
+              )}
             </button>
           );
         })}
       </div>
 
       {/* Date header */}
-      <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-        {format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })} — {dayRdvs.length} rdv
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+          {format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })}
+        </p>
+        <span className="text-[10px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">{dayRdvs.length} rdv</span>
+      </div>
 
       {/* RDV list */}
       {dayRdvs.length === 0 ? (
-        <div className="flex flex-col items-center py-12 gap-2">
-          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center">
-            <Calendar className="w-7 h-7 text-gray-300" />
+        <div className="flex flex-col items-center py-12 gap-3">
+          <div className="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center">
+            <Calendar className="w-8 h-8 text-gray-300" />
           </div>
-          <p className="text-[13px] font-bold text-gray-400">Aucun rendez-vous ce jour</p>
+          <p className="text-[14px] font-bold text-gray-400">Aucun rendez-vous ce jour</p>
+          <p className="text-[11px] text-gray-300">Les rdv confirmés apparaîtront ici</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {dayRdvs.map(rdv => (
-            <button
-              key={rdv.id}
-              onClick={() => onSelectRdv(rdv)}
-              className={`w-full flex items-center gap-3 p-4 rounded-2xl text-left active:scale-[0.99] transition-all shadow-sm ${statusColor[rdv.status] || "bg-white border border-gray-100"}`}
-            >
-              <div className="w-12 text-center shrink-0">
-                <p className="text-[13px] font-black text-gray-700">{rdv.time || rdv.time_slot}</p>
-                <p className="text-[9px] text-gray-400 font-medium">{rdv.duration_min}min</p>
+          {dayRdvs.map((rdv, idx) => {
+            const isDone = rdv.status === "termine";
+            const timeStr = rdv.time || rdv.time_slot || "";
+            const nextRdv = dayRdvs[idx + 1];
+            const nextTime = nextRdv ? (nextRdv.time || nextRdv.time_slot || "") : null;
+
+            return (
+              <div key={rdv.id}>
+                <button
+                  onClick={() => onSelectRdv(rdv)}
+                  className={`w-full flex items-center gap-3 p-4 rounded-2xl text-left active:scale-[0.99] transition-all shadow-sm border ${
+                    isDone
+                      ? "bg-gray-50 border-gray-200 opacity-70"
+                      : "bg-white border-gray-100 hover:border-primary/30"
+                  }`}
+                >
+                  {/* Time & duration */}
+                  <div className="w-14 text-center shrink-0">
+                    <p className={`text-[14px] font-black ${isDone ? "text-gray-400 line-through" : "text-gray-900"}`}>{timeStr}</p>
+                    <p className="text-[9px] text-gray-400 font-medium">{rdv.duration_min || 60}min</p>
+                  </div>
+
+                  {/* Vertical timeline indicator */}
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className={`w-3 h-3 rounded-full border-2 ${isDone ? "bg-green-500 border-green-500" : "bg-white border-primary"}`} />
+                    {nextTime && <div className="w-0.5 h-6 bg-gray-200 mt-1" />}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className={`text-[15px] font-black truncate ${isDone ? "text-gray-400" : "text-gray-900"}`}>{rdv.service_name}</p>
+                      {isDone && <span className="text-[8px] font-black text-green-500 bg-green-50 px-1.5 py-0.5 rounded-full shrink-0">✓</span>}
+                    </div>
+                    <p className="text-[12px] font-medium text-gray-500 truncate">{rdv.client_name || rdv.client_email}</p>
+                  </div>
+
+                  {/* Price */}
+                  <div className="text-right shrink-0">
+                    <p className={`text-[14px] font-black ${isDone ? "text-gray-400" : "text-primary"}`}>{rdv.total_price || rdv.service_price}€</p>
+                  </div>
+                </button>
               </div>
-              <div className="flex-1">
-                <p className="text-[15px] font-black text-gray-900">{rdv.service_name}</p>
-                <p className="text-[12px] font-medium text-gray-500">{rdv.client_name || rdv.client_email}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-[14px] font-black text-primary">{rdv.total_price || rdv.service_price}€</p>
-              </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
