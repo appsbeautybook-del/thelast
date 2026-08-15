@@ -380,14 +380,20 @@ export default function RendezVous() {
 
   // ── Real-time: auto-open PostServiceReview when pro validates code ──
   const prevStatusRef = useRef({});
+  const userEmailRef = useRef(null);
   useEffect(() => {
     // Snapshot current statuses so we only trigger on actual transitions
     reservations.forEach(r => { prevStatusRef.current[r.id] = r.status; });
   }, [reservations]);
   useEffect(() => {
     let channel;
-    supabase.auth.getUser().then(({ data }) => data?.user).then(user => {
+    let pollInterval;
+    const setup = async () => {
+      const { data } = await supabase.auth.getUser();
+      const user = data?.user;
       if (!user) return;
+      userEmailRef.current = user.email;
+      // Channel real-time
       channel = supabase
         .channel("reservation-status-" + user.email)
         .on("postgres_changes", {
@@ -399,20 +405,55 @@ export default function RendezVous() {
           const newRdv = payload.new;
           const prevStatus = prevStatusRef.current[newRdv.id];
           prevStatusRef.current[newRdv.id] = newRdv.status;
-          // Update local reservations state so badge changes
           setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, ...newRdv } : r));
-          // Auto-open PostServiceReview when status → termine
           if (newRdv.status === "termine" && !newRdv.review_done && prevStatus !== "termine") {
             setReviewModal(newRdv);
           }
-          // Auto-open calendar suggestion ONLY when status transitions TO confirme
           if (newRdv.status === "confirme" && prevStatus !== "confirme") {
             setCalendarSuggestion(newRdv);
           }
         })
         .subscribe();
-    }).catch(() => {});
-    return () => { if (channel) supabase.removeChannel(channel); };
+      // Polling fallback toutes les 10s
+      pollInterval = setInterval(async () => {
+        try {
+          const { data: fresh } = await supabase
+            .from("Reservation").select("*")
+            .eq("client_email", user.email)
+            .order("date", { ascending: false }).limit(100);
+          if (!fresh) return;
+          setReservations(prev => {
+            let changed = false;
+            const next = prev.map(r => {
+              const freshR = fresh.find(f => f.id === r.id);
+              if (freshR && freshR.status !== r.status) {
+                changed = true;
+                const prevSt = prevStatusRef.current[r.id];
+                prevStatusRef.current[r.id] = freshR.status;
+                if (freshR.status === "confirme" && prevSt !== "confirme") {
+                  setTimeout(() => setCalendarSuggestion(freshR), 500);
+                }
+                if (freshR.status === "termine" && !freshR.review_done && prevSt !== "termine") {
+                  setTimeout(() => setReviewModal(freshR), 500);
+                }
+                return { ...r, ...freshR };
+              }
+              return r;
+            });
+            // Add new reservations not yet in state
+            fresh.forEach(f => {
+              if (!next.some(r => r.id === f.id)) {
+                next.unshift(f);
+                changed = true;
+              }
+            });
+            return changed ? next : prev;
+          });
+        } catch {}
+      }, 10000);
+    };
+    setup();
+    return () => { if (channel) supabase.removeChannel(channel); if (pollInterval) clearInterval(pollInterval); };
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);

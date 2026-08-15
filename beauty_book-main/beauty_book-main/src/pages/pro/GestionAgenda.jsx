@@ -51,12 +51,12 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
   const handleSaveEdit = async () => {
     setSavingEdit(true);
     try {
-      await entities.Reservation.update(rdv.id, {
+      await supabase.from("Reservation").update({
         date: editDate,
         time: editTime,
         time_slot: editTime,
         salon_address: editAddress,
-      });
+      }).eq("id", rdv.id);
       onUpdateStatus(rdv.id, rdv.status);
       rdv.date = editDate;
       rdv.time = editTime;
@@ -82,14 +82,14 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
     no_show: "No Show",
   };
 
-  const handleStatus = async (status) => {
+  const handleStatus = async (status, skipClose = false) => {
     setLoading(true);
     if (status === "termine") {
       await apiClient.callFunction("completeReservation", { reservation_id: rdv.id }).catch(async () => {
-        await entities.Reservation.update(rdv.id, { status });
+        await supabase.from("Reservation").update({ status }).eq("id", rdv.id);
       });
     } else {
-      await entities.Reservation.update(rdv.id, { status });
+      await supabase.from("Reservation").update({ status }).eq("id", rdv.id);
     }
 
     // Envoyer notification au client
@@ -116,7 +116,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
 
     onUpdateStatus(rdv.id, status);
     setLoading(false);
-    onClose();
+    if (!skipClose) onClose();
   };
 
   const handleCodeDigit = (val, idx) => {
@@ -143,7 +143,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
       codeRefs[0].current?.focus();
       return;
     }
-    await handleStatus("termine");
+    await handleStatus("termine", true);
     setShowReliability(true);
   };
 
@@ -987,7 +987,7 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
 
   const handleAction = async (id, status) => {
     setUpdating(id);
-    await entities.Reservation.update(id, { status });
+    await supabase.from("Reservation").update({ status }).eq("id", id);
     setReservations(prev => prev.map(r => r.id === id ? { ...r, status } : r));
 
     // Envoyer notification au client
@@ -1483,6 +1483,8 @@ export default function GestionAgenda() {
   const [autoAccept, setAutoAccept] = useState(() => {
     return localStorage.getItem(`bb_auto_accept_${user?.email}`) === "true";
   });
+  const autoAcceptRef = useRef(autoAccept);
+  useEffect(() => { autoAcceptRef.current = autoAccept; }, [autoAccept]);
 
   const proEmail = user?.email;
 
@@ -1542,10 +1544,10 @@ export default function GestionAgenda() {
             if (prev.some(r => r.id === newRdv.id)) return prev;
             return [newRdv, ...prev];
           });
-          // Auto-accept: si le toggle est activé et le RDV est en_attente
-          if (autoAccept && newRdv.status === "en_attente") {
+          // Auto-accept: lit depuis ref (toujours à jour, pas de stale closure)
+          if (autoAcceptRef.current && newRdv.status === "en_attente") {
             try {
-              await entities.Reservation.update(newRdv.id, { status: "confirme" });
+              await supabase.from("Reservation").update({ status: "confirme" }).eq("id", newRdv.id);
               setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, status: "confirme" } : r));
               try {
                 await notifyReservationConfirmed({
@@ -1565,17 +1567,25 @@ export default function GestionAgenda() {
         }
       })
       .subscribe();
+    // Polling fallback: vérifier les changements toutes les 15s
+    const pollInterval = setInterval(() => {
+      if (!proEmail) return;
+      supabase.from("Reservation").select("*").eq("pro_email", proEmail).order("date", { ascending: false }).limit(200)
+        .then(({ data }) => { if (data) setReservations(data); })
+        .catch(() => {});
+    }, 15000);
     // Listen for pro-profile-updated events (from ProfilPro page)
     const onProfileUpdated = (e) => {
       const d = e.detail || {};
     };
     window.addEventListener('pro-profile-updated', onProfileUpdated);
-    return () => { unsubProfil(); if (rtChannel) supabase.removeChannel(rtChannel); window.removeEventListener('pro-profile-updated', onProfileUpdated); };
-  }, [proEmail, autoAccept]);
+    return () => { unsubProfil(); if (rtChannel) supabase.removeChannel(rtChannel); clearInterval(pollInterval); window.removeEventListener('pro-profile-updated', onProfileUpdated); };
+  }, [proEmail]);
 
   const toggleAutoAccept = async () => {
     const next = !autoAccept;
     setAutoAccept(next);
+    autoAcceptRef.current = next;
     localStorage.setItem(`bb_auto_accept_${proEmail}`, String(next));
 
     // Si on active l'auto-accept, confirmer toutes les réservations en_attente
@@ -1583,7 +1593,7 @@ export default function GestionAgenda() {
       const pending = reservations.filter(r => r.status === "en_attente");
       for (const rdv of pending) {
         try {
-          await entities.Reservation.update(rdv.id, { status: "confirme" });
+          await supabase.from("Reservation").update({ status: "confirme" }).eq("id", rdv.id);
           setReservations(prev => prev.map(r => r.id === rdv.id ? { ...r, status: "confirme" } : r));
           try {
             await notifyReservationConfirmed({
