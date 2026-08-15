@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Clock, CheckCircle2, Loader, Users, Download, CreditCard, Banknote, Share2, Pencil, X, Check, Tag, Lock, Shield, Moon } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, CheckCircle2, Loader, Users, Download, CreditCard, Banknote, Share2, Pencil, X, Check, Tag, Lock, Shield, Moon, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -509,6 +509,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [loadingAddress, setLoadingAddress] = useState(false);
   const addressDebounceRef = useRef(null);
+  const [clientNotes, setClientNotes] = useState(booking.notes || "");
 
   // Synchroniser le lieu avec le profil pro
   useEffect(() => {
@@ -639,6 +640,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       seat_number: booking.seat || null,
       payment_type: pType,
       crg_code: crgCode,
+      notes: clientNotes || "",
     };
   };
 
@@ -826,6 +828,26 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Commentaire client */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
+              <MessageSquare className="w-4 h-4 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-[13px] font-black text-gray-900">Commentaire</p>
+              <p className="text-[10px] text-gray-400 font-medium">Informations pour le professionnel</p>
+            </div>
+          </div>
+          <textarea
+            value={clientNotes}
+            onChange={e => setClientNotes(e.target.value)}
+            placeholder="Ex: allergies, demandes spéciales, étage, code d'accès…"
+            rows={3}
+            className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-[13px] text-gray-700 font-medium outline-none border border-gray-200 focus:border-primary resize-none placeholder:text-gray-300"
+          />
         </div>
 
         {/* Lieu */}

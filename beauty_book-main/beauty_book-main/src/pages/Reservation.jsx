@@ -44,6 +44,7 @@ export default function Reservation() {
     date: null,
     time: null,
     seat: null,
+    notes: "",
     salon: { name: state?.service?.pro_name || "Professionnel BeautyBook", address: state?.service?.pro_city || "", pro_email: proEmail || resolvedProEmail || "" },
   });
 
