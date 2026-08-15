@@ -233,24 +233,40 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
           </div>
         )}
 
-        {/* Infos paiement */}
-        {rdv.payment_status && (
-          <div className="bg-gray-50 rounded-2xl p-4 mb-3">
-            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Paiement</p>
-            <div className="flex items-center gap-2">
-              <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded-full ${
-                rdv.payment_status === "paye" ? "bg-green-100 text-green-600" :
-                rdv.payment_status === "acompte_paye" ? "bg-orange-100 text-orange-600" :
-                "bg-gray-100 text-gray-500"
-              }`}>
-                {rdv.payment_status === "paye" ? "Payé" : rdv.payment_status === "acompte_paye" ? "Acompte payé" : "Non payé"}
-              </span>
-              {rdv.acompte_amount > 0 && (
-                <span className="text-[11px] text-gray-400 font-medium">Acompte: {rdv.acompte_amount}€</span>
+        {/* Infos paiement — synchronisé avec le choix client */}
+        {(rdv.payment_type || rdv.payment_status) && (() => {
+          const type = rdv.payment_type || (rdv.payment_status === "paye" ? "full" : rdv.payment_status === "acompte_paye" ? "acompte" : null);
+          const isFull = type === "full";
+          const isAcompte = type === "acompte";
+          const acompteAmt = isAcompte ? Math.round((rdv.total_price || rdv.service_price || 0) * 0.3 * 100) / 100 : 0;
+          const resteAPayer = isAcompte ? ((rdv.total_price || rdv.service_price || 0) - acompteAmt).toFixed(2) : 0;
+          return (
+            <div className="bg-gray-50 rounded-2xl p-4 mb-3">
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Paiement</p>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className={`text-[11px] font-black uppercase px-2 py-0.5 rounded-full ${
+                  isFull ? "bg-green-100 text-green-600" :
+                  isAcompte ? "bg-orange-100 text-orange-600" :
+                  "bg-gray-100 text-gray-500"
+                }`}>
+                  {isFull ? "Paiement complet" : isAcompte ? "Acompte 30%" : rdv.payment_status === "paye" ? "Payé" : "Non payé"}
+                </span>
+                <span className="text-[11px] font-bold text-gray-700">
+                  {isFull ? `${rdv.total_price || rdv.service_price || 0}€` :
+                   isAcompte ? `${acompteAmt}€` : ""}
+                </span>
+              </div>
+              {isAcompte && (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <div className="h-1.5 flex-1 bg-orange-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-orange-500 rounded-full" style={{ width: "30%" }} />
+                  </div>
+                  <span className="text-[10px] text-gray-400 font-medium">Reste {resteAPayer}€ à régler au salon</span>
+                </div>
               )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Actions selon statut */}
         {rdv.status === "en_attente" && (
