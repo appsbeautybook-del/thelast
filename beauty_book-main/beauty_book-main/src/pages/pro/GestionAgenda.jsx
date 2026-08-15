@@ -1580,7 +1580,24 @@ export default function GestionAgenda() {
         if (newRdv.status === "en_attente") {
           try {
             await entities.Reservation.update(newRdv.id, { status: "confirme" });
-            setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, status: "confirme" } : r));
+            // Add to state if not already present, then update status
+            setReservations(prev => {
+              const exists = prev.some(r => r.id === newRdv.id);
+              if (exists) {
+                return prev.map(r => r.id === newRdv.id ? { ...r, status: "confirme" } : r);
+              }
+              return [{ ...newRdv, status: "confirme" }, ...prev];
+            });
+            // Notify client
+            try {
+              await notifyReservationConfirmed({
+                clientEmail: newRdv.client_email,
+                serviceName: newRdv.service_name || "Rendez-vous",
+                date: newRdv.date || "",
+                time: newRdv.time || newRdv.time_slot || "",
+                proName: newRdv.salon_name || newRdv.pro_name || proEmail,
+              });
+            } catch (e) { console.error("Auto-accept notification error:", e); }
           } catch (e) { console.error("Auto-accept error:", e); }
         }
       })
