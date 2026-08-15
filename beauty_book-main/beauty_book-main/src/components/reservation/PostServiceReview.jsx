@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star, X, Loader, Heart, Coffee, Gift } from "lucide-react";
+import { Star, X, Loader, Heart, Coffee, Gift, MessageSquare, PenLine } from "lucide-react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 
@@ -142,17 +142,17 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
           <>
             <div className="text-center mb-6">
               <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <Star className="w-7 h-7 text-primary" />
+                <PenLine className="w-7 h-7 text-primary" />
               </div>
               <p className="text-[11px] font-black text-primary uppercase tracking-widest mb-1">Votre avis compte</p>
               <h3 className="text-[22px] font-black text-gray-900 leading-tight">
-                Comment s'est passée<br />votre prestation ?
+                Partagez votre<br />expérience ?
               </h3>
               <p className="text-[13px] text-gray-400 font-medium mt-1">{reservation.service_name} chez {proName || reservation.salon_name}</p>
             </div>
 
             {/* Étoiles */}
-            <div className="flex justify-center gap-3 mb-6">
+            <div className="flex justify-center gap-3 mb-2">
               {[1, 2, 3, 4, 5].map(star => (
                 <button
                   key={star}
@@ -176,15 +176,32 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
               </p>
             )}
 
-            {/* Commentaire */}
-            <div className="mb-5">
-              <textarea
-                value={commentaire}
-                onChange={e => setCommentaire(e.target.value)}
-                placeholder="Décrivez votre expérience (optionnel)..."
-                rows={3}
-                className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3.5 text-[14px] font-medium text-gray-700 outline-none resize-none"
-              />
+            {/* Commentaire — mis en avant */}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageSquare className="w-4 h-4 text-primary" />
+                <p className="text-[12px] font-black text-gray-700 uppercase tracking-widest">Votre commentaire</p>
+              </div>
+              <div className="bg-gray-50 border border-gray-100 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/30 transition-all">
+                <textarea
+                  value={commentaire}
+                  onChange={e => setCommentaire(e.target.value)}
+                  placeholder="Décrivez votre expérience, ce que vous avez aimé, des conseils pour les futurs clients..."
+                  rows={4}
+                  className="w-full px-4 py-3.5 text-[14px] font-medium text-gray-700 outline-none resize-none bg-transparent placeholder:text-gray-300"
+                />
+                <div className="px-4 pb-3 flex items-center justify-between">
+                  <p className="text-[10px] text-gray-300 font-medium">{commentaire.length}/500</p>
+                  {commentaire.length > 10 && (
+                    <span className="text-[10px] font-black text-green-500 flex items-center gap-1">
+                      <Heart className="w-3 h-3 fill-green-500" /> Commentaire utile
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-[11px] text-gray-400 font-medium mt-2 text-center">
+                Les commentaires aident les autres clients à choisir leur prestataire
+              </p>
             </div>
 
             <button

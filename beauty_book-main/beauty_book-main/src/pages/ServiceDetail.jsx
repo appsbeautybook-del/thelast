@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Share2, Heart, MapPin, Clock, Star, CheckCircle, ShoppingCart, Play, Calendar, ChevronRight, Scissors, Sparkles, Wand2, X, ChevronLeft, ArrowUp } from "lucide-react";
+import { ArrowLeft, Share2, Heart, MapPin, Clock, Star, CheckCircle, ShoppingCart, Play, Calendar, ChevronRight, Scissors, Sparkles, Wand2, X, ChevronLeft, ArrowUp, Wifi, Car, Thermometer, CreditCard, Accessibility, PawPrint, Baby, Coffee } from "lucide-react";
 import VTCSection from "@/components/service/VTCSection";
 import CommandeModal from "@/components/restaurant/CommandeModal";
 import PostServiceReview from "@/components/reservation/PostServiceReview";
@@ -646,14 +646,24 @@ export default function ServiceDetail() {
           <div>
             <SectionTitle>Commodités</SectionTitle>
             <div className="flex flex-wrap gap-2">
-              {proData.commodites.map((c, i) => (
-                <div key={i} className="flex items-center gap-1.5 bg-gray-50 rounded-full px-3 py-2 border border-gray-100">
-                  <span className="text-[14px]">
-                    {c === "Wifi" ? "📶" : c === "Parking" ? "🅿️" : c === "Climatisation" ? "❄️" : c === "Café offert" ? "☕" : c === "Paiement CB" ? "💳" : c === "Accessible PMR" ? "♿" : c === "Animaux acceptés" ? "🐾" : c === "Espace bébé" ? "👶" : "✓"}
-                  </span>
-                  <span className="text-[12px] font-bold text-gray-700">{c}</span>
-                </div>
-              ))}
+              {proData.commodites.map((c, i) => {
+                const iconMap = {
+                  "Wifi": <Wifi className="w-4 h-4 text-blue-500" />,
+                  "Parking": <Car className="w-4 h-4 text-green-600" />,
+                  "Climatisation": <Thermometer className="w-4 h-4 text-cyan-500" />,
+                  "Café offert": <Coffee className="w-4 h-4 text-amber-600" />,
+                  "Paiement CB": <CreditCard className="w-4 h-4 text-indigo-500" />,
+                  "Accessible PMR": <Accessibility className="w-4 h-4 text-violet-500" />,
+                  "Animaux acceptés": <PawPrint className="w-4 h-4 text-pink-500" />,
+                  "Espace bébé": <Baby className="w-4 h-4 text-sky-500" />,
+                };
+                return (
+                  <div key={i} className="flex items-center gap-1.5 bg-gray-50 rounded-full px-3 py-2 border border-gray-100">
+                    {iconMap[c] || <CheckCircle className="w-4 h-4 text-gray-400" />}
+                    <span className="text-[12px] font-bold text-gray-700">{c}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -962,7 +972,7 @@ export default function ServiceDetail() {
       {/* ── Sticky CTA ── */}
       <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
         <button
-          onClick={() => navigate("/reservation", { state: { service: { ...s, price, pro_name: proData?.salon_name, pro_avatar: proData?.avatar_url, pro_city: proData?.city } } })}
+          onClick={() => navigate("/reservation", { state: { service: { ...s, price: total, addons: selectedAddons, pro_name: proData?.salon_name, pro_avatar: proData?.avatar_url, pro_city: proData?.city } } })}
           className="w-full relative overflow-hidden rounded-3xl active:scale-[0.98] transition-all shadow-2xl shadow-primary/40"
           style={{ background: "linear-gradient(135deg, #f97316 0%, #ea580c 50%, #c2410c 100%)" }}
         >
@@ -979,7 +989,7 @@ export default function ServiceDetail() {
             </div>
             <div className="bg-white/20 rounded-2xl px-4 py-2.5 flex flex-col items-center shrink-0">
               <span className="text-white/70 text-[9px] font-black uppercase tracking-widest">dès</span>
-              <span className="text-white text-[20px] font-black leading-none">{formatPrice(price)}</span>
+              <span className="text-white text-[20px] font-black leading-none">{formatPrice(total)}</span>
             </div>
           </div>
         </button>
