@@ -11,14 +11,16 @@ export default function AuthCallback() {
 
     const handleUserAuth = async (user) => {
       if (done) return;
-      setStatus('Vérification du compte...');
-      console.log('[AuthCallback] User authentifié:', user.email, user.id);
+      done = true;
+      setStatus('Connexion réussie...');
 
+      console.log('[AuthCallback] User:', user.email);
+
+      // Vérifier si le profil existe
       let profile = null;
-
-      const { data: profileById, error: errorById } = await supabase
+      const { data: profileById } = await supabase
         .from('profiles')
-        .select('id, email')
+        .select('id')
         .eq('id', user.id)
         .maybeSingle();
 
@@ -27,67 +29,34 @@ export default function AuthCallback() {
       } else {
         const { data: profileByEmail } = await supabase
           .from('profiles')
-          .select('id, email')
+          .select('id')
           .eq('email', user.email)
           .maybeSingle();
-
-        if (profileByEmail) {
-          profile = profileByEmail;
-        }
+        if (profileByEmail) profile = profileByEmail;
       }
 
-      console.log('[AuthCallback] Profile trouvé:', !!profile, '| Erreur ID:', errorById?.message);
-
-      if (done) return;
-
-      if (profile) {
-        console.log('[AuthCallback] → Accueil (compte existant)');
-        localStorage.setItem('bb_onboarded', '1');
-        done = true;
-        navigate('/', { replace: true });
-      } else {
-        const fromSignup = sessionStorage.getItem('bb_social_signup');
-
-        if (fromSignup) {
-          console.log('[AuthCallback] → Accueil (inscription Google)');
-          const { error: insertError } = await supabase.from('profiles').upsert({
-            id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
-            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
-            role: 'user',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'id' });
-
-          if (insertError) console.error('[AuthCallback] Profile insert error:', insertError);
-
-          localStorage.setItem('bb_onboarded', '1');
-          sessionStorage.removeItem('bb_social_signup');
-          done = true;
-          navigate('/', { replace: true });
-        } else {
-          console.log('[AuthCallback] → Accueil (nouveau profil)');
-          const { error: insertError } = await supabase.from('profiles').upsert({
-            id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
-            avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
-            role: 'user',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'id' });
-
-          if (insertError) console.error('[AuthCallback] Profile insert error:', insertError);
-
-          localStorage.setItem('bb_onboarded', '1');
-          done = true;
-          navigate('/', { replace: true });
-        }
+      // Créer le profil s'il n'existe pas
+      if (!profile) {
+        console.log('[AuthCallback] Creating profile...');
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+          avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || '',
+          role: 'user',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
       }
+
+      // Toujours aller à l'accueil
+      localStorage.setItem('bb_onboarded', '1');
+      sessionStorage.removeItem('bb_social_signup');
+      console.log('[AuthCallback] → Home');
+      navigate('/', { replace: true });
     };
 
-    // ── 1) Listener onAuthStateChange — se déclenche quand Supabase traite le token ──
+    // Écouter les changements d'auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AuthCallback] onAuthStateChange:', event, !!session?.user);
       if (session?.user && !done) {
@@ -95,45 +64,18 @@ export default function AuthCallback() {
       }
     });
 
-    // ── 2) Vérification initiale immédiate ──
-    const tryGetSession = async () => {
-      try {
-        // Attendre que les tokens dans le hash soient traités
-        const hash = window.location.hash;
-        if (hash && hash.includes('access_token')) {
-          await new Promise(r => setTimeout(r, 1500));
-        }
-
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (done) return;
-
-        if (error) {
-          console.error('[AuthCallback] getSession error:', error);
-        }
-
-        if (session?.user) {
-          await handleUserAuth(session.user);
-          return;
-        }
-
-        // Fallback: getUser
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (user && !userError) {
-          await handleUserAuth(user);
-        }
-      } catch (e) {
-        console.error('[AuthCallback] tryGetSession error:', e);
+    // Vérifier la session immédiatement
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !done) {
+        handleUserAuth(session.user);
       }
-    };
+    }).catch(console.error);
 
-    tryGetSession();
-
-    // ── 3) Timeout de sécurité → si rien ne marche, retour à connexion ──
+    // Timeout de sécurité
     const timeout = setTimeout(() => {
       if (!done) {
         done = true;
-        console.warn('[AuthCallback] Timeout — redirection vers /connexion');
+        console.warn('[AuthCallback] Timeout');
         navigate('/connexion', { replace: true });
       }
     }, 30000);
