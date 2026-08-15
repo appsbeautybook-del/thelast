@@ -554,8 +554,68 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
   };
 
   const totalPersons = booking.services.reduce((s, svc) => s + (svc.persons || 1), 0);
-  const totalPrice = booking.services.reduce((s, svc) => s + svc.price * (svc.persons || 1), 0);
+  const basePrice = booking.services.reduce((s, svc) => s + svc.price * (svc.persons || 1), 0);
   const totalDuration = booking.services.reduce((s, svc) => s + (svc.duration_min || parseInt(svc.duration) || 60), 0);
+
+  // ── Majoration nocturne (+50%) si créneau entre 21h et 07h ──
+  const isNightSlot = (() => {
+    const time = booking.time;
+    if (!time) return false;
+    const [h] = time.split(":").map(Number);
+    return h >= 21 || h < 7;
+  })();
+  const nightSurcharge = isNightSlot ? Math.round(basePrice * 0.5 * 100) / 100 : 0;
+
+  // ── Frais de transport (si adresse modifiée à domicile) ──
+  const TRANSPORT_RATE_PER_KM = 0.50; // 0.50€ par km
+  const MIN_TRANSPORT_FEE = 3.00;     // minimum 3€
+  const [transportDistance, setTransportDistance] = useState(0);
+  const [transportFee, setTransportFee] = useState(0);
+  const [transportLoading, setTransportLoading] = useState(false);
+
+  // Calculer la distance quand l'adresse change
+  useEffect(() => {
+    const calcTransport = async () => {
+      if (!customAddress || !savedLieu?.address) {
+        setTransportFee(0);
+        setTransportDistance(0);
+        return;
+      }
+      // Si l'adresse est la même que le salon, pas de frais
+      if (customAddress.toLowerCase().trim() === savedLieu.address?.toLowerCase().trim()) {
+        setTransportFee(0);
+        setTransportDistance(0);
+        return;
+      }
+      setTransportLoading(true);
+      try {
+        // Géocoder les deux adresses via Nominatim
+        const [res1, res2] = await Promise.all([
+          fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(savedLieu.address)}&format=json&limit=1&countrycodes=fr,be,ch`),
+          fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(customAddress)}&format=json&limit=1&countrycodes=fr,be,ch`),
+        ]);
+        const [data1, data2] = await Promise.all([res1.json(), res2.json()]);
+        if (data1.length > 0 && data2.length > 0) {
+          const lat1 = parseFloat(data1[0].lat), lng1 = parseFloat(data1[0].lon);
+          const lat2 = parseFloat(data2[0].lat), lng2 = parseFloat(data2[0].lon);
+          // Haversine
+          const R = 6371;
+          const dLat = ((lat2 - lat1) * Math.PI) / 180;
+          const dLng = ((lng2 - lng1) * Math.PI) / 180;
+          const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+          const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          setTransportDistance(Math.round(dist * 10) / 10);
+          setTransportFee(Math.max(MIN_TRANSPORT_FEE, Math.round(dist * TRANSPORT_RATE_PER_KM * 100) / 100));
+        }
+      } catch (e) {
+        console.warn('[Transport] Geocoding error:', e);
+      }
+      setTransportLoading(false);
+    };
+    calcTransport();
+  }, [customAddress, savedLieu?.address]);
+
+  const totalPrice = basePrice + nightSurcharge + transportFee;
   const acompteAmount = Math.round(totalPrice * 0.3 * 100) / 100;
   const dateStr = booking.date ? format(booking.date, "yyyy-MM-dd") : null;
 
@@ -566,12 +626,15 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       pro_name: savedLieu.name || "",
       service_id: booking.services[0]?.id || "",
       service_name: booking.services.map(s => s.title || s.name).join(" + "),
-      service_price: totalPrice,
+      service_price: basePrice,
       date: dateStr,
       time_slot: booking.time || "00:00",
       duration_min: totalDuration,
       persons: totalPersons,
       total_price: totalPrice,
+      night_surcharge: nightSurcharge,
+      transport_fee: transportFee,
+      transport_distance_km: transportDistance,
       salon_name: savedLieu.name || "",
       salon_address: savedLieu.address || "",
       seat_number: booking.seat || null,
@@ -851,6 +914,33 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── Détail du prix ── */}
+        <div className="bg-white border border-gray-100 rounded-3xl p-5">
+          <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">Détail du prix</p>
+          <div className="space-y-2">
+            <div className="flex justify-between text-[13px]">
+              <span className="text-gray-500 font-medium">Services</span>
+              <span className="font-bold text-gray-900">{basePrice}€</span>
+            </div>
+            {isNightSlot && (
+              <div className="flex justify-between text-[13px]">
+                <span className="text-gray-500 font-medium">Majoration nocturne (+50%)</span>
+                <span className="font-bold text-orange-500">+{nightSurcharge}€</span>
+              </div>
+            )}
+            {transportFee > 0 && (
+              <div className="flex justify-between text-[13px]">
+                <span className="text-gray-500 font-medium">Transport ({transportDistance} km)</span>
+                <span className="font-bold text-orange-500">+{transportFee}€</span>
+              </div>
+            )}
+            <div className="border-t border-gray-100 pt-2 mt-2 flex justify-between">
+              <span className="text-[14px] font-black text-gray-900">Total</span>
+              <span className="text-[16px] font-black text-primary">{totalPrice}€</span>
+            </div>
+          </div>
         </div>
 
         {/* ── Mode de paiement — 2 options uniquement ── */}

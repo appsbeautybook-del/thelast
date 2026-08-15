@@ -212,7 +212,7 @@ function Step1({ data, setData }) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
-          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Prix (€) *</p>
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Prix TTC (€) *</p>
           <input
             type="number"
             value={data.price ?? ""}
@@ -220,6 +220,12 @@ function Step1({ data, setData }) {
             placeholder="0.00"
             className="w-full text-[24px] font-black text-gray-900 outline-none bg-transparent"
           />
+          {data.price && Number(data.price) > 0 && (
+            <div className="mt-1 space-y-0.5">
+              <p className="text-[10px] text-gray-400 font-medium">HT : {(Number(data.price) / 1.2).toFixed(2)}€</p>
+              <p className="text-[10px] text-primary font-bold">TVA (20%) : {(Number(data.price) - Number(data.price) / 1.2).toFixed(2)}€</p>
+            </div>
+          )}
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4">
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Durée (min)</p>
@@ -705,6 +711,9 @@ export default function AjouterService() {
         category: data.category || "",
         style: data.style || null,
         price: parseFloat(data.price) || 0,
+        price_ht: data.price ? (parseFloat(data.price) / 1.2) : 0,
+        tva_rate: 20,
+        tva_amount: data.price ? (parseFloat(data.price) - parseFloat(data.price) / 1.2) : 0,
         duration: parseInt(data.duration) || 60,
         images: (data.images || []),
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),
@@ -748,6 +757,9 @@ export default function AjouterService() {
         category: data.category,
         style: data.style || null,
         price: parseFloat(data.price) || 0,
+        price_ht: data.price ? (parseFloat(data.price) / 1.2) : 0,
+        tva_rate: 20,
+        tva_amount: data.price ? (parseFloat(data.price) - parseFloat(data.price) / 1.2) : 0,
         duration: parseInt(data.duration) || 60,
         images: (data.images || []),
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),

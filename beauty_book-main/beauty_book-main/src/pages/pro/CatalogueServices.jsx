@@ -229,6 +229,9 @@ export default function CatalogueServices() {
                       <div className="ml-auto bg-gray-50 rounded-2xl px-5 py-3 text-right">
                         <p className={`text-[26px] font-black leading-none ${isActive ? "text-gray-900" : "text-gray-400"}`}>{Number(service.price).toFixed(2)}</p>
                         <p className={`text-[18px] font-black leading-none ${isActive ? "text-gray-900" : "text-gray-400"}`}>€</p>
+                        {service.tva_rate > 0 && (
+                          <p className="text-[10px] text-primary font-bold mt-1">HT : {((service.price || 0) / 1.2).toFixed(2)}€</p>
+                        )}
                       </div>
                     </div>
 
