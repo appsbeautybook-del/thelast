@@ -6,6 +6,7 @@ import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { likesApi } from '@/api/likes';
 import { useAuth } from "@/lib/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
 import SponsoredCard from "@/components/reels/SponsoredCard";
 
 const TABS = ["Réels", "Conseils", "Tutos"];
@@ -550,7 +551,7 @@ function SpeedSelector({ speed, onChange, onClose }) {
 }
 
 // ── Single Reel Card (plein écran, scroll vertical) ───────────────────────────
-function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, onRepub, followed, onFollow, onComment, onShare, onBuyProduits, onBuyServices, onSpeedChange, speed, currentUser, onAuthorClick }) {
+function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, onRepub, followed, onFollow, onComment, onShare, onBuyProduits, onBuyServices, onSpeedChange, speed, currentUser, onAuthorClick, navigate, toast }) {
   const videoRef = useRef(null);
   const audioRef = useRef(null); // piste musicale externe
   const progressRef = useRef(null);
@@ -757,7 +758,13 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
           <span className="text-white text-[10px] font-black">Partager</span>
         </button>
         {/* Offre */}
-        <button onClick={() => setShowOfferOverlay(v => !v)} className="flex flex-col items-center gap-0.5 active:scale-95">
+        <button onClick={() => {
+          if (!reel.product_id && !reel.service_id) {
+            toast({ title: "Aucun lien", description: "Ce réel n'est lié à aucun produit ou service.", variant: "destructive" });
+            return;
+          }
+          setShowOfferOverlay(v => !v);
+        }} className="flex flex-col items-center gap-0.5 active:scale-95">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center shadow-lg ${showOfferOverlay ? "bg-white" : "bg-primary shadow-primary/40"}`}>
             <ShoppingBag className={`w-5 h-5 ${showOfferOverlay ? "text-primary" : "text-white"}`} />
           </div>
@@ -775,24 +782,28 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
       {/* ── Offre overlay (au-dessus du nom) ── */}
       {showOfferOverlay && (
         <div className="absolute left-4 right-20 z-30 flex gap-2" style={{ bottom: "calc(170px + env(safe-area-inset-bottom, 16px))" }}>
-          <button onClick={() => { setShowOfferOverlay(false); onBuyProduits(); }}
-            className="flex-1 flex items-center gap-2.5 pl-2.5 pr-3.5 py-2 rounded-full active:scale-95 transition-all"
-            style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.9) 0%, rgba(234,88,12,0.95) 100%)', boxShadow: '0 4px 20px rgba(249,115,22,0.4)' }}>
-            <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-              <ShoppingCart className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="text-white text-[12px] font-extrabold tracking-wide">Acheter</span>
-            <ArrowUpRight className="w-3 h-3 text-white/60 ml-auto" />
-          </button>
-          <button onClick={() => { setShowOfferOverlay(false); onBuyServices(); }}
-            className="flex-1 flex items-center gap-2.5 pl-2.5 pr-3.5 py-2 rounded-full active:scale-95 transition-all border border-white/20"
-            style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
-            <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center shrink-0">
-              <Scissors className="w-4 h-4 text-white" strokeWidth={2.5} />
-            </div>
-            <span className="text-white text-[12px] font-extrabold tracking-wide">Réserver</span>
-            <ArrowUpRight className="w-3 h-3 text-white/60 ml-auto" />
-          </button>
+          {reel.product_id && (
+            <button onClick={() => { setShowOfferOverlay(false); navigate(`/produit?id=${encodeURIComponent(reel.product_id)}`); }}
+              className="flex-1 flex items-center gap-2.5 pl-2.5 pr-3.5 py-2 rounded-full active:scale-95 transition-all"
+              style={{ background: 'linear-gradient(135deg, rgba(249,115,22,0.9) 0%, rgba(234,88,12,0.95) 100%)', boxShadow: '0 4px 20px rgba(249,115,22,0.4)' }}>
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                <ShoppingCart className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-white text-[12px] font-extrabold tracking-wide">Acheter</span>
+              <ArrowUpRight className="w-3 h-3 text-white/60 ml-auto" />
+            </button>
+          )}
+          {reel.service_id && (
+            <button onClick={() => { setShowOfferOverlay(false); navigate(`/service/${reel.service_id}`); }}
+              className="flex-1 flex items-center gap-2.5 pl-2.5 pr-3.5 py-2 rounded-full active:scale-95 transition-all border border-white/20"
+              style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
+              <div className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+                <Scissors className="w-4 h-4 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="text-white text-[12px] font-extrabold tracking-wide">Réserver</span>
+              <ArrowUpRight className="w-3 h-3 text-white/60 ml-auto" />
+            </button>
+          )}
         </div>
       )}
 
@@ -838,6 +849,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function Reels() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const targetReelId = searchParams.get("reelId");
   const { user } = useAuth();
@@ -1212,6 +1224,8 @@ export default function Reels() {
                 speed={speed}
                 currentUser={user}
                 onAuthorClick={handleAuthorClick}
+                navigate={navigate}
+                toast={toast}
               />
             </div>
           );
