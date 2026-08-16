@@ -30,7 +30,7 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
   };
 
   const handleSkipTip = () => {
-    setStep("payment");
+    setStep("review");
   };
 
   const formatCardNumber = (val) => {
