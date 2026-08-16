@@ -85,9 +85,11 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
   const handleStatus = async (status, skipClose = false) => {
     setLoading(true);
     if (status === "termine") {
-      await apiClient.callFunction("completeReservation", { reservation_id: rdv.id }).catch(async () => {
+      const result = await apiClient.callFunction("completeReservation", { reservation_id: rdv.id }).catch(() => null);
+      // Si le backend échoue ou retourne un fallback, faire la mise à jour directe
+      if (!result || result.data?.fallback || result.data?.success === false) {
         await supabase.from("Reservation").update({ status }).eq("id", rdv.id);
-      });
+      }
     } else {
       await supabase.from("Reservation").update({ status }).eq("id", rdv.id);
     }
