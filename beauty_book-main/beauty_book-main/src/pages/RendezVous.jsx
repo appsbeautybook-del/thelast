@@ -368,7 +368,14 @@ export default function RendezVous() {
     supabase.auth.getUser().then(({ data }) => data?.user).then(user => {
       if (!user) { setLoading(false); return; }
       entities.Reservation.filter({ client_email: user.email }, "-date", 100)
-        .then(data => setReservations(data))
+        .then(data => {
+          setReservations(data);
+          // Auto-open modals pour les réservations qui en ont besoin au chargement
+          const pendingReview = data.find(r => r.status === "termine" && !r.review_done);
+          if (pendingReview) {
+            setTimeout(() => setReviewModal(pendingReview), 800);
+          }
+        })
         .catch(() => {})
         .finally(() => setLoading(false));
     }).catch(() => setLoading(false));
@@ -388,6 +395,41 @@ export default function RendezVous() {
   useEffect(() => {
     let channel;
     let pollInterval;
+    const checkForModals = async (email) => {
+      try {
+        const { data: fresh } = await supabase
+          .from("Reservation").select("*")
+          .eq("client_email", email)
+          .order("date", { ascending: false }).limit(100);
+        if (!fresh) return;
+        setReservations(prev => {
+          let changed = false;
+          const next = prev.map(r => {
+            const freshR = fresh.find(f => f.id === r.id);
+            if (freshR && freshR.status !== r.status) {
+              changed = true;
+              const prevSt = prevStatusRef.current[r.id];
+              prevStatusRef.current[r.id] = freshR.status;
+              if (freshR.status === "confirme" && prevSt !== "confirme") {
+                setTimeout(() => setCalendarSuggestion(freshR), 300);
+              }
+              if (freshR.status === "termine" && prevSt !== "termine") {
+                setTimeout(() => setReviewModal(freshR), 300);
+              }
+              return { ...r, ...freshR };
+            }
+            return r;
+          });
+          fresh.forEach(f => {
+            if (!next.some(r => r.id === f.id)) {
+              next.unshift(f);
+              changed = true;
+            }
+          });
+          return changed ? next : prev;
+        });
+      } catch {}
+    };
     const setup = async () => {
       const { data } = await supabase.auth.getUser();
       const user = data?.user;
@@ -406,7 +448,7 @@ export default function RendezVous() {
           const prevStatus = prevStatusRef.current[newRdv.id];
           prevStatusRef.current[newRdv.id] = newRdv.status;
           setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, ...newRdv } : r));
-          if (newRdv.status === "termine" && !newRdv.review_done && prevStatus !== "termine") {
+          if (newRdv.status === "termine" && prevStatus !== "termine") {
             setReviewModal(newRdv);
           }
           if (newRdv.status === "confirme" && prevStatus !== "confirme") {
@@ -414,46 +456,22 @@ export default function RendezVous() {
           }
         })
         .subscribe();
-      // Polling fallback toutes les 10s
-      pollInterval = setInterval(async () => {
-        try {
-          const { data: fresh } = await supabase
-            .from("Reservation").select("*")
-            .eq("client_email", user.email)
-            .order("date", { ascending: false }).limit(100);
-          if (!fresh) return;
-          setReservations(prev => {
-            let changed = false;
-            const next = prev.map(r => {
-              const freshR = fresh.find(f => f.id === r.id);
-              if (freshR && freshR.status !== r.status) {
-                changed = true;
-                const prevSt = prevStatusRef.current[r.id];
-                prevStatusRef.current[r.id] = freshR.status;
-                if (freshR.status === "confirme" && prevSt !== "confirme") {
-                  setTimeout(() => setCalendarSuggestion(freshR), 500);
-                }
-                if (freshR.status === "termine" && !freshR.review_done && prevSt !== "termine") {
-                  setTimeout(() => setReviewModal(freshR), 500);
-                }
-                return { ...r, ...freshR };
-              }
-              return r;
-            });
-            // Add new reservations not yet in state
-            fresh.forEach(f => {
-              if (!next.some(r => r.id === f.id)) {
-                next.unshift(f);
-                changed = true;
-              }
-            });
-            return changed ? next : prev;
-          });
-        } catch {}
-      }, 10000);
+      // Polling fallback toutes les 8s
+      pollInterval = setInterval(() => checkForModals(user.email), 8000);
     };
     setup();
-    return () => { if (channel) supabase.removeChannel(channel); if (pollInterval) clearInterval(pollInterval); };
+    // Re-check quand l'utilisateur revient sur la page
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && userEmailRef.current) {
+        checkForModals(userEmailRef.current);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+      if (pollInterval) clearInterval(pollInterval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);
