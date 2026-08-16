@@ -224,7 +224,7 @@ export default function ServiceDetail() {
       const reservationId = params.get("reservation_id");
       if (reservationId) {
         entities.Reservation.filter({ id: reservationId }, "-created_at", 1)
-          .then(res => { if (res[0]) { setReviewReservation(res[0]); setShowReview(true); } })
+          .then(res => { if (res[0] && res[0].code_validated) { setReviewReservation(res[0]); setShowReview(true); } })
           .catch(() => {});
       } else {
         setShowReview(true);

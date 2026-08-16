@@ -371,7 +371,7 @@ export default function RendezVous() {
         .then(data => {
           setReservations(data);
           // Auto-open modals pour les réservations qui en ont besoin au chargement
-          const pendingReview = data.find(r => r.status === "termine" && !r.review_done);
+          const pendingReview = data.find(r => r.status === "termine" && r.code_validated && !r.review_done);
           if (pendingReview) {
             setTimeout(() => setReviewModal(pendingReview), 800);
           }
@@ -413,7 +413,7 @@ export default function RendezVous() {
               if (freshR.status === "confirme" && prevSt !== "confirme") {
                 setTimeout(() => setCalendarSuggestion(freshR), 300);
               }
-              if (freshR.status === "termine" && prevSt !== "termine") {
+              if (freshR.status === "termine" && freshR.code_validated && prevSt !== "termine") {
                 setTimeout(() => setReviewModal(freshR), 300);
               }
               return { ...r, ...freshR };
@@ -448,7 +448,7 @@ export default function RendezVous() {
           const prevStatus = prevStatusRef.current[newRdv.id];
           prevStatusRef.current[newRdv.id] = newRdv.status;
           setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, ...newRdv } : r));
-          if (newRdv.status === "termine" && prevStatus !== "termine") {
+          if (newRdv.status === "termine" && newRdv.code_validated && prevStatus !== "termine") {
             setReviewModal(newRdv);
           }
           if (newRdv.status === "confirme" && prevStatus !== "confirme") {

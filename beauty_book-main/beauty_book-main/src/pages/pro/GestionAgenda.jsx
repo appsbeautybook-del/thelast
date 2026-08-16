@@ -145,7 +145,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
       codeRefs[0].current?.focus();
       return;
     }
-    await handleStatus("termine", true);
+    await supabase.from("Reservation").update({ status: "termine", code_validated: true }).eq("id", rdv.id);
     setShowReliability(true);
   };
 
