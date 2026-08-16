@@ -358,7 +358,7 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
               disabled={note === 0 || saving}
               className="w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest text-white flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40 bg-primary"
             >
-              {saving ? <><Loader className="w-4 h-4 animate-spin" />Envoi...</> : <>Publier mon avis →</>}
+              {saving ? <><Loader className="w-4 h-4 animate-spin" />Envoi...</> : <>Confirmer mon avis ✓</>}
             </button>
 
             <button onClick={handleSkipReview} className="w-full text-center text-[11px] font-black text-gray-300 mt-3 uppercase tracking-widest">Plus tard</button>

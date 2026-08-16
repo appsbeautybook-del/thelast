@@ -407,7 +407,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
       {/* Page Score de Fiabilite */}
       {showReliability && (
         <div className="fixed inset-0 z-[60] bg-white flex flex-col">
-          <div className="px-5 pt-12 pb-4">
+          <div className="flex-1 overflow-y-auto px-5 pt-12 pb-4">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
@@ -453,9 +453,9 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
           </div>
           <div className="px-5 pb-8 mt-auto">
             <button onClick={handleSubmitReliability} disabled={!reliabilityChoice || savingScore}
-              className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-2 sticky bottom-0 mb-4">
               {savingScore ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
-              Valider le score
+              Confirmer mon avis
             </button>
           </div>
         </div>
