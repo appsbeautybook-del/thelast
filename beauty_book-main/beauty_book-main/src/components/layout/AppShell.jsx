@@ -19,7 +19,7 @@ function getThemeBg() {
 const SELF_SCROLL_PAGES = ["/services-salons", "/maria", "/reels", "/live", "/reseau-social", "/explorer"];
 
 const FOOTER_HIDDEN_PATHS = [
-  "/pro/", "/devenir-pro", "/reservation", "/modifier-profil",
+  "/pro/", "/devenir-pro", "/modifier-profil",
   "/modifier-profil-client",
   "/programme-fidelite", "/messages", "/notifications",
   "/produit", "/service/", "/style/", "/immobilier/",
