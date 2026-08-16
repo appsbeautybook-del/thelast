@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
+import { apiClient } from "@/lib/apiClient";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function buildWeek(baseDate) {
@@ -40,6 +41,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
   const [showReliability, setShowReliability] = useState(false);
   const [reliabilityChoice, setReliabilityChoice] = useState(null);
   const [savingScore, setSavingScore] = useState(false);
+  const [showCalendarSuccess, setShowCalendarSuccess] = useState(false);
   const codeRefs = [useRef(), useRef(), useRef(), useRef()];
 
   const [editing, setEditing] = useState(false);
@@ -86,7 +88,6 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
     setLoading(true);
     if (status === "termine") {
       const result = await apiClient.callFunction("completeReservation", { reservation_id: rdv.id }).catch(() => null);
-      // Si le backend échoue ou retourne un fallback, faire la mise à jour directe
       if (!result || result.data?.fallback || result.data?.success === false) {
         await supabase.from("Reservation").update({ status }).eq("id", rdv.id);
       }
@@ -94,7 +95,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
       await supabase.from("Reservation").update({ status }).eq("id", rdv.id);
     }
 
-    // Envoyer notification au client
+    // Envoyer notification + email au client
     try {
       const serviceName = rdv.service_name || rdv.service || "votre rendez-vous";
       const date = rdv.date || "";
@@ -106,11 +107,31 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
           serviceName, date, time,
           proName: proDisplayName,
         });
+        // Envoyer email confirmation
+        try {
+          await apiClient.callFunction("sendReservationEmail", {
+            to: rdv.client_email,
+            type: "confirmed",
+            clientName: rdv.client_name,
+            serviceName, date, time,
+            proName: proDisplayName,
+          });
+        } catch (e) { console.error("Email confirmation error:", e); }
       } else if (status === "annule") {
         await notifyReservationCancelled({
           clientEmail: rdv.client_email, serviceName, date,
           proName: proDisplayName,
         });
+        // Envoyer email annulation
+        try {
+          await apiClient.callFunction("sendReservationEmail", {
+            to: rdv.client_email,
+            type: "cancelled",
+            clientName: rdv.client_name,
+            serviceName, date,
+            proName: proDisplayName,
+          });
+        } catch (e) { console.error("Email cancellation error:", e); }
       }
     } catch (e) {
       console.error("Notification error:", e);
@@ -118,7 +139,11 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
 
     onUpdateStatus(rdv.id, status);
     setLoading(false);
-    if (!skipClose) onClose();
+    if (status === "confirme") {
+      setShowCalendarSuccess(true);
+    } else if (!skipClose) {
+      onClose();
+    }
   };
 
   const handleCodeDigit = (val, idx) => {
@@ -437,6 +462,109 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
               className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
               {savingScore ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
               Valider le score
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Page Success + Calendar */}
+      {showCalendarSuccess && (
+        <div className="fixed inset-0 z-[60] bg-white flex flex-col">
+          <div className="px-5 pt-12 pb-4 flex-1 flex flex-col items-center">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6" style={{ background: "#E8732A" }}>
+              <CheckCircle className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-[24px] font-black text-gray-900 text-center mb-2">RDV Accepté !</h2>
+            <p className="text-[13px] text-gray-400 text-center mb-6">
+              Le client a été notifié. Enregistrez ce rendez-vous dans votre agenda.
+            </p>
+
+            <div className="w-full space-y-3">
+              <a
+                href={(() => {
+                  const pad = (n) => String(n).padStart(2, "0");
+                  const [y, mo, d] = (rdv.date || "2000-01-01").split("-").map(Number);
+                  const [sh, sm] = (rdv.time || rdv.time_slot || "00:00").split(":").map(Number);
+                  const endT = sh * 60 + sm + (rdv.duration_min || 60);
+                  const eh = Math.floor(endT / 60) % 24, em = endT % 60;
+                  const fmt = (yy, mm, dd, hh, min) => `${yy}${pad(mm)}${pad(dd)}T${pad(hh)}${pad(min)}00`;
+                  const p = new URLSearchParams({
+                    action: "TEMPLATE",
+                    text: `💆 BeautyBook – ${rdv.service_name || "RDV"} (${rdv.client_name || ""})`,
+                    dates: `${fmt(y, mo, d, sh, sm)}/${fmt(y, mo, d, eh, em)}`,
+                    details: `Client: ${rdv.client_name || ""}\nService: ${rdv.service_name || ""}`,
+                    location: rdv.salon_address || "",
+                  });
+                  return `https://calendar.google.com/calendar/render?${p.toString()}`;
+                })()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4285F4] text-white rounded-2xl font-black text-[12px] uppercase tracking-widest active:scale-95 transition-all w-full"
+              >
+                <Calendar className="w-4 h-4" />
+                Ajouter à Google Calendar
+              </a>
+              <button
+                onClick={() => {
+                  const pad = (n) => String(n).padStart(2, "0");
+                  const [y, mo, d] = (rdv.date || "2000-01-01").split("-").map(Number);
+                  const [sh, sm] = (rdv.time || rdv.time_slot || "00:00").split(":").map(Number);
+                  const endT = sh * 60 + sm + (rdv.duration_min || 60);
+                  const eh = Math.floor(endT / 60) % 24, em = endT % 60;
+                  const dtStart = `${y}${pad(mo)}${pad(d)}T${pad(sh)}${pad(sm)}00`;
+                  const dtEnd = `${y}${pad(mo)}${pad(d)}T${pad(eh)}${pad(em)}00`;
+                  const ics = [
+                    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BeautyBook//FR",
+                    "BEGIN:VEVENT",
+                    `DTSTART:${dtStart}`, `DTEND:${dtEnd}`,
+                    `SUMMARY:BeautyBook – ${rdv.service_name || "RDV"} (${rdv.client_name || ""})`,
+                    `DESCRIPTION:Client: ${rdv.client_name || ""}\\nService: ${rdv.service_name || ""}`,
+                    `LOCATION:${rdv.salon_address || ""}`,
+                    "END:VEVENT", "END:VCALENDAR"
+                  ].join("\r\n");
+                  const blob = new Blob([ics], { type: "text/calendar" });
+                  const url = URL.createObjectURL(blob);
+                  window.open(url, "_blank");
+                }}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest active:scale-95 transition-all w-full"
+              >
+                Ajouter à Apple Calendar
+              </button>
+              <button
+                onClick={() => {
+                  const pad = (n) => String(n).padStart(2, "0");
+                  const [y, mo, d] = (rdv.date || "2000-01-01").split("-").map(Number);
+                  const [sh, sm] = (rdv.time || rdv.time_slot || "00:00").split(":").map(Number);
+                  const endT = sh * 60 + sm + (rdv.duration_min || 60);
+                  const eh = Math.floor(endT / 60) % 24, em = endT % 60;
+                  const dtStart = `${y}${pad(mo)}${pad(d)}T${pad(sh)}${pad(sm)}00`;
+                  const dtEnd = `${y}${pad(mo)}${pad(d)}T${pad(eh)}${pad(em)}00`;
+                  const ics = [
+                    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//BeautyBook//FR",
+                    "BEGIN:VEVENT",
+                    `DTSTART:${dtStart}`, `DTEND:${dtEnd}`,
+                    `SUMMARY:BeautyBook – ${rdv.service_name || "RDV"} (${rdv.client_name || ""})`,
+                    `DESCRIPTION:Client: ${rdv.client_name || ""}\\nService: ${rdv.service_name || ""}`,
+                    `LOCATION:${rdv.salon_address || ""}`,
+                    "END:VEVENT", "END:VCALENDAR"
+                  ].join("\r\n");
+                  const blob = new Blob([ics], { type: "text/calendar" });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = "beautybook-rdv.ics"; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-gray-900 text-white rounded-2xl font-black text-[12px] uppercase tracking-widest active:scale-95 transition-all w-full"
+              >
+                <Download className="w-4 h-4" />
+                Télécharger le fichier .ics
+              </button>
+            </div>
+          </div>
+          <div className="px-5 pb-8">
+            <button onClick={onClose}
+              className="w-full py-3.5 rounded-2xl border border-gray-200 text-[12px] font-black text-gray-500 uppercase tracking-widest active:scale-95 transition-all">
+              Fermer
             </button>
           </div>
         </div>

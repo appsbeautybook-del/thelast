@@ -96,3 +96,93 @@ export async function sendOTPEmail(email, code) {
   console.log('[Email] ==========================================');
   return { success: true, note: 'console_only' };
 }
+
+// ── Emails Reservation ────────────────────────────────────────────────────────
+
+function buildReservationConfirmedHtml({ clientName, serviceName, date, time, proName }) {
+  const formattedDate = date ? new Date(date + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #E8732A; font-size: 28px; margin: 0;">BeautyBook</h1>
+      </div>
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 16px; padding: 32px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 12px;">✅</div>
+        <h2 style="color: #166534; font-size: 20px; margin: 0 0 8px;">Réservation confirmée !</h2>
+        <p style="color: #16a34a; font-size: 14px; margin: 0 0 20px;">${proName || "Le professionnel"} a confirmé votre rendez-vous.</p>
+        <div style="background: white; border-radius: 12px; padding: 20px; text-align: left;">
+          <p style="color: #374151; font-size: 14px; margin: 0 0 8px;"><strong>Service :</strong> ${serviceName || ""}</p>
+          <p style="color: #374151; font-size: 14px; margin: 0 0 8px;"><strong>Date :</strong> ${formattedDate}</p>
+          <p style="color: #374151; font-size: 14px; margin: 0;"><strong>Heure :</strong> ${time || ""}</p>
+        </div>
+      </div>
+      <p style="color: #9ca3af; font-size: 11px; text-align: center; margin-top: 24px;">
+        Consultez vos rendez-vous dans l'application BeautyBook.
+      </p>
+    </div>
+  `;
+}
+
+function buildReservationCancelledHtml({ clientName, serviceName, date, proName, reason }) {
+  const formattedDate = date ? new Date(date + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px;">
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #E8732A; font-size: 28px; margin: 0;">BeautyBook</h1>
+      </div>
+      <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 32px; text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 12px;">❌</div>
+        <h2 style="color: #991b1b; font-size: 20px; margin: 0 0 8px;">Réservation annulée</h2>
+        <p style="color: #dc2626; font-size: 14px; margin: 0 0 20px;">${proName || "Le professionnel"} a annulé votre rendez-vous.</p>
+        <div style="background: white; border-radius: 12px; padding: 20px; text-align: left;">
+          <p style="color: #374151; font-size: 14px; margin: 0 0 8px;"><strong>Service :</strong> ${serviceName || ""}</p>
+          <p style="color: #374151; font-size: 14px; margin: 0 0 8px;"><strong>Date :</strong> ${formattedDate}</p>
+          ${reason ? `<p style="color: #374151; font-size: 14px; margin: 0;"><strong>Raison :</strong> ${reason}</p>` : ""}
+        </div>
+      </div>
+      <p style="color: #9ca3af; font-size: 11px; text-align: center; margin-top: 24px;">
+        Consultez vos rendez-vous dans l'application BeautyBook.
+      </p>
+    </div>
+  `;
+}
+
+async function sendReservationEmail({ to, type, clientName, serviceName, date, time, proName, reason }) {
+  const isConfirmed = type === "confirmed";
+  const subject = isConfirmed
+    ? `✅ Votre rendez-vous ${serviceName || ""} est confirmé`
+    : `❌ Votre rendez-vous ${serviceName || ""} a été annulé`;
+  const html = isConfirmed
+    ? buildReservationConfirmedHtml({ clientName, serviceName, date, time, proName })
+    : buildReservationCancelledHtml({ clientName, serviceName, date, proName, reason });
+  const text = isConfirmed
+    ? `Votre rendez-vous ${serviceName || ""} le ${date || ""} à ${time || ""} a été confirmé par ${proName || ""}.`
+    : `Votre rendez-vous ${serviceName || ""} le ${date || ""} a été annulé par ${proName || ""}.`;
+
+  const resend = getResend();
+  if (resend) {
+    try {
+      await resend.emails.send({ from: 'BeautyBook <onboarding@resend.dev>', to, subject, text, html });
+      console.log('[Email] Reservation email sent via Resend to:', to);
+      return { success: true };
+    } catch (err) {
+      console.warn('[Email] Resend reservation email failed:', err.message);
+    }
+  }
+
+  const gmail = await getGmailTransporter();
+  if (gmail) {
+    try {
+      await gmail.sendMail({ from: `"BeautyBook" <${process.env.GMAIL_USER}>`, to, subject, text, html });
+      console.log('[Email] Reservation email sent via Gmail to:', to);
+      return { success: true };
+    } catch (err) {
+      console.error('[Email] Gmail reservation email error:', err.message);
+    }
+  }
+
+  console.log('[Email] Reservation email (console only):', type, '->', to);
+  return { success: true, note: 'console_only' };
+}
+
+export { sendReservationEmail };
