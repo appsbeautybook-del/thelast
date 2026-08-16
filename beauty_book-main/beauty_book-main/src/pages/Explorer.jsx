@@ -618,7 +618,7 @@ export default function Explorer() {
 
       {/* Map */}
       {showMap && (
-      <div className="flex-1 relative min-h-0">
+      <div className="flex-1 relative min-h-0 z-[400]">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
             <div className="w-8 h-8 border-4 border-gray-200 border-t-primary rounded-full animate-spin" />
@@ -730,7 +730,10 @@ export default function Explorer() {
                       let serviceImg = s.image_url || null;
                       if (!serviceImg && s.images) {
                         const imgs = typeof s.images === "string" ? JSON.parse(s.images) : s.images;
-                        if (Array.isArray(imgs) && imgs.length > 0) serviceImg = imgs[0];
+                        if (Array.isArray(imgs) && imgs.length > 0) {
+                          const isVideo = (url) => /\.(mp4|webm|mov|avi)(\?|$)/i.test(url);
+                          serviceImg = imgs.find(u => u && !isVideo(u)) || imgs[0] || null;
+                        }
                       }
                       return (
                       <div key={s.id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
