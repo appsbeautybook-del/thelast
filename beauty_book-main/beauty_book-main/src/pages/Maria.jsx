@@ -953,7 +953,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                         <div className={`px-4 py-3.5 ${bubbleAssistantText}`}>
                           <MariaMessage
                             content={displayContent || ""}
-                            onSpeak={() => speakResponse(msg.content, i, false, msg.voiceUrl)}
+                            onSpeak={() => speakResponse(msg.content, i, false, null)}
                             muted={muted}
                             onToggleMuted={i === messages.length - 1 ? handleToggleMuted : undefined}
                             voiceUrl={msg.voiceUrl}
