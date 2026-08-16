@@ -760,7 +760,8 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
         {/* Offre */}
         <button onClick={() => {
           if (!reel.product_id && !reel.service_id) {
-            toast({ title: "Aucun lien", description: "Ce réel n'est lié à aucun produit ou service.", variant: "destructive" });
+            const t = toast({ title: "Aucun lien", description: "Ce réel n'est lié à aucun produit ou service.", variant: "default" });
+            setTimeout(() => t.dismiss(), 5000);
             return;
           }
           setShowOfferOverlay(v => !v);

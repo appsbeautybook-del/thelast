@@ -179,6 +179,8 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
   const [produits, setProduits] = useState([]);
   const [services, setServices] = useState([]);
   const [linkedType, setLinkedType] = useState(null);
+  const [showProductList, setShowProductList] = useState(false);
+  const [showServiceList, setShowServiceList] = useState(false);
   const [recordingMode, setRecordingMode] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [cameraFacing, setCameraFacing] = useState("environment");
@@ -2219,22 +2221,22 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
           <p className={`text-[13px] font-medium ${stepIsDark ? "text-white/50" : "text-gray-500"}`}>Associez votre contenu à un produit ou un service (optionnel).</p>
         </div>
 
-        {/* Choix : Produit ou Service */}
+        {/* Choix : Produit et/ou Service */}
         <div className="flex gap-3">
-          <button onClick={() => setLinkedType(linkedType === "produit" ? null : "produit")}
-            className={`flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${linkedType === "produit" ? "border-primary bg-primary/10" : stepIsDark ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"}`}>
-            <ShoppingBag className={`w-6 h-6 ${linkedType === "produit" ? "text-primary" : stepIsDark ? "text-white/40" : "text-gray-400"}`} />
-            <span className={`text-[11px] font-black uppercase tracking-widest ${linkedType === "produit" ? "text-primary" : stepIsDark ? "text-white/50" : "text-gray-500"}`}>Produit</span>
+          <button onClick={() => setShowProductList(v => !v)}
+            className={`flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${showProductList ? "border-primary bg-primary/10" : stepIsDark ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"}`}>
+            <ShoppingBag className={`w-6 h-6 ${showProductList ? "text-primary" : stepIsDark ? "text-white/40" : "text-gray-400"}`} />
+            <span className={`text-[11px] font-black uppercase tracking-widest ${showProductList ? "text-primary" : stepIsDark ? "text-white/50" : "text-gray-500"}`}>Produit</span>
           </button>
-          <button onClick={() => setLinkedType(linkedType === "service" ? null : "service")}
-            className={`flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${linkedType === "service" ? "border-primary bg-primary/10" : stepIsDark ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"}`}>
-            <Star className={`w-6 h-6 ${linkedType === "service" ? "text-primary" : stepIsDark ? "text-white/40" : "text-gray-400"}`} />
-            <span className={`text-[11px] font-black uppercase tracking-widest ${linkedType === "service" ? "text-primary" : stepIsDark ? "text-white/50" : "text-gray-500"}`}>Service</span>
+          <button onClick={() => setShowServiceList(v => !v)}
+            className={`flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl border-2 transition-all ${showServiceList ? "border-primary bg-primary/10" : stepIsDark ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"}`}>
+            <Star className={`w-6 h-6 ${showServiceList ? "text-primary" : stepIsDark ? "text-white/40" : "text-gray-400"}`} />
+            <span className={`text-[11px] font-black uppercase tracking-widest ${showServiceList ? "text-primary" : stepIsDark ? "text-white/50" : "text-gray-500"}`}>Service</span>
           </button>
         </div>
 
         {/* Liste produits */}
-        {linkedType === "produit" && (
+        {showProductList && (
           <div className="space-y-2">
             <p className={`text-[11px] font-black uppercase tracking-widest ${stepIsDark ? "text-white/40" : "text-gray-400"}`}>Sélectionnez un produit</p>
             {produits.length === 0 ? (
@@ -2243,10 +2245,9 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
               produits.map(p => (
                 <button key={p.id} onClick={() => setForm(f => ({
                   ...f,
-                  product_id: p.id,
-                  product_name: p.name,
-                  product_img: p.image_url,
-                  service_id: null, service_name: null,
+                  product_id: f.product_id === p.id ? null : p.id,
+                  product_name: f.product_id === p.id ? null : p.name,
+                  product_img: f.product_id === p.id ? null : p.image_url,
                 }))}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all active:scale-[0.98] ${form.product_id === p.id ? "border-primary bg-primary/10" : stepIsDark ? "border-white/10 bg-white/5" : "border-gray-100 bg-gray-50"}`}>
                   <div className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 ${stepIsDark ? "bg-white/10" : "bg-gray-200"}`}>
@@ -2264,7 +2265,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
         )}
 
         {/* Liste services */}
-        {linkedType === "service" && (
+        {showServiceList && (
           <div className="space-y-2">
             <p className={`text-[11px] font-black uppercase tracking-widest ${stepIsDark ? "text-white/40" : "text-gray-400"}`}>Sélectionnez un service</p>
             {services.length === 0 ? (
@@ -2273,9 +2274,8 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
               services.map(s => (
                 <button key={s.id} onClick={() => setForm(f => ({
                   ...f,
-                  service_id: s.id,
-                  service_name: s.title,
-                  product_id: null, product_name: null, product_img: null,
+                  service_id: f.service_id === s.id ? null : s.id,
+                  service_name: f.service_id === s.id ? null : s.title,
                 }))}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all active:scale-[0.98] ${form.service_id === s.id ? "border-primary bg-primary/10" : stepIsDark ? "border-white/10 bg-white/5" : "border-gray-100 bg-gray-50"}`}>
                   {s.image_url ? (
@@ -2302,8 +2302,9 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
         {(form.product_name || form.service_name) && (
           <div className="rounded-2xl p-4 flex items-center gap-3" style={{ background: stepIsDark ? "rgba(34,197,94,0.1)" : "#f0fdf4", border: `1px solid ${stepIsDark ? "rgba(34,197,94,0.2)" : "#dcfce7"}` }}>
             <CheckCircle2 className="w-6 h-6 text-green-500 shrink-0" />
-            <div>
-              <p className={`text-[12px] font-black ${stepIsDark ? "text-white" : "text-gray-900"}`}>Lié : {form.product_name || form.service_name}</p>
+            <div className="flex-1">
+              {form.product_name && <p className={`text-[12px] font-black ${stepIsDark ? "text-white" : "text-gray-900"}`}>Produit : {form.product_name}</p>}
+              {form.service_name && <p className={`text-[12px] font-black ${stepIsDark ? "text-white" : "text-gray-900"}`}>Service : {form.service_name}</p>}
               <button onClick={() => setForm(f => ({ ...f, product_id: null, product_name: null, product_img: null, service_id: null, service_name: null }))}
                 className="text-[11px] text-red-400 font-bold mt-0.5">Retirer le lien</button>
             </div>
