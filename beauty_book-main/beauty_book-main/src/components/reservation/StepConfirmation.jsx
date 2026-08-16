@@ -298,8 +298,6 @@ function QRCodeDisplay({ value, size = 200 }) {
 
 // ── Écran de confirmation avec QR Code ───────────────────────────────────────
 function ConfirmationSuccess({ totalPrice, icsData, crgCode, paymentMode, acompteAmount }) {
-  const navigate = useNavigate();
-  const [countdown, setCountdown] = useState(5);
   const [icsDownloaded, setIcsDownloaded] = useState(false);
 
   // Auto-download ICS on mount (iPhone/iOS will prompt "Ajouter à l'agenda")
@@ -319,14 +317,6 @@ function ConfirmationSuccess({ totalPrice, icsData, crgCode, paymentMode, acompt
     }
   }, [icsData, icsDownloaded]);
 
-  useEffect(() => {
-    if (countdown <= 0) {
-      navigate("/rendez-vous", { replace: true });
-      return;
-    }
-    const timer = setTimeout(() => setCountdown(c => c - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown, navigate]);
   const downloadICS = () => {
     if (!icsData) return;
     const raw = decodeURIComponent(escape(atob(icsData)));
@@ -478,14 +468,6 @@ function ConfirmationSuccess({ totalPrice, icsData, crgCode, paymentMode, acompt
         )}
       </div>
 
-      {/* Redirection automatique vers /rendez-vous */}
-      <div className="w-full space-y-2">
-        <button
-          onClick={() => navigate("/rendez-vous", { replace: true })}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-2xl font-black text-[13px] uppercase tracking-widest active:scale-95 transition-all"
-        >
-          Voir mes rendez-vous ({countdown}s)
-        </button>
       </div>
     </div>
   );
