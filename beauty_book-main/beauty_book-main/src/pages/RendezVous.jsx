@@ -482,9 +482,10 @@ export default function RendezVous() {
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);
-  const upcoming = reservations.filter(r => r.date >= today && !["annule"].includes(r.status));
-  const past = reservations.filter(r => r.date < today || r.status === "termine");
-  const cancelled = reservations.filter(r => r.status === "annule");
+  const reviewingId = reviewModal?.id;
+  const upcoming = reservations.filter(r => r.date >= today && !["annule"].includes(r.status) && r.id !== reviewingId);
+  const past = reservations.filter(r => (r.date < today || r.status === "termine") && r.id !== reviewingId);
+  const cancelled = reservations.filter(r => r.status === "annule" && r.id !== reviewingId);
 
   return (
     <div className="font-display pb-4">
