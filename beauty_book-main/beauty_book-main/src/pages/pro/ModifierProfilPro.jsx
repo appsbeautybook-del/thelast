@@ -55,6 +55,8 @@ export default function ModifierProfilPro() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState({ infos: true });
+  const [newService, setNewService] = useState({ name: "", price: "" });
+  const [newMenuItem, setNewMenuItem] = useState({ name: "", price: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const avatarRef = useRef(null);
@@ -209,6 +211,8 @@ export default function ModifierProfilPro() {
         horaires: data.hours,
         ouverture: data.hours,
         galerie_urls: data.galerie_urls || [],
+        menu_restaurant: data.menu_items || [],
+        additional_services: data.additional_services || [],
         updated_at: new Date().toISOString(),
       };
       if (existing?.id) {
@@ -533,8 +537,35 @@ export default function ModifierProfilPro() {
             </div>
           </button>
           {expanded.services && (
-            <div className="px-4 pb-4">
-              <button className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-5 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-[#E8732A]/40 hover:text-[#E8732A] transition-colors active:scale-95">
+            <div className="px-4 pb-4 space-y-3">
+              {data.additional_services.length > 0 && (
+                <div className="space-y-2">
+                  {data.additional_services.map((s, i) => (
+                    <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-black text-gray-900 truncate">{s.name}</p>
+                        {s.price && <p className="text-[11px] font-bold text-primary">{s.price}€</p>}
+                      </div>
+                      <button onClick={() => setData(d => ({ ...d, additional_services: d.additional_services.filter((_, j) => j !== i) }))}
+                        className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 active:scale-95">
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input value={newService.name} onChange={e => setNewService(s => ({ ...s, name: e.target.value }))}
+                  placeholder="Nom du service" className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+                <input value={newService.price} onChange={e => setNewService(s => ({ ...s, price: e.target.value }))}
+                  placeholder="Prix €" type="number" className="w-20 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+              </div>
+              <button onClick={() => {
+                if (!newService.name.trim()) return;
+                setData(d => ({ ...d, additional_services: [...d.additional_services, { name: newService.name.trim(), price: newService.price || "" }] }));
+                setNewService({ name: "", price: "" });
+              }} disabled={!newService.name.trim()}
+                className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-[#E8732A]/40 hover:text-[#E8732A] transition-colors active:scale-95 disabled:opacity-40">
                 <Plus className="w-4 h-4" /> AJOUTER UN SERVICE
               </button>
             </div>
@@ -553,8 +584,35 @@ export default function ModifierProfilPro() {
             </div>
           </button>
           {expanded.menu && (
-            <div className="px-4 pb-4">
-              <button className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-5 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-[#E8732A]/40 hover:text-[#E8732A] transition-colors active:scale-95">
+            <div className="px-4 pb-4 space-y-3">
+              {data.menu_items.length > 0 && (
+                <div className="space-y-2">
+                  {data.menu_items.map((m, i) => (
+                    <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-black text-gray-900 truncate">{m.name}</p>
+                        {m.price && <p className="text-[11px] font-bold text-primary">{m.price}€</p>}
+                      </div>
+                      <button onClick={() => setData(d => ({ ...d, menu_items: d.menu_items.filter((_, j) => j !== i) }))}
+                        className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 active:scale-95">
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input value={newMenuItem.name} onChange={e => setNewMenuItem(m => ({ ...m, name: e.target.value }))}
+                  placeholder="Nom de l'élément" className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+                <input value={newMenuItem.price} onChange={e => setNewMenuItem(m => ({ ...m, price: e.target.value }))}
+                  placeholder="Prix €" type="number" className="w-20 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+              </div>
+              <button onClick={() => {
+                if (!newMenuItem.name.trim()) return;
+                setData(d => ({ ...d, menu_items: [...d.menu_items, { name: newMenuItem.name.trim(), price: newMenuItem.price || "" }] }));
+                setNewMenuItem({ name: "", price: "" });
+              }} disabled={!newMenuItem.name.trim()}
+                className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-[#E8732A]/40 hover:text-[#E8732A] transition-colors active:scale-95 disabled:opacity-40">
                 <Plus className="w-4 h-4" /> AJOUTER UN ELEMENT
               </button>
             </div>

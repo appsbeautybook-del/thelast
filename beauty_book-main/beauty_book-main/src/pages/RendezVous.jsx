@@ -375,12 +375,12 @@ export default function RendezVous() {
           if (pendingReview) {
             setTimeout(() => setReviewModal(pendingReview), 800);
           }
-          // Auto-open calendar suggestion si un RDV vient d'être confirmé (pas encore vu)
-          const pendingCalendar = data.find(r => r.status === "confirme" && !r.calendar_shown);
+          // Auto-open calendar suggestion pour les RDV confirmés pas encore vus
+          const seenCalendars = JSON.parse(localStorage.getItem("bb_calendars_seen") || "[]");
+          const pendingCalendar = data.find(r => r.status === "confirme" && !seenCalendars.includes(r.id));
           if (pendingCalendar) {
             setTimeout(() => setCalendarSuggestion(pendingCalendar), 800);
-            // Marquer comme vu pour ne pas réafficher
-            supabase.from("Reservation").update({ calendar_shown: true }).eq("id", pendingCalendar.id).catch(() => {});
+            localStorage.setItem("bb_calendars_seen", JSON.stringify([...seenCalendars, pendingCalendar.id]));
           }
         })
         .catch(() => {})
@@ -752,7 +752,7 @@ export default function RendezVous() {
         const blob = new Blob([ics], { type: "text/calendar" });
         const appleUrl = URL.createObjectURL(blob);
         return (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => { setCalendarSuggestion(null); URL.revokeObjectURL(appleUrl); if (calendarSuggestion?.id) supabase.from("Reservation").update({ calendar_shown: true }).eq("id", calendarSuggestion.id).catch(() => {}); }}>
+          <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => { setCalendarSuggestion(null); URL.revokeObjectURL(appleUrl); }}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
             <div className="relative bg-white w-[90%] max-w-sm rounded-3xl p-6 z-10 text-center" onClick={e => e.stopPropagation()}>
               <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -772,7 +772,7 @@ export default function RendezVous() {
                   <Calendar className="w-4 h-4" /> Apple Calendar
                 </button>
               </div>
-              <button onClick={() => { setCalendarSuggestion(null); URL.revokeObjectURL(appleUrl); if (calendarSuggestion?.id) supabase.from("Reservation").update({ calendar_shown: true }).eq("id", calendarSuggestion.id).catch(() => {}); }}
+              <button onClick={() => { setCalendarSuggestion(null); URL.revokeObjectURL(appleUrl); }}
                 className="mt-4 text-[12px] font-black text-gray-400 uppercase tracking-widest">
                 Plus tard
               </button>
