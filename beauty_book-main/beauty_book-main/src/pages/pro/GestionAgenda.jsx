@@ -1569,12 +1569,33 @@ export default function GestionAgenda() {
         }
       })
       .subscribe();
-    // Polling fallback: vérifier les changements toutes les 15s
-    const pollInterval = setInterval(() => {
+    // Polling fallback: vérifier les changements toutes les 15s + auto-accept si activé
+    const pollInterval = setInterval(async () => {
       if (!proEmail) return;
-      supabase.from("Reservation").select("*").eq("pro_email", proEmail).order("date", { ascending: false }).limit(200)
-        .then(({ data }) => { if (data) setReservations(data); })
-        .catch(() => {});
+      try {
+        const { data } = await supabase.from("Reservation").select("*").eq("pro_email", proEmail).order("date", { ascending: false }).limit(200);
+        if (!data) return;
+        setReservations(data);
+        // Auto-accept via polling si activé
+        if (autoAcceptRef.current) {
+          const pending = data.filter(r => r.status === "en_attente");
+          for (const rdv of pending) {
+            try {
+              await supabase.from("Reservation").update({ status: "confirme" }).eq("id", rdv.id);
+              setReservations(prev => prev.map(r => r.id === rdv.id ? { ...r, status: "confirme" } : r));
+              try {
+                await notifyReservationConfirmed({
+                  clientEmail: rdv.client_email,
+                  serviceName: rdv.service_name || "Rendez-vous",
+                  date: rdv.date || "",
+                  time: rdv.time || rdv.time_slot || "",
+                  proName: rdv.salon_name || rdv.pro_name || proEmail,
+                });
+              } catch (e) { console.error("Auto-accept poll notify error:", e); }
+            } catch (e) { console.error("Auto-accept poll error:", e); }
+          }
+        }
+      } catch (e) { console.error("Poll error:", e); }
     }, 15000);
     // Listen for pro-profile-updated events (from ProfilPro page)
     const onProfileUpdated = (e) => {
