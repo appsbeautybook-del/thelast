@@ -467,8 +467,6 @@ function ConfirmationSuccess({ totalPrice, icsData, crgCode, paymentMode, acompt
           </button>
         )}
       </div>
-
-      </div>
     </div>
   );
 }
