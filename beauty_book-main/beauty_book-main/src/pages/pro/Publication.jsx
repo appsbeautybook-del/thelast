@@ -2491,6 +2491,11 @@ export default function Publication() {
         created_by_id: user?.id || undefined,
         category: pubTypeToCategory[form.pubType] || "Réels",
         status: "publie",
+        product_id: form.product_id || null,
+        product_name: form.product_name || null,
+        product_img: form.product_img || null,
+        service_id: form.service_id || null,
+        service_name: form.service_name || null,
       };
 
       let reel;
@@ -2532,6 +2537,11 @@ export default function Publication() {
         category: pubTypeToCategory[form.pubType] || "Réels",
         pub_type: form.pubType,
         status: "brouillon",
+        product_id: form.product_id || null,
+        product_name: form.product_name || null,
+        product_img: form.product_img || null,
+        service_id: form.service_id || null,
+        service_name: form.service_name || null,
       };
 
       let reel;
