@@ -118,6 +118,15 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
         {/* ── ÉTAPE POURBOIRE ── */}
         {step === "tip" && (
           <>
+            <div className="bg-green-50 border border-green-100 rounded-2xl px-4 py-3 mb-5 flex items-center gap-3">
+              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-[13px] font-black text-green-700">Le service a été effectué ✓</p>
+                <p className="text-[11px] text-green-600 font-medium">Merci pour votre confiance, vous êtes génial(e) !</p>
+              </div>
+            </div>
             <div className="text-center mb-6">
               <div className="w-14 h-14 bg-orange-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <Coffee className="w-7 h-7 text-primary" />
