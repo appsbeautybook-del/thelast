@@ -51,12 +51,14 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
               {[
                 { icon: TrendingUp, label: "AI Scaling Business", desc: "Pousse ton business avec l'IA", action: "scaling" },
                 { icon: Bot, label: "Receptionniste IA", desc: "Accueil & gestion de salon", action: "receptionniste" },
+                { icon: Globe, label: "AI Social Media", desc: "Gère tes réseaux sociaux avec IA", action: "social" },
               ].map(({ icon: Icon, label, desc, action }) => (
                 <button
                   key={label}
                   onClick={() => {
                     if (action === "scaling") { navigate("/ai-scaling-business"); onClose(); }
                     if (action === "receptionniste") { navigate("/receptionniste-ia"); onClose(); }
+                    if (action === "social") { navigate("/social-media"); onClose(); }
                   }}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"
                 >
@@ -1152,7 +1154,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
 
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         <div className="px-4 pt-2" style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}>
-          <div className={`grid gap-2.5 mb-5 ${isPro ? "grid-cols-2" : "grid-cols-3"}`}>
+          <div className="grid grid-cols-3 gap-2.5 mb-5">
             {isPro ? (
               <>
                 <button
@@ -1185,6 +1187,23 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                     <div>
                       <p className="text-white text-[13px] font-black leading-tight">Receptionniste</p>
                       <p className="text-white text-[13px] font-black leading-tight">IA</p>
+                      <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => navigate("/social-media")}
+                  className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+                >
+                  <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=400" alt="social media" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-pink-500/80 to-purple-700/70" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                    <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <Globe className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white text-[13px] font-black leading-tight">AI Social</p>
+                      <p className="text-white text-[13px] font-black leading-tight">Media</p>
                       <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
                     </div>
                   </div>
