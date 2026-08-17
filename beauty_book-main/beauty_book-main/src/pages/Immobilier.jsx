@@ -256,31 +256,31 @@ export default function Immobilier() {
 
         {/* Search + Map + Filter buttons */}
         <div className="flex items-center gap-2 mb-3">
-          <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-2xl px-4 py-2.5">
+          <div className="flex-1 min-w-0 flex items-center gap-2 bg-gray-100 rounded-2xl px-3 py-2.5">
             <Search className="w-4 h-4 text-gray-400 shrink-0" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher un espace, un quartier..."
-              className="flex-1 bg-transparent text-[13px] text-gray-700 outline-none placeholder:text-gray-400"
+              placeholder="Rechercher..."
+              className="flex-1 min-w-0 bg-transparent text-[13px] text-gray-700 outline-none placeholder:text-gray-400 truncate"
             />
             {search && (
-              <button onClick={() => setSearch("")}><X className="w-3.5 h-3.5 text-gray-400" /></button>
+              <button onClick={() => setSearch("")} className="shrink-0"><X className="w-3.5 h-3.5 text-gray-400" /></button>
             )}
           </div>
           <button
             onClick={() => setShowMap(s => !s)}
-            className={`flex items-center gap-1.5 px-3 h-10 rounded-2xl text-[12px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 ${showMap ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-gray-100 text-gray-600"}`}
+            className={`flex items-center gap-1.5 px-2.5 h-10 rounded-2xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all active:scale-95 shrink-0 ${showMap ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-gray-100 text-gray-600"}`}
           >
             <Map className="w-4 h-4" />
             Carte
           </button>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`relative flex items-center gap-1.5 px-3 h-10 rounded-2xl text-[12px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 ${showFilters ? "bg-primary text-white" : "bg-gray-100 text-gray-600"}`}
+            className={`relative flex items-center gap-1.5 px-2.5 h-10 rounded-2xl text-[11px] font-black uppercase tracking-widest whitespace-nowrap transition-all active:scale-95 shrink-0 ${showFilters ? "bg-primary text-white" : "bg-gray-100 text-gray-600"}`}
           >
             <SlidersHorizontal className="w-4 h-4" />
-            Filtres
+            Filtrer
             {activeFilterCount > 0 && (
               <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{activeFilterCount}</span>
             )}
