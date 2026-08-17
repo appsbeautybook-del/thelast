@@ -895,28 +895,31 @@ export default function ServiceDetail() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              {similarStyles.map((sv) => (
-                <button
-                  key={sv.id}
-                  onClick={() => navigate(`/service/${sv.id}`, { state: { id: sv.id } })}
-                  className="rounded-2xl overflow-hidden relative active:scale-[0.98] transition-all bg-gray-100 aspect-[3/4]"
-                >
-                  {sv.image_url
-                    ? <img src={sv.image_url} alt={sv.title} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center"><Scissors className="w-8 h-8 text-gray-300" /></div>
-                  }
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-3">
-                    <p className="text-white text-[12px] font-black leading-tight line-clamp-2">{sv.title}</p>
-                    <div className="flex items-center justify-between mt-1">
-                      {sv.category && (
-                        <span className="bg-primary/80 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full">{sv.category}</span>
-                      )}
-                      <span className="text-white font-black text-[11px]">{formatPrice(sv.price)}</span>
+              {similarStyles.map((sv) => {
+                const serviceImage = sv.image_url || (sv.images?.length > 0 ? sv.images[0] : null);
+                return (
+                  <button
+                    key={sv.id}
+                    onClick={() => navigate(`/service/${sv.id}`, { state: { id: sv.id } })}
+                    className="rounded-2xl overflow-hidden relative active:scale-[0.98] transition-all bg-gray-100 aspect-[3/4]"
+                  >
+                    {serviceImage
+                      ? <img src={serviceImage} alt={sv.title} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center"><Scissors className="w-8 h-8 text-gray-300" /></div>
+                    }
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <p className="text-white text-[12px] font-black leading-tight line-clamp-2">{sv.title}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        {sv.category && (
+                          <span className="bg-primary/80 text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full">{sv.category}</span>
+                        )}
+                        <span className="text-white font-black text-[11px]">{formatPrice(sv.price)}</span>
+                      </div>
                     </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
