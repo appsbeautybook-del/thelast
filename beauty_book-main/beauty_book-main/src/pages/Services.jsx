@@ -89,14 +89,14 @@ export default function Services() {
   }, [activeCategory, refreshKey]);
 
   useEffect(() => {
-    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 30)
+    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 100)
       .then(items => setPros(items || []))
       .catch(() => setPros([]));
   }, [refreshKey]);
 
   let mapItems = useMemo(() => pros
     .filter(p => p.latitude && p.longitude)
-    .slice(0, 15)
+    .slice(0, 30)
     .map(p => {
       const proServices = services.filter(s => s.pro_email === p.user_email);
       const minPrice = proServices.length > 0
@@ -121,7 +121,7 @@ export default function Services() {
     if (activeCategory) {
       result = result.filter(p => p.specialites?.some(s => s.toLowerCase().includes(activeCategory.label.toLowerCase())));
     }
-    return result.slice(0, 6);
+    return result.slice(0, 12);
   }, [pros, activeCategory]);
 
   const filteredParticuliers = useMemo(() => {
@@ -129,7 +129,7 @@ export default function Services() {
     if (activeCategory) {
       result = result.filter(p => p.specialites?.some(s => s.toLowerCase().includes(activeCategory.label.toLowerCase())));
     }
-    return result.slice(0, 6);
+    return result.slice(0, 12);
   }, [pros, activeCategory]);
 
   const goToServicesSalons = (tab = "STYLES") => {

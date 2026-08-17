@@ -1423,7 +1423,7 @@ function SalonsTab({ activeCategory }) {
 
   useEffect(() => {
     let cancelled = false;
-    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 50)
+    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 100)
       .then(async (all) => {
         if (cancelled) return;
         const salons = all.filter(p => p.salon_name && p.salon_name.trim() !== "");
@@ -1531,7 +1531,7 @@ function ParticuliersTab({ activeCategory }) {
 
   useEffect(() => {
     let cancelled = false;
-    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 50)
+    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 100)
       .then(async (all) => {
         if (cancelled) return;
         const particuliers = all.filter(p => !p.salon_name || p.salon_name.trim() === "");
