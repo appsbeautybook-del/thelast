@@ -238,70 +238,69 @@ TU ES UNE VRAIE RÉCEPTIONNISTE :
 
         {/* Welcome + Stats */}
         {messages.length === 0 && (
-          <div className="px-4 pt-5 pb-4">
+          <div className="px-4 pt-4 pb-4">
 
             {/* Config Banner */}
             {!isConfigured && (
               <button
                 onClick={() => setShowConfig(true)}
-                className="w-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 mb-5 flex items-center gap-3 active:scale-[0.98] transition-all"
+                className="w-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3.5 mb-4 flex items-center gap-3 active:scale-[0.98] transition-all"
               >
-                <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
                   <Phone className="w-5 h-5 text-amber-600" />
                 </div>
-                <div className="text-left flex-1">
+                <div className="text-left flex-1 min-w-0">
                   <p className="text-[13px] font-black text-amber-800">Configurez votre réceptionniste</p>
-                  <p className="text-[11px] text-amber-600 font-medium">Ajoutez votre numéro de téléphone pour que les clients puissent vous joindre</p>
+                  <p className="text-[11px] text-amber-600 font-medium">Ajoutez votre numéro de téléphone</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-amber-400 shrink-0" />
               </button>
             )}
 
-            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-5 text-white mb-5 shadow-lg shadow-emerald-500/20">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <Bot className="w-6 h-6 text-white" />
+            {/* Quick Actions — en haut pour être visible immédiatement */}
+            <div className="grid grid-cols-2 gap-2 mb-4">
+              {QUICK_ACTIONS.map(({ icon: Icon, label, prompt, color, bg, textColor }) => (
+                <button
+                  key={label}
+                  onClick={() => sendMessage(prompt)}
+                  className={`${bg} rounded-2xl p-3.5 text-left active:scale-[0.97] transition-all border border-transparent hover:shadow-sm`}
+                >
+                  <div className={`w-9 h-9 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center mb-2 shadow-sm`}>
+                    <Icon className="w-4.5 h-4.5 text-white" />
+                  </div>
+                  <p className={`text-[12px] font-black ${textColor}`}>{label}</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Welcome compact */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-4 text-white mb-4 shadow-lg shadow-emerald-500/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+                  <Bot className="w-5 h-5 text-white" />
                 </div>
-                <div>
-                  <p className="text-[18px] font-black leading-tight">Bonjour ! 👋</p>
-                  <p className="text-[12px] text-white/80 font-medium">Réceptionniste de {proProfile?.salon_name || "votre salon"}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-black leading-tight">Bonjour ! 👋</p>
+                  <p className="text-[11px] text-white/80 font-medium truncate">
+                    {proProfile?.phone ? `📞 ${proProfile.phone}` : "Ajoutez votre numéro en configuration"}
+                  </p>
                 </div>
               </div>
-              <p className="text-[13px] text-white/90 font-medium leading-relaxed">
-                Je gère vos appels, réservations et accueil clients. {proProfile?.phone ? `Mon numéro : ${proProfile.phone}` : "Ajoutez votre numéro en configuration."}
-              </p>
             </div>
 
             {/* Today's Stats */}
-            <div className="grid grid-cols-4 gap-2 mb-5">
+            <div className="grid grid-cols-4 gap-2 mb-4">
               {[
                 { label: "Total", value: todayStats.total, icon: Calendar, color: "text-gray-900" },
                 { label: "Confirmés", value: todayStats.confirmed, icon: CheckCircle2, color: "text-green-600" },
                 { label: "En attente", value: todayStats.pending, icon: Clock, color: "text-amber-600" },
                 { label: "Terminés", value: todayStats.completed, icon: Star, color: "text-primary" },
               ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="bg-white rounded-2xl p-3 text-center shadow-sm">
-                  <Icon className={`w-4 h-4 ${color} mx-auto mb-1`} />
-                  <p className={`text-[18px] font-black ${color}`}>{value}</p>
-                  <p className="text-[9px] font-bold text-gray-400 uppercase">{label}</p>
+                <div key={label} className="bg-white rounded-2xl p-2.5 text-center shadow-sm">
+                  <Icon className={`w-4 h-4 ${color} mx-auto mb-0.5`} />
+                  <p className={`text-[16px] font-black ${color}`}>{value}</p>
+                  <p className="text-[8px] font-bold text-gray-400 uppercase">{label}</p>
                 </div>
-              ))}
-            </div>
-
-            {/* Quick Actions */}
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Actions rapides</p>
-            <div className="grid grid-cols-2 gap-2 mb-5">
-              {QUICK_ACTIONS.map(({ icon: Icon, label, prompt, color, bg, textColor }) => (
-                <button
-                  key={label}
-                  onClick={() => sendMessage(prompt)}
-                  className={`${bg} rounded-2xl p-4 text-left active:scale-[0.97] transition-all border border-transparent hover:shadow-sm`}
-                >
-                  <div className={`w-10 h-10 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center mb-3 shadow-sm`}>
-                    <Icon className="w-5 h-5 text-white" />
-                  </div>
-                  <p className={`text-[13px] font-black ${textColor}`}>{label}</p>
-                </button>
               ))}
             </div>
 
