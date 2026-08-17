@@ -16,6 +16,81 @@ function emailToDisplayName(email) {
 
 // ── Réponse auto Toggle ───────────────────────────────────────────────────────
 const MARIA_AI_KEY = "bb_maria_ai_active";
+const MARIA_CHAT_CACHE = {};
+
+async function generateAutoReply({ clientMessage, clientName, proProfile, conversationHistory }) {
+  const systemPrompt = `Tu es l'assistant IA de réception du salon "${proProfile?.salon_name || "de beauté"}".
+
+CONTEXTE DU SALON:
+- Nom: ${proProfile?.salon_name || "Non renseigné"}
+- Spécialités: ${proProfile?.specialites?.join(", ") || "Non renseigné"}
+- Ville: ${proProfile?.city || "Non renseigné"}
+- Note: ${proProfile?.rating || "N/A"}/5
+
+RÈGLES:
+- Tu réponds EN FRANÇAIS, de manière chaleureuse et professionnelle
+- Tu es la réceptionniste du salon, pas Maria l'assistante personnelle
+- Tu gères les demandes de RDV, les questions sur les services, les prix
+- Tu proposes de prendre un RDV quand c'est pertinent
+- Tu restes concis (2-3 phrases max par réponse)
+- Tu n'inventes pas de prix ou d'horaires, tu dis que tu vérifies si nécessaire
+- Tu peux utiliser des emojis avec modération
+- Ne JAMAIS mentionner que tu es une IA`;
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...(conversationHistory || []).slice(-6).map(m => ({
+      role: m.sender_email === proProfile?.user_email ? 'assistant' : 'user',
+      content: m.content,
+    })),
+    { role: 'user', content: `Message de ${clientName}: "${clientMessage}"` },
+  ];
+
+  const OR_KEY_B64 = 'c2stb3ItdjEtOThjODllNjY1MzI5ZTdkYjg5YmQ3MmVmOGRiNzVjZTYyYjk1YWY4ZDRjMDNjOTI2YzZkZDIxOWE3NTcxMDRmZQ==';
+  const OR_KEY = atob(OR_KEY_B64);
+  const FREE_MODELS = [
+    'openrouter/free',
+    'google/gemma-4-31b-it:free',
+    'nvidia/nemotron-3-ultra-550b-a55b:free',
+    'openai/gpt-oss-20b:free',
+  ];
+
+  // Try Vercel serverless first
+  try {
+    const apiRes = await fetch('/api/ai/maria', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages, temperature: 0.7, max_tokens: 256 }),
+    });
+    if (apiRes.ok) {
+      const data = await apiRes.json();
+      if (data?.choices?.[0]?.message?.content) return data.choices[0].message.content;
+    }
+  } catch {}
+
+  // Fallback: OpenRouter direct
+  for (const freeModel of FREE_MODELS) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OR_KEY}`,
+          'HTTP-Referer': window.location.origin,
+          'X-Title': 'BeautyBook Auto-Reply',
+        },
+        body: JSON.stringify({ model: freeModel, messages, temperature: 0.7, max_tokens: 256 }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.choices?.[0]?.message?.content) return data.choices[0].message.content;
+      }
+    } catch {}
+  }
+
+  // Final fallback: generic polite reply
+  return `Merci ${clientName} ! Je prends note de votre message. Je vous réponds très rapidement 😊`;
+}
 
 function MariaAIToggle({ active, onChange }) {
   return (
@@ -238,11 +313,12 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
       const filtered = Object.values(allById).sort((a, b) => new Date(a.created_at || a.created_date) - new Date(b.created_at || b.created_date));
       msgIdsRef.current = new Set(filtered.map(m => m.id));
       setMessages(filtered);
-      // Mark as read
-      for (const m of filtered) {
-        if (!m.read && !m.is_read && m.receiver_email === currentUser.email) {
-          supabase.from("MessageChat").update({ read: true, is_read: true }).eq("id", m.id).catch(() => {});
-        }
+      // Mark as read — await all updates so conversations list reflects changes
+      const markPromises = filtered
+        .filter(m => !m.read && !m.is_read && m.receiver_email === currentUser.email)
+        .map(m => supabase.from("MessageChat").update({ read: true, is_read: true }).eq("id", m.id));
+      if (markPromises.length > 0) {
+        await Promise.all(markPromises);
       }
     } catch (e) { console.error("[Chat] loadMessages:", e); }
     setLoading(false);
@@ -284,7 +360,10 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
         if (msgIdsRef.current.has(m.id)) return;
         msgIdsRef.current.add(m.id);
         setMessages(prev => [...prev, m]);
-        supabase.from("MessageChat").update({ read: true, is_read: true }).eq("id", m.id).catch(() => {});
+        // Mark incoming messages as read immediately
+        if (m.receiver_email === currentUser.email) {
+          supabase.from("MessageChat").update({ read: true, is_read: true }).eq("id", m.id).catch(() => {});
+        }
         setOtherTyping(false);
       })
       .on("postgres_changes", { event: "DELETE", schema: "public", table: "MessageChat", filter: `conversation_id=eq.${convId}` }, (payload) => {
@@ -358,6 +437,7 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
       receiver_email: conversation.other_email,
       content: content || (fileUrl ? "📷 Image" : ""),
       attachment_url: fileUrl || "",
+      type: imageFile ? "image" : "",
       is_read: false, read: false,
       created_at: now, updated_at: now,
     };
@@ -927,8 +1007,17 @@ export default function Messages() {
   // Écouter les nouveaux messages entrants pour Maria AI
   useEffect(() => {
     if (!user) return;
+    let proProfileCache = null;
+    let cancelled = false;
+
+    // Load pro profile once for context
+    entities.ProfilPro.filter({ user_email: user.email }, '-created_at', 1)
+      .then(res => { if (!cancelled) proProfileCache = res[0] || null; })
+      .catch(() => {});
+
+    const channelName = `maria-ai-autoreply-${user.email}-${Date.now()}`;
     const channel = supabase
-      .channel(`maria-ai-${user.email}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'MessageChat' },
@@ -944,30 +1033,51 @@ export default function Messages() {
 
           processedMsgIds.current.add(m.id);
 
+          const delay = 600 + Math.random() * 400;
           setTimeout(async () => {
             try {
               const convId = m.conversation_id;
               const clientName = m.sender_name || emailToDisplayName(m.sender_email);
-              const mariaReply = `Merci ${clientName} ! Je prends note de votre message. Je vous réponds très rapidement 😊`;
+
+              // Fetch recent conversation history for context
+              const { data: history } = await supabase
+                .from("MessageChat")
+                .select("content, sender_email")
+                .eq("conversation_id", convId)
+                .order("created_at", { ascending: false })
+                .limit(10);
+
+              const conversationHistory = (history || []).reverse();
+
+              const mariaReply = await generateAutoReply({
+                clientMessage: m.content,
+                clientName,
+                proProfile: proProfileCache,
+                conversationHistory,
+              });
+
               const { error } = await supabase.from("MessageChat").insert({
                 conversation_id: convId,
                 sender_email: user.email,
                 receiver_email: m.sender_email,
                 sender_name: user.user_metadata?.full_name || user.full_name || "Réponse auto",
                 content: mariaReply,
-                is_read: false,
-                read: false,
+                is_read: true,
+                read: true,
                 is_maria: true,
               });
               if (error) console.error("Maria AI reply error:", error);
             } catch (e) {
               console.error("Maria AI reply error:", e);
             }
-          }, 1800 + Math.random() * 1200);
+          }, delay);
         }
       )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const loadConversations = async () => {
@@ -1114,7 +1224,7 @@ export default function Messages() {
   );
 
   if (activeConv) {
-    return <ChatView conversation={activeConv} currentUser={user} onBack={() => { setActiveConv(null); loadConversations(); }} onStartCall={startCall} />;
+    return <ChatView conversation={activeConv} currentUser={user} onBack={() => { setActiveConv(null); setTimeout(() => loadConversations(), 300); }} onStartCall={startCall} />;
   }
 
   return (

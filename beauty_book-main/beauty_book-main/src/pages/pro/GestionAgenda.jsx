@@ -31,6 +31,24 @@ function buildWeek(baseDate) {
   return Array.from({ length: 7 }, (_, i) => addDays(start, i));
 }
 
+const SOURCE_CONFIG = {
+  app:                { label: "Application",      color: "bg-orange-100 text-orange-600" },
+  receptionniste:     { label: "Receptionniste",   color: "bg-green-100 text-green-600" },
+  receptionniste_ia:  { label: "Receptionniste IA", color: "bg-green-100 text-green-600" },
+  ai_social_media:    { label: "AI Social Media",  color: "bg-violet-100 text-violet-600" },
+  maria_ai:           { label: "Maria AI",         color: "bg-orange-100 text-orange-600" },
+};
+
+function SourceBadge({ source, className = "" }) {
+  const config = SOURCE_CONFIG[source];
+  if (!config) return null;
+  return (
+    <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded-full ${config.color} ${className}`}>
+      {config.label}
+    </span>
+  );
+}
+
 // ── RDV Detail Modal ──────────────────────────────────────────────────────────
 function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
   const navigate = useNavigate();
@@ -528,6 +546,7 @@ function NouveauRdvModal({ onClose, proEmail, onCreated }) {
       notes: form.notes,
       status: "en_attente",
       payment_status: "non_paye",
+      source: "receptionniste",
     };
     const rdv = await entities.Reservation.create(payload);
     // Auto-create Client entry if not exists
@@ -922,6 +941,7 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
                     <div className="flex items-center gap-2">
                       <p className={`text-[15px] font-black truncate ${isDone ? "text-gray-400" : "text-gray-900"}`}>{rdv.service_name}</p>
                       {isDone && <span className="text-[8px] font-black text-green-500 bg-green-50 px-1.5 py-0.5 rounded-full shrink-0">✓</span>}
+                      <SourceBadge source={rdv.source} />
                     </div>
                     <p className="text-[12px] font-medium text-gray-500 truncate">{rdv.client_name || rdv.client_email}</p>
                   </div>
@@ -945,6 +965,7 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState(null);
   const [filterStatus, setFilterStatus] = useState("en_attente");
+  const [filterSource, setFilterSource] = useState("all");
   const [clientScores, setClientScores] = useState({});
 
   // ── Format date long en français ──
@@ -995,7 +1016,8 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
       r.service_name?.toLowerCase().includes(search.toLowerCase()) ||
       r.date?.toLowerCase().includes(search.toLowerCase());
     const matchStatus = r.status === filterStatus;
-    return matchSearch && matchStatus;
+    const matchSource = filterSource === "all" || r.source === filterSource;
+    return matchSearch && matchStatus && matchSource;
   }).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
   // ── Grouper par date ──
@@ -1050,13 +1072,26 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
         />
       </div>
 
-      {/* Filter chips */}
+      {/* Filter chips — status + source on same line */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {[{ id: "en_attente", label: "En attente" }, { id: "confirme", label: "Confirmés" }, { id: "termine", label: "Terminés" }, { id: "annule", label: "Annulés" }].map(f => (
           <button
             key={f.id}
             onClick={() => setFilterStatus(f.id)}
             className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${filterStatus === f.id ? "bg-primary text-white" : "bg-gray-100 text-gray-400"}`}
+          >
+            {f.label}
+          </button>
+        ))}
+        <div className="w-px h-4 bg-gray-200 shrink-0" />
+        {[{ id: "app", label: "Application", activeColor: "bg-orange-500 text-white" },
+          { id: "receptionniste_ia", label: "Receptionniste IA", activeColor: "bg-green-500 text-white" },
+          { id: "ai_social_media", label: "AI Social Media", activeColor: "bg-violet-500 text-white" }
+        ].map(f => (
+          <button
+            key={f.id}
+            onClick={() => setFilterSource(filterSource === f.id ? "all" : f.id)}
+            className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all ${filterSource === f.id ? f.activeColor : "bg-gray-100 text-gray-400"}`}
           >
             {f.label}
           </button>
@@ -1090,9 +1125,12 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
             {/* RDVs de cette date */}
             {groupedByDate[dateKey].map(r => (
               <div key={r.id} onClick={() => onSelectRdv(r)} className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 relative cursor-pointer active:scale-[0.98] transition-all">
-                <span className={`absolute top-4 right-4 text-[10px] font-black uppercase px-3 py-1 rounded-full ${statusBadgeColors[r.status] || "bg-gray-100 text-gray-500"}`}>
-                  {statusLabels[r.status] || r.status}
-                </span>
+                <div className="absolute top-4 right-4 flex items-center gap-1.5">
+                  <SourceBadge source={r.source} />
+                  <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${statusBadgeColors[r.status] || "bg-gray-100 text-gray-500"}`}>
+                    {statusLabels[r.status] || r.status}
+                  </span>
+                </div>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
                     <span className="text-[18px] font-black text-primary">{(r.client_email || "?")[0].toUpperCase()}</span>
@@ -1286,12 +1324,33 @@ function CrmTab({ reservations, proEmail }) {
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Dernier</p>
             </div>
           </div>
+          {/* Source breakdown */}
+          {(() => {
+            const sources = {};
+            selectedClient.rdvs.forEach(r => {
+              const s = r.source || "app";
+              sources[s] = (sources[s] || 0) + 1;
+            });
+            const sourceEntries = Object.entries(sources).filter(([, c]) => c > 0);
+            if (sourceEntries.length <= 1) return null;
+            return (
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sources:</p>
+                {sourceEntries.map(([src, count]) => (
+                  <SourceBadge key={src} source={src} className="text-[9px]" />
+                ))}
+              </div>
+            );
+          })()}
         </div>
         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Historique des RDV</p>
         {rdvs.map(r => (
           <div key={r.id} className="bg-white rounded-2xl px-4 py-3.5 flex items-center gap-3 shadow-sm border border-gray-100">
             <div className="flex-1">
-              <p className="text-[14px] font-black text-gray-900">{r.service_name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-[14px] font-black text-gray-900">{r.service_name}</p>
+                <SourceBadge source={r.source} />
+              </div>
               <p className="text-[11px] text-gray-400 font-medium capitalize">{r.date ? format(parseISO(r.date), "EEEE d MMMM", { locale: fr }) : ""} • {r.time || r.time_slot}</p>
             </div>
             <div className="text-right">

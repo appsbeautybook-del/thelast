@@ -544,6 +544,7 @@ export const apiClient = {
       crg_code: payload.crg_code || "",
       notes: payload.notes || "",
       status: "en_attente",
+      source: payload.source || "app",
     };
 
     // Ensure pro_email is never empty (required by NOT NULL constraint)
@@ -560,7 +561,7 @@ export const apiClient = {
       "duration_min", "persons", "total_price",
       "salon_name", "salon_address", "seats_total",
       "payment_type", "payment_status", "crg_code", "acompte_amount",
-      "status", "notes", "addons",
+      "status", "notes", "addons", "source",
       "reminder_scheduled", "reminder_sent", "completed_at",
       "review_requested", "created_by_id",
     ];

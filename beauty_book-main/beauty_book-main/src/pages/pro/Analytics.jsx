@@ -88,6 +88,14 @@ export default function Analytics() {
   const tipsCount = inPeriod.filter(r => r.status === "termine" && Number(r.tip_amount) > 0).length;
   const avgTip = tipsCount > 0 ? Math.round(totalTips / tipsCount) : 0;
 
+  const sourceStats = {};
+  inPeriod.filter(r => r.status !== "annule").forEach(r => {
+    const s = r.source || "app";
+    if (!sourceStats[s]) sourceStats[s] = { count: 0, revenue: 0 };
+    sourceStats[s].count++;
+    if (r.status === "termine") sourceStats[s].revenue += (r.total_price || r.service_price || 0);
+  });
+
   const serviceTips = {};
   const serviceTipsCount = {};
   inPeriod.filter(r => r.status === "termine" && Number(r.tip_amount) > 0).forEach(r => {
@@ -216,6 +224,46 @@ export default function Analytics() {
             <div className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all" style={{ width: `${bestServicePct}%` }} />
           </div>
         </div>
+
+        {/* Source Breakdown */}
+        {Object.keys(sourceStats).length > 0 && (
+          <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
+                <BarChart3 className="w-4 h-4 text-blue-500" />
+              </div>
+              <h3 className="text-[15px] font-black text-gray-900">Sources de RDV</h3>
+            </div>
+            <div className="space-y-3">
+              {Object.entries(sourceStats).sort((a, b) => b[1].count - a[1].count).map(([src, data]) => {
+                const totalAll = Object.values(sourceStats).reduce((s, v) => s + v.count, 0);
+                const pct = totalAll > 0 ? Math.round((data.count / totalAll) * 100) : 0;
+                const srcColors = {
+                  app: "bg-orange-500", receptionniste: "bg-green-500",
+                  receptionniste_ia: "bg-green-500", ai_social_media: "bg-violet-500", maria_ai: "bg-orange-500"
+                };
+                const srcLabels = {
+                  app: "Application", receptionniste: "Receptionniste",
+                  receptionniste_ia: "Receptionniste IA", ai_social_media: "AI Social Media", maria_ai: "Maria AI"
+                };
+                return (
+                  <div key={src}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[11px] font-black text-gray-700">{srcLabels[src] || src}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-gray-500">{data.count} RDV</span>
+                        <span className="text-[11px] font-black text-primary">{data.revenue}€</span>
+                      </div>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${srcColors[src] || "bg-gray-400"} transition-all`} style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Chart */}
         <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">

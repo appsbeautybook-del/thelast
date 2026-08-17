@@ -621,6 +621,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       payment_type: pType,
       crg_code: crgCode,
       notes: clientNotes || "",
+      source: "app",
     };
   };
 
