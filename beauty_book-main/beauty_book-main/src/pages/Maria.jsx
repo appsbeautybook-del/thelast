@@ -4,7 +4,7 @@ import {
   Wand2, History, Bot, Send, Mic,
   Scissors, Lightbulb, Heart, Clock, Star, Paperclip,
   FileText, Volume2, CheckCircle, MessageSquare, Calendar, ExternalLink,
-  Instagram, Facebook, Globe
+  Instagram, Facebook, Globe, TrendingUp
 } from "lucide-react";
 import { entities, uploadFile } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -66,14 +66,14 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
             <>
               {[
                 { icon: Globe, label: "AI Social Media", desc: "Gère tes réseaux sociaux avec IA", action: "social" },
-                { icon: Scissors, label: "Scan Capillaire", desc: "Analyse ton cuir chevelu avec IA", action: "scan" },
+                { icon: TrendingUp, label: "AI Scaling Business", desc: "Pousse ton business avec l'IA", action: "scaling" },
                 { icon: Bot, label: "Receptionniste IA", desc: "Accueil & gestion de salon", action: "receptionniste" },
               ].map(({ icon: Icon, label, desc, action }) => (
                 <button
                   key={label}
                   onClick={() => {
                     if (action === "social") { navigate("/social-media"); onClose(); }
-                    if (action === "scan") { navigate("/scan-capillaire"); onClose(); }
+                    if (action === "scaling") { navigate("/ai-scaling-business"); onClose(); }
                     if (action === "receptionniste") { navigate("/receptionniste-ia"); onClose(); }
                   }}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"

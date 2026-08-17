@@ -103,6 +103,7 @@ import ParametresPro from '@/pages/pro/ParametresPro';
 import PromoService from '@/pages/pro/PromoService';
 import ScanCapillaire from '@/pages/ScanCapillaire';
 import ReceptionnistIA from '@/pages/ReceptionnistIA';
+import AIScalingBusiness from '@/pages/AIScalingBusiness';
 import AdminLogin from '@/pages/admin/AdminLogin';
 import AdminSignup from '@/pages/admin/AdminSignup';
 import AdminDashboard from '@/pages/admin/AdminDashboard.jsx';
@@ -293,6 +294,7 @@ const AuthenticatedApp = () => {
         <Route path="/supprimer-compte" element={<SupprimerCompte />} />
         <Route path="/sh-ai" element={<ShAI />} />
         <Route path="/receptionniste-ia" element={<ReceptionnistIA />} />
+        <Route path="/ai-scaling-business" element={<AIScalingBusiness />} />
         <Route path="/explorer" element={<Explorer />} />
         <Route path="/recherche-approfondie" element={<Services />} />
         <Route path="/a-propos" element={<About />} />
