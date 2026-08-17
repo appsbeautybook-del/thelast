@@ -20,11 +20,11 @@ const CATEGORIES = [
 ];
 
 const STYLES = [
-  { id: 1, name: "Havana Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1595959183082-7b570b7e1e2b?q=80&w=400" },
-  { id: 2, name: "Spring Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?q=80&w=400" },
-  { id: 3, name: "Passion Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=400" },
-  { id: 4, name: "Box Braids", category: "Coiffure", image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400" },
-  { id: 5, name: "Cornrows", category: "Coiffure", image: "https://images.unsplash.com/photo-1596178065887-1198b6148b2b?q=80&w=400" },
+  { id: 1, name: "Havana Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1595959183082-7b570b7e1e2b?q=80&w=200" },
+  { id: 2, name: "Spring Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?q=80&w=200" },
+  { id: 3, name: "Passion Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=200" },
+  { id: 4, name: "Box Braids", category: "Coiffure", image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=200" },
+  { id: 5, name: "Cornrows", category: "Coiffure", image: "https://images.unsplash.com/photo-1596178065887-1198b6148b2b?q=80&w=200" },
 ];
 
 const PRICE_RANGES = [
@@ -315,11 +315,11 @@ export default function Explorer() {
     return result;
   }, [profils, activeCategory, search, filterPrice, filterDistance, filterRating, filterGender, filterServiceType, filterOpenNow, sortBy, minPricesMap, hasLocation, userLocation]);
 
-  const allMapItems = filtered.map((p) => ({
+  const allMapItems = useMemo(() => filtered.map((p) => ({
     ...p,
     mapLat: p.latitude || p.lat || 48.866 + (Math.random() - 0.5) * 0.08,
     mapLng: p.longitude || p.lng || 2.333 + (Math.random() - 0.5) * 0.12,
-  }));
+  })), [filtered]);
 
   const selectedPro = allMapItems.find(p => p.id === selected);
   const mapCenter = useMemo(() => {
@@ -483,7 +483,7 @@ export default function Explorer() {
               <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" maxZoom={19} />
               <FlyToLocation center={mapCenter} />
               {userLocation && <Marker position={userLocation} icon={userIcon} />}
-              {allMapItems.slice(0, 20).map((p) => (
+              {allMapItems.slice(0, 10).map((p) => (
                 <Marker key={p.id} position={[p.mapLat, p.mapLng]} icon={priceIcon(minPricesMap[p.user_email] || 0, selected === p.id)} eventHandlers={{ click: () => handleSelectMarker(p.id) }} />
               ))}
             </MapContainer>
@@ -507,10 +507,10 @@ export default function Explorer() {
               {STYLES.map(style => (
                 <button
                   key={style.id}
-                  className="shrink-0 w-44 text-left active:scale-[0.97] transition-all"
+                  className="shrink-0 w-36 text-left active:scale-[0.97] transition-all"
                 >
-                  <div className="h-40 rounded-2xl overflow-hidden mb-2">
-                    <img src={style.image} alt={style.name} className="w-full h-full object-cover" />
+                  <div className="h-36 rounded-2xl overflow-hidden mb-2">
+                    <img src={style.image} alt={style.name} className="w-full h-full object-cover" loading="lazy" />
                   </div>
                   <p className="text-[13px] font-black text-gray-900">{style.name}</p>
                   <p className="text-[11px] text-gray-400 font-medium">{style.category}</p>
@@ -584,7 +584,7 @@ export default function Explorer() {
                 className="w-[70px] h-[70px] rounded-2xl overflow-hidden shrink-0 bg-gray-100 shadow-md cursor-pointer active:scale-95 transition-all"
                 onClick={() => navigate("/pro/vue-client", { state: { proEmail: selectedPro.user_email } })}
               >
-                <img src={selectedPro.avatar_url || selectedPro.cover_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300"} alt={selectedPro.salon_name} className="w-full h-full object-cover" />
+                <img src={selectedPro.avatar_url || selectedPro.cover_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300"} alt={selectedPro.salon_name} className="w-full h-full object-cover" loading="lazy" />
               </div>
               <div className="flex-1 min-w-0 pt-0.5">
                 <div className="flex items-start justify-between gap-2">
@@ -622,7 +622,7 @@ export default function Explorer() {
                     <div key={s.id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
                       <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-gray-200">
                         {s.image_url ? (
-                          <img src={s.image_url} alt={s.title || s.name} className="w-full h-full object-cover" />
+                          <img src={s.image_url} alt={s.title || s.name} className="w-full h-full object-cover" loading="lazy" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center"><Sparkles className="w-3.5 h-3.5 text-gray-300" /></div>
                         )}
@@ -668,7 +668,7 @@ export default function Explorer() {
                 <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" maxZoom={19} />
                 <FlyToLocation center={mapCenter} />
                 {userLocation && <Marker position={userLocation} icon={userIcon} />}
-                {allMapItems.map((p) => (
+                {allMapItems.slice(0, 30).map((p) => (
                   <Marker key={p.id} position={[p.mapLat, p.mapLng]} icon={priceIcon(minPricesMap[p.user_email] || 0, selected === p.id)} eventHandlers={{ click: () => handleSelectMarker(p.id) }} />
                 ))}
               </MapContainer>
