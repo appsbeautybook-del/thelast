@@ -62,29 +62,59 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
           </button>
         </div>
         <div className="px-4 space-y-1 mb-2">
-          {[
-            { icon: Wand2, label: "AI Hairstyle Changer", desc: "Simule une coiffure sur ta photo", action: "simulator" },
-            { icon: Scissors, label: "Scan Capillaire", desc: "Analyse ton cuir chevelu avec IA", action: "scan" },
-            { icon: Sparkles, label: "Styliste IA", desc: "Trouve le look parfait pour toi", action: "styliste" },
-          ].map(({ icon: Icon, label, desc, action }) => (
-            <button
-              key={label}
-              onClick={() => {
-                if (action === "simulator") { onOpenSimulator(); onClose(); }
-                if (action === "scan") { onScanCapillaire(); onClose(); }
-                if (action === "styliste") { onStylisteIA(); onClose(); }
-              }}
-              className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"
-            >
-              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
-                <Icon className="w-5 h-5 text-gray-600" />
-              </div>
-              <div className="text-left">
-                <p className="text-[15px] font-black text-gray-800">{label}</p>
-                <p className="text-[11px] text-gray-400 font-medium">{desc}</p>
-              </div>
-            </button>
-          ))}
+          {isPro ? (
+            <>
+              {[
+                { icon: Globe, label: "AI Social Media", desc: "Gère tes réseaux sociaux avec IA", action: "social" },
+                { icon: Scissors, label: "Scan Capillaire", desc: "Analyse ton cuir chevelu avec IA", action: "scan" },
+                { icon: Bot, label: "Receptionniste IA", desc: "Accueil & gestion de salon", action: "receptionniste" },
+              ].map(({ icon: Icon, label, desc, action }) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    if (action === "social") { navigate("/social-media"); onClose(); }
+                    if (action === "scan") { navigate("/scan-capillaire"); onClose(); }
+                    if (action === "receptionniste") { sendMessage("Je suis à l'accueil de mon salon. Aide-moi à gérer les appels, accueillir les clients et organiser mon planning du jour."); onClose(); }
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"
+                >
+                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[15px] font-black text-gray-800">{label}</p>
+                    <p className="text-[11px] text-gray-400 font-medium">{desc}</p>
+                  </div>
+                </button>
+              ))}
+            </>
+          ) : (
+            <>
+              {[
+                { icon: Wand2, label: "AI Hairstyle Changer", desc: "Simule une coiffure sur ta photo", action: "simulator" },
+                { icon: Scissors, label: "Scan Capillaire", desc: "Analyse ton cuir chevelu avec IA", action: "scan" },
+                { icon: Sparkles, label: "Styliste IA", desc: "Trouve le look parfait pour toi", action: "styliste" },
+              ].map(({ icon: Icon, label, desc, action }) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    if (action === "simulator") { onOpenSimulator(); onClose(); }
+                    if (action === "scan") { onScanCapillaire(); onClose(); }
+                    if (action === "styliste") { onStylisteIA(); onClose(); }
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"
+                >
+                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                    <Icon className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[15px] font-black text-gray-800">{label}</p>
+                    <p className="text-[11px] text-gray-400 font-medium">{desc}</p>
+                  </div>
+                </button>
+              ))}
+            </>
+          )}
         </div>
         <div className="px-4 mb-4">
           <div className="flex items-center gap-2 bg-gray-100 rounded-2xl px-4 py-3">
@@ -1159,41 +1189,81 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
               </div>
             </button>
 
-            <button
-              onClick={() => navigate("/sh-ai")}
-              className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
-            >
-              <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400" alt="styliste ia" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-700/70" />
-              <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-white" />
+            {isPro ? (
+              <button
+                onClick={() => sendMessage("Je suis à l'accueil de mon salon. Aide-moi à gérer les appels, accueillir les clients et organiser mon planning du jour.")}
+                className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+              >
+                <img src="https://images.unsplash.com/photo-1556745757-8d76bdb6984b?q=80&w=400" alt="receptionniste ia" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/80 to-teal-700/70" />
+                <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                  <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <Bot className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white text-[13px] font-black leading-tight">Receptionniste</p>
+                    <p className="text-white text-[13px] font-black leading-tight">IA</p>
+                    <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white text-[13px] font-black leading-tight">Styliste</p>
-                  <p className="text-white text-[13px] font-black leading-tight">IA</p>
-                  <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate("/sh-ai")}
+                className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+              >
+                <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400" alt="styliste ia" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-700/70" />
+                <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                  <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white text-[13px] font-black leading-tight">Styliste</p>
+                    <p className="text-white text-[13px] font-black leading-tight">IA</p>
+                    <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            )}
 
-            <button
-              onClick={() => setShowSimulator(true)}
-              className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
-            >
-              <img src={STYLE_IMG} alt="style" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-orange-700/60" />
-              <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <Wand2 className="w-4 h-4 text-white" />
+            {isPro ? (
+              <button
+                onClick={() => navigate("/social-media")}
+                className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+              >
+                <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=400" alt="social media" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-br from-pink-500/80 to-purple-700/70" />
+                <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                  <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <Globe className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white text-[13px] font-black leading-tight">AI Social</p>
+                    <p className="text-white text-[13px] font-black leading-tight">Media</p>
+                    <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white text-[13px] font-black leading-tight">AI Hair</p>
-                  <p className="text-white text-[13px] font-black leading-tight">Changer</p>
-                  <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowSimulator(true)}
+                className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+              >
+                <img src={STYLE_IMG} alt="style" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-orange-700/60" />
+                <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                  <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                    <Wand2 className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-white text-[13px] font-black leading-tight">AI Hair</p>
+                    <p className="text-white text-[13px] font-black leading-tight">Changer</p>
+                    <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            )}
           </div>
 
           <div className="text-center mb-5">
