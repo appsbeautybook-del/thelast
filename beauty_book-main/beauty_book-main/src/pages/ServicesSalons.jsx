@@ -1316,6 +1316,7 @@ function ProfilCard({ item, media, liked, onLike, onSelect, open, badge, minPric
   const navigate = useNavigate();
   const city = [item.city, item.postal_code ? String(item.postal_code).slice(0, 2) : null].filter(Boolean).join(", ");
   const hasRating = item.rating > 0 && item.reviews_count > 0;
+  const mainImg = media?.[0] || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400";
 
   const goToDetail = (e) => {
     if (e) e.stopPropagation();
@@ -1323,76 +1324,53 @@ function ProfilCard({ item, media, liked, onLike, onSelect, open, badge, minPric
   };
 
   return (
-    <div className={`mx-4 bg-white rounded-3xl overflow-hidden shadow-sm border active:scale-[0.99] transition-all duration-300 cursor-pointer ${highlighted ? "border-primary shadow-lg shadow-primary/10 ring-2 ring-primary/20 scale-[1.01]" : "border-gray-100"}`} onClick={onSelect}>
-      {/* Media — clic direct vers page détail */}
-      <div className="relative">
-        <CardMediaSlider media={media} onCardClick={goToDetail} />
-        {/* Bouton like */}
-        <button onClick={onLike} className="absolute top-3 right-3 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow z-10 active:scale-95 transition-all">
-          <Heart className={`w-4 h-4 ${liked ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
-        </button>
-        {/* Badge abonnement */}
-        {badge && <span className="absolute top-3 left-3 bg-gray-900/80 text-white text-[10px] font-black px-2.5 py-1 rounded-full z-10 uppercase">{badge}</span>}
-      </div>
-
-      {/* Section blanche bas */}
-      <div className="px-4 py-3">
-        {/* Nom du salon + avatar */}
-        <div className="flex items-center gap-2 mb-0.5">
-          {item.avatar_url && (
-            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0">
-              <img src={item.avatar_url} alt={item.salon_name} className="w-full h-full object-cover" />
-            </div>
-          )}
-          <h3 className="text-[17px] font-black text-gray-900 leading-tight truncate">{item.salon_name}</h3>
-        </div>
-        {/* Spécialités / catégorie */}
-        {item.specialites?.length > 0 && (
-          <p className="text-[12px] text-primary font-bold truncate mt-0.5">{item.specialites.slice(0, 2).join(" · ")}</p>
+    <button
+      onClick={() => onSelect()}
+      className={`w-full bg-white rounded-2xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all text-left flex ${highlighted ? "ring-2 ring-primary shadow-lg" : ""}`}
+    >
+      <div className="w-[100px] h-[110px] shrink-0 relative overflow-hidden">
+        <img src={mainImg} alt={item.salon_name} className="w-full h-full object-cover" loading="lazy" />
+        {open === true && (
+          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-md px-1.5 py-0.5">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+            <span className="text-[8px] font-bold text-green-700">Ouvert</span>
+          </div>
         )}
-        {/* Ville + type + ouvert/fermé + note */}
-        <div className="flex items-center gap-2 flex-wrap mt-2">
-          {city && (
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
-              <span className="text-[12px] text-gray-500 font-semibold">{city}</span>
-            </span>
-          )}
-          <span className="bg-orange-100 text-orange-600 text-[10px] font-black px-2.5 py-0.5 rounded-full">
-            {item.type_activite === "Salon" || !item.type_activite ? "Salon Professionnel" : item.type_activite}
-          </span>
-          {open === true && (
-            <span className="bg-teal-50 text-teal-600 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-teal-100">● Ouvert</span>
-          )}
-          {open === false && (
-            <span className="bg-red-50 text-red-500 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-100">● Fermé</span>
-          )}
-          {hasRating ? (
-            <span className="flex items-center gap-1">
-              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-              <span className="text-[12px] font-black text-gray-700">{item.rating}</span>
-              <span className="text-[10px] text-gray-400">({item.reviews_count})</span>
-            </span>
-          ) : (
-            <span className="text-[10px] text-gray-400 italic">Pas de notation</span>
-          )}
+        {open === false && (
+          <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-md px-1.5 py-0.5">
+            <span className="text-[8px] font-bold text-red-500">Fermé</span>
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
+        <div>
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[14px] font-extrabold text-gray-900 truncate leading-tight">{item.salon_name}</p>
+            {minPrice != null && minPrice > 0 && (
+              <span className="text-[11px] font-extrabold text-primary shrink-0">dès {minPrice}€</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            {city && (
+              <span className="flex items-center gap-0.5 text-[10px] text-gray-400 font-medium">
+                <MapPin className="w-2.5 h-2.5" />{city}
+              </span>
+            )}
+            {hasRating && (
+              <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-500">
+                <Star className="w-2.5 h-2.5 fill-amber-400" />{item.rating}
+                <span className="text-gray-400 font-normal">({item.reviews_count})</span>
+              </span>
+            )}
+          </div>
         </div>
-        {/* Bouton Voir le profil + prix minimum */}
-        <div className="flex items-center justify-between mt-2">
-          <button
-            onClick={(e) => { e.stopPropagation(); goToDetail(e); }}
-            className="bg-primary text-white text-[11px] font-black px-4 py-1.5 rounded-2xl active:scale-95 transition-all shadow-sm shadow-primary/30"
-          >
-            Voir le profil →
-          </button>
-          {minPrice != null && (
-            <span className="text-[13px] font-black text-gray-500">
-              dès <span className="text-[16px] text-primary">{minPrice}€</span>
-            </span>
-          )}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {item.specialites?.slice(0, 3).map(s => (
+            <span key={s} className="text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">{s}</span>
+          ))}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -1443,53 +1421,31 @@ function SalonsTab({ activeCategory }) {
     return () => { cancelled = true; };
   }, []);
 
+  const handleCardSelect = (item) => {
+    setHighlightedId(item.id);
+    setSelectedProfil(item);
+  };
+
   const { profils, minPricesMap } = data;
   let filtered = activeCategory === "Tous" ? profils : profils.filter(p => p.specialites?.some(s => s.toLowerCase().includes(activeCategory.toLowerCase())));
   if (hasLocation) {
     filtered = filterByRadius(filtered, 100);
   }
 
-  const mapItems = useMemo(() => filtered
-    .filter(p => (p.latitude || p._lat) && (p.longitude || p._lng))
-    .map((p) => ({
-    id: p.id,
-    price: minPricesMap[p.user_email] || 0,
-    title: p.salon_name,
-    lat: parseFloat(p.latitude || p._lat),
-    lng: parseFloat(p.longitude || p._lng),
-    address: p.address || null,
-    city: p.city || null,
-  })), [filtered, minPricesMap]);
-
-  const handleMapSelect = (item) => {
-    setHighlightedId(item.id);
-    setSelectedProfil(item);
-    setTimeout(() => {
-      const el = document.getElementById(`salon-card-${item.id}`);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
-  };
-
-  const handleCardSelect = (item) => {
-    setHighlightedId(item.id);
-    setSelectedProfil(item);
-  };
-
   return (
-    <div className="space-y-4">
-      {/* ── Map ── */}
-      <div className="mx-4 pt-3"><MapWithPricePins items={mapItems} onSelectItem={handleMapSelect} height="h-40" /></div>
+    <div className="px-4 pt-3 pb-8">
       {loading ? (
-        <div className="flex justify-center py-12"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+        <div className="flex justify-center py-20"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <div className="w-20 h-20 rounded-3xl bg-purple-50 flex items-center justify-center">
-            <Store className="w-10 h-10 text-purple-400" />
+        <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
+            <Store className="w-7 h-7 text-gray-300" />
           </div>
-          <p className="text-[16px] font-black text-gray-700">Aucun salon disponible</p>
+          <p className="text-[15px] font-bold text-gray-800">Aucun salon trouvé</p>
+          <p className="text-[12px] text-gray-400 font-medium">Essayez une autre catégorie</p>
         </div>
       ) : (
-        <div ref={listRef}>
+        <div ref={listRef} className="space-y-3">
           {filtered.map((item) => {
             const media = [];
             if (item.galerie_urls?.length > 0) item.galerie_urls.forEach(u => { if (u && !media.includes(u)) media.push(u); });
@@ -1499,7 +1455,7 @@ function SalonsTab({ activeCategory }) {
               <div key={item.id} id={`salon-card-${item.id}`}>
                 <ProfilCard
                   item={item}
-                  media={media.length > 0 ? media : ["https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=600"]}
+                  media={media.length > 0 ? media : ["https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400"]}
                   liked={liked.includes(item.id)}
                   onLike={(e) => { e.stopPropagation(); setLiked(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id]); }}
                   onSelect={() => handleCardSelect(item)}
