@@ -34,22 +34,6 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
             <X className="w-5 h-5" />
           </button>
         </div>
-        {isPro && (
-          <div className="px-4 mb-2">
-            <button
-              onClick={() => { navigate("/social-media"); onClose(); }}
-              className="w-full flex items-center gap-3 bg-gradient-to-r from-orange-500/10 to-pink-500/10 rounded-2xl px-4 py-3.5 active:scale-[0.98] transition-all border border-orange-200/50"
-            >
-              <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center shrink-0 shadow-md">
-                <Globe className="w-4.5 h-4.5 text-white" />
-              </div>
-              <div className="text-left">
-                <span className="text-[15px] font-black text-gray-800 block leading-tight">Réseaux Sociaux</span>
-                <span className="text-[11px] text-gray-400 font-medium">Instagram, Facebook, TikTok…</span>
-              </div>
-            </button>
-          </div>
-        )}
         <div className="px-4 mb-2">
           <button
             onClick={() => { onNewChat(); onClose(); }}
@@ -65,14 +49,12 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
           {isPro ? (
             <>
               {[
-                { icon: Globe, label: "AI Social Media", desc: "Gère tes réseaux sociaux avec IA", action: "social" },
                 { icon: TrendingUp, label: "AI Scaling Business", desc: "Pousse ton business avec l'IA", action: "scaling" },
                 { icon: Bot, label: "Receptionniste IA", desc: "Accueil & gestion de salon", action: "receptionniste" },
               ].map(({ icon: Icon, label, desc, action }) => (
                 <button
                   key={label}
                   onClick={() => {
-                    if (action === "social") { navigate("/social-media"); onClose(); }
                     if (action === "scaling") { navigate("/ai-scaling-business"); onClose(); }
                     if (action === "receptionniste") { navigate("/receptionniste-ia"); onClose(); }
                   }}
@@ -1170,81 +1152,99 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
 
       <div className="flex-1 overflow-y-auto hide-scrollbar">
         <div className="px-4 pt-2" style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}>
-          <div className="grid grid-cols-3 gap-2.5 mb-5">
-            <button
-              onClick={() => navigate("/scan-capillaire")}
-              className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
-            >
-              <img src={SCAN_IMG} alt="scan" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-br from-sky-400/80 to-blue-600/70" />
-              <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <Scissors className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-white text-[13px] font-black leading-tight">Scan</p>
-                  <p className="text-white text-[13px] font-black leading-tight">Capillaire</p>
-                  <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">IA</span>
-                </div>
-              </div>
-            </button>
-
+          <div className={`grid gap-2.5 mb-5 ${isPro ? "grid-cols-2" : "grid-cols-3"}`}>
             {isPro ? (
-              <button
-                onClick={() => navigate("/receptionniste-ia")}
-                className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
-              >
-                <img src="https://images.unsplash.com/photo-1556745757-8d76bdb6984b?q=80&w=400" alt="receptionniste ia" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/80 to-teal-700/70" />
-                <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                  <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-white" />
+              <>
+                <button
+                  onClick={() => navigate("/ai-scaling-business")}
+                  className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+                >
+                  <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=400" alt="ai scaling business" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/80 to-blue-700/70" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                    <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white text-[13px] font-black leading-tight">AI Scaling</p>
+                      <p className="text-white text-[13px] font-black leading-tight">Business</p>
+                      <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">IA</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white text-[13px] font-black leading-tight">Receptionniste</p>
-                    <p className="text-white text-[13px] font-black leading-tight">IA</p>
-                    <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                </button>
+                <button
+                  onClick={() => navigate("/receptionniste-ia")}
+                  className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+                >
+                  <img src="https://images.unsplash.com/photo-1556745757-8d76bdb6984b?q=80&w=400" alt="receptionniste ia" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/80 to-teal-700/70" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                    <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <Bot className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white text-[13px] font-black leading-tight">Receptionniste</p>
+                      <p className="text-white text-[13px] font-black leading-tight">IA</p>
+                      <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+              </>
             ) : (
-              <button
-                onClick={() => navigate("/sh-ai")}
-                className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
-              >
-                <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400" alt="styliste ia" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-700/70" />
-                <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                  <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-white" />
+              <>
+                <button
+                  onClick={() => navigate("/scan-capillaire")}
+                  className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+                >
+                  <img src={SCAN_IMG} alt="scan" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-400/80 to-blue-600/70" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                    <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <Scissors className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white text-[13px] font-black leading-tight">Scan</p>
+                      <p className="text-white text-[13px] font-black leading-tight">Capillaire</p>
+                      <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">IA</span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white text-[13px] font-black leading-tight">Styliste</p>
-                    <p className="text-white text-[13px] font-black leading-tight">IA</p>
-                    <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                </button>
+                <button
+                  onClick={() => navigate("/sh-ai")}
+                  className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+                >
+                  <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400" alt="styliste ia" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-700/70" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                    <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white text-[13px] font-black leading-tight">Styliste</p>
+                      <p className="text-white text-[13px] font-black leading-tight">IA</p>
+                      <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+                <button
+                  onClick={() => navigate("/scan-capillaire")}
+                  className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+                >
+                  <img src={SCAN_IMG} alt="scan" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-400/80 to-blue-600/70" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                    <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <Scissors className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white text-[13px] font-black leading-tight">AI Hair</p>
+                      <p className="text-white text-[13px] font-black leading-tight">Changer</p>
+                      <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                    </div>
+                  </div>
+                </button>
+              </>
             )}
-
-            {isPro ? (
-              <button
-                onClick={() => navigate("/social-media")}
-                className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
-              >
-                <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=400" alt="social media" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-500/80 to-purple-700/70" />
-                <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                  <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <Globe className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white text-[13px] font-black leading-tight">AI Social</p>
-                    <p className="text-white text-[13px] font-black leading-tight">Media</p>
-                    <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
-                  </div>
-                </div>
-              </button>
             ) : (
               <button
                 onClick={() => setShowSimulator(true)}
