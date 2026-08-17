@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Star, X, Search, SlidersHorizontal, RotateCcw, DollarSign, ArrowUpDown, Home, Store, Calendar, Camera, Loader2, Navigation, Sparkles, ChevronRight, Clock, Filter, Map as MapIcon, XCircle, TrendingUp, Bell, Sliders } from "lucide-react";
+import { MapPin, Star, X, Search, SlidersHorizontal, RotateCcw, DollarSign, ArrowUpDown, Home, Store, Calendar, Navigation, Sparkles, XCircle, Bell, Sliders, ChevronRight, Clock } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -8,23 +8,23 @@ import { entities } from '@/api/entities';
 import { useLocation } from '@/contexts/LocationContext';
 
 const CATEGORIES = [
-  { id: "Tous", label: "TOUS", emoji: "☀️" },
-  { id: "Coiffure", label: "COIFFURE", emoji: "✂️" },
-  { id: "Tresses", label: "TRESSES", emoji: "〰️" },
-  { id: "Ongles", label: "MANUCURE", emoji: "💎" },
-  { id: "Pedicure", label: "PÉDICURE", emoji: "⭐" },
-  { id: "Maquillage", label: "MAQUILLAGE", emoji: "💄" },
-  { id: "Soin", label: "SOIN VISAGE", emoji: "💧" },
-  { id: "Barbe", label: "BARBE", emoji: "🪒" },
-  { id: "Massage", label: "MASSAGE", emoji: "💆" },
+  { id: "Tous", label: "Tous", emoji: "🔥" },
+  { id: "Coiffure", label: "Coiffure", emoji: "✂️" },
+  { id: "Tresses", label: "Tresses", emoji: "〰️" },
+  { id: "Ongles", label: "Manucure", emoji: "💎" },
+  { id: "Pedicure", label: "Pédicure", emoji: "🦶" },
+  { id: "Maquillage", label: "Maquillage", emoji: "💄" },
+  { id: "Soin", label: "Soin", emoji: "💧" },
+  { id: "Barbe", label: "Barbe", emoji: "🪒" },
+  { id: "Massage", label: "Massage", emoji: "💆" },
 ];
 
-const STYLES = [
-  { id: 1, name: "Havana Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1595959183082-7b570b7e1e2b?q=80&w=200" },
-  { id: 2, name: "Spring Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?q=80&w=200" },
-  { id: 3, name: "Passion Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=200" },
-  { id: 4, name: "Box Braids", category: "Coiffure", image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=200" },
-  { id: 5, name: "Cornrows", category: "Coiffure", image: "https://images.unsplash.com/photo-1596178065887-1198b6148b2b?q=80&w=200" },
+const STYLES_DATA = [
+  { id: 1, name: "Havana Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1595959183082-7b570b7e1e2b?q=80&w=300" },
+  { id: 2, name: "Spring Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?q=80&w=300" },
+  { id: 3, name: "Passion Twists", category: "Coiffure", image: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=300" },
+  { id: 4, name: "Box Braids", category: "Coiffure", image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=300" },
+  { id: 5, name: "Cornrows", category: "Coiffure", image: "https://images.unsplash.com/photo-1596178065887-1198b6148b2b?q=80&w=300" },
 ];
 
 const PRICE_RANGES = [
@@ -94,18 +94,8 @@ const userIcon = L.divIcon({
   iconSize: [28, 36],
   iconAnchor: [14, 32],
   html: `<div style="position: relative; width: 28px; height: 36px;">
-    <div style="
-      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-      width: 28px; height: 28px; border-radius: 50%;
-      background: #4285F4; border: 3px solid white;
-      box-shadow: 0 0 0 3px rgba(66,133,244,0.3), 0 2px 8px rgba(0,0,0,0.3);
-    "></div>
-    <div style="
-      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-      width: 0; height: 0;
-      border-left: 6px solid transparent; border-right: 6px solid transparent;
-      border-top: 8px solid #4285F4;
-    "></div>
+    <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; border-radius: 50%; background: #4285F4; border: 3px solid white; box-shadow: 0 0 0 3px rgba(66,133,244,0.3), 0 2px 8px rgba(0,0,0,0.3);"></div>
+    <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #4285F4;"></div>
   </div>`,
 });
 
@@ -125,70 +115,6 @@ function getDistance(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function SalonCard({ pro, minPrice, services, onSelect, index }) {
-  const mainImg = pro.avatar_url || pro.cover_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400";
-  const isOpen = pro.is_open;
-  return (
-    <button
-      onClick={() => onSelect(pro)}
-      className="bg-white rounded-[20px] overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.05)] active:scale-[0.97] transition-all duration-300 text-left group w-full"
-      style={{ animationDelay: `${index * 60}ms` }}
-    >
-      <div className="relative h-44 overflow-hidden bg-gray-100">
-        <img
-          src={mainImg}
-          alt={pro.salon_name}
-          className="w-full h-full object-cover group-active:scale-110 transition-transform duration-700 ease-out"
-          loading="lazy"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent" />
-        <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
-          {isOpen ? (
-            <div className="flex items-center gap-1.5 bg-green-500/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-1 rounded-full">
-              <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-              Ouvert
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 bg-gray-800/80 backdrop-blur-md text-white/80 text-[9px] font-bold px-2 py-1 rounded-full">
-              Fermé
-            </div>
-          )}
-          {minPrice > 0 && (
-            <div className="bg-white/95 backdrop-blur-md text-gray-900 text-[11px] font-black px-2.5 py-1 rounded-full">
-              dès {minPrice}€
-            </div>
-          )}
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-3">
-          <p className="text-[15px] font-black text-white drop-shadow-lg truncate leading-tight">{pro.salon_name}</p>
-          <div className="flex items-center gap-2 mt-1">
-            {pro.city && (
-              <span className="flex items-center gap-1 text-[10px] text-white/80 font-medium">
-                <MapPin className="w-2.5 h-2.5" />{pro.city}
-              </span>
-            )}
-            {pro.rating > 0 && (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-white">
-                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />{pro.rating}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-      {pro.specialites?.length > 0 && (
-        <div className="px-3 py-2.5 flex flex-wrap gap-1">
-          {pro.specialites.slice(0, 3).map(s => (
-            <span key={s} className="text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{s}</span>
-          ))}
-          {pro.specialites.length > 3 && (
-            <span className="text-[9px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">+{pro.specialites.length - 3}</span>
-          )}
-        </div>
-      )}
-    </button>
-  );
-}
-
 export default function Explorer() {
   const navigate = useNavigate();
   const { filterByRadius, hasLocation, latitude, longitude } = useLocation();
@@ -202,11 +128,7 @@ export default function Explorer() {
   const [expanded, setExpanded] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState("list");
-  const [searchImagePreview, setSearchImagePreview] = useState(null);
-  const [imageSearchLoading, setImageSearchLoading] = useState(false);
   const [showMapSheet, setShowMapSheet] = useState(false);
-  const imageInputRef = useRef(null);
   const scrollRef = useRef(null);
 
   const [filterPrice, setFilterPrice] = useState("tous");
@@ -328,59 +250,6 @@ export default function Explorer() {
     return { lat: 48.866, lng: 2.333 };
   }, [userLocation, selectedPro]);
 
-  const handleImageSearch = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageSearchLoading(true);
-    const previewUrl = URL.createObjectURL(file);
-    setSearchImagePreview(previewUrl);
-    try {
-      const reader = new FileReader();
-      const base64 = await new Promise((resolve, reject) => {
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const OR_KEY = (typeof __OPENROUTER_KEY__ !== 'undefined' ? __OPENROUTER_KEY__ : '') || import.meta.env.VITE_OPENROUTER_KEY || '';
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OR_KEY}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'BeautyBook Image Search',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-001',
-          messages: [{
-            role: 'user',
-            content: [
-              { type: 'text', text: 'Analyze this beauty/hairdressing image. Return ONLY JSON: {"keywords": ["k1","k2"], "category": "one of: Coiffure, Maquillage, Ongles, Soin, Barbe, Massage, Tresses"}' },
-              { type: 'image_url', image_url: { url: `data:image/${file.type.split('/')[1]};base64,${base64}` } },
-            ],
-          }],
-          temperature: 0.3,
-          max_tokens: 150,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const content = data.choices?.[0]?.message?.content || '';
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          if (parsed.keywords?.length) setSearch(parsed.keywords.join(' '));
-          if (parsed.category && parsed.category !== 'Tous') setActiveCategory(parsed.category);
-        }
-      }
-    } catch (err) {
-      console.error('[Explorer] Image search error:', err);
-    } finally {
-      setImageSearchLoading(false);
-      if (imageInputRef.current) imageInputRef.current.value = '';
-    }
-  };
-
   const handleSelectCard = (pro) => {
     setSelected(pro.id);
     setExpanded(true);
@@ -396,219 +265,250 @@ export default function Explorer() {
     setExpanded(true);
   };
 
-  return (
-    <div className="font-display h-full bg-[#faf9f7] flex flex-col overflow-hidden">
+  if (loading) {
+    return (
+      <div className="font-display h-full bg-[#faf9f7] flex flex-col items-center justify-center">
+        <div className="relative mb-5">
+          <div className="w-16 h-16 border-[3px] border-primary/15 rounded-full animate-spin" style={{ borderTopColor: "#E8732A" }} />
+          <Sparkles className="w-7 h-7 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <p className="text-[13px] font-bold text-gray-400">Recherche en cours...</p>
+      </div>
+    );
+  }
 
-      {/* ── HEADER ── */}
-      <div className="bg-white px-5 pt-5 pb-4 flex-shrink-0">
-        <div className="flex items-center justify-between mb-1">
-          <h1 className="text-[28px] font-black text-gray-900 leading-none tracking-tight">EXPLORER</h1>
+  return (
+    <div className="font-display h-full bg-[#f8f8f8] flex flex-col overflow-hidden">
+
+      {/* ── TOP HEADER ── */}
+      <div className="bg-white px-5 pt-[env(safe-area-inset-top,12px)] pb-0 flex-shrink-0">
+        <div className="flex items-center justify-between pt-3 pb-3">
+          <div>
+            <h1 className="text-[22px] font-extrabold text-gray-900 tracking-tight leading-none">Explorer</h1>
+            <p className="text-[11px] text-gray-400 font-semibold mt-0.5">{filtered.length} salons autour de vous</p>
+          </div>
           <button
             onClick={() => navigate("/notifications")}
-            className="w-10 h-10 bg-gray-100 rounded-2xl flex items-center justify-center active:scale-95 transition-all"
+            className="relative w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center active:scale-95 transition-all"
           >
-            <Bell className="w-5 h-5 text-gray-600" />
+            <Bell className="w-[18px] h-[18px] text-gray-500" />
           </button>
         </div>
-        <p className="text-[11px] font-bold text-primary uppercase tracking-widest mb-4">● VIVEZ L'EXPÉRIENCE BEAUTYBOOK</p>
 
-        {/* Search Bar */}
-        <div className="flex items-center gap-2">
-          <div className="flex-1 flex items-center gap-2.5 bg-gray-100 rounded-2xl px-4 py-3">
-            <Search className="w-4.5 h-4.5 text-gray-400 shrink-0" />
+        {/* Search */}
+        <div className="flex items-center gap-2.5 pb-3">
+          <div className="flex-1 flex items-center gap-2.5 bg-gray-100 rounded-xl px-3.5 py-2.5">
+            <Search className="w-[15px] h-[15px] text-gray-400 shrink-0" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Salons, Styles, Services..."
+              placeholder="Rechercher un salon..."
               className="flex-1 bg-transparent text-[13px] text-gray-700 outline-none placeholder:text-gray-400 font-medium"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="text-gray-400">
-                <XCircle className="w-4 h-4" />
+              <button onClick={() => setSearch("")} className="shrink-0">
+                <XCircle className="w-[15px] h-[15px] text-gray-400" />
               </button>
             )}
           </div>
           <button
             onClick={() => setShowFilters(true)}
-            className="relative w-12 h-12 bg-gray-900 rounded-2xl flex items-center justify-center active:scale-95 transition-all"
+            className="relative w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center active:scale-95 transition-all shrink-0"
           >
-            <Sliders className="w-5 h-5 text-white" />
+            <SlidersHorizontal className="w-[15px] h-[15px] text-gray-600" />
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-[9px] font-black rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-[18px] h-[18px] bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center">
                 {activeFilterCount}
               </span>
             )}
           </button>
         </div>
-      </div>
 
-      {/* ── CATEGORIES ── */}
-      <div className="bg-white border-b border-gray-100 flex-shrink-0">
-        <div ref={scrollRef} className="flex gap-2 overflow-x-auto hide-scrollbar px-5 py-3">
+        {/* Category Pills */}
+        <div className="flex gap-1.5 overflow-x-auto hide-scrollbar pb-3 -mx-5 px-5">
           {CATEGORIES.map(cat => (
             <button
               key={cat.id}
               onClick={() => { setActiveCategory(cat.id); setSelected(null); setExpanded(false); }}
-              className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-[11px] font-bold transition-all active:scale-95 ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-[7px] rounded-lg text-[11px] font-bold transition-all active:scale-95 ${
                 activeCategory === cat.id
-                  ? "bg-primary text-white shadow-md shadow-primary/20"
-                  : "bg-gray-100 text-gray-600"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-500"
               }`}
             >
-              <span className="text-[14px]">{cat.emoji}</span>
+              <span className="text-[13px] leading-none">{cat.emoji}</span>
               {cat.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* ── LOADING ── */}
-      {loading && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative">
-              <div className="w-14 h-14 border-4 border-primary/20 rounded-full animate-spin" style={{ borderTopColor: "#E8732A" }} />
-              <Sparkles className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            </div>
-            <p className="text-[13px] font-bold text-gray-400">Découvertes en cours...</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── MAP SECTION ── */}
-      {!loading && (
-        <div className="px-5 pt-4 pb-2 flex-shrink-0">
-          <div className="rounded-[20px] overflow-hidden h-48 shadow-sm border border-gray-100">
-            <MapContainer center={mapCenter} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={false} attributionControl={false}>
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" maxZoom={19} />
-              <FlyToLocation center={mapCenter} />
-              {userLocation && <Marker position={userLocation} icon={userIcon} />}
-              {allMapItems.slice(0, 10).map((p) => (
-                <Marker key={p.id} position={[p.mapLat, p.mapLng]} icon={priceIcon(minPricesMap[p.user_email] || 0, selected === p.id)} eventHandlers={{ click: () => handleSelectMarker(p.id) }} />
-              ))}
-            </MapContainer>
-          </div>
-        </div>
-      )}
-
-      {/* ── CONTENT ── */}
-      {!loading && (
-        <div className="flex-1 overflow-y-auto" ref={scrollRef}>
-          {/* Styles Section */}
-          <div className="px-5 pt-3 pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-5 bg-primary rounded-full" />
-                <p className="text-[14px] font-black text-gray-900">STYLES</p>
+      {/* ── INLINE MAP (collapsible) ── */}
+      {!showMapSheet && (
+        <div className="bg-white px-4 pb-3 flex-shrink-0">
+          <button
+            onClick={() => setShowMapSheet(true)}
+            className="w-full flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2.5 active:scale-[0.99] transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-primary" />
               </div>
-              <button className="text-[11px] font-bold text-primary">DÉCOUVRIR</button>
+              <div className="text-left">
+                <p className="text-[12px] font-bold text-gray-800">Voir la carte</p>
+                <p className="text-[10px] text-gray-400 font-medium">{filtered.length} salons à proximité</p>
+              </div>
             </div>
-            <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
-              {STYLES.map(style => (
-                <button
-                  key={style.id}
-                  className="shrink-0 w-36 text-left active:scale-[0.97] transition-all"
-                >
-                  <div className="h-36 rounded-2xl overflow-hidden mb-2">
-                    <img src={style.image} alt={style.name} className="w-full h-full object-cover" loading="lazy" />
-                  </div>
-                  <p className="text-[13px] font-black text-gray-900">{style.name}</p>
-                  <p className="text-[11px] text-gray-400 font-medium">{style.category}</p>
-                </button>
-              ))}
-            </div>
-          </div>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+      )}
 
-          {/* Salons List */}
+      {/* ── SCROLLABLE CONTENT ── */}
+      <div className="flex-1 overflow-y-auto" ref={scrollRef} style={{ paddingBottom: expanded ? "55vh" : "0" }}>
+
+        {/* Styles Tendance */}
+        <div className="bg-white mt-1 py-3">
+          <div className="flex items-center justify-between px-5 mb-2.5">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-4 bg-primary rounded-full" />
+              <p className="text-[13px] font-extrabold text-gray-900">Tendances</p>
+            </div>
+            <button className="text-[11px] font-bold text-primary" onClick={() => navigate("/services-salons?tab=STYLES")}>Tout voir</button>
+          </div>
+          <div className="flex gap-2.5 overflow-x-auto hide-scrollbar px-5">
+            {STYLES_DATA.map(style => (
+              <button
+                key={style.id}
+                onClick={() => navigate(`/style/${style.id}`, { state: { ...style, cover: style.image, images: [style.image], category: style.category } })}
+                className="shrink-0 w-[120px] text-left active:scale-[0.97] transition-all"
+              >
+                <div className="w-[120px] h-[140px] rounded-xl overflow-hidden mb-1.5 relative">
+                  <img src={style.image} alt={style.name} className="w-full h-full object-cover" loading="lazy" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  <span className="absolute bottom-1.5 left-2 text-white text-[10px] font-bold drop-shadow">{style.name}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Salon Cards */}
+        <div className="px-4 pt-3 pb-8">
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 px-6">
-              <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-amber-50 rounded-3xl flex items-center justify-center mb-4">
-                <Search className="w-8 h-8 text-primary/40" />
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+                <Search className="w-7 h-7 text-gray-300" />
               </div>
-              <p className="text-[16px] font-black text-gray-900 mb-2">Aucun salon trouvé</p>
-              <p className="text-[12px] text-gray-400 font-medium text-center">
-                Essayez de modifier vos filtres ou votre recherche
-              </p>
+              <p className="text-[15px] font-bold text-gray-800 mb-1">Aucun salon trouvé</p>
+              <p className="text-[12px] text-gray-400 font-medium text-center px-10">Modifiez vos filtres pour voir plus de résultats</p>
               {activeFilterCount > 0 && (
                 <button
                   onClick={resetFilters}
-                  className="mt-4 px-5 py-2.5 bg-primary text-white text-[12px] font-bold rounded-full active:scale-95 transition-all"
+                  className="mt-4 px-5 py-2 bg-gray-900 text-white text-[11px] font-bold rounded-lg active:scale-95 transition-all"
                 >
-                  Réinitialiser les filtres
+                  Réinitialiser
                 </button>
               )}
             </div>
           ) : (
-            <div className="px-5 pb-28">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                  {filtered.length} salon{filtered.length !== 1 ? "s" : ""}
-                </p>
-                <button
-                  onClick={() => setShowMapSheet(true)}
-                  className="flex items-center gap-1.5 text-[11px] font-bold text-primary active:scale-95"
-                >
-                  <MapIcon className="w-3.5 h-3.5" />
-                  Voir la carte
-                </button>
-              </div>
-              <div className="space-y-3">
-                {filtered.map((p, i) => (
-                  <SalonCard
-                    key={p.id}
-                    pro={p}
-                    minPrice={minPricesMap[p.user_email]}
-                    services={servicesMap[p.user_email]}
-                    onSelect={handleSelectCard}
-                    index={i}
-                  />
-                ))}
-              </div>
+            <div className="space-y-3">
+              {filtered.map((pro) => {
+                const img = pro.avatar_url || pro.cover_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400";
+                const price = minPricesMap[pro.user_email];
+                const isOpen = pro.is_open;
+                return (
+                  <button
+                    key={pro.id}
+                    onClick={() => handleSelectCard(pro)}
+                    className="w-full bg-white rounded-2xl overflow-hidden shadow-[0_1px_6px_rgba(0,0,0,0.04)] active:scale-[0.98] transition-all text-left flex"
+                  >
+                    <div className="w-[100px] h-[100px] shrink-0 relative overflow-hidden">
+                      <img src={img} alt={pro.salon_name} className="w-full h-full object-cover" loading="lazy" />
+                      {isOpen && (
+                        <div className="absolute top-1.5 left-1.5 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-md px-1.5 py-0.5">
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                          <span className="text-[8px] font-bold text-green-700">Ouvert</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[14px] font-extrabold text-gray-900 truncate leading-tight">{pro.salon_name}</p>
+                          {price > 0 && (
+                            <span className="text-[11px] font-extrabold text-primary shrink-0">dès {price}€</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          {pro.city && (
+                            <span className="flex items-center gap-0.5 text-[10px] text-gray-400 font-medium">
+                              <MapPin className="w-2.5 h-2.5" />{pro.city}
+                            </span>
+                          )}
+                          {pro.rating > 0 && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-500">
+                              <Star className="w-2.5 h-2.5 fill-amber-400" />{pro.rating}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {pro.specialites?.length > 0 && (
+                        <div className="flex gap-1 mt-1.5 flex-wrap">
+                          {pro.specialites.slice(0, 3).map(s => (
+                            <span key={s} className="text-[9px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">{s}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
-      )}
+      </div>
 
       {/* ── BOTTOM PANEL (Selected Pro) ── */}
       <div
-        className="bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] flex-shrink-0 z-[600] overflow-hidden transition-all duration-300 ease-out rounded-t-3xl"
+        className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] z-[600] overflow-hidden transition-all duration-300 ease-out rounded-t-3xl"
         style={{ maxHeight: expanded ? "55vh" : "0px" }}
       >
         <div className="flex justify-center pt-3 pb-1 cursor-pointer" onClick={() => setExpanded(false)}>
           <div className="w-10 h-1.5 bg-gray-200 rounded-full" />
         </div>
         {expanded && selectedPro && (
-          <div className="px-5 pb-4">
-            <div className="flex items-start gap-3 mb-4">
+          <div className="px-5 pb-5">
+            <div className="flex items-start gap-3 mb-3">
               <div
-                className="w-[70px] h-[70px] rounded-2xl overflow-hidden shrink-0 bg-gray-100 shadow-md cursor-pointer active:scale-95 transition-all"
+                className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-gray-100 cursor-pointer active:scale-95 transition-all"
                 onClick={() => navigate("/pro/vue-client", { state: { proEmail: selectedPro.user_email } })}
               >
                 <img src={selectedPro.avatar_url || selectedPro.cover_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300"} alt={selectedPro.salon_name} className="w-full h-full object-cover" loading="lazy" />
               </div>
-              <div className="flex-1 min-w-0 pt-0.5">
-                <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
-                    <p className="text-[16px] font-black text-gray-900 truncate leading-tight">{selectedPro.salon_name}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {selectedPro.city && <span className="flex items-center gap-1 text-[11px] text-gray-400 font-medium"><MapPin className="w-2.5 h-2.5" />{selectedPro.city}</span>}
-                      {selectedPro.rating > 0 && <span className="flex items-center gap-1 text-[11px] font-bold text-gray-700"><Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />{selectedPro.rating}</span>}
+                    <p className="text-[15px] font-extrabold text-gray-900 truncate">{selectedPro.salon_name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {selectedPro.city && <span className="text-[11px] text-gray-400 font-medium">{selectedPro.city}</span>}
+                      {selectedPro.rating > 0 && <span className="flex items-center gap-0.5 text-[11px] font-bold text-amber-500"><Star className="w-3 h-3 fill-amber-400" />{selectedPro.rating}</span>}
                     </div>
                   </div>
                   <button onClick={() => { setSelected(null); setExpanded(false); }} className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center shrink-0 active:scale-95">
                     <X className="w-3.5 h-3.5 text-gray-500" />
                   </button>
                 </div>
-                <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center gap-2 mt-2.5">
                   {minPricesMap[selectedPro.user_email] > 0
-                    ? <span className="text-[15px] font-black text-primary">dès {minPricesMap[selectedPro.user_email]}€</span>
+                    ? <span className="text-[13px] font-extrabold text-primary">dès {minPricesMap[selectedPro.user_email]}€</span>
                     : <span className="text-[11px] text-gray-400 font-medium">Prix sur demande</span>
                   }
                   <button
                     onClick={() => navigate("/pro/vue-client", { state: { proEmail: selectedPro.user_email } })}
-                    className="bg-primary text-white text-[11px] font-black uppercase tracking-wider px-5 py-2.5 rounded-2xl active:scale-95 transition-all shadow-md shadow-primary/20"
+                    className="ml-auto bg-gray-900 text-white text-[11px] font-bold px-4 py-2 rounded-lg active:scale-95 transition-all"
                   >
-                    Voir le profil →
+                    Voir le profil
                   </button>
                 </div>
               </div>
@@ -616,24 +516,22 @@ export default function Explorer() {
 
             {servicesMap[selectedPro.user_email]?.length > 0 && (
               <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 px-1">Services populaires</p>
-                <div className="space-y-2">
+                <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Services</p>
+                <div className="space-y-1.5">
                   {servicesMap[selectedPro.user_email].slice(0, 3).map(s => (
-                    <div key={s.id} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
-                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-gray-200">
+                    <div key={s.id} className="flex items-center gap-2.5 bg-gray-50 rounded-xl px-3 py-2.5">
+                      <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-gray-200">
                         {s.image_url ? (
                           <img src={s.image_url} alt={s.title || s.name} className="w-full h-full object-cover" loading="lazy" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center"><Sparkles className="w-3.5 h-3.5 text-gray-300" /></div>
+                          <div className="w-full h-full flex items-center justify-center"><Sparkles className="w-3 h-3 text-gray-300" /></div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[12px] font-bold text-gray-900 truncate">{s.title || s.name}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {s.duration && <span className="text-[9px] text-gray-400 font-medium flex items-center gap-1"><Clock className="w-2 h-2" />{s.duration} min</span>}
-                        </div>
+                        {s.duration && <span className="text-[9px] text-gray-400 font-medium">{s.duration} min</span>}
                       </div>
-                      <span className="text-[13px] font-black text-primary shrink-0">{s.price}€</span>
+                      <span className="text-[12px] font-extrabold text-primary shrink-0">{s.price}€</span>
                     </div>
                   ))}
                 </div>
@@ -646,9 +544,9 @@ export default function Explorer() {
       {/* ── MAP BOTTOM SHEET ── */}
       {showMapSheet && (
         <div className="fixed inset-0 z-[700] flex items-end" onClick={() => setShowMapSheet(false)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative bg-white w-full h-[85vh] rounded-t-3xl overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300"
+            className="relative bg-white w-full h-[85vh] rounded-t-3xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
@@ -656,7 +554,7 @@ export default function Explorer() {
             </div>
             <div className="flex items-center justify-between px-5 pb-3 border-b border-gray-100 flex-shrink-0">
               <div>
-                <h2 className="text-[16px] font-black text-gray-900">Carte</h2>
+                <h2 className="text-[15px] font-extrabold text-gray-900">Carte</h2>
                 <p className="text-[10px] text-gray-400 font-medium">{filtered.length} salons</p>
               </div>
               <button onClick={() => setShowMapSheet(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
@@ -673,7 +571,7 @@ export default function Explorer() {
                 ))}
               </MapContainer>
               {userLocation && (
-                <button className="absolute bottom-4 right-4 z-[500] w-12 h-12 bg-white rounded-2xl shadow-xl flex items-center justify-center active:scale-95">
+                <button className="absolute bottom-4 right-4 z-[500] w-11 h-11 bg-white rounded-xl shadow-lg flex items-center justify-center active:scale-95">
                   <Navigation className="w-5 h-5 text-primary" />
                 </button>
               )}
@@ -685,25 +583,25 @@ export default function Explorer() {
       {/* ── FILTER MODAL ── */}
       {showFilters && (
         <div className="fixed inset-0 z-[700] flex items-end" onClick={() => setShowFilters(false)}>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/40" />
           <div
-            className="relative bg-white w-full rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300"
+            className="relative bg-white w-full rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
               <div className="w-10 h-1.5 bg-gray-200 rounded-full" />
             </div>
-            <div className="flex items-center justify-between px-6 pb-4 border-b border-gray-100 flex-shrink-0">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <SlidersHorizontal className="w-4 h-4 text-primary" />
-                </div>
-                <h2 className="text-[16px] font-black text-gray-900">Filtres</h2>
+            <div className="flex items-center justify-between px-5 pb-3 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-[15px] font-extrabold text-gray-900">Filtres</h2>
+                {activeFilterCount > 0 && (
+                  <span className="w-5 h-5 bg-primary text-white text-[9px] font-black rounded-full flex items-center justify-center">{activeFilterCount}</span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {activeFilterCount > 0 && (
-                  <button onClick={resetFilters} className="flex items-center gap-1 text-[11px] font-bold text-gray-500">
-                    <RotateCcw className="w-3 h-3" /> Tout
+                  <button onClick={resetFilters} className="text-[11px] font-bold text-gray-500 flex items-center gap-1">
+                    <RotateCcw className="w-3 h-3" /> Reset
                   </button>
                 )}
                 <button onClick={() => setShowFilters(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
@@ -711,21 +609,21 @@ export default function Explorer() {
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
               {[
                 { label: "Budget", options: PRICE_RANGES, value: filterPrice, setter: setFilterPrice, icon: DollarSign },
                 { label: "Distance", options: DISTANCE_OPTIONS, value: filterDistance, setter: setFilterDistance, icon: MapPin },
-                { label: "Note minimum", options: RATING_OPTIONS, value: filterRating, setter: setFilterRating, icon: Star },
+                { label: "Note", options: RATING_OPTIONS, value: filterRating, setter: setFilterRating, icon: Star },
               ].map(({ label, options, value, setter, icon: Icon }) => (
                 <div key={label}>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">{label}</p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">{label}</p>
+                  <div className="flex flex-wrap gap-1.5">
                     {options.map(opt => (
                       <button
                         key={opt.id}
                         onClick={() => setter(opt.id)}
-                        className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-bold transition-all active:scale-95 ${
-                          value === opt.id ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-gray-100 text-gray-600"
+                        className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all active:scale-95 ${
+                          value === opt.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"
                         }`}
                       >
                         <Icon className="w-3 h-3" />
@@ -737,10 +635,10 @@ export default function Explorer() {
               ))}
 
               <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">Clientèle</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Clientèle</p>
+                <div className="flex flex-wrap gap-1.5">
                   {GENDER_OPTIONS.map(g => (
-                    <button key={g} onClick={() => setFilterGender(g)} className={`shrink-0 px-3 py-2 rounded-full text-[11px] font-bold transition-all active:scale-95 ${filterGender === g ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-gray-100 text-gray-600"}`}>
+                    <button key={g} onClick={() => setFilterGender(g)} className={`shrink-0 px-3 py-2 rounded-lg text-[11px] font-bold transition-all active:scale-95 ${filterGender === g ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}>
                       {g}
                     </button>
                   ))}
@@ -748,10 +646,10 @@ export default function Explorer() {
               </div>
 
               <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">Type</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Type</p>
+                <div className="flex flex-wrap gap-1.5">
                   {SERVICE_TYPE_OPTIONS.map(t => (
-                    <button key={t} onClick={() => setFilterServiceType(t)} className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-bold transition-all active:scale-95 ${filterServiceType === t ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-gray-100 text-gray-600"}`}>
+                    <button key={t} onClick={() => setFilterServiceType(t)} className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all active:scale-95 ${filterServiceType === t ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}>
                       {t === "À domicile" ? <Home className="w-3 h-3" /> : t === "Salon" ? <Store className="w-3 h-3" /> : null}
                       {t}
                     </button>
@@ -760,10 +658,10 @@ export default function Explorer() {
               </div>
 
               <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">Disponibilité</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Disponibilité</p>
+                <div className="flex flex-wrap gap-1.5">
                   {OPEN_NOW_OPTIONS.map(o => (
-                    <button key={o.id} onClick={() => setFilterOpenNow(o.id)} className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-bold transition-all active:scale-95 ${filterOpenNow === o.id ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-gray-100 text-gray-600"}`}>
+                    <button key={o.id} onClick={() => setFilterOpenNow(o.id)} className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all active:scale-95 ${filterOpenNow === o.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}>
                       <Calendar className="w-3 h-3" />
                       {o.label}
                     </button>
@@ -772,10 +670,10 @@ export default function Explorer() {
               </div>
 
               <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5">Trier par</p>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider mb-2">Trier par</p>
+                <div className="flex flex-wrap gap-1.5">
                   {SORT_OPTIONS.map(s => (
-                    <button key={s.id} onClick={() => setSortBy(s.id)} className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full text-[11px] font-bold transition-all active:scale-95 ${sortBy === s.id ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-gray-100 text-gray-600"}`}>
+                    <button key={s.id} onClick={() => setSortBy(s.id)} className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all active:scale-95 ${sortBy === s.id ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600"}`}>
                       <ArrowUpDown className="w-3 h-3" />
                       {s.label}
                     </button>
@@ -783,10 +681,10 @@ export default function Explorer() {
                 </div>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0">
+            <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
               <button
                 onClick={() => setShowFilters(false)}
-                className="w-full py-3.5 bg-primary text-white text-[13px] font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-lg shadow-primary/25"
+                className="w-full py-3.5 bg-gray-900 text-white text-[13px] font-extrabold uppercase tracking-wider rounded-xl active:scale-[0.98] transition-all"
               >
                 Voir {filtered.length} résultat{filtered.length !== 1 ? "s" : ""}
               </button>
