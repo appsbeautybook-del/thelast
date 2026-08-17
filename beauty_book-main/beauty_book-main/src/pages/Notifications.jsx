@@ -6,6 +6,7 @@ import {
   ShieldCheck, Scissors, User, Megaphone
 } from "lucide-react";
 import { supabase } from '@/api/supabaseClient';
+import { entities } from '@/api/entities';
 import {
   loadNotifications,
   markAsRead,
@@ -67,7 +68,6 @@ function NotifItem({ notif, onRead, onNavigate, onDelete }) {
     onRead(notif.id);
     if (notif.type === "message" && notif.data?.conversation_id) {
       const senderEmail = notif.data?.sender_email;
-      // Détecter si c'est un message admin
       const isAdmin = notif.data?.is_admin || notif.title?.toLowerCase().includes("admin");
       if (senderEmail) {
         const nameParam = notif.data?.sender_name
@@ -78,6 +78,12 @@ function NotifItem({ notif, onRead, onNavigate, onDelete }) {
       } else {
         onNavigate("/messages");
       }
+    } else if (notif.type === "reservation") {
+      onNavigate("/rendez-vous");
+    } else if (notif.type === "commande") {
+      onNavigate("/rendez-vous");
+    } else if (notif.type === "avis") {
+      onNavigate("/rendez-vous");
     } else if (notif.action_url) {
       onNavigate(notif.action_url);
     } else if (notif.link) {
@@ -182,8 +188,12 @@ export default function Notifications() {
   };
 
   const deleteNotif = async (id) => {
-    await entities.Notification.delete(id).catch(() => {});
     setNotifications(prev => prev.filter(n => n.id !== id));
+    try {
+      await entities.Notification.delete(id);
+    } catch {
+      await supabase.from("Notification").delete().eq("id", id);
+    }
   };
 
   const unreadCount = notifications.filter(n => !n.read && !n.is_read).length;
