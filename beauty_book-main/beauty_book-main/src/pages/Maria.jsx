@@ -74,7 +74,7 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
                   onClick={() => {
                     if (action === "social") { navigate("/social-media"); onClose(); }
                     if (action === "scan") { navigate("/scan-capillaire"); onClose(); }
-                    if (action === "receptionniste") { sendMessage("Je suis à l'accueil de mon salon. Aide-moi à gérer les appels, accueillir les clients et organiser mon planning du jour."); onClose(); }
+                    if (action === "receptionniste") { navigate("/receptionniste-ia"); onClose(); }
                   }}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"
                 >
@@ -1191,7 +1191,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
 
             {isPro ? (
               <button
-                onClick={() => sendMessage("Je suis à l'accueil de mon salon. Aide-moi à gérer les appels, accueillir les clients et organiser mon planning du jour.")}
+                onClick={() => navigate("/receptionniste-ia")}
                 className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
               >
                 <img src="https://images.unsplash.com/photo-1556745757-8d76bdb6984b?q=80&w=400" alt="receptionniste ia" className="w-full h-full object-cover" />
