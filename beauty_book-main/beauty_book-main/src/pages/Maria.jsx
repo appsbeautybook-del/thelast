@@ -450,14 +450,16 @@ export default function Maria() {
     }, intervalMs);
   };
 
-  // ── Synthèse vocale via Voicebox (fallback: Web Speech API) ──
+  // ── Synthèse vocale via Microsoft Edge TTS (fallback: Web Speech API) ──
   const voiceAudioRef = useRef(null);
+  const microsoftTTSAbortRef = useRef(null);
+
   const speakResponse = (text, msgIndex, withTyping = false, voiceUrl = null) => {
     if (muted) return;
     setSpeaking(true);
     if (withTyping) startTypingEffect(text, msgIndex ?? -1);
 
-    // Si on a une URL Voicebox, l'utiliser
+    // 1. Si on a une URL Voicebox, l'utiliser
     if (voiceUrl) {
       if (voiceAudioRef.current) {
         voiceAudioRef.current.pause();
@@ -469,16 +471,61 @@ export default function Maria() {
         setSpeaking(false);
         if (withTyping) { setTypingText(text); setTypingIndex(null); }
       };
-      audio.onerror = () => {
-        // Fallback to Web Speech API
-        speakWithWebSpeech(text, msgIndex, withTyping);
-      };
-      audio.play().catch(() => speakWithWebSpeech(text, msgIndex, withTyping));
+      audio.onerror = () => speakMicrosoftTTS(text, msgIndex, withTyping);
+      audio.play().catch(() => speakMicrosoftTTS(text, msgIndex, withTyping));
       return;
     }
 
-    // Fallback: Web Speech API
-    speakWithWebSpeech(text, msgIndex, withTyping);
+    // 2. Microsoft Edge TTS (gratuit, voix haute qualité)
+    speakMicrosoftTTS(text, msgIndex, withTyping);
+  };
+
+  const speakMicrosoftTTS = async (text, msgIndex, withTyping) => {
+    const clean = text
+      .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, "")
+      .replace(/\*\*/g, "").replace(/\*/g, "").replace(/#{1,6}\s/g, "")
+      .replace(/`[^`]+`/g, "").replace(/\n/g, " ").replace(/\s{2,}/g, " ").trim()
+      .slice(0, 1500);
+
+    if (!clean) { setSpeaking(false); return; }
+
+    try {
+      console.log('[Maria TTS] Requesting Microsoft Edge TTS...');
+      microsoftTTSAbortRef.current = new AbortController();
+      const res = await fetch('/api/ai/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: clean, voice: 'fr-FR' }),
+        signal: microsoftTTSAbortRef.current.signal,
+      });
+
+      if (!res.ok) throw new Error(`TTS HTTP ${res.status}`);
+
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (voiceAudioRef.current) {
+        voiceAudioRef.current.pause();
+        voiceAudioRef.current.src = "";
+      }
+
+      const audio = new Audio(url);
+      voiceAudioRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        setSpeaking(false);
+        if (withTyping) { setTypingText(text); setTypingIndex(null); }
+      };
+      audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        speakWithWebSpeech(text, msgIndex, withTyping);
+      };
+      audio.play().catch(() => speakWithWebSpeech(text, msgIndex, withTyping));
+      console.log('[Maria TTS] Microsoft Edge TTS playing');
+    } catch (err) {
+      console.log('[Maria TTS] Microsoft TTS failed:', err.message, '→ falling back to Web Speech API');
+      speakWithWebSpeech(text, msgIndex, withTyping);
+    }
   };
 
   const speakWithWebSpeech = (text, msgIndex, withTyping) => {
@@ -496,17 +543,17 @@ export default function Maria() {
     utt.rate = 1.05;
     utt.pitch = 1.0;
 
-    // Prefer high-quality cloud/remote French female voices
+    // Prefer Microsoft French voices (high quality on Windows/Edge)
     const voices = window.speechSynthesis.getVoices();
-    const frFemale = voices.filter(v => v.lang.startsWith("fr") && (v.name.includes("female") || v.name.includes("Female") || v.name.includes("Amélie") || v.name.includes("Virginie") || v.name.includes("Marie") || v.name.includes("Denise") || v.name.includes("Thomas") === false));
-    const frRemote = frFemale.filter(v => !v.localService);
-    const frLocal = frFemale.filter(v => v.localService);
+    const msFrFemale = voices.filter(v => v.lang.startsWith("fr") && /Marie|Denise|Virginie|Amélie|Hortense|France/i.test(v.name));
+    const msFrMale = voices.filter(v => v.lang.startsWith("fr") && /Henri|Paul|Quentin|Thomas/i.test(v.name));
+    const frRemote = voices.filter(v => v.lang.startsWith("fr") && !v.localService);
     const allFr = voices.filter(v => v.lang.startsWith("fr"));
 
-    const bestVoice = frRemote[0] || frLocal[0] || frFemale[0] || allFr[0];
+    const bestVoice = msFrFemale[0] || frRemote[0] || msFrMale[0] || allFr[0];
     if (bestVoice) {
       utt.voice = bestVoice;
-      console.log('[Maria TTS] Using voice:', bestVoice.name, bestVoice.lang, bestVoice.localService ? 'local' : 'remote');
+      console.log('[Maria TTS] Web Speech voice:', bestVoice.name, bestVoice.lang, bestVoice.localService ? 'local' : 'remote');
     }
 
     utt.onend = () => {
@@ -519,6 +566,10 @@ export default function Maria() {
 
   const stopSpeaking = () => {
     window.speechSynthesis.cancel();
+    if (microsoftTTSAbortRef.current) {
+      microsoftTTSAbortRef.current.abort();
+      microsoftTTSAbortRef.current = null;
+    }
     if (voiceAudioRef.current) {
       voiceAudioRef.current.pause();
       voiceAudioRef.current.src = "";
