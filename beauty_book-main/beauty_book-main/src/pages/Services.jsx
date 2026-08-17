@@ -89,7 +89,7 @@ export default function Services() {
   }, [activeCategory, refreshKey]);
 
   useEffect(() => {
-    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 100)
+    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 500)
       .then(items => setPros(items || []))
       .catch(() => setPros([]));
   }, [refreshKey]);

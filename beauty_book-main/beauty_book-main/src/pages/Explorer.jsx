@@ -230,7 +230,7 @@ export default function Explorer() {
   }, [hasLocation, latitude, longitude]);
 
   useEffect(() => {
-    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 100)
+    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 500)
       .then(async (all) => {
         setProfils(all);
         const emails = all.map(p => p.user_email).filter(Boolean);

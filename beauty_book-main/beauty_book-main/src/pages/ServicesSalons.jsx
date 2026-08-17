@@ -1131,7 +1131,7 @@ function ServicesTab({ activeCategory }) {
   }, [user?.email]);
 
   useEffect(() => {
-    entities.Service.filter({ status: "actif" }, "-created_at", 100)
+    entities.Service.filter({ status: "actif" }, "-created_at", 500)
       .then(async (svcs) => {
         setServices(svcs);
         // Charger les profils pro pour chaque service
@@ -1423,7 +1423,7 @@ function SalonsTab({ activeCategory }) {
 
   useEffect(() => {
     let cancelled = false;
-    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 100)
+    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 500)
       .then(async (all) => {
         if (cancelled) return;
         const salons = all.filter(p => p.salon_name && p.salon_name.trim() !== "");
@@ -1531,7 +1531,7 @@ function ParticuliersTab({ activeCategory }) {
 
   useEffect(() => {
     let cancelled = false;
-    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 100)
+    entities.ProfilPro.filter({ status: "actif" }, "-created_at", 500)
       .then(async (all) => {
         if (cancelled) return;
         const particuliers = all.filter(p => !p.salon_name || p.salon_name.trim() === "");
