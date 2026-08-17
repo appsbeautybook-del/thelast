@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Bot, Phone, Calendar, Clock, User, Users, CheckCircle2,
-  Send, Mic, Sparkles, MessageSquare, Bell, CalendarCheck, Star,
-  Loader2, ChevronRight, PhoneIncoming, PhoneMissed, PhoneOff,
-  ClipboardList, TrendingUp, AlertCircle, Volume2
+  Send, Sparkles, MessageSquare, Bell, CalendarCheck, Star,
+  Loader2, ChevronRight, PhoneIncoming, ClipboardList, TrendingUp,
+  Settings, X, Save, PhoneCall, MapPin, Scissors
 } from "lucide-react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -32,16 +32,45 @@ export default function ReceptionnistIA() {
   const [loading, setLoading] = useState(false);
   const [todayStats, setTodayStats] = useState({ total: 0, confirmed: 0, pending: 0, completed: 0 });
   const [upcomingRDV, setUpcomingRDV] = useState([]);
+  const [proProfile, setProProfile] = useState(null);
+  const [showConfig, setShowConfig] = useState(false);
+  const [configPhone, setConfigPhone] = useState("");
+  const [configSalon, setConfigSalon] = useState("");
+  const [configAddress, setConfigAddress] = useState("");
+  const [savingConfig, setSavingConfig] = useState(false);
   const chatEndRef = useRef(null);
-  const inputRef = useRef(null);
 
   useEffect(() => {
+    loadProfile();
     loadTodayData();
   }, []);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const loadProfile = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profiles } = await supabase
+        .from("ProfilPro")
+        .select("*")
+        .eq("user_email", user.email)
+        .limit(1);
+
+      if (profiles && profiles.length > 0) {
+        const profile = profiles[0];
+        setProProfile(profile);
+        setConfigPhone(profile.phone || "");
+        setConfigSalon(profile.salon_name || "");
+        setConfigAddress(profile.city || profile.address || "");
+      }
+    } catch (e) {
+      console.error("[ReceptionnistIA] Profile load error:", e);
+    }
+  };
 
   const loadTodayData = async () => {
     try {
@@ -68,6 +97,30 @@ export default function ReceptionnistIA() {
     }
   };
 
+  const saveConfig = async () => {
+    setSavingConfig(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updates = {
+        phone: configPhone.trim(),
+        salon_name: configSalon.trim(),
+        city: configAddress.trim(),
+      };
+
+      if (proProfile?.id) {
+        await supabase.from("ProfilPro").update(updates).eq("id", proProfile.id);
+      }
+
+      setProProfile(prev => ({ ...prev, ...updates }));
+      setShowConfig(false);
+    } catch (e) {
+      console.error("[ReceptionnistIA] Config save error:", e);
+    }
+    setSavingConfig(false);
+  };
+
   const sendMessage = async (text) => {
     if (!text.trim()) return;
     const userMsg = { id: Date.now(), role: "user", content: text.trim() };
@@ -78,8 +131,32 @@ export default function ReceptionnistIA() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const userName = user?.user_metadata?.name || user?.email?.split("@")[0] || "Pro";
+      const salonName = proProfile?.salon_name || "mon salon";
+      const phone = proProfile?.phone || "non renseigné";
+      const city = proProfile?.city || proProfile?.address || "non renseignée";
+      const specialties = proProfile?.specialites?.join(", ") || "beauté-général";
 
-      const systemPrompt = `Tu es Maria, l'assistant réceptionniste IA de ${userName}. Tu gères le salon de coiffure/beauté : appels, réservations, accueil clients, planning, rappels, annulations. Tu es professionnel(le), chaleureux(se) et efficace. Tu parles en français. Tu donnes des conseils pratiques pour optimiser la gestion du salon. Réponds de manière concise et actionnable.`;
+      const systemPrompt = `Tu es Maria, la réceptionniste IA du salon "${salonName}" de ${userName}.
+
+INFORMATIONS DU SALON :
+- Nom : ${salonName}
+- Professionnel : ${userName}
+- Téléphone du salon : ${phone}
+- Ville : ${city}
+- Spécialités : ${specialties}
+
+TU ES UNE VRAIE RÉCEPTIONNISTE :
+- Tu gères les appels téléphoniques du salon (tu peux donner le numéro aux clients)
+- Tu accueilles les clients et gères les réservations
+- Tu confirmes, modifies ou annules les RDV
+- Tu envoies des rappels aux clients
+- Tu gères le planning et les créneaux disponibles
+- Tu connais les services et tarifs du salon
+- Tu es professionnelle, chaleureuse et efficace
+- Tu parles toujours en français
+- Tu donnes des réponses concises et actionnable
+- Quand un client demande le numéro de téléphone, donne toujours ${phone}
+- Tu peux orienter vers la page "/rendez-vous" pour réserver`;
 
       const historyForAI = messages.slice(-6).map(m => ({
         role: m.role === "user" ? "user" : "assistant",
@@ -112,7 +189,7 @@ export default function ReceptionnistIA() {
         const reply = data.choices?.[0]?.message?.content || "Je n'ai pas pu traiter votre demande. Réessayez.";
         setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: reply }]);
       } else {
-        setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: "Erreur de connexion. Vérifiez votre connexion internet." }]);
+        setMessages(prev => [...prev, { id: Date.now() + 1, role: "assistant", content: "Erreur de connexion. Réessayez." }]);
       }
     } catch (e) {
       console.error("[ReceptionnistIA] AI error:", e);
@@ -125,6 +202,8 @@ export default function ReceptionnistIA() {
     e.preventDefault();
     sendMessage(input);
   };
+
+  const isConfigured = proProfile?.phone;
 
   return (
     <div className="font-display min-h-full bg-[#f8f7f5] flex flex-col">
@@ -143,9 +222,15 @@ export default function ReceptionnistIA() {
               <h1 className="text-[18px] font-black text-gray-900 leading-none">Réceptionniste IA</h1>
               <span className="bg-emerald-100 text-emerald-700 text-[8px] font-black px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-widest">IA</span>
             </div>
-            <p className="text-[10px] text-gray-400 font-medium">Votre assistant salon intelligent</p>
+            <p className="text-[10px] text-gray-400 font-medium">{proProfile?.salon_name || "Assistant salon"}</p>
           </div>
         </div>
+        <button
+          onClick={() => setShowConfig(true)}
+          className="w-9 h-9 bg-gray-100 rounded-2xl flex items-center justify-center active:scale-95 transition-all"
+        >
+          <Settings className="w-4 h-4 text-gray-500" />
+        </button>
       </div>
 
       {/* ── CONTENT ── */}
@@ -154,6 +239,24 @@ export default function ReceptionnistIA() {
         {/* Welcome + Stats */}
         {messages.length === 0 && (
           <div className="px-4 pt-5 pb-4">
+
+            {/* Config Banner */}
+            {!isConfigured && (
+              <button
+                onClick={() => setShowConfig(true)}
+                className="w-full bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-4 mb-5 flex items-center gap-3 active:scale-[0.98] transition-all"
+              >
+                <div className="w-11 h-11 bg-amber-100 rounded-xl flex items-center justify-center shrink-0">
+                  <Phone className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="text-left flex-1">
+                  <p className="text-[13px] font-black text-amber-800">Configurez votre réceptionniste</p>
+                  <p className="text-[11px] text-amber-600 font-medium">Ajoutez votre numéro de téléphone pour que les clients puissent vous joindre</p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-amber-400 shrink-0" />
+              </button>
+            )}
+
             <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-5 text-white mb-5 shadow-lg shadow-emerald-500/20">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -161,11 +264,11 @@ export default function ReceptionnistIA() {
                 </div>
                 <div>
                   <p className="text-[18px] font-black leading-tight">Bonjour ! 👋</p>
-                  <p className="text-[12px] text-white/80 font-medium">Je suis votre réceptionniste IA</p>
+                  <p className="text-[12px] text-white/80 font-medium">Réceptionniste de {proProfile?.salon_name || "votre salon"}</p>
                 </div>
               </div>
               <p className="text-[13px] text-white/90 font-medium leading-relaxed">
-                Je gère vos appels, réservations et accueil clients. Posez-moi une question ou choisissez une action rapide ci-dessous.
+                Je gère vos appels, réservations et accueil clients. {proProfile?.phone ? `Mon numéro : ${proProfile.phone}` : "Ajoutez votre numéro en configuration."}
               </p>
             </div>
 
@@ -289,7 +392,6 @@ export default function ReceptionnistIA() {
         <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 pt-3">
           <div className="flex-1 flex items-center bg-gray-100 rounded-2xl px-4 py-3">
             <input
-              ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               placeholder="Ex: Confirme le RDV de Marie à 14h..."
@@ -307,6 +409,104 @@ export default function ReceptionnistIA() {
         </form>
         <p className="text-center text-[9px] text-gray-300 font-medium mt-1.5">MARIA · RÉCEPTIONNISTE IA</p>
       </div>
+
+      {/* ── CONFIG MODAL ── */}
+      {showConfig && (
+        <div className="fixed inset-0 z-[200] flex items-end" onClick={() => setShowConfig(false)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative bg-white w-full rounded-t-3xl max-h-[85vh] overflow-hidden flex flex-col animate-in slide-in-from-bottom duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
+              <div className="w-10 h-1.5 bg-gray-200 rounded-full" />
+            </div>
+
+            <div className="flex items-center justify-between px-6 pb-4 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 bg-emerald-100 rounded-xl flex items-center justify-center">
+                  <Settings className="w-4 h-4 text-emerald-600" />
+                </div>
+                <h2 className="text-[18px] font-black text-gray-900">Configuration</h2>
+              </div>
+              <button onClick={() => setShowConfig(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+              {/* Phone Number */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <PhoneCall className="w-4 h-4 text-emerald-600" />
+                  <p className="text-[13px] font-black text-gray-900">Numéro de téléphone</p>
+                </div>
+                <p className="text-[11px] text-gray-400 font-medium mb-3">Ce numéro sera communiqué aux clients par le réceptionniste IA</p>
+                <input
+                  type="tel"
+                  value={configPhone}
+                  onChange={e => setConfigPhone(e.target.value)}
+                  placeholder="06 12 34 56 78"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-[15px] font-bold text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
+                />
+              </div>
+
+              {/* Salon Name */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Scissors className="w-4 h-4 text-emerald-600" />
+                  <p className="text-[13px] font-black text-gray-900">Nom du salon</p>
+                </div>
+                <input
+                  type="text"
+                  value={configSalon}
+                  onChange={e => setConfigSalon(e.target.value)}
+                  placeholder="Mon Salon de Beauté"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-[15px] font-bold text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
+                />
+              </div>
+
+              {/* Address */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <MapPin className="w-4 h-4 text-emerald-600" />
+                  <p className="text-[13px] font-black text-gray-900">Ville / Adresse</p>
+                </div>
+                <input
+                  type="text"
+                  value={configAddress}
+                  onChange={e => setConfigAddress(e.target.value)}
+                  placeholder="Paris, France"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3.5 text-[15px] font-bold text-gray-900 outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/50 transition-all"
+                />
+              </div>
+
+              {/* Info Box */}
+              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
+                <p className="text-[12px] text-emerald-700 font-medium leading-relaxed">
+                  <span className="font-black">💡 À quoi sert le numéro ?</span><br />
+                  Le réceptionniste IA pourra communiquer votre numéro aux clients qui souhaitent vous appeler directement. Il gère aussi les réservations et les rappels.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0">
+              <button
+                onClick={saveConfig}
+                disabled={!configPhone.trim() || savingConfig}
+                className="w-full py-4 bg-emerald-500 text-white text-[14px] font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-40 flex items-center justify-center gap-2"
+              >
+                {savingConfig ? (
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Enregistrement...</>
+                ) : (
+                  <><Save className="w-5 h-5" /> Enregistrer</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
