@@ -1245,43 +1245,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                     </div>
                   </div>
                 </button>
-                <button
-                  onClick={() => navigate("/scan-capillaire")}
-                  className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
-                >
-                  <img src={SCAN_IMG} alt="scan" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-br from-sky-400/80 to-blue-600/70" />
-                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                    <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
-                      <Scissors className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-white text-[13px] font-black leading-tight">AI Hair</p>
-                      <p className="text-white text-[13px] font-black leading-tight">Changer</p>
-                      <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
-                    </div>
-                  </div>
-                </button>
               </>
-            )}
-            ) : (
-              <button
-                onClick={() => setShowSimulator(true)}
-                className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
-              >
-                <img src={STYLE_IMG} alt="style" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-orange-700/60" />
-                <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                  <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
-                    <Wand2 className="w-4 h-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-white text-[13px] font-black leading-tight">AI Hair</p>
-                    <p className="text-white text-[13px] font-black leading-tight">Changer</p>
-                    <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
-                  </div>
-                </div>
-              </button>
             )}
           </div>
 
@@ -1348,12 +1312,12 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
 
       <button
         onClick={() => navigate("/pro/publication")}
-        className="fixed right-0 z-50 active:scale-90 transition-all flex items-center gap-1"
+        className="fixed right-4 z-50 active:scale-90 transition-all flex items-center gap-2 bg-gradient-to-r from-primary to-orange-600 text-white rounded-full pl-5 pr-3 py-3 shadow-xl shadow-primary/30"
         style={{ top: "65%", transform: "translateY(-50%)" }}
       >
-        <span className="text-[10px] font-black text-white bg-gray-900 border border-sky-400 border-r-0 rounded-l-full px-3 py-2.5 uppercase tracking-widest">Créer</span>
-        <div className="bg-gray-900 border-2 border-sky-400 rounded-l-none rounded-r-full flex items-center justify-center shadow-xl w-10 h-10">
-          <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
+        <span className="text-[12px] font-black uppercase tracking-wider">Créer</span>
+        <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+          <Plus className="w-4 h-4 text-white" strokeWidth={3} />
         </div>
       </button>
 
