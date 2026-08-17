@@ -14,7 +14,7 @@ function emailToDisplayName(email) {
   return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-// ── Maria AI Toggle ───────────────────────────────────────────────────────────
+// ── Réponse auto Toggle ───────────────────────────────────────────────────────
 const MARIA_AI_KEY = "bb_maria_ai_active";
 
 function MariaAIToggle({ active, onChange }) {
@@ -29,7 +29,7 @@ function MariaAIToggle({ active, onChange }) {
     >
       <Sparkles className={`w-3.5 h-3.5 ${active ? "text-white" : "text-gray-400"}`} />
       <span className={`text-[11px] font-black ${active ? "text-white" : "text-gray-500"}`}>
-        Maria AI
+        Réponse auto
       </span>
       <div className={`w-7 h-4 rounded-full transition-all flex items-center px-0.5 ${active ? "bg-white/30" : "bg-gray-200"}`}>
         <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-all ${active ? "translate-x-3" : "translate-x-0"}`} />
@@ -953,7 +953,7 @@ export default function Messages() {
                 conversation_id: convId,
                 sender_email: user.email,
                 receiver_email: m.sender_email,
-                sender_name: user.user_metadata?.full_name || user.full_name || "Maria AI",
+                sender_name: user.user_metadata?.full_name || user.full_name || "Réponse auto",
                 content: mariaReply,
                 is_read: false,
                 read: false,
@@ -1141,14 +1141,14 @@ export default function Messages() {
         </div>
       </div>
 
-      {/* Bandeau Maria AI actif */}
+      {/* Bandeau Réponse auto actif */}
       {isPro && mariaAIActive && (
         <div className="flex items-center gap-2 px-4 py-2 bg-violet-50 border-b border-violet-100">
           <div className="w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center shrink-0">
             <Sparkles className="w-3 h-3 text-white" />
           </div>
           <p className="text-[11px] font-bold text-violet-700">
-            Maria AI répond automatiquement à vos clients et les aide à réserver
+            Réponse auto active — vos clients reçoivent une réponse immédiate
           </p>
           <div className="w-2 h-2 bg-violet-500 rounded-full animate-pulse ml-auto shrink-0" />
         </div>
