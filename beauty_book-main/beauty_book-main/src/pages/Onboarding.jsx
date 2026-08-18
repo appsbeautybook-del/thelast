@@ -182,10 +182,40 @@ function StepSignup({ onNext, onBack }) {
       throw signUpError;
     }
 
-    // Envoyer un OTP de vérification par email (séparément de signUp qui envoie un lien)
+    // Tenter de se connecter immédiatement
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    });
+
+    // Créer le profil
+    if (signUpData?.user) {
+      await supabase.from('profiles').upsert({
+        id: signUpData.user.id,
+        email: form.email,
+        full_name: `${form.prenom} ${form.nom}`,
+        role: 'user',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
+
+    if (!signInError) {
+      // Connexion réussie → onboarding terminé
+      localStorage.setItem("bb_onboarded", "1");
+      sessionStorage.setItem("bb_signup_data", JSON.stringify({
+        prenom: form.prenom,
+        nom: form.nom,
+        email: form.email,
+        phone: "",
+        mode: "email",
+      }));
+      onNext();
+      return;
+    }
+
+    // Si la connexion échoue (confirmation email requise), envoyer OTP et aller à StepVerification
     await supabase.auth.signInWithOtp({ email: form.email });
 
-    // Stocker les données pour StepVerification
     sessionStorage.setItem("bb_signup_data", JSON.stringify({
       prenom: form.prenom,
       nom: form.nom,
