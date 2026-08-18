@@ -8,7 +8,7 @@ const inputCls = "w-full bg-gray-50 border border-gray-200 text-gray-800 rounded
 const EMPTY_FORM = {
   title: "", description: "", type: "location", price: "",
   unit: "/MOIS", surface: "", location: "", area: "",
-  equip: "", extra: "", badge: "PRO", images: [], video_url: "",
+  equip: "", extra: "", images: [], video_url: "",
   contact_email: "", contact_phone: "", status: "actif",
 };
 
@@ -48,7 +48,9 @@ export default function AdminImmobilier() {
     if (!form.title || !form.price) return;
     setSaving(true);
     try {
-      const res = await adminApi.createImmobilier({ ...form, price: parseFloat(form.price) || 0 });
+      const payload = { ...form, price: parseFloat(form.price) || 0 };
+      delete payload.badge;
+      const res = await adminApi.createImmobilier(payload);
       const item = res?.data?.result || res?.result || res?.data || res;
       setListings(prev => [item, ...prev]);
       setCreating(false);
