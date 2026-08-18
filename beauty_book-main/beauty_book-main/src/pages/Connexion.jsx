@@ -273,6 +273,15 @@ function ForgotPassword({ onBack }) {
                   {resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
                 </button>
               )}
+              {!emailNotConfirmed && error && (
+                <button
+                  onClick={() => setShowForgot(true)}
+                  className="mt-2 text-[12px] font-black underline active:scale-95 transition-all"
+                  style={{ color: "#E8732A" }}
+                >
+                  Réinitialiser le mot de passe
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -357,11 +366,8 @@ export default function Connexion() {
       if (signInError) {
         if (signInError.message?.includes('Email not confirmed') || signInError.message?.includes('not confirmed')) {
           setEmailNotConfirmed(true);
-          setError("Votre email n'est pas encore confirmé. Vérifiez votre boîte de réception.");
+          setError("Votre email n'est pas encore confirmé.");
           return;
-        }
-        if (signInError.message?.includes('provider') || signInError.message?.includes('not enabled')) {
-          throw new Error("Le provider Email n'est pas activé. Activez-le dans le dashboard Supabase > Authentication > Providers > Email.");
         }
         throw signInError;
       }
