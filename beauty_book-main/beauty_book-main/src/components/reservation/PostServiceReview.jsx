@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Star, X, Loader, Heart, Coffee, Gift, MessageSquare, PenLine, CreditCard, Lock, CheckCircle2, ChevronLeft } from "lucide-react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -14,6 +14,8 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
   const [commentaire, setCommentaire] = useState("");
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
+  const [loadingReview, setLoadingReview] = useState(true);
 
   // Payment form
   const [cardNumber, setCardNumber] = useState("");
@@ -24,6 +26,32 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
   const [paymentDone, setPaymentDone] = useState(false);
 
   const totalAmount = (Number(reservation.total_price || reservation.service_price || 0)) + (customTip ? Number(customTip) : tipAmount);
+
+  // Load existing review
+  useEffect(() => {
+    const loadReview = async () => {
+      try {
+        const { data } = await supabase
+          .from("Avis")
+          .select("*")
+          .eq("reservation_id", reservation.id)
+          .eq("auteur_email", reservation.client_email)
+          .limit(1)
+          .maybeSingle();
+        if (data) {
+          setExistingReview(data);
+          setNote(data.note || 0);
+          setCommentaire(data.commentaire || "");
+          setStep("review");
+        }
+      } catch (e) {
+        console.error("Load review error:", e);
+      }
+      setLoadingReview(false);
+    };
+    if (reservation?.id && reservation?.client_email) loadReview();
+    else setLoadingReview(false);
+  }, [reservation?.id, reservation?.client_email]);
 
   const handleTipConfirm = () => {
     setStep("payment");
@@ -65,17 +93,30 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
     if (note === 0) return;
     setSaving(true);
     const targetEmail = proEmail || reservation.pro_email;
-    await entities.Avis.create({
-      reservation_id: reservation.id,
-      type: "client_to_pro",
-      auteur_email: reservation.client_email,
-      auteur_nom: reservation.client_email,
-      cible_email: targetEmail,
-      cible_nom: proName || reservation.pro_name,
-      note,
-      commentaire,
-      service_nom: reservation.service_name,
-    });
+
+    if (existingReview) {
+      // Update existing review
+      await entities.Avis.update(existingReview.id, { note, commentaire });
+    } else {
+      // Create new review
+      await entities.Avis.create({
+        reservation_id: reservation.id,
+        type: "client_to_pro",
+        auteur_email: reservation.client_email,
+        auteur_nom: reservation.client_email,
+        cible_email: targetEmail,
+        cible_nom: proName || reservation.pro_name,
+        note,
+        commentaire,
+        service_nom: reservation.service_name,
+      });
+      // Mark reservation as reviewed
+      try {
+        await entities.Reservation.update(reservation.id, { review_done: true });
+      } catch (e) { console.error("Mark review_done error:", e); }
+    }
+
+    // Update pro rating
     try {
       const { data: avis } = await supabase.from("Avis").select("note").eq("cible_email", targetEmail);
       if (avis && avis.length > 0) {
@@ -289,79 +330,104 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
         {/* ── ÉTAPE AVIS ── */}
         {step === "review" && (
           <>
-            <div className="text-center mb-6">
-              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <PenLine className="w-7 h-7 text-primary" />
+            {loadingReview ? (
+              <div className="flex justify-center py-12">
+                <Loader className="w-6 h-6 animate-spin text-primary" />
               </div>
-              <p className="text-[11px] font-black text-primary uppercase tracking-widest mb-1">Votre avis compte</p>
-              <h3 className="text-[22px] font-black text-gray-900 leading-tight">
-                Partagez votre<br />expérience ?
-              </h3>
-              <p className="text-[13px] text-gray-400 font-medium mt-1">{reservation.service_name} chez {proName || reservation.salon_name}</p>
-            </div>
-
-            {/* Étoiles */}
-            <div className="flex justify-center gap-3 mb-2">
-              {[1, 2, 3, 4, 5].map(star => (
-                <button
-                  key={star}
-                  onMouseEnter={() => setHovered(star)}
-                  onMouseLeave={() => setHovered(0)}
-                  onClick={() => setNote(star)}
-                  className="active:scale-110 transition-all"
-                >
-                  <Star
-                    className="w-10 h-10 transition-all"
-                    fill={(hovered || note) >= star ? "#E8732A" : "none"}
-                    stroke={(hovered || note) >= star ? "#E8732A" : "#d1d5db"}
-                  />
-                </button>
-              ))}
-            </div>
-
-            {note > 0 && (
-              <p className="text-center text-[13px] font-black text-primary mb-4">
-                {["", "Pas satisfait", "Peut mieux faire", "Correct", "Bien", "Excellent !"][note]}
-              </p>
-            )}
-
-            {/* Commentaire — mis en avant */}
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <MessageSquare className="w-4 h-4 text-primary" />
-                <p className="text-[12px] font-black text-gray-700 uppercase tracking-widest">Votre commentaire</p>
-              </div>
-              <div className="bg-gray-50 border border-gray-100 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/30 transition-all">
-                <textarea
-                  value={commentaire}
-                  onChange={e => setCommentaire(e.target.value)}
-                  placeholder="Décrivez votre expérience, ce que vous avez aimé, des conseils pour les futurs clients..."
-                  rows={4}
-                  className="w-full px-4 py-3.5 text-[14px] font-medium text-gray-700 outline-none resize-none bg-transparent placeholder:text-gray-300"
-                />
-                <div className="px-4 pb-3 flex items-center justify-between">
-                  <p className="text-[10px] text-gray-300 font-medium">{commentaire.length}/500</p>
-                  {commentaire.length > 10 && (
-                    <span className="text-[10px] font-black text-green-500 flex items-center gap-1">
-                      <Heart className="w-3 h-3 fill-green-500" /> Commentaire utile
-                    </span>
-                  )}
+            ) : (
+              <>
+                <div className="text-center mb-6">
+                  <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <PenLine className="w-7 h-7 text-primary" />
+                  </div>
+                  <p className="text-[11px] font-black text-primary uppercase tracking-widest mb-1">
+                    {existingReview ? "Votre avis" : "Votre avis compte"}
+                  </p>
+                  <h3 className="text-[22px] font-black text-gray-900 leading-tight">
+                    {existingReview ? (
+                      <>Voir & modifier<br />votre avis ?</>
+                    ) : (
+                      <>Partagez votre<br />expérience ?</>
+                    )}
+                  </h3>
+                  <p className="text-[13px] text-gray-400 font-medium mt-1">{reservation.service_name} chez {proName || reservation.salon_name}</p>
                 </div>
-              </div>
-              <p className="text-[11px] text-gray-400 font-medium mt-2 text-center">
-                Les commentaires aident les autres clients à choisir leur prestataire
-              </p>
-            </div>
 
-            <button
-              onClick={handleSubmitReview}
-              disabled={note === 0 || saving}
-              className="w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest text-white flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40 bg-primary"
-            >
-              {saving ? <><Loader className="w-4 h-4 animate-spin" />Envoi...</> : <>Confirmer mon avis ✓</>}
-            </button>
+                {/* Étoiles */}
+                <div className="flex justify-center gap-3 mb-2">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      onMouseEnter={() => setHovered(star)}
+                      onMouseLeave={() => setHovered(0)}
+                      onClick={() => setNote(star)}
+                      className="active:scale-110 transition-all"
+                    >
+                      <Star
+                        className="w-10 h-10 transition-all"
+                        fill={(hovered || note) >= star ? "#E8732A" : "none"}
+                        stroke={(hovered || note) >= star ? "#E8732A" : "#d1d5db"}
+                      />
+                    </button>
+                  ))}
+                </div>
 
-            <button onClick={handleSkipReview} className="w-full text-center text-[11px] font-black text-gray-300 mt-3 uppercase tracking-widest">Plus tard</button>
+                {note > 0 && (
+                  <p className="text-center text-[13px] font-black text-primary mb-4">
+                    {["", "Pas satisfait", "Peut mieux faire", "Correct", "Bien", "Excellent !"][note]}
+                  </p>
+                )}
+
+                {/* Commentaire — mis en avant */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MessageSquare className="w-4 h-4 text-primary" />
+                    <p className="text-[12px] font-black text-gray-700 uppercase tracking-widest">Votre commentaire</p>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-100 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-primary/30 focus-within:border-primary/30 transition-all">
+                    <textarea
+                      value={commentaire}
+                      onChange={e => setCommentaire(e.target.value)}
+                      placeholder="Décrivez votre expérience, ce que vous avez aimé, des conseils pour les futurs clients..."
+                      rows={4}
+                      className="w-full px-4 py-3.5 text-[14px] font-medium text-gray-700 outline-none resize-none bg-transparent placeholder:text-gray-300"
+                    />
+                    <div className="px-4 pb-3 flex items-center justify-between">
+                      <p className="text-[10px] text-gray-300 font-medium">{commentaire.length}/500</p>
+                      {commentaire.length > 10 && (
+                        <span className="text-[10px] font-black text-green-500 flex items-center gap-1">
+                          <Heart className="w-3 h-3 fill-green-500" /> Commentaire utile
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-gray-400 font-medium mt-2 text-center">
+                    Les commentaires aident les autres clients à choisir leur prestataire
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleSubmitReview}
+                  disabled={note === 0 || saving}
+                  className="w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest text-white flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40 bg-primary"
+                >
+                  {saving ? (
+                    <><Loader className="w-4 h-4 animate-spin" />Envoi...</>
+                  ) : existingReview ? (
+                    <>Modifier mon avis ✓</>
+                  ) : (
+                    <>Confirmer mon avis ✓</>
+                  )}
+                </button>
+
+                {!existingReview && (
+                  <button onClick={handleSkipReview} className="w-full text-center text-[11px] font-black text-gray-300 mt-3 uppercase tracking-widest">Plus tard</button>
+                )}
+                {existingReview && (
+                  <button onClick={() => { setDone(true); setTimeout(() => { onSubmitted?.(); onClose?.(); }, 500); }} className="w-full text-center text-[11px] font-black text-gray-300 mt-3 uppercase tracking-widest">Fermer</button>
+                )}
+              </>
+            )}
           </>
         )}
       </div>

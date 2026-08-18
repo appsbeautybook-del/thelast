@@ -697,10 +697,14 @@ export default function RendezVous() {
               </div>
               <button
                 onClick={() => setReviewModal(r)}
-                className="shrink-0 flex items-center gap-1.5 bg-primary/10 text-primary text-[11px] font-black px-3 py-2 rounded-xl active:scale-95 transition-all uppercase tracking-widest"
+                className={`shrink-0 flex items-center gap-1.5 text-[11px] font-black px-3 py-2 rounded-xl active:scale-95 transition-all uppercase tracking-widest ${
+                  r.review_done
+                    ? "bg-green-50 text-green-600 border border-green-200"
+                    : "bg-primary/10 text-primary"
+                }`}
               >
-                <Star className="w-3.5 h-3.5 fill-primary" />
-                Avis
+                <Star className="w-3.5 h-3.5" fill={r.review_done ? "currentColor" : "none"} />
+                {r.review_done ? "Avis ✓" : "Avis"}
               </button>
             </div>
                 ))}
