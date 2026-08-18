@@ -163,7 +163,27 @@ function StepSignup({ onNext, onBack }) {
       return;
     }
 
-    // Stocker les données pour StepVerification — le compte Auth sera créé APRÈS la vérification OTP
+    // Créer le compte Auth (envoie l'email de confirmation/OTP automatiquement)
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: `${form.prenom} ${form.nom}`,
+        },
+        emailRedirectTo: window.location.origin + "/",
+      },
+    });
+
+    if (signUpError) {
+      if (signUpError.message?.includes('already registered')) {
+        setError("Cette adresse email possède déjà un compte.");
+        return;
+      }
+      throw signUpError;
+    }
+
+    // Stocker les données pour StepVerification
     sessionStorage.setItem("bb_signup_data", JSON.stringify({
       prenom: form.prenom,
       nom: form.nom,
@@ -398,39 +418,8 @@ function StepVerification({ onNext, onBack }) {
         return;
       }
 
-      // Mode email : envoyer via Supabase
-      if (!currentData.email) {
-        let user = null;
-        for (let i = 0; i < 8; i++) {
-          user = await supabase.auth.getUser().then(({ data }) => data?.user).catch(() => null);
-          if (user?.email) break;
-          await new Promise(r => setTimeout(r, 750));
-        }
-        if (user?.email) {
-          currentData = { ...currentData, email: user.email, mode: "email" };
-          sessionStorage.setItem("bb_signup_data", JSON.stringify(currentData));
-          setData(currentData);
-        }
-      }
-
-      const contact = currentData.mode === "email" ? currentData.email : currentData.phone;
-      if (!contact || (currentData.mode === "email" && !contact.includes('@'))) {
-        console.warn('[StepVerification] No valid contact to send OTP to');
-        return;
-      }
-
-      try {
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: currentData.email,
-        });
-        if (otpError) {
-          console.warn('[StepVerification] Email OTP failed:', otpError.message);
-        } else {
-          console.log('[StepVerification] OTP sent to:', currentData.email);
-        }
-      } catch (e) {
-        console.warn('[StepVerification] Email OTP error:', e);
-      }
+      // Mode email : le code OTP a déjà été envoyé par signUp() — rien à faire ici
+      // On attend simplement que l'utilisateur entre le code
     };
 
     sendCode();
@@ -493,7 +482,7 @@ function StepVerification({ onNext, onBack }) {
     const { error: verifyError } = await supabase.auth.verifyOtp({
       email,
       token: fullCode,
-      type: 'email',
+      type: 'signup',
     });
 
     if (verifyError) {
@@ -537,7 +526,7 @@ function StepVerification({ onNext, onBack }) {
       }
     } else if (currentData.email) {
       try {
-        await supabase.auth.signInWithOtp({ email: currentData.email });
+        await supabase.auth.resend({ email: currentData.email, type: 'signup' });
       } catch {
         // Erreur silencieuse
       }
