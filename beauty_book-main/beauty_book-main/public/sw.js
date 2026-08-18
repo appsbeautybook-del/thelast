@@ -1,5 +1,5 @@
 // Service Worker pour les notifications push BeautyBook
-const CACHE_NAME = 'beautybook-v2';
+const CACHE_NAME = 'beautybook-v3';
 
 // Installation
 self.addEventListener('install', (event) => {
