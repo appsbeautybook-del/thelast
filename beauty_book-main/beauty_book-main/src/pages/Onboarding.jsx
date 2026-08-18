@@ -163,7 +163,7 @@ function StepSignup({ onNext, onBack }) {
       return;
     }
 
-    // Créer le compte Auth (envoie l'email de confirmation/OTP automatiquement)
+    // Créer le compte Auth
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
@@ -171,7 +171,6 @@ function StepSignup({ onNext, onBack }) {
         data: {
           full_name: `${form.prenom} ${form.nom}`,
         },
-        emailRedirectTo: window.location.origin + "/",
       },
     });
 
@@ -182,6 +181,9 @@ function StepSignup({ onNext, onBack }) {
       }
       throw signUpError;
     }
+
+    // Envoyer un OTP de vérification par email (séparément de signUp qui envoie un lien)
+    await supabase.auth.signInWithOtp({ email: form.email });
 
     // Stocker les données pour StepVerification
     sessionStorage.setItem("bb_signup_data", JSON.stringify({
@@ -482,7 +484,7 @@ function StepVerification({ onNext, onBack }) {
     const { error: verifyError } = await supabase.auth.verifyOtp({
       email,
       token: fullCode,
-      type: 'signup',
+      type: 'email',
     });
 
     if (verifyError) {
@@ -490,10 +492,7 @@ function StepVerification({ onNext, onBack }) {
       setCode(["", "", "", "", "", ""]);
       inputs.current[0]?.focus();
     } else {
-      // OTP vérifié — définir le mot de passe pour que le login email/mot de passe fonctionne
-      if (currentData.password) {
-        await supabase.auth.updateUser({ password: currentData.password });
-      }
+      // OTP vérifié — le compte est confirmé
       // Créer le profil
       const user = await supabase.auth.getUser().then(({ data }) => data?.user).catch(() => null);
       if (user) {
@@ -526,7 +525,7 @@ function StepVerification({ onNext, onBack }) {
       }
     } else if (currentData.email) {
       try {
-        await supabase.auth.resend({ email: currentData.email, type: 'signup' });
+        await supabase.auth.signInWithOtp({ email: currentData.email });
       } catch {
         // Erreur silencieuse
       }
