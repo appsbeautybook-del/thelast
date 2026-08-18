@@ -155,7 +155,7 @@ export default function RoutineModal({ onClose, onCreated, prefill = null }) {
   return (
     <div className="fixed inset-0 z-[300] flex items-end">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white w-full rounded-t-3xl z-10 max-h-[92vh] flex flex-col" style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}>
+      <div className="relative bg-white w-full rounded-t-3xl z-10 max-h-[85vh] flex flex-col" style={{ paddingBottom: "calc(90px + env(safe-area-inset-bottom, 16px))" }}>
         {/* Handle */}
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1 shrink-0" />
 
