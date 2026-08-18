@@ -155,7 +155,7 @@ export default function RoutineModal({ onClose, onCreated, prefill = null }) {
   return (
     <div className="fixed inset-0 z-[300] flex items-end">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white w-full rounded-t-3xl z-10 max-h-[92vh] flex flex-col">
+      <div className="relative bg-white w-full rounded-t-3xl z-10 max-h-[92vh] flex flex-col" style={{ paddingBottom: "env(safe-area-inset-bottom, 16px)" }}>
         {/* Handle */}
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mt-3 mb-1 shrink-0" />
 
@@ -187,7 +187,7 @@ export default function RoutineModal({ onClose, onCreated, prefill = null }) {
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 pt-4 pb-6 space-y-4">
 
           {/* Step 0 — Suggestions */}
           {step === 0 && (
@@ -402,7 +402,7 @@ export default function RoutineModal({ onClose, onCreated, prefill = null }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-4 pt-3 border-t border-gray-100 shrink-0">
+        <div className="px-5 pb-6 pt-3 border-t border-gray-100 shrink-0">
           {step > 0 && step < 3 ? (
             <button onClick={() => setStep(s => s + 1)} disabled={step === 1 && !form.name.trim()}
               className="w-full bg-primary text-white py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-50">
