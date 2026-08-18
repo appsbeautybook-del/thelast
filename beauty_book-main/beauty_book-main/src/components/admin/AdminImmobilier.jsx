@@ -9,7 +9,7 @@ const EMPTY_FORM = {
   title: "", description: "", type: "location", price: "",
   unit: "/MOIS", surface: "", location: "", area: "",
   equip: "", extra: "", images: [], video_url: "",
-  contact_email: "", contact_phone: "", status: "actif",
+  status: "actif",
 };
 
 export default function AdminImmobilier() {
@@ -127,9 +127,6 @@ export default function AdminImmobilier() {
             <input value={form.extra} onChange={e => setForm(f => ({ ...f, extra: e.target.value }))} placeholder="Extra (ex: Parking)" className={inputCls} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <input value={form.contact_email} onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} placeholder="Email contact" className={inputCls} />
-            <input value={form.contact_phone} onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))} placeholder="Téléphone" className={inputCls} />
           </div>
 
           {/* Images */}
