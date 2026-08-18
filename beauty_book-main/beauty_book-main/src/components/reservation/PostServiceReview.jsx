@@ -14,6 +14,7 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
   const [commentaire, setCommentaire] = useState("");
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [existingReview, setExistingReview] = useState(null);
   const [loadingReview, setLoadingReview] = useState(true);
 
@@ -125,8 +126,8 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
       }
     } catch (e) { console.error("Sync rating:", e); }
     setSaving(false);
-    setDone(true);
-    setTimeout(() => { onSubmitted?.(); onClose?.(); }, 2000);
+    setSubmitted(true);
+    setTimeout(() => { setDone(true); }, 1500);
   };
 
   const handleSkipReview = () => {
@@ -409,11 +410,15 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
 
                 <button
                   onClick={handleSubmitReview}
-                  disabled={note === 0 || saving}
-                  className="w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest text-white flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40 bg-primary"
+                  disabled={note === 0 || saving || submitted}
+                  className={`w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest text-white flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-100 ${
+                    submitted ? "bg-green-500" : "bg-primary"
+                  }`}
                 >
                   {saving ? (
                     <><Loader className="w-4 h-4 animate-spin" />Envoi...</>
+                  ) : submitted ? (
+                    <>Avis envoyé ✓</>
                   ) : existingReview ? (
                     <>Modifier mon avis ✓</>
                   ) : (
