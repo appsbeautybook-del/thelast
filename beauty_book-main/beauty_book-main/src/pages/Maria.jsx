@@ -1312,6 +1312,23 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   </div>
                 </button>
                 <button
+                  onClick={() => { setShowSimulator(true); }}
+                  className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
+                >
+                  <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400" alt="ai hairstyle" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-rose-500/80 to-pink-700/70" />
+                  <div className="absolute inset-0 p-4 flex flex-col justify-between">
+                    <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
+                      <Wand2 className="w-4 h-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-white text-[13px] font-black leading-tight">AI Hairstyle</p>
+                      <p className="text-white text-[13px] font-black leading-tight">Changer</p>
+                      <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">Essayer</span>
+                    </div>
+                  </div>
+                </button>
+                <button
                   onClick={() => navigate("/sh-ai")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
