@@ -259,9 +259,23 @@ function ForgotPassword({ onBack }) {
               onKeyDown={e => e.key === "Enter" && handleSend()}
             />
           </div>
-          {error && <p className="text-[12px] text-red-500 font-medium">{error}</p>}
-        </div>
 
+          {error && (
+            <div>
+              <p className="text-[12px] text-red-500 font-medium">{error}</p>
+              {emailNotConfirmed && (
+                <button
+                  onClick={handleResendConfirmation}
+                  disabled={resending}
+                  className="mt-2 text-[12px] font-black underline active:scale-95 transition-all"
+                  style={{ color: "#E8732A" }}
+                >
+                  {resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
         <div className="mt-6">
           <button
             onClick={handleSend}
@@ -289,7 +303,9 @@ export default function Connexion() {
   const [remember, setRemember] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
+  const [resending, setResending] = useState(false);
 
   // Restore saved email if "remember me" was checked
   useEffect(() => {
@@ -328,6 +344,7 @@ export default function Connexion() {
     if (!email || !password || loading) return;
     setLoading(true);
     setError("");
+    setEmailNotConfirmed(false);
     try {
       if (remember) {
         localStorage.setItem("bb_remember", "1");
@@ -338,6 +355,11 @@ export default function Connexion() {
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
+        if (signInError.message?.includes('Email not confirmed') || signInError.message?.includes('not confirmed')) {
+          setEmailNotConfirmed(true);
+          setError("Votre email n'est pas encore confirmé. Vérifiez votre boîte de réception.");
+          return;
+        }
         if (signInError.message?.includes('provider') || signInError.message?.includes('not enabled')) {
           throw new Error("Le provider Email n'est pas activé. Activez-le dans le dashboard Supabase > Authentication > Providers > Email.");
         }
@@ -350,6 +372,19 @@ export default function Connexion() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email || resending) return;
+    setResending(true);
+    try {
+      await supabase.auth.resend({ email, type: 'signup' });
+      setError("Email de confirmation renvoyé. Vérifiez votre boîte de réception.");
+      setEmailNotConfirmed(false);
+    } catch {
+      setError("Erreur lors de l'envoi. Réessayez.");
+    }
+    setResending(false);
   };
 
   const handleOAuth = async (provider) => {
