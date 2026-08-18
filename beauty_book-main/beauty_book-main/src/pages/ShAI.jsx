@@ -2,7 +2,7 @@ import { fetchShopifyProducts } from "@/api/shopifyClient";
 import { useState, useRef, useEffect, useCallback, Component } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  ArrowLeft, Wand2, Camera, Download,
+  ArrowLeft, ArrowRight, Wand2, Camera, Download,
   Sun, Contrast, Droplets, RefreshCw, X, Heart, Search,
   ShoppingCart, Check, Sparkles, Shirt, Repeat2, Clock,
   Crop, FlipHorizontal, RotateCw, Palette, Image as ImageIcon
@@ -494,6 +494,9 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
   const [showHistory, setShowHistory] = useState(false);
   const { addToCart } = useCartSync();
   const [justAdded, setJustAdded] = useState(false);
+  const [comparePos, setComparePos] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const compareRef = useRef(null);
 
   // ── Save draft to localStorage (debounced) ──
   useEffect(() => {
@@ -699,6 +702,15 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
     localStorage.removeItem(SHAI_DRAFT_KEY);
   };
 
+  const handleCompareMove = (clientX) => {
+    if (!compareRef.current) return;
+    const rect = compareRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    setComparePos(Math.round((x / rect.width) * 100));
+  };
+  const onCompareMouseMove = (e) => { if (isDragging) handleCompareMove(e.clientX); };
+  const onCompareTouchMove = (e) => { if (isDragging) handleCompareMove(e.touches[0].clientX); };
+
   const baseList = showFavoris && likedProducts.length > 0 ? likedProducts : products;
   const filteredProducts = searchQuery.trim()
     ? baseList.filter(p => (p.name + " " + (p.brand || "")).toLowerCase().includes(searchQuery.toLowerCase()))
@@ -710,6 +722,49 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
   if (result) {
     return (
       <div className="px-4 pt-4 pb-10 space-y-4">
+        {/* Avant / Après Slider */}
+        {userPhoto && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[12px] font-black text-gray-700 uppercase tracking-widest">Avant / Après</p>
+              <span className="text-[10px] text-gray-400 font-medium">← Glisser →</span>
+            </div>
+            <div
+              ref={compareRef}
+              className="relative aspect-[3/4] rounded-2xl overflow-hidden cursor-col-resize select-none bg-gray-100"
+              onMouseDown={() => setIsDragging(true)}
+              onMouseUp={() => setIsDragging(false)}
+              onMouseLeave={() => setIsDragging(false)}
+              onMouseMove={onCompareMouseMove}
+              onTouchStart={() => setIsDragging(true)}
+              onTouchEnd={() => setIsDragging(false)}
+              onTouchMove={onCompareTouchMove}
+            >
+              <div className="absolute inset-0">
+                <img src={result} alt="Après" className="w-full h-full object-cover" />
+                <div className="absolute bottom-2 right-2 bg-primary/90 rounded-full px-2 py-0.5">
+                  <span className="text-white text-[9px] font-black uppercase">APRÈS</span>
+                </div>
+              </div>
+              <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - comparePos}% 0 0)` }}>
+                <img src={userPhoto} alt="Avant" className="w-full h-full object-cover" />
+                <div className="absolute bottom-2 left-2 bg-gray-900/80 rounded-full px-2 py-0.5">
+                  <span className="text-white text-[9px] font-black uppercase">AVANT</span>
+                </div>
+              </div>
+              <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg" style={{ left: `${comparePos}%` }}>
+                <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center border-2 border-primary">
+                  <div className="flex items-center gap-0.5">
+                    <ArrowLeft className="w-3 h-3 text-primary" />
+                    <ArrowRight className="w-3 h-3 text-primary" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-center text-[10px] text-gray-400 mt-1.5 font-medium">Glissez pour comparer l'original et le résultat</p>
+          </div>
+        )}
+
         {mode === "article" && selectedProduct && (
           <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center gap-3">
             <img src={selectedProduct.img} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0 shadow-sm" />
@@ -1002,6 +1057,9 @@ function EchangeTenues() {
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState(draft?.searchResults || []);
   const [detectedItems, setDetectedItems] = useState(draft?.detectedItems || []);
+  const [comparePos, setComparePos] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
+  const compareRef = useRef(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -1091,8 +1149,60 @@ function EchangeTenues() {
     localStorage.removeItem(SHAI_TENUES_DRAFT_KEY);
   };
 
+  const handleCompareMove = (clientX) => {
+    if (!compareRef.current) return;
+    const rect = compareRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    setComparePos(Math.round((x / rect.width) * 100));
+  };
+  const onCompareMouseMove = (e) => { if (isDragging) handleCompareMove(e.clientX); };
+  const onCompareTouchMove = (e) => { if (isDragging) handleCompareMove(e.touches[0].clientX); };
+
   if (result) return (
     <div className="px-4 pt-4 pb-10 space-y-4">
+      {/* Avant / Après Slider */}
+      {userPhoto && (
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[12px] font-black text-gray-700 uppercase tracking-widest">Avant / Après</p>
+            <span className="text-[10px] text-gray-400 font-medium">← Glisser →</span>
+          </div>
+          <div
+            ref={compareRef}
+            className="relative aspect-[3/4] rounded-2xl overflow-hidden cursor-col-resize select-none bg-gray-100"
+            onMouseDown={() => setIsDragging(true)}
+            onMouseUp={() => setIsDragging(false)}
+            onMouseLeave={() => setIsDragging(false)}
+            onMouseMove={onCompareMouseMove}
+            onTouchStart={() => setIsDragging(true)}
+            onTouchEnd={() => setIsDragging(false)}
+            onTouchMove={onCompareTouchMove}
+          >
+            <div className="absolute inset-0">
+              <img src={result} alt="Après" className="w-full h-full object-cover" />
+              <div className="absolute bottom-2 right-2 bg-primary/90 rounded-full px-2 py-0.5">
+                <span className="text-white text-[9px] font-black uppercase">APRÈS</span>
+              </div>
+            </div>
+            <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - comparePos}% 0 0)` }}>
+              <img src={userPhoto} alt="Avant" className="w-full h-full object-cover" />
+              <div className="absolute bottom-2 left-2 bg-gray-900/80 rounded-full px-2 py-0.5">
+                <span className="text-white text-[9px] font-black uppercase">AVANT</span>
+              </div>
+            </div>
+            <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg" style={{ left: `${comparePos}%` }}>
+              <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 bg-white rounded-full shadow-xl flex items-center justify-center border-2 border-primary">
+                <div className="flex items-center gap-0.5">
+                  <ArrowLeft className="w-3 h-3 text-primary" />
+                  <ArrowRight className="w-3 h-3 text-primary" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="text-center text-[10px] text-gray-400 mt-1.5 font-medium">Glissez pour comparer l'original et le résultat</p>
+        </div>
+      )}
+
       {searchResults.length > 0 && (
         <div>
           <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest mb-3">Articles similaires</p>
@@ -1122,28 +1232,33 @@ function EchangeTenues() {
         ))}
       </div>
       {/* Photos avec overlay chargement sur la photo utilisateur */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex flex-col gap-2">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Votre photo</p>
-          <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-md">
+      <div className="space-y-3">
+        {/* Votre photo — grande */}
+        <div>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Votre photo</p>
+          <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-md max-w-[280px] mx-auto">
             {userPhoto ? (
               <>
-                <img src={userPhoto} alt="" className="w-full h-full object-cover" />
+                <img src={userPhoto} alt="" className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-30' : 'opacity-100'}`} />
                 {loading && <LoadingOverlay onCancel={cancelExchange} />}
                 {!loading && (
                   <button onClick={() => setUserPhoto(null)} className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full flex items-center justify-center z-10">
                     <X className="w-3.5 h-3.5 text-white" />
                   </button>
                 )}
+                {!loading && (
+                  <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-black/30 to-transparent" />
+                )}
               </>
             ) : (
-              <UploadZone image={null} onUpload={handleUserPhoto} onClear={() => {}} hint="Corps entier" accent />
+              <UploadZone image={null} onUpload={handleUserPhoto} onClear={() => {}} hint="Corps entier, fond neutre" accent />
             )}
           </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tenue à copier</p>
-          <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-md">
+        {/* Tenue à copier — petite */}
+        <div>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tenue à copier</p>
+          <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md max-w-[200px]">
             {referencePhoto ? (
               <>
                 <img src={referencePhoto} alt="" className="w-full h-full object-cover" />

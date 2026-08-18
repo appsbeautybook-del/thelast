@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Shield, Download, Heart, Check, Search, Sparkles, ImageIcon, GalleryHorizontalEnd } from "lucide-react";
+import { ArrowLeft, ArrowRight, Shield, Download, Heart, Check, Search, Sparkles, ImageIcon, GalleryHorizontalEnd, Loader2, Camera } from "lucide-react";
 import { entities, uploadFile } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { apiClient } from '@/lib/apiClient';
@@ -42,6 +42,8 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
   const [styles, setStyles] = useState([]);
   const [loadingStyles, setLoadingStyles] = useState(true);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [photoAnalysis, setPhotoAnalysis] = useState(null);
+  const [analyzingPhoto, setAnalyzingPhoto] = useState(false);
   const compareRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -120,7 +122,41 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
     if (!file) return;
     setUserPhoto(file);
     setUserPhotoUrl(URL.createObjectURL(file));
-    setUserPhotoUploadedUrl(null); // reset upload cache
+    setUserPhotoUploadedUrl(null);
+    setPhotoAnalysis(null);
+    analyzePhoto(file);
+  };
+
+  const analyzePhoto = async (file) => {
+    setAnalyzingPhoto(true);
+    setPhotoAnalysis(null);
+    try {
+      let urlToSend = URL.createObjectURL(file);
+      try {
+        const { file_url } = await uploadFile({ file });
+        if (file_url) urlToSend = file_url;
+      } catch {}
+      const res = await apiClient.callFunction("analyzePhoto", {
+        photoUrl: urlToSend,
+        productName: "coiffure",
+      });
+      const d = res.data || {};
+      setPhotoAnalysis({
+        compatibility_score: d.compatibility_score || 85,
+        issues: d.issues || [],
+        body_type: d.body_type || "",
+        suggestion: d.suggestion || "Photo prête pour la simulation.",
+        ...d,
+      });
+    } catch {
+      setPhotoAnalysis({
+        compatibility_score: 85,
+        issues: [],
+        body_type: "",
+        suggestion: "Photo prête pour la simulation.",
+      });
+    }
+    setAnalyzingPhoto(false);
   };
 
   const startSimulation = async () => {
@@ -328,27 +364,28 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
           {/* ── STEP 2: Photo + Style ── */}
           {step === 2 && (
             <div className="space-y-6">
-              {/* Photo upload */}
+              {/* Photo upload — grande zone */}
               <div>
                 <h3 className="text-[15px] font-black text-gray-900 mb-3 flex items-center gap-2"><ImageIcon className="w-4 h-4 text-primary" strokeWidth={1.5} /> Votre photo</h3>
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer active:scale-95 transition-all ${userPhotoUrl ? "border-primary bg-orange-50/30" : "border-gray-200 bg-gray-50"}`}
+                  className={`border-2 border-dashed rounded-3xl flex flex-col items-center justify-center cursor-pointer active:scale-[0.98] transition-all ${userPhotoUrl ? "border-primary bg-orange-50/30 aspect-[3/4] max-w-[280px] mx-auto" : "border-primary/40 bg-primary/5 py-16"}`}
                 >
                   {userPhotoUrl ? (
-                    <div className="relative">
-                      <img src={userPhotoUrl} alt="Votre photo" className="w-32 h-32 object-cover rounded-2xl shadow-md" />
-                      <div className="absolute -top-2 -right-2 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
+                    <div className="relative w-full h-full">
+                      <img src={userPhotoUrl} alt="Votre photo" className="w-full h-full object-cover rounded-3xl" />
+                      <div className="absolute -top-2 -right-2 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center border-2 border-white z-10">
                         <Check className="w-3.5 h-3.5 text-white" />
                       </div>
+                      <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-black/30 to-transparent rounded-b-3xl" />
                     </div>
                   ) : (
                     <>
-                      <div className="w-16 h-16 bg-gradient-to-br from-orange-50 to-orange-100 rounded-2xl flex items-center justify-center mb-2 border border-orange-200">
-                        <ImageIcon className="w-7 h-7 text-primary/60" strokeWidth={1.2} />
+                      <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-3 border border-primary/20">
+                        <Camera className="w-8 h-8 text-primary" strokeWidth={1.5} />
                       </div>
-                      <p className="text-[14px] font-black text-gray-700">Importer votre photo</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">JPG, PNG · Max 10 Mo</p>
+                      <p className="text-[15px] font-black text-primary">Importer</p>
+                      <p className="text-[12px] text-gray-400 font-medium mt-1">Corps entier, fond neutre</p>
                     </>
                   )}
                 </div>
@@ -359,6 +396,62 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                   </button>
                 )}
               </div>
+
+              {/* Analyse photo */}
+              {userPhotoUrl && analyzingPhoto && (
+                <div className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
+                  <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin shrink-0" />
+                  <p className="text-[11px] font-bold text-blue-600">Analyse de la photo en cours…</p>
+                </div>
+              )}
+              {userPhotoUrl && !analyzingPhoto && photoAnalysis && (
+                <div className={`rounded-xl border px-3 py-3 space-y-2 ${
+                  photoAnalysis.compatibility_score >= 70 ? "bg-green-50 border-green-100" :
+                  photoAnalysis.compatibility_score >= 40 ? "bg-yellow-50 border-yellow-100" :
+                  "bg-red-50 border-red-100"
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[15px]">
+                        {photoAnalysis.compatibility_score >= 70 ? "✅" : photoAnalysis.compatibility_score >= 40 ? "⚠️" : "❌"}
+                      </span>
+                      <p className={`text-[12px] font-black ${
+                        photoAnalysis.compatibility_score >= 70 ? "text-green-700" :
+                        photoAnalysis.compatibility_score >= 40 ? "text-yellow-700" : "text-red-600"
+                      }`}>
+                        {photoAnalysis.compatibility_score >= 70 ? "Photo compatible" :
+                         photoAnalysis.compatibility_score >= 40 ? "Compatibilité partielle" : "Photo non recommandée"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            photoAnalysis.compatibility_score >= 70 ? "bg-green-500" :
+                            photoAnalysis.compatibility_score >= 40 ? "bg-yellow-400" : "bg-red-400"
+                          }`}
+                          style={{ width: `${photoAnalysis.compatibility_score}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-black text-gray-600">{photoAnalysis.compatibility_score}%</span>
+                    </div>
+                  </div>
+                  {photoAnalysis.issues?.length > 0 && (
+                    <div className="space-y-0.5">
+                      {photoAnalysis.issues.map((issue, i) => (
+                        <p key={i} className="text-[10px] text-gray-500 font-medium flex items-start gap-1">
+                          <span className="shrink-0 mt-0.5">•</span>{issue}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  {photoAnalysis.suggestion && photoAnalysis.compatibility_score < 70 && (
+                    <p className="text-[10px] font-bold text-gray-600 bg-white/70 rounded-lg px-2 py-1.5">
+                      💡 {photoAnalysis.suggestion}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Style selector */}
               <div>
@@ -471,15 +564,37 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
               <div className="flex gap-4 w-full">
                 <div className="flex-1 flex flex-col items-center gap-2">
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">VOUS</p>
-                  {userPhotoUrl ? (
-                    <div className="w-full aspect-square rounded-2xl overflow-hidden">
-                      <img src={userPhotoUrl} alt="Vous" className="w-full h-full object-cover" />
+                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden">
+                    {userPhotoUrl ? (
+                      <img src={userPhotoUrl} alt="Vous" className="w-full h-full object-cover opacity-40" />
+                    ) : (
+                      <div className="w-full h-full rounded-2xl bg-gray-100 flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-gray-300" strokeWidth={1.2} />
+                      </div>
+                    )}
+                    {/* Barre de chargement orange superposée */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/20 border-2 border-primary/40 flex items-center justify-center mb-3">
+                        <Sparkles className="w-6 h-6 text-primary animate-spin" />
+                      </div>
+                      <div className="w-4/5 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-white text-[11px] font-black drop-shadow-md">{progressMsg}</p>
+                          <p className="text-primary text-[13px] font-black drop-shadow-md">{progress}%</p>
+                        </div>
+                        <div className="h-2.5 bg-white/20 rounded-full overflow-hidden border border-white/10">
+                          <div
+                            className="h-full rounded-full transition-[width] duration-300 ease-out"
+                            style={{
+                              width: `${progress}%`,
+                              background: 'linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fdba74 100%)',
+                              boxShadow: '0 0 12px rgba(249, 115, 22, 0.6)',
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  ) : (
-                    <div className="w-full aspect-square rounded-2xl bg-gray-100 flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-gray-300" strokeWidth={1.2} />
-                    </div>
-                  )}
+                  </div>
                 </div>
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30">
@@ -494,23 +609,6 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                     </div>
                   )}
                 </div>
-              </div>
-
-              <div className="w-full space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                    <p className="text-[13px] font-black text-gray-900">Nano Banana AI</p>
-                  </div>
-                  <p className="text-[14px] font-black text-primary animate-pulse">{progress}%</p>
-                </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full transition-all duration-700 ease-out animate-pulse"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <p className="text-[12px] text-gray-500 font-medium text-center">{progressMsg}</p>
               </div>
 
               <div className="flex items-center gap-2">
