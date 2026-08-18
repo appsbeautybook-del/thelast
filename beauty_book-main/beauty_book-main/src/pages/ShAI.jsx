@@ -1255,22 +1255,24 @@ function EchangeTenues() {
             )}
           </div>
         </div>
-        {/* Tenue à copier — petite */}
-        <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tenue à copier</p>
-          <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md max-w-[200px]">
-            {referencePhoto ? (
-              <>
-                <img src={referencePhoto} alt="" className="w-full h-full object-cover" />
-                {!loading && (
-                  <button onClick={() => { setReferencePhoto(null); setSearchResults([]); setDetectedItems([]); }} className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full flex items-center justify-center z-10">
-                    <X className="w-3.5 h-3.5 text-white" />
-                  </button>
-                )}
-              </>
-            ) : (
-              <UploadZone image={null} onUpload={handleReferencePhoto} onClear={() => {}} hint="Photo référence" accent={false} />
-            )}
+        {/* Tenue à copier — petite, centrée */}
+        <div className="flex justify-center">
+          <div className="w-[200px]">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 text-center">Tenue à copier</p>
+            <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md">
+              {referencePhoto ? (
+                <>
+                  <img src={referencePhoto} alt="" className="w-full h-full object-cover" />
+                  {!loading && (
+                    <button onClick={() => { setReferencePhoto(null); setSearchResults([]); setDetectedItems([]); }} className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full flex items-center justify-center z-10">
+                      <X className="w-3.5 h-3.5 text-white" />
+                    </button>
+                  )}
+                </>
+              ) : (
+                <UploadZone image={null} onUpload={handleReferencePhoto} onClear={() => {}} hint="Photo référence" accent={false} />
+              )}
+            </div>
           </div>
         </div>
       </div>

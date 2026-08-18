@@ -188,18 +188,22 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
         setUserPhotoUploadedUrl(file_url);
       }
 
-      // 2. Récupérer toutes les images de référence du style sélectionné
+      // 2. Récupérer l'image de référence du style sélectionné
       const referenceImages = selectedStyle.allImages
         ? selectedStyle.allImages.filter(Boolean).slice(0, 3)
         : [selectedStyle.img].filter(Boolean);
+      const garmentPhoto = referenceImages[0] || selectedStyle.img;
 
       setProgressMsg("Connexion à l'IA...");
 
-      // 3. Appeler la fonction backend avec timeout
-      const apiCall = apiClient.callFunction("simulateHairstyle", {
-        userPhotoUrl: uploadedUrl,
-        styleTitle: selectedStyle.label,
-        referenceImages,
+      // 3. Appeler shAiTryOn (même processus que l'essayage article)
+      const apiCall = apiClient.callFunction("shAiTryOn", {
+        user_photo: uploadedUrl,
+        garment_photo: garmentPhoto,
+        garment_name: `coiffure: ${selectedStyle.label}`,
+        preserve_face: true,
+        preserve_background: true,
+        mode: "hair",
       });
       const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 60000));
       const response = await Promise.race([apiCall, timeout]);
@@ -215,10 +219,11 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
         throw new Error(data.error);
       }
 
-      const isFallback = data?.fallback === true || !data?.generatedImageUrl;
+      const isFallback = data?.fallback === true || !data?.result_url && !data?.generatedImageUrl;
+      const resultUrl = data?.result_url || data?.generatedImageUrl || null;
       
       setResult({
-        generatedImageUrl: data?.generatedImageUrl || null,
+        generatedImageUrl: resultUrl,
         styleLabel: selectedStyle.label,
         styleImg: selectedStyle.img,
         userPhotoUrl,
