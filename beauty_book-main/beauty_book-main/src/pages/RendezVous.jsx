@@ -513,7 +513,7 @@ export default function RendezVous() {
       {showAddMenu && (
         <div className="fixed inset-0 z-[200] flex items-end" onClick={() => setShowAddMenu(false)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="relative bg-white w-full rounded-t-3xl px-5 pt-4 pb-10 z-10" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-white w-full rounded-t-3xl px-5 pt-4 pb-6 z-10" onClick={e => e.stopPropagation()}>
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />
             <h3 className="text-[18px] font-black text-gray-900 mb-1">Ajouter</h3>
             <p className="text-[13px] text-gray-400 font-medium mb-5">Que souhaitez-vous créer ?</p>
@@ -543,7 +543,7 @@ export default function RendezVous() {
                 </div>
               </button>
             </div>
-            <button onClick={() => setShowAddMenu(false)} className="w-full text-center text-[11px] font-black text-gray-400 mt-4 uppercase tracking-widest">Annuler</button>
+            <button onClick={() => setShowAddMenu(false)} className="w-full text-center text-[11px] font-black text-gray-400 mt-2 uppercase tracking-widest">Annuler</button>
           </div>
         </div>
       )}
@@ -830,7 +830,7 @@ export default function RendezVous() {
         <div className="fixed inset-0 z-[300] flex items-end" onClick={() => setSelectedReservation(null)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div className="relative bg-white w-full rounded-t-3xl z-10 overflow-hidden" onClick={e => e.stopPropagation()}
-            style={{ paddingBottom: "calc(16px + env(safe-area-inset-bottom, 16px))" }}>
+            style={{ paddingBottom: "calc(8px + env(safe-area-inset-bottom, 12px))" }}>
             {/* Handle */}
             <div className="flex justify-center pt-3 pb-2">
               <div className="w-10 h-1 bg-gray-200 rounded-full" />

@@ -144,92 +144,62 @@ function StepSignup({ onNext, onBack }) {
   const pwdStrong = pwdScore >= 3;
 
   const [touched, setTouched] = useState(false);
-  const isValid = form.prenom && form.nom &&
-    (mode === "email" ? form.email : form.phone) &&
-    pwdStrong && form.password === form.confirm;
+  const isValid = form.prenom && form.nom && form.email && pwdStrong && form.password === form.confirm;
 
   const handleSubmit = async () => {
     setTouched(true);
     if (!isValid) return;
     setError("");
 
-    const phone = mode === "phone" ? `${selectedCountry.dial}${form.phone.replace(/\s/g, "")}` : "";
-    const syntheticEmail = mode === "phone" ? `phone_${form.phone.replace(/\s/g, "")}@appsbeautybook.app` : form.email;
-
     // Vérifier si un compte existe déjà
-    if (mode === "email" && form.email) {
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', form.email)
-        .single();
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', form.email)
+      .single();
 
-      if (existingProfile) {
-        setError("Cette adresse email possède déjà un compte. Veuillez vous connecter.");
-        return;
-      }
+    if (existingProfile) {
+      setError("Cette adresse email possède déjà un compte. Veuillez vous connecter.");
+      return;
     }
 
-    // Mode téléphone : créer le compte puis envoyer OTP
-    if (mode === "phone" && phone) {
-      try {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email: syntheticEmail,
-          password: form.password,
-          options: {
-            data: {
-              full_name: `${form.prenom} ${form.nom}`,
-              phone: phone,
-            },
-          },
-        });
+    // Créer le compte Supabase Auth immédiatement
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: `${form.prenom} ${form.nom}`,
+        },
+      },
+    });
 
-        if (signUpError) {
-          if (signUpError.message?.includes('already registered')) {
-            setError("Ce numéro de téléphone possède déjà un compte.");
-            return;
-          }
-          throw signUpError;
-        }
-
-        // Stocker les données pour l'étape suivante
-        sessionStorage.setItem("bb_signup_data", JSON.stringify({
-          prenom: form.prenom,
-          nom: form.nom,
-          email: syntheticEmail,
-          phone: phone,
-          mode,
-        }));
-
-        // Créer le profil avec le numéro de téléphone
-        if (signUpData?.user) {
-          await supabase.from('profiles').upsert({
-            id: signUpData.user.id,
-            email: syntheticEmail,
-            phone: phone,
-            full_name: `${form.prenom} ${form.nom}`,
-            role: 'user',
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'id' });
-        }
-
-        // Aller à l'étape de vérification (qui gère le téléphone maintenant)
-        onNext();
-        return;
-      } catch (e) {
-        console.error('[StepSignup] Phone signup error:', e);
-        setError("Erreur lors de l'inscription. Réessayez.");
+    if (signUpError) {
+      if (signUpError.message?.includes('already registered')) {
+        setError("Cette adresse email possède déjà un compte.");
         return;
       }
+      throw signUpError;
     }
 
-    // Mode email : stocker et passer à la vérification OTP
+    // Créer le profil
+    if (signUpData?.user) {
+      await supabase.from('profiles').upsert({
+        id: signUpData.user.id,
+        email: form.email,
+        full_name: `${form.prenom} ${form.nom}`,
+        role: 'user',
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }
+
+    // Stocker les données pour l'étape suivante
     sessionStorage.setItem("bb_signup_data", JSON.stringify({
       prenom: form.prenom,
       nom: form.nom,
       email: form.email,
       phone: "",
-      mode,
+      mode: "email",
     }));
     onNext();
   };
@@ -278,86 +248,11 @@ function StepSignup({ onNext, onBack }) {
           </div>
         </div>
 
-        {/* Toggle email / phone */}
-        <div className="flex bg-gray-100 rounded-2xl p-1">
-          <button onClick={() => setMode("email")} className={`flex-1 py-2.5 rounded-xl text-[12px] font-black transition-all ${mode === "email" ? "bg-white shadow text-gray-900" : "text-gray-400"}`}>
-            ✉️ Email
-          </button>
-          <button onClick={() => setMode("phone")} className={`flex-1 py-2.5 rounded-xl text-[12px] font-black transition-all ${mode === "phone" ? "bg-white shadow text-gray-900" : "text-gray-400"}`}>
-            📱 Téléphone
-          </button>
+        {/* Email only — phone hidden */}
+        <div>
+          <label className={labelClass}>Adresse e-mail</label>
+          <input className={inputClass} type="email" placeholder="sophie.martin@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
         </div>
-
-        {mode === "email" ? (
-          <div>
-            <label className={labelClass}>Adresse e-mail</label>
-            <input className={inputClass} type="email" placeholder="sophie.martin@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-          </div>
-        ) : (
-          <div className="relative">
-            <label className={labelClass}>Numéro de téléphone</label>
-            <div className="flex items-center gap-2 bg-gray-100 rounded-2xl px-4 py-3.5 focus-within:ring-2 focus-within:ring-primary/40">
-              <button
-                type="button"
-                onClick={() => setShowCountryPicker(!showCountryPicker)}
-                className="flex items-center gap-1.5 shrink-0 active:scale-95 transition-all"
-              >
-                <span className="text-[18px]">{selectedCountry.flag}</span>
-                <span className="text-[13px] font-black text-gray-500">{selectedCountry.dial}</span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-gray-400">
-                  <path d="M6 9l6 6 6-6"/>
-                </svg>
-              </button>
-              <div className="w-px h-4 bg-gray-300" />
-              <input
-                type="tel"
-                placeholder="6 12 34 56 78"
-                value={form.phone}
-                onChange={e => setForm({ ...form, phone: e.target.value })}
-                className="flex-1 bg-transparent text-[14px] font-medium text-gray-800 outline-none placeholder:text-gray-400"
-              />
-            </div>
-
-            {showCountryPicker && (
-              <div className="absolute left-0 right-0 top-full mt-1 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 max-h-[280px] flex flex-col overflow-hidden">
-                <div className="p-2 border-b border-gray-100">
-                  <input
-                    type="text"
-                    placeholder="Rechercher un pays..."
-                    value={countrySearch}
-                    onChange={e => setCountrySearch(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-50 rounded-xl text-[13px] font-medium outline-none"
-                    autoFocus
-                  />
-                </div>
-                <div className="overflow-y-auto flex-1">
-                  {COUNTRIES.filter(c =>
-                    c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-                    c.dial.includes(countrySearch) ||
-                    c.code.toLowerCase().includes(countrySearch.toLowerCase())
-                  ).map(c => (
-                    <button
-                      key={c.code}
-                      onClick={() => {
-                        setSelectedCountry(c);
-                        setShowCountryPicker(false);
-                        setCountrySearch("");
-                      }}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left active:bg-gray-50 transition-colors ${selectedCountry.code === c.code ? "bg-orange-50" : ""}`}
-                    >
-                      <span className="text-[20px]">{c.flag}</span>
-                      <span className="flex-1 text-[13px] font-semibold text-gray-800">{c.name}</span>
-                      <span className="text-[13px] font-bold text-gray-400">{c.dial}</span>
-                    </button>
-                  ))}
-                </div>
-                <button onClick={() => { setShowCountryPicker(false); setCountrySearch(""); }} className="p-2 border-t border-gray-100 text-[13px] font-black text-primary">
-                  Fermer
-                </button>
-              </div>
-            )}
-          </div>
-        )}
 
         <div>
           <label className={labelClass}>Mot de passe</label>
@@ -405,7 +300,7 @@ function StepSignup({ onNext, onBack }) {
           <div className="bg-red-50 border border-red-100 rounded-2xl px-4 py-3">
             <p className="text-[12px] text-red-500 font-bold">
               {!form.prenom || !form.nom ? "Prénom et nom sont obligatoires." :
-               !(mode === "email" ? form.email : form.phone) ? `Votre ${mode === "email" ? "email" : "téléphone"} est obligatoire.` :
+               !form.email ? "Votre adresse email est obligatoire." :
                !pwdStrong ? "Votre mot de passe n'est pas assez fort." :
                form.password !== form.confirm ? "Les mots de passe ne correspondent pas." : ""}
             </p>
@@ -422,22 +317,6 @@ function StepSignup({ onNext, onBack }) {
         >
           Suivant
         </button>
-
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-100" />
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Ou continuer avec</span>
-          <div className="flex-1 h-px bg-gray-100" />
-        </div>
-
-        <div className="flex gap-3 justify-center">
-          <button
-            onClick={() => handleSocialLogin('google')}
-            className="flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 rounded-2xl py-3.5 active:scale-95 transition-all shadow-sm"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            <span className="text-[12px] font-black text-gray-700">Google</span>
-          </button>
-        </div>
 
         <p className="text-center text-[12px] text-gray-400 font-medium">
           Déjà un compte ?{" "}

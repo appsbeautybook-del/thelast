@@ -402,7 +402,7 @@ export default function RoutineModal({ onClose, onCreated, prefill = null }) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 pb-8 pt-3 border-t border-gray-100 shrink-0">
+        <div className="px-5 pb-4 pt-3 border-t border-gray-100 shrink-0">
           {step > 0 && step < 3 ? (
             <button onClick={() => setStep(s => s + 1)} disabled={step === 1 && !form.name.trim()}
               className="w-full bg-primary text-white py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-50">
