@@ -47,11 +47,18 @@ export default function AdminImmobilier() {
     e.preventDefault();
     if (!form.title || !form.price) return;
     setSaving(true);
-    const { data } = await adminApi.createImmobilier({ ...form, price: parseFloat(form.price) || 0 });
-    setListings(prev => [data.result, ...prev]);
-    setCreating(false);
-    setForm({ ...EMPTY_FORM });
-    setSaving(false);
+    try {
+      const res = await adminApi.createImmobilier({ ...form, price: parseFloat(form.price) || 0 });
+      const item = res?.data?.result || res?.result || res?.data || res;
+      setListings(prev => [item, ...prev]);
+      setCreating(false);
+      setForm({ ...EMPTY_FORM });
+    } catch (err) {
+      console.error("Erreur création immobilier:", err);
+      alert("Erreur lors de la création. Réessayez.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const toggleStatus = async (listing) => {
