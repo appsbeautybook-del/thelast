@@ -151,7 +151,7 @@ function StepSignup({ onNext, onBack }) {
     if (!isValid) return;
     setError("");
 
-    // Vérifier si un compte existe déjà
+    // Vérifier si un compte existe déjà (profiles table)
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id')
@@ -163,43 +163,14 @@ function StepSignup({ onNext, onBack }) {
       return;
     }
 
-    // Créer le compte Supabase Auth immédiatement
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          full_name: `${form.prenom} ${form.nom}`,
-        },
-      },
-    });
-
-    if (signUpError) {
-      if (signUpError.message?.includes('already registered')) {
-        setError("Cette adresse email possède déjà un compte.");
-        return;
-      }
-      throw signUpError;
-    }
-
-    // Créer le profil
-    if (signUpData?.user) {
-      await supabase.from('profiles').upsert({
-        id: signUpData.user.id,
-        email: form.email,
-        full_name: `${form.prenom} ${form.nom}`,
-        role: 'user',
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'id' });
-    }
-
-    // Stocker les données pour l'étape suivante
+    // Stocker les données pour StepVerification — le compte Auth sera créé APRÈS la vérification OTP
     sessionStorage.setItem("bb_signup_data", JSON.stringify({
       prenom: form.prenom,
       nom: form.nom,
       email: form.email,
       phone: "",
       mode: "email",
+      password: form.password,
     }));
     onNext();
   };
@@ -530,6 +501,21 @@ function StepVerification({ onNext, onBack }) {
       setCode(["", "", "", "", "", ""]);
       inputs.current[0]?.focus();
     } else {
+      // OTP vérifié — définir le mot de passe pour que le login email/mot de passe fonctionne
+      if (currentData.password) {
+        await supabase.auth.updateUser({ password: currentData.password });
+      }
+      // Créer le profil
+      const user = await supabase.auth.getUser().then(({ data }) => data?.user).catch(() => null);
+      if (user) {
+        await supabase.from('profiles').upsert({
+          id: user.id,
+          email: user.email,
+          full_name: `${currentData.prenom || ""} ${currentData.nom || ""}`.trim(),
+          role: 'user',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+      }
       onNext();
     }
     setLoading(false);
