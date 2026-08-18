@@ -370,11 +370,6 @@ export default function RendezVous() {
       entities.Reservation.filter({ client_email: user.email }, "-date", 100)
         .then(data => {
           setReservations(data);
-          // Auto-open modals pour les réservations qui en ont besoin au chargement
-          const pendingReview = data.find(r => r.status === "termine" && r.code_validated && !r.review_done);
-          if (pendingReview) {
-            setTimeout(() => setReviewModal(pendingReview), 800);
-          }
           // Auto-open calendar suggestion pour les RDV confirmés pas encore vus
           const seenCalendars = JSON.parse(localStorage.getItem("bb_calendars_seen") || "[]");
           const pendingCalendar = data.find(r => r.status === "confirme" && !seenCalendars.includes(r.id));
