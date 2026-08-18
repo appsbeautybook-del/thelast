@@ -150,7 +150,8 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end bg-black/30 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-t-3xl w-full px-6 pt-5 pb-10 shadow-2xl" style={{ paddingBottom: "calc(40px + env(safe-area-inset-bottom, 40px))" }} onClick={e => e.stopPropagation()}>
+      <div className="bg-white rounded-t-3xl w-full max-h-[85vh] overflow-y-auto shadow-2xl" style={{ paddingBottom: "calc(60px + env(safe-area-inset-bottom, 60px))" }} onClick={e => e.stopPropagation()}>
+        <div className="px-6 pt-5">
         <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
         <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-300">
           <X className="w-5 h-5" />
@@ -430,6 +431,7 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );
