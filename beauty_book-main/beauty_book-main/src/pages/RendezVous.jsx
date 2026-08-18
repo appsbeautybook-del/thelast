@@ -410,7 +410,7 @@ export default function RendezVous() {
             const freshR = fresh.find(f => f.id === r.id);
             if (freshR && freshR.status !== r.status) {
               changed = true;
-              const prevSt = prevStatusRef.current[r.id];
+              const prevSt = prevStatusRef.current[r.id] || r.status;
               prevStatusRef.current[r.id] = freshR.status;
               if (freshR.status === "confirme" && prevSt !== "confirme") {
                 setTimeout(() => setCalendarSuggestion(freshR), 300);
@@ -437,6 +437,13 @@ export default function RendezVous() {
       const user = data?.user;
       if (!user) return;
       userEmailRef.current = user.email;
+      // Initialiser prevStatusRef avec les statuts actuels AVANT de s'abonner au real-time
+      const { data: currentRdvs } = await supabase
+        .from("Reservation").select("id, status")
+        .eq("client_email", user.email);
+      if (currentRdvs) {
+        currentRdvs.forEach(r => { prevStatusRef.current[r.id] = r.status; });
+      }
       // Channel real-time
       channel = supabase
         .channel("reservation-status-" + user.email)
