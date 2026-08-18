@@ -468,7 +468,6 @@ export default function Connexion() {
           </button>
 
           {/* Google button hidden */}
-          </div>
 
           <p className="text-center text-[12px] text-gray-400 font-medium pt-2">
             Pas encore de compte ?{" "}
