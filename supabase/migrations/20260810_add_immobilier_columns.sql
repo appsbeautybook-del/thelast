@@ -11,3 +11,7 @@ ALTER TABLE public."ImmobilierListing" ADD COLUMN IF NOT EXISTS equip TEXT DEFAU
 ALTER TABLE public."ImmobilierListing" ADD COLUMN IF NOT EXISTS extra TEXT DEFAULT '';
 ALTER TABLE public."ImmobilierListing" ADD COLUMN IF NOT EXISTS badge TEXT DEFAULT 'PRO';
 ALTER TABLE public."ImmobilierListing" ADD COLUMN IF NOT EXISTS video_url TEXT DEFAULT '';
+ALTER TABLE public."ImmobilierListing" ADD COLUMN IF NOT EXISTS salon_type TEXT DEFAULT '';
+ALTER TABLE public."ImmobilierListing" ADD COLUMN IF NOT EXISTS price_fonds_commerce NUMERIC DEFAULT 0;
+ALTER TABLE public."ImmobilierListing" ADD COLUMN IF NOT EXISTS tax_mode TEXT DEFAULT 'TTC';
+ALTER TABLE public."ImmobilierListing" ADD COLUMN IF NOT EXISTS city TEXT DEFAULT '';

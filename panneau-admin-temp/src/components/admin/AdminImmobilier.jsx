@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { uploadFile } from '@/api/entities';
 import { adminApi } from "@/lib/adminApiClient";
-import { Plus, Trash2, Upload, Loader2, X, Home, Eye, EyeOff, MapPin, Ruler, Euro, Phone, Mail, AlertCircle, CheckCircle2, FileText, Clock, Save, RotateCcw } from "lucide-react";
+import { Plus, Trash2, Upload, Loader2, X, Home, Eye, EyeOff, MapPin, Euro, Phone, Mail, AlertCircle, CheckCircle2, FileText, Clock, Save, Scissors, Building2, Receipt } from "lucide-react";
 import AddressInput from "@/components/ui/AddressInput";
 
 const inputCls = "w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-primary transition-colors";
@@ -9,12 +9,25 @@ const labelCls = "text-[10px] font-black text-gray-500 uppercase tracking-widest
 const DRAFT_KEY = "bb_immobilier_draft";
 const DRAFTS_LIST_KEY = "bb_immobilier_drafts";
 
+const SALON_TYPES = [
+  { value: "salon_de_beaute", label: "Salon de beauté" },
+  { value: "salon_de_coiffure", label: "Salon de coiffure" },
+  { value: "salon_manucure", label: "Salon de manucure / pédicure" },
+  { value: "institut_de_beaute", label: "Institut de beauté" },
+  { value: "barbier", label: "Barbier" },
+  { value: "spa", label: "Spa / Hammam" },
+  { value: "tattoo", label: "Studio de tattoo / piercing" },
+  { value: "autre", label: "Autre" },
+];
+
 const EMPTY_FORM = {
   title: "", description: "", type: "location",
-  price: "", price_per_m2: "", unit: "/MOIS",
+  price: "", price_fonds_commerce: "", price_per_m2: "",
+  tax_mode: "TTC",
+  salon_type: "",
   surface: "", rooms: "", floor: "",
-  location: "", area: "", postal_code: "",
-  equip: "", extra: "", badge: "PRO",
+  location: "", city: "", area: "", postal_code: "",
+  equip: "", extra: "",
   images: [], video_url: "",
   contact_email: "", contact_phone: "", status: "actif",
 };
@@ -22,15 +35,12 @@ const EMPTY_FORM = {
 function saveDraft(form) {
   try { localStorage.setItem(DRAFT_KEY, JSON.stringify(form)); } catch {}
 }
-
 function loadDraft() {
   try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch { return null; }
 }
-
 function clearDraft() {
   try { localStorage.removeItem(DRAFT_KEY); } catch {}
 }
-
 function saveDraftToList(form) {
   try {
     const drafts = JSON.parse(localStorage.getItem(DRAFTS_LIST_KEY) || "[]");
@@ -39,11 +49,9 @@ function saveDraftToList(form) {
     localStorage.setItem(DRAFTS_LIST_KEY, JSON.stringify(drafts.slice(0, 20)));
   } catch {}
 }
-
 function loadDraftsList() {
   try { return JSON.parse(localStorage.getItem(DRAFTS_LIST_KEY) || "[]"); } catch { return []; }
 }
-
 function deleteDraftFromList(draftId) {
   try {
     const drafts = JSON.parse(localStorage.getItem(DRAFTS_LIST_KEY) || "[]");
@@ -54,7 +62,6 @@ function deleteDraftFromList(draftId) {
 export default function AdminImmobilier() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState(() => loadDraft() || { ...EMPTY_FORM });
@@ -62,6 +69,7 @@ export default function AdminImmobilier() {
   const [success, setSuccess] = useState(false);
   const [drafts, setDrafts] = useState(() => loadDraftsList());
   const [activeTab, setActiveTab] = useState("all");
+  const [creating, setCreating] = useState(false);
   const imgRef = useRef(null);
   const videoRef = useRef(null);
   const autoSaveTimer = useRef(null);
@@ -71,7 +79,6 @@ export default function AdminImmobilier() {
       .then(res => setListings(Array.isArray(res) ? res : res?.data?.results || [])).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  // Auto-save to localStorage on every form change
   useEffect(() => {
     if (creating && (form.title || form.description || form.price)) {
       clearTimeout(autoSaveTimer.current);
@@ -79,13 +86,10 @@ export default function AdminImmobilier() {
     }
   }, [form, creating]);
 
-  // Restore draft on open
   useEffect(() => {
     if (creating) {
       const draft = loadDraft();
-      if (draft && draft.title) {
-        setForm(draft);
-      }
+      if (draft && draft.title) setForm(draft);
     }
   }, [creating]);
 
@@ -95,14 +99,9 @@ export default function AdminImmobilier() {
     try {
       setUploading(true);
       const { file_url } = await uploadFile({ file });
-      if (isVideo) {
-        setForm(f => ({ ...f, video_url: file_url }));
-      } else {
-        setForm(f => ({ ...f, images: [...f.images, file_url] }));
-      }
-    } catch (err) {
-      console.error("Upload error:", err);
-    }
+      if (isVideo) setForm(f => ({ ...f, video_url: file_url }));
+      else setForm(f => ({ ...f, images: [...f.images, file_url] }));
+    } catch (err) { console.error("Upload error:", err); }
     setUploading(false);
     e.target.value = "";
   };
@@ -132,17 +131,19 @@ export default function AdminImmobilier() {
         description: form.description || "",
         type: form.type || "location",
         price: toNum(form.price),
+        price_fonds_commerce: toNum(form.price_fonds_commerce),
         price_per_m2: toNum(form.price_per_m2) || computePricePerM2(form.price, form.surface) || 0,
-        unit: form.unit || "",
+        tax_mode: form.type === "location" ? (form.tax_mode || "TTC") : null,
+        salon_type: form.salon_type || "",
         surface: toNum(form.surface),
         rooms: toInt(form.rooms),
         floor: form.floor || "",
         location: form.location || "",
+        city: form.city || "",
         area: form.area || "",
         postal_code: form.postal_code || "",
         equip: form.equip || "",
         extra: form.extra || "",
-        badge: form.badge || "PRO",
         images: form.images || [],
         video_url: form.video_url || "",
         contact_email: form.contact_email || "",
@@ -188,9 +189,7 @@ export default function AdminImmobilier() {
     try {
       await adminApi.updateImmobilier(listing.id, { status: newStatus });
       setListings(prev => prev.map(l => l.id === listing.id ? { ...l, status: newStatus } : l));
-    } catch (err) {
-      console.error("[AdminImmobilier] Toggle error:", err);
-    }
+    } catch (err) { console.error("[AdminImmobilier] Toggle error:", err); }
   };
 
   const deleteListing = async (id) => {
@@ -198,17 +197,14 @@ export default function AdminImmobilier() {
     try {
       await adminApi.deleteImmobilier(id);
       setListings(prev => prev.filter(l => l.id !== id));
-    } catch (err) {
-      console.error("[AdminImmobilier] Delete error:", err);
-    }
+    } catch (err) { console.error("[AdminImmobilier] Delete error:", err); }
   };
 
   const isVente = form.type === "vente";
 
   const filteredListings = activeTab === "all" ? listings
     : activeTab === "vente" ? listings.filter(l => l.type === "vente")
-    : activeTab === "location" ? listings.filter(l => l.type === "location")
-    : listings;
+    : listings.filter(l => l.type === "location");
 
   if (loading) return <div className="flex justify-center py-16"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -228,15 +224,13 @@ export default function AdminImmobilier() {
         </div>
       )}
 
-      <div className="flex gap-2">
-        <button onClick={() => { setCreating(v => !v); setError(""); }}
-          className="flex-1 flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl text-[13px] font-black active:scale-95 transition-all shadow-lg shadow-primary/20">
-          <Plus className="w-4 h-4" /> Nouvelle annonce
-        </button>
-      </div>
+      <button onClick={() => { setCreating(v => !v); setError(""); }}
+        className="w-full flex items-center justify-center gap-2 bg-primary text-white px-4 py-3 rounded-xl text-[13px] font-black active:scale-95 transition-all shadow-lg shadow-primary/20">
+        <Plus className="w-4 h-4" /> Nouvelle annonce immobilière
+      </button>
 
       {creating && (
-        <form onSubmit={createListing} className="bg-white rounded-2xl p-5 border border-gray-200 space-y-4 shadow-sm">
+        <form onSubmit={createListing} className="bg-white rounded-2xl p-5 border border-gray-200 space-y-5 shadow-sm">
           <div className="flex items-center justify-between">
             <h3 className="text-gray-900 text-[15px] font-black">Créer une annonce</h3>
             <div className="flex items-center gap-1.5 text-[10px] text-gray-400">
@@ -244,129 +238,187 @@ export default function AdminImmobilier() {
             </div>
           </div>
 
-          {/* Type + Titre */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Titre *</label>
-              <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ex: Local commercial Paris 8e" required className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Type de transaction *</label>
-              <select value={form.type} onChange={e => {
-                const t = e.target.value;
-                setForm(f => ({ ...f, type: t, unit: t === "vente" ? "" : "/MOIS" }));
-              }} className={inputCls}>
-                <option value="location">Location</option>
-                <option value="vente">Vente</option>
-              </select>
+          {/* ── Titre ── */}
+          <div>
+            <label className={labelCls}>Titre de l'annonce *</label>
+            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              placeholder="Ex: Salon de coiffure 80m² — Paris 15e" required className={inputCls} />
+          </div>
+
+          {/* ── Type de transaction ── */}
+          <div>
+            <label className={labelCls}>Type de transaction *</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setForm(f => ({ ...f, type: "location", unit: "/MOIS" }))}
+                className={`py-3 rounded-xl text-[13px] font-black border-2 transition-all active:scale-95 ${
+                  !isVente ? "border-primary bg-primary text-white shadow-md shadow-primary/20" : "border-gray-200 bg-white text-gray-500"
+                }`}>
+                Location
+              </button>
+              <button type="button" onClick={() => setForm(f => ({ ...f, type: "vente", unit: "" }))}
+                className={`py-3 rounded-xl text-[13px] font-black border-2 transition-all active:scale-95 ${
+                  isVente ? "border-blue-500 bg-blue-500 text-white shadow-md shadow-blue-500/20" : "border-gray-200 bg-white text-gray-500"
+                }`}>
+                Vente
+              </button>
             </div>
           </div>
 
-          <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-            placeholder="Description détaillée du bien" rows={3} className={`${inputCls} resize-none`} />
+          {/* ── Type de salon (vente uniquement) ── */}
+          {isVente && (
+            <div className="bg-blue-50 rounded-2xl p-4 space-y-3 border border-blue-100">
+              <h4 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-1.5">
+                <Scissors className="w-3.5 h-3.5" /> Type de salon
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {SALON_TYPES.map(st => (
+                  <button key={st.value} type="button" onClick={() => setForm(f => ({ ...f, salon_type: st.value }))}
+                    className={`py-2.5 px-3 rounded-xl text-[12px] font-bold border transition-all text-left ${
+                      form.salon_type === st.value
+                        ? "border-blue-500 bg-blue-500 text-white"
+                        : "border-gray-200 bg-white text-gray-600 hover:border-blue-300"
+                    }`}>
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* Pricing */}
-          <div className="bg-gray-50 rounded-2xl p-4 space-y-3 border border-gray-100">
-            <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-widest flex items-center gap-1.5">
-              <Euro className="w-3.5 h-3.5" /> {isVente ? "Prix de vente" : "Loyer"}
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>{isVente ? "Prix de vente (€) *" : "Loyer mensuel (€) *"}</label>
-                <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                  placeholder={isVente ? "Ex: 250000" : "Ex: 800"} required className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Unité</label>
-                <input value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}
-                  placeholder={isVente ? "/ AU M2" : "/MOIS"} className={inputCls} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Prix au m² (€)</label>
-                <input type="number" value={form.price_per_m2} onChange={e => setForm(f => ({ ...f, price_per_m2: e.target.value }))}
-                  placeholder="Calculé automatiquement si vide" className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Surface (m²) *</label>
-                <input type="number" value={form.surface} onChange={e => {
-                  const s = e.target.value;
-                  setForm(f => {
-                    const updated = { ...f, surface: s };
-                    if (f.price && s && !f.price_per_m2) {
-                      updated.price_per_m2 = Math.round(parseFloat(f.price) / parseFloat(s));
-                    }
-                    return updated;
-                  });
-                }} placeholder="Ex: 85" className={inputCls} />
-              </div>
-            </div>
+          {/* ── Description ── */}
+          <div>
+            <label className={labelCls}>Description</label>
+            <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              placeholder={isVente ? "Décrivez le fonds de commerce, l'emplacement, la clientèle..." : "Décrivez le local, les conditions de location..."}
+              rows={3} className={`${inputCls} resize-none`} />
           </div>
 
-          {/* Property Details */}
-          <div className="bg-gray-50 rounded-2xl p-4 space-y-3 border border-gray-100">
-            <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-widest flex items-center gap-1.5">
-              <Home className="w-3.5 h-3.5" /> Détails du bien
-            </h4>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className={labelCls}>Pièces</label>
-                <input type="number" value={form.rooms} onChange={e => setForm(f => ({ ...f, rooms: e.target.value }))} placeholder="Ex: 3" className={inputCls} />
+          {/* ── Prix (vente) ── */}
+          {isVente && (
+            <div className="bg-blue-50 rounded-2xl p-4 space-y-3 border border-blue-100">
+              <h4 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-1.5">
+                <Euro className="w-3.5 h-3.5" /> Prix de vente
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Prix de vente (€) *</label>
+                  <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                    placeholder="Ex: 120000" required className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Fonds de commerce (€)</label>
+                  <input type="number" value={form.price_fonds_commerce} onChange={e => setForm(f => ({ ...f, price_fonds_commerce: e.target.value }))}
+                    placeholder="Ex: 45000" className={inputCls} />
+                </div>
               </div>
-              <div>
-                <label className={labelCls}>Étage</label>
-                <input value={form.floor} onChange={e => setForm(f => ({ ...f, floor: e.target.value }))} placeholder="Ex: 2ème" className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Équipements</label>
-                <input value={form.equip} onChange={e => setForm(f => ({ ...f, equip: e.target.value }))} placeholder="Ex: 1 fauteuil" className={inputCls} />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Surface (m²)</label>
+                  <input type="number" value={form.surface} onChange={e => {
+                    const s = e.target.value;
+                    setForm(f => {
+                      const updated = { ...f, surface: s };
+                      if (f.price && s) updated.price_per_m2 = Math.round(parseFloat(f.price) / parseFloat(s));
+                      return updated;
+                    });
+                  }} placeholder="Ex: 80" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Prix au m² (€)</label>
+                  <input type="number" value={form.price_per_m2} onChange={e => setForm(f => ({ ...f, price_per_m2: e.target.value }))}
+                    placeholder="Calculé auto" className={inputCls} readOnly={!form.price_per_m2} />
+                </div>
               </div>
             </div>
-            <input value={form.extra} onChange={e => setForm(f => ({ ...f, extra: e.target.value }))} placeholder="Extra (ex: Parking, Cave, Balcon)" className={inputCls} />
-          </div>
+          )}
 
-          {/* Location */}
+          {/* ── Loyer (location) ── */}
+          {!isVente && (
+            <div className="bg-purple-50 rounded-2xl p-4 space-y-3 border border-purple-100">
+              <h4 className="text-[11px] font-black text-purple-700 uppercase tracking-widest flex items-center gap-1.5">
+                <Euro className="w-3.5 h-3.5" /> Loyer
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Loyer mensuel (€) *</label>
+                  <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                    placeholder="Ex: 1200" required className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Taxe</label>
+                  <div className="flex gap-1">
+                    <button type="button" onClick={() => setForm(f => ({ ...f, tax_mode: "HT" }))}
+                      className={`flex-1 py-3 rounded-xl text-[12px] font-black border transition-all ${
+                        form.tax_mode === "HT" ? "border-purple-500 bg-purple-500 text-white" : "border-gray-200 bg-white text-gray-500"
+                      }`}>HT</button>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, tax_mode: "TTC" }))}
+                      className={`flex-1 py-3 rounded-xl text-[12px] font-black border transition-all ${
+                        form.tax_mode === "TTC" ? "border-purple-500 bg-purple-500 text-white" : "border-gray-200 bg-white text-gray-500"
+                      }`}>TTC</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Adresse ── */}
           <div className="bg-gray-50 rounded-2xl p-4 space-y-3 border border-gray-100">
             <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-widest flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5" /> Localisation
+              <MapPin className="w-3.5 h-3.5" /> Adresse
             </h4>
             <div>
               <label className={labelCls}>Adresse complète *</label>
               <AddressInput
                 value={form.location}
                 onChange={(v) => setForm(f => ({ ...f, location: v }))}
-                onCityChange={(city) => setForm(f => ({ ...f, area: f.area || city }))}
-                onPostalCodeChange={(pc) => setForm(f => ({ ...f, postal_code: pc }))}
+                onCityChange={(city) => setForm(f => ({ ...f, city: f.city || city, area: f.area || city }))}
+                onPostalCodeChange={(pc) => setForm(f => ({ ...f, postal_code: f.postal_code || pc }))}
                 onCoordinatesChange={(c) => setForm(f => ({ ...f, _lat: c.latitude, _lng: c.longitude }))}
                 placeholder="Ex: 12 rue de la Paix, Paris"
                 className={inputCls}
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input value={form.area} onChange={e => setForm(f => ({ ...f, area: e.target.value }))} placeholder="Quartier / Zone" className={inputCls} />
-              <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} placeholder="Code postal" className={inputCls} />
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className={labelCls}>Ville</label>
+                <input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="Paris" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Quartier</label>
+                <input value={form.area} onChange={e => setForm(f => ({ ...f, area: e.target.value }))} placeholder="Opéra" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Code postal</label>
+                <input value={form.postal_code} onChange={e => setForm(f => ({ ...f, postal_code: e.target.value }))} placeholder="75002" className={inputCls} />
+              </div>
             </div>
           </div>
 
-          {/* Contact */}
+          {/* ── Détails du bien ── */}
           <div className="bg-gray-50 rounded-2xl p-4 space-y-3 border border-gray-100">
-            <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-widest">Contact</h4>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-gray-400 shrink-0" />
-                <input value={form.contact_email} onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} placeholder="Email contact" className={inputCls} />
+            <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-widest flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5" /> Détails du bien
+            </h4>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className={labelCls}>Pièces</label>
+                <input type="number" value={form.rooms} onChange={e => setForm(f => ({ ...f, rooms: e.target.value }))} placeholder="3" className={inputCls} />
               </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-gray-400 shrink-0" />
-                <input value={form.contact_phone} onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))} placeholder="Téléphone" className={inputCls} />
+              <div>
+                <label className={labelCls}>Étage</label>
+                <input value={form.floor} onChange={e => setForm(f => ({ ...f, floor: e.target.value }))} placeholder="RDC" className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Équipements</label>
+                <input value={form.equip} onChange={e => setForm(f => ({ ...f, equip: e.target.value }))} placeholder="Fauteuils, miroirs..." className={inputCls} />
               </div>
             </div>
+            <input value={form.extra} onChange={e => setForm(f => ({ ...f, extra: e.target.value }))} placeholder="Extras : Parking, Cave, Terrasse..." className={inputCls} />
           </div>
 
-          {/* Images */}
+          {/* ── Photos ── */}
           <div>
-            <label className={labelCls}>Photos (plusieurs possibles)</label>
+            <label className={labelCls}>Photos</label>
             <input ref={imgRef} type="file" accept="image/*" multiple className="hidden" onChange={async (e) => {
               const files = Array.from(e.target.files);
               for (const file of files) {
@@ -399,7 +451,7 @@ export default function AdminImmobilier() {
             </button>
           </div>
 
-          {/* Vidéo */}
+          {/* ── Vidéo ── */}
           <div>
             <label className={labelCls}>Vidéo (optionnel)</label>
             <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={e => handleFileUpload(e, true)} />
@@ -417,6 +469,22 @@ export default function AdminImmobilier() {
             )}
           </div>
 
+          {/* ── Contact ── */}
+          <div className="bg-gray-50 rounded-2xl p-4 space-y-3 border border-gray-100">
+            <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-widest">Contact</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                <input value={form.contact_email} onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} placeholder="Email" className={inputCls} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                <input value={form.contact_phone} onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))} placeholder="Téléphone" className={inputCls} />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Boutons ── */}
           <div className="flex gap-3">
             <button type="submit" disabled={saving}
               className="flex-1 bg-primary text-white py-3 rounded-xl text-[13px] font-black disabled:opacity-60 flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
@@ -476,6 +544,7 @@ export default function AdminImmobilier() {
       <div className="space-y-3">
         {filteredListings.map(l => {
           const isVenteCard = l.type === "vente";
+          const salonLabel = SALON_TYPES.find(s => s.value === l.salon_type)?.label;
           return (
             <div key={l.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="flex items-center gap-4 p-4">
@@ -487,12 +556,13 @@ export default function AdminImmobilier() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-gray-900 text-[13px] font-black truncate">{l.title}</p>
-                  <p className="text-gray-500 text-[11px]">{l.location}{l.area ? ` · ${l.area}` : ""}</p>
+                  <p className="text-gray-500 text-[11px]">{l.city || l.location}{l.area ? ` · ${l.area}` : ""}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${isVenteCard ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"}`}>
                       {isVenteCard ? "Vente" : "Location"}
                     </span>
-                    <span className="text-[11px] font-black text-primary">{l.price?.toLocaleString("fr-FR")}€{l.unit ? ` ${l.unit}` : ""}</span>
+                    {salonLabel && <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">{salonLabel}</span>}
+                    <span className="text-[11px] font-black text-primary">{l.price?.toLocaleString("fr-FR")}€{!isVenteCard && l.tax_mode ? ` ${l.tax_mode}` : ""}</span>
                     {l.price_per_m2 > 0 && <span className="text-[10px] text-gray-400">{l.price_per_m2.toLocaleString("fr-FR")}€/m²</span>}
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${l.status === "actif" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
                       {l.status === "actif" ? "Disponible" : l.status === "loue" ? (isVenteCard ? "Vendu" : "Loué") : l.status}
