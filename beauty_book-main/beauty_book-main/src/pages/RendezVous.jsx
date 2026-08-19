@@ -316,8 +316,8 @@ function EventCard({ event, onClick }) {
             <span className="text-[11px] font-bold text-gray-400">{event.location}</span>
           </div>
         </div>
-      </button>
-    </div>
+      </div>
+    </button>
   );
 }
 
