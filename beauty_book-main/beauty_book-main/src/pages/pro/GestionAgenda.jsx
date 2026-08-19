@@ -469,7 +469,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
               ))}
             </div>
           </div>
-          <div className="shrink-0 px-5 pb-8 pt-4 bg-white border-t border-gray-100" style={{ paddingBottom: "calc(32px + env(safe-area-inset-bottom, 16px))" }}>
+          <div className="shrink-0 px-5 pb-8 pt-4 bg-white border-t border-gray-100" style={{ paddingBottom: "calc(90px + env(safe-area-inset-bottom, 16px))" }}>
             <button onClick={handleSubmitReliability} disabled={!reliabilityChoice || savingScore}
               className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
               {savingScore ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
