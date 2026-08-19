@@ -424,7 +424,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
 
       {/* Page Score de Fiabilite */}
       {showReliability && (
-        <div className="fixed inset-0 z-[60] bg-white flex flex-col" style={{ height: "100dvh" }}>
+        <div className="fixed inset-0 z-[120] bg-white flex flex-col" style={{ height: "100dvh" }}>
           <div className="flex-1 overflow-y-auto px-5 pt-12">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -469,7 +469,7 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
               ))}
             </div>
           </div>
-          <div className="shrink-0 px-5 pb-8 pt-4 bg-white border-t border-gray-100" style={{ paddingBottom: "calc(90px + env(safe-area-inset-bottom, 16px))" }}>
+          <div className="shrink-0 px-5 pb-8 pt-4 bg-white border-t border-gray-100" style={{ paddingBottom: "calc(120px + env(safe-area-inset-bottom, 16px))" }}>
             <button onClick={handleSubmitReliability} disabled={!reliabilityChoice || savingScore}
               className="w-full bg-blue-600 text-white py-4 rounded-2xl text-[14px] font-black uppercase tracking-widest active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
               {savingScore ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
