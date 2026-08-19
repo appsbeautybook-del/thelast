@@ -693,7 +693,7 @@ export default function AjouterService() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (editService || !user?.email) return;
+    if (!user?.email) return;
     if (!data.name && !data.description && !data.category) return;
     const timer = setTimeout(async () => {
       const payload = {
@@ -703,15 +703,17 @@ export default function AjouterService() {
         description: data.description || "",
         category: data.category || "",
         style: data.style || null,
+        audience: data.audience || "",
         price: parseFloat(data.price) || 0,
         duration: parseInt(data.duration) || 60,
         images: (data.images || []),
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),
-        status: "brouillon",
+        status: data._editId ? (data.status || "brouillon") : "brouillon",
       };
       try {
         if (data._editId) {
-          await supabase.from("Service").update(payload).eq("id", data._editId);
+          const { error } = await supabase.from("Service").update(payload).eq("id", data._editId);
+          if (error) console.error("Auto-save update error:", error);
         } else {
           const res = await entities.Service.create(payload);
           const newId = res?.data?.service?.id || res?.result?.id || res?.id;
@@ -721,7 +723,7 @@ export default function AjouterService() {
           }
         }
         localStorage.setItem("bb_service_draft", JSON.stringify({ ...data, _ts: Date.now() }));
-      } catch {}
+      } catch (e) { console.error("Auto-save error:", e); }
     }, 3000);
     return () => clearTimeout(timer);
   }, [data, editService, user?.email]);
@@ -746,6 +748,7 @@ export default function AjouterService() {
         description: data.description || "",
         category: data.category,
         style: data.style || null,
+        audience: data.audience || "",
         price: parseFloat(data.price) || 0,
         duration: parseInt(data.duration) || 60,
         images: (data.images || []),
@@ -753,7 +756,8 @@ export default function AjouterService() {
         status: asDraft ? "brouillon" : "actif",
       };
       if (data._editId) {
-        await supabase.from("Service").update(payload).eq("id", data._editId);
+        const { error } = await supabase.from("Service").update(payload).eq("id", data._editId);
+        if (error) throw error;
       } else {
         await entities.Service.create(payload);
       }
