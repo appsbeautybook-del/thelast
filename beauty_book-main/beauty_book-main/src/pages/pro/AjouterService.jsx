@@ -231,8 +231,8 @@ function Step1({ data, setData }) {
           <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Durée (min)</p>
           <input
             type="number"
-            value={data.duration ?? ""}
-            onChange={e => setData(d => ({ ...d, duration: e.target.value }))}
+            value={data.duration_min ?? ""}
+            onChange={e => setData(d => ({ ...d, duration_min: e.target.value }))}
             placeholder="60"
             className="w-full text-[24px] font-black text-gray-900 outline-none bg-transparent"
           />
@@ -679,7 +679,7 @@ export default function AjouterService() {
         audience: editService.audience || "",
         style: editService.style || "",
         price: editService.price ?? "",
-        duration: editService.duration_min ?? "",
+        duration_min: editService.duration_min ?? "",
         images: mediaList,
         addons: editService.addons || [],
         status: editService.status || "brouillon",
@@ -715,7 +715,7 @@ export default function AjouterService() {
         price_ht: data.price ? (parseFloat(data.price) / 1.2) : 0,
         tva_rate: 20,
         tva_amount: data.price ? (parseFloat(data.price) - parseFloat(data.price) / 1.2) : 0,
-        duration: parseInt(data.duration) || 60,
+        duration_min: parseInt(data.duration_min) || 60,
         images: (data.images || []),
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),
         status: data._editId ? (data.status || "brouillon") : "brouillon",
@@ -763,7 +763,7 @@ export default function AjouterService() {
         price_ht: data.price ? (parseFloat(data.price) / 1.2) : 0,
         tva_rate: 20,
         tva_amount: data.price ? (parseFloat(data.price) - parseFloat(data.price) / 1.2) : 0,
-        duration: parseInt(data.duration) || 60,
+        duration_min: parseInt(data.duration_min) || 60,
         images: (data.images || []),
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),
         status: asDraft ? "brouillon" : "actif",
