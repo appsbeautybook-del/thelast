@@ -369,19 +369,20 @@ export default function RendezVous() {
   const loadReservations = () => {
     supabase.auth.getUser().then(({ data }) => data?.user).then(user => {
       if (!user) { setLoading(false); return; }
-      entities.Reservation.filter({ client_email: user.email }, "-date", 100)
-        .then(data => {
-          setReservations(data);
-          // Auto-open calendar suggestion pour les RDV confirmés pas encore vus
-          const seenCalendars = JSON.parse(localStorage.getItem("bb_calendars_seen") || "[]");
-          const pendingCalendar = data.find(r => r.status === "confirme" && !seenCalendars.includes(r.id));
-          if (pendingCalendar) {
-            setTimeout(() => setCalendarSuggestion(pendingCalendar), 800);
-            localStorage.setItem("bb_calendars_seen", JSON.stringify([...seenCalendars, pendingCalendar.id]));
-          }
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false));
+      Promise.all([
+        entities.Reservation.filter({ client_email: user.email }, "-date", 100).catch(() => []),
+        entities.Avis.filter({ auteur_email: user.email, type: "client_to_pro" }, "-created_at", 200).catch(() => []),
+      ]).then(([resData, avisData]) => {
+        const reviewedIds = new Set(avisData.map(a => a.reservation_id).filter(Boolean));
+        const enriched = resData.map(r => ({ ...r, review_done: reviewedIds.has(r.id) || !!r.review_done }));
+        setReservations(enriched);
+        const seenCalendars = JSON.parse(localStorage.getItem("bb_calendars_seen") || "[]");
+        const pendingCalendar = enriched.find(r => r.status === "confirme" && !seenCalendars.includes(r.id));
+        if (pendingCalendar) {
+          setTimeout(() => setCalendarSuggestion(pendingCalendar), 800);
+          localStorage.setItem("bb_calendars_seen", JSON.stringify([...seenCalendars, pendingCalendar.id]));
+        }
+      }).catch(() => {}).finally(() => setLoading(false));
     }).catch(() => setLoading(false));
   };
 
