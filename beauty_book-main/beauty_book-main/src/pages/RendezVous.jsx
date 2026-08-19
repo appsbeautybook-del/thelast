@@ -40,7 +40,7 @@ function reservationToEvent(r) {
     date: r.date,
     time: r.time || r.time_slot,
     location: r.salon_address || "",
-    status: r.status === "confirme" ? "confirmed" : r.status === "annule" ? "cancelled" : "pending",
+    status: r.status === "confirme" ? "confirmed" : r.status === "annule" ? "cancelled" : r.status === "termine" ? "done" : "pending",
     type: "rdv",
     dateObj: new Date(r.date),
     pro_email: r.pro_email,
@@ -300,8 +300,8 @@ function EventCard({ event, onClick }) {
         <div className="flex items-center gap-1.5 mb-0.5">
           <Scissors className="w-3 h-3 text-primary" />
           <span className="text-[10px] font-black text-primary uppercase tracking-widest">RDV</span>
-          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${event.status === "confirmed" ? "bg-green-50 text-green-600" : "bg-orange-50 text-orange-500"}`}>
-            {event.status === "confirmed" ? "Confirmé" : "En attente"}
+          <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${event.status === "confirmed" ? "bg-green-50 text-green-600" : event.status === "done" ? "bg-gray-100 text-gray-500" : "bg-orange-50 text-orange-500"}`}>
+            {event.status === "confirmed" ? "Confirmé" : event.status === "done" ? "Terminé" : "En attente"}
           </span>
         </div>
         <p className="text-[14px] font-black text-gray-900">{event.service}</p>
@@ -383,11 +383,9 @@ export default function RendezVous() {
           localStorage.setItem("bb_calendars_seen", JSON.stringify([...seenCalendars, pendingCalendar.id]));
         }
         // Auto-open pourboire for termine reservations not yet reviewed
-        const seenPourboire = JSON.parse(localStorage.getItem("bb_pourboire_shown") || "[]");
-        const unreviewedTermine = enriched.find(r => r.status === "termine" && !reviewedIds.has(r.id) && !seenPourboire.includes(r.id));
+        const unreviewedTermine = enriched.find(r => r.status === "termine" && !reviewedIds.has(r.id));
         if (unreviewedTermine) {
           setTimeout(() => setReviewModal(unreviewedTermine), 1000);
-          localStorage.setItem("bb_pourboire_shown", JSON.stringify([...seenPourboire, unreviewedTermine.id]));
         }
       }).catch(() => {}).finally(() => setLoading(false));
     }).catch(() => setLoading(false));
@@ -426,11 +424,13 @@ export default function RendezVous() {
                 setTimeout(() => setCalendarSuggestion(freshR), 300);
               }
               if (freshR.status === "termine" && prevSt !== "termine") {
-                const seenPourboire = JSON.parse(localStorage.getItem("bb_pourboire_shown") || "[]");
-                if (!seenPourboire.includes(freshR.id)) {
-                  setTimeout(() => setReviewModal(freshR), 300);
-                  localStorage.setItem("bb_pourboire_shown", JSON.stringify([...seenPourboire, freshR.id]));
-                }
+                setTimeout(() => {
+                  entities.Avis.filter({ reservation_id: freshR.id, auteur_email: email }, "-created_at", 1).then(avis => {
+                    if (!avis || avis.length === 0) {
+                      setReviewModal(freshR);
+                    }
+                  }).catch(() => setReviewModal(freshR));
+                }, 300);
               }
               return { ...r, ...freshR };
             }
@@ -472,11 +472,12 @@ export default function RendezVous() {
           prevStatusRef.current[newRdv.id] = newRdv.status;
           setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, ...newRdv } : r));
           if (newRdv.status === "termine" && prevStatus !== "termine") {
-            const seenPourboire = JSON.parse(localStorage.getItem("bb_pourboire_shown") || "[]");
-            if (!seenPourboire.includes(newRdv.id)) {
-              setReviewModal(newRdv);
-              localStorage.setItem("bb_pourboire_shown", JSON.stringify([...seenPourboire, newRdv.id]));
-            }
+            // Only open pourboire if no avis exists yet for this reservation
+            entities.Avis.filter({ reservation_id: newRdv.id, auteur_email: newRdv.client_email }, "-created_at", 1).then(avis => {
+              if (!avis || avis.length === 0) {
+                setReviewModal(newRdv);
+              }
+            }).catch(() => setReviewModal(newRdv));
           }
           if (newRdv.status === "confirme" && prevStatus !== "confirme") {
             setCalendarSuggestion(newRdv);
@@ -502,10 +503,9 @@ export default function RendezVous() {
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);
-  const reviewingId = reviewModal?.id;
-  const upcoming = reservations.filter(r => r.date >= today && !["annule"].includes(r.status) && r.id !== reviewingId);
-  const past = reservations.filter(r => (r.date < today || r.status === "termine") && r.id !== reviewingId);
-  const cancelled = reservations.filter(r => r.status === "annule" && r.id !== reviewingId);
+  const upcoming = reservations.filter(r => r.date >= today && r.status === "confirme");
+  const past = reservations.filter(r => r.status === "termine" || r.date < today);
+  const cancelled = reservations.filter(r => r.status === "annule");
 
   return (
     <div className="font-display pb-4">
@@ -660,8 +660,8 @@ export default function RendezVous() {
               <div className="p-3 flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="text-[14px] font-black text-gray-900 truncate">{r.service_name}</h3>
-                  <span className={`shrink-0 text-[9px] font-black uppercase px-2 py-1 rounded-full ${r.status === "confirme" ? "bg-green-50 text-green-600" : "bg-primary/10 text-primary"}`}>
-                    {r.status === "confirme" ? "Confirmé" : "En attente"}
+                  <span className={`shrink-0 text-[9px] font-black uppercase px-2 py-1 rounded-full ${r.status === "confirme" ? "bg-green-50 text-green-600" : r.status === "termine" ? "bg-gray-100 text-gray-500" : "bg-primary/10 text-primary"}`}>
+                    {r.status === "confirme" ? "Confirmé" : r.status === "termine" ? "Terminé" : "En attente"}
                   </span>
                 </div>
                 <p className="text-[11px] font-bold text-gray-400 capitalize mt-0.5">{r.salon_name || r.pro_name}</p>
@@ -879,7 +879,7 @@ export default function RendezVous() {
                   <p className="text-[13px] font-bold text-gray-400 mt-0.5">{selectedReservation.salon_name || selectedReservation.pro_name}</p>
                 </div>
                 <span className={`shrink-0 text-[10px] font-black uppercase px-3 py-1.5 rounded-full ${selectedReservation.status === "confirme" ? "bg-green-50 text-green-600" : "bg-primary/10 text-primary"}`}>
-                  {selectedReservation.status === "confirme" ? "Confirmé ✓" : "En attente"}
+                  {selectedReservation.status === "confirme" ? "Confirmé ✓" : selectedReservation.status === "termine" ? "Terminé" : "En attente"}
                 </span>
               </div>
 
