@@ -382,6 +382,13 @@ export default function RendezVous() {
           setTimeout(() => setCalendarSuggestion(pendingCalendar), 800);
           localStorage.setItem("bb_calendars_seen", JSON.stringify([...seenCalendars, pendingCalendar.id]));
         }
+        // Auto-open pourboire for termine reservations not yet reviewed
+        const seenPourboire = JSON.parse(localStorage.getItem("bb_pourboire_shown") || "[]");
+        const unreviewedTermine = enriched.find(r => r.status === "termine" && !reviewedIds.has(r.id) && !seenPourboire.includes(r.id));
+        if (unreviewedTermine) {
+          setTimeout(() => setReviewModal(unreviewedTermine), 1000);
+          localStorage.setItem("bb_pourboire_shown", JSON.stringify([...seenPourboire, unreviewedTermine.id]));
+        }
       }).catch(() => {}).finally(() => setLoading(false));
     }).catch(() => setLoading(false));
   };
@@ -419,7 +426,11 @@ export default function RendezVous() {
                 setTimeout(() => setCalendarSuggestion(freshR), 300);
               }
               if (freshR.status === "termine" && prevSt !== "termine") {
-                setTimeout(() => setReviewModal(freshR), 300);
+                const seenPourboire = JSON.parse(localStorage.getItem("bb_pourboire_shown") || "[]");
+                if (!seenPourboire.includes(freshR.id)) {
+                  setTimeout(() => setReviewModal(freshR), 300);
+                  localStorage.setItem("bb_pourboire_shown", JSON.stringify([...seenPourboire, freshR.id]));
+                }
               }
               return { ...r, ...freshR };
             }
@@ -461,7 +472,11 @@ export default function RendezVous() {
           prevStatusRef.current[newRdv.id] = newRdv.status;
           setReservations(prev => prev.map(r => r.id === newRdv.id ? { ...r, ...newRdv } : r));
           if (newRdv.status === "termine" && prevStatus !== "termine") {
-            setReviewModal(newRdv);
+            const seenPourboire = JSON.parse(localStorage.getItem("bb_pourboire_shown") || "[]");
+            if (!seenPourboire.includes(newRdv.id)) {
+              setReviewModal(newRdv);
+              localStorage.setItem("bb_pourboire_shown", JSON.stringify([...seenPourboire, newRdv.id]));
+            }
           }
           if (newRdv.status === "confirme" && prevStatus !== "confirme") {
             setCalendarSuggestion(newRdv);
