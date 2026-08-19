@@ -55,6 +55,7 @@ const parseOrder = (orderBy) => {
 
 const KNOWN_COLUMNS = {
   Reel: ['id','title','description','video_url','thumbnail_url','images','category','tags','status','likes','views','comments_count','author_email','author_name','author_avatar','created_at','updated_at','created_by_id'],
+  ImmobilierListing: ['id','title','description','price','price_per_m2','unit','surface','rooms','floor','type','status','city','address','location','area','postal_code','equip','extra','badge','images','video_url','contact_email','contact_phone','latitude','longitude','_lat','_lng','created_at','updated_at','created_by_id'],
   Style: ['id','title','description','category','subcategory','images','image_url','video_url','tags','pro_email','status','likes','views','featured','author_email','author_name','author_avatar','produits_utilises','outils_utilises','type_cheveux','type_peau','type_prestation','temps_moyen','niveau_difficulte','mots_cles','created_at','updated_at'],
   StyleCategory: ['id','name','slug','description','icon','color','is_active','styles_count','subcategories_count','created_at','updated_at'],
   StyleSubCategory: ['id','name','slug','category_id','description','is_active','styles_count','created_at','updated_at'],

@@ -31,12 +31,23 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
 
   if (done) {
     return (
-      <div className="flex flex-col items-center py-10 gap-3 text-center">
-        <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-          <Star className="w-8 h-8 text-white fill-white" />
+      <div className="fixed inset-0 z-[200] flex items-end bg-black/30 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-white rounded-t-3xl w-full px-6 pt-5 pb-10 shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-300">
+            <X className="w-5 h-5" />
+          </button>
+          <div className="flex flex-col items-center py-6 gap-3">
+            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+              <Star className="w-8 h-8 text-white fill-white" />
+            </div>
+            <p className="text-[18px] font-black text-gray-900">Merci pour votre avis !</p>
+            <p className="text-[13px] text-gray-400 font-medium">Il est maintenant visible sur la fiche du service.</p>
+          </div>
+          <button onClick={onClose} className="w-full py-4 rounded-2xl font-black text-[14px] uppercase tracking-widest text-white" style={{ background: "#E8732A" }}>
+            Fermer
+          </button>
         </div>
-        <p className="text-[18px] font-black text-gray-900">Merci pour votre avis !</p>
-        <p className="text-[13px] text-gray-400 font-medium">Il est maintenant visible sur la fiche du service.</p>
       </div>
     );
   }

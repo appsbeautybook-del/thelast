@@ -707,16 +707,33 @@ export default function RendezVous() {
               </div>
               <div className="space-y-2">
                 {rdvs.map((r) => (
-            <div key={r.id} className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-3 shadow-sm">
+            <div key={r.id} onClick={() => setSelectedReservation(r)} className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-3 shadow-sm active:scale-[0.99] transition-all cursor-pointer">
               <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5 text-green-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-black text-gray-900 truncate">{r.service_name}</p>
                 <p className="text-[11px] font-bold text-gray-400 capitalize">{r.salon_name || r.pro_name}</p>
+                {r.client_name && (
+                  <p className="text-[11px] font-bold text-gray-500">{r.client_name}</p>
+                )}
+                <div className="flex items-center gap-3 mt-1">
+                  {(r.time_slot || r.time) && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-gray-300" />
+                      <span className="text-[11px] font-bold text-gray-500">{r.time_slot || r.time}</span>
+                    </div>
+                  )}
+                  {r.salon_address && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-gray-300" />
+                      <span className="text-[11px] font-bold text-gray-400 truncate">{r.salon_address}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <button
-                onClick={() => setReviewModal(r)}
+                onClick={(e) => { e.stopPropagation(); setReviewModal(r); }}
                 className={`shrink-0 flex items-center gap-1.5 text-[11px] font-black px-3 py-2 rounded-xl active:scale-95 transition-all uppercase tracking-widest ${
                   r.review_done
                     ? "bg-green-50 text-green-600 border border-green-200"

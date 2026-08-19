@@ -58,6 +58,8 @@ const KNOWN_COLUMNS = {
   user_favorite: ['id','user_email','target_id','target_type','target_title','target_image','target_data','created_at'],
   reel_comment: ['id','reel_id','user_email','user_name','user_avatar','content','likes','parent_id','created_at','updated_at'],
   user_follow: ['id','follower_email','follower_name','follower_avatar','followed_email','created_at'],
+  Reservation: ['id','client_email','client_name','pro_email','pro_name','service_id','service_name','service_price','date','time','time_slot','end_time_slot','duration_min','persons','total_price','night_surcharge','transport_fee','transport_distance_km','salon_name','salon_address','seat_number','seats_total','payment_type','payment_status','crg_code','acompte_amount','notes','addons','status','reminder_scheduled','reminder_sent','completed_at','review_requested','code_validated','reliability_score','source','created_by_id','created_at','updated_at'],
+  ImmobilierListing: ['id','title','description','price','price_per_m2','unit','surface','rooms','floor','type','status','city','address','location','area','postal_code','equip','extra','badge','images','video_url','contact_email','contact_phone','latitude','longitude','_lat','_lng','created_at','updated_at','created_by_id'],
 };
 
 const stripUnknownColumns = async (tableName, payload) => {

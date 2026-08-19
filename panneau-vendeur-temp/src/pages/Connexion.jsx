@@ -153,7 +153,18 @@ export default function Connexion() {
       localStorage.setItem("bb_onboarded", "1");
       navigate("/", { replace: true });
     } catch (e) {
-      setError("Email ou mot de passe incorrect.");
+      const msg = e?.message || "";
+      if (msg.includes("Invalid login credentials") || msg.includes("invalid")) {
+        setError("Email ou mot de passe incorrect. Vérifiez vos identifiants ou créez un compte.");
+      } else if (msg.includes("Email not confirmed") || msg.includes("not confirmed")) {
+        setError("Votre email n'est pas encore confirmé. Vérifiez votre boîte mail.");
+      } else if (msg.includes("Too many")) {
+        setError("Trop de tentatives. Réessayez dans quelques minutes.");
+      } else if (msg.includes("provider") || msg.includes("not enabled")) {
+        setError("Le provider Email n'est pas activé dans Supabase.");
+      } else {
+        setError("Erreur de connexion : " + (msg || "Vérifiez vos identifiants."));
+      }
     } finally {
       setLoading(false);
     }

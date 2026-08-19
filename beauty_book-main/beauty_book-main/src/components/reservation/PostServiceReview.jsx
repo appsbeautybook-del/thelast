@@ -138,12 +138,18 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
   if (done) {
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-        <div className="bg-white rounded-3xl w-[90%] max-w-[360px] px-6 py-10 shadow-2xl text-center">
+        <div className="bg-white rounded-3xl w-[90%] max-w-[360px] px-6 py-10 shadow-2xl text-center relative">
+          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-300">
+            <X className="w-5 h-5" />
+          </button>
           <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
             <Heart className="w-8 h-8 text-white fill-white" />
           </div>
           <p className="text-[18px] font-black text-gray-900">Merci !</p>
           <p className="text-[13px] text-gray-400 font-medium mt-1">Votre retour aide les autres clients.</p>
+          <button onClick={onClose} className="mt-6 w-full py-3 bg-primary text-white rounded-2xl font-black text-[13px] uppercase tracking-widest active:scale-95 transition-all">
+            Fermer
+          </button>
         </div>
       </div>
     );

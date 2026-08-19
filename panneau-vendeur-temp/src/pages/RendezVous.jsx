@@ -524,16 +524,33 @@ export default function RendezVous() {
               <p className="text-[15px] font-black text-gray-400">Aucun RDV passé</p>
             </div>
           ) : past.map((r) => (
-            <div key={r.id} className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-3 shadow-sm">
+            <div key={r.id} onClick={() => setSelectedReservation(r)} className="bg-white rounded-2xl p-4 border border-gray-100 flex items-center gap-3 shadow-sm active:scale-[0.99] transition-all cursor-pointer">
               <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-5 h-5 text-green-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[14px] font-black text-gray-900 truncate">{r.service_name}</p>
-                <p className="text-[11px] font-bold text-gray-400">{r.salon_name || r.pro_name} · {r.date}</p>
+                <p className="text-[11px] font-bold text-gray-400">{r.salon_name || r.pro_name}</p>
+                {r.client_name && (
+                  <p className="text-[11px] font-bold text-gray-500">{r.client_name}</p>
+                )}
+                <div className="flex items-center gap-3 mt-1">
+                  {(r.time_slot || r.time) && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-gray-300" />
+                      <span className="text-[11px] font-bold text-gray-500">{r.time_slot || r.time}</span>
+                    </div>
+                  )}
+                  {r.salon_address && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-gray-300" />
+                      <span className="text-[11px] font-bold text-gray-400 truncate">{r.salon_address}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <button
-                onClick={() => setAvisModal(r)}
+                onClick={(e) => { e.stopPropagation(); setAvisModal(r); }}
                 className="shrink-0 flex items-center gap-1.5 bg-primary/10 text-primary text-[11px] font-black px-3 py-2 rounded-xl active:scale-95 transition-all uppercase tracking-widest"
               >
                 <Star className="w-3.5 h-3.5 fill-primary" />
@@ -605,8 +622,8 @@ export default function RendezVous() {
                   <p className="text-[18px] font-black text-gray-900 leading-tight">{selectedReservation.service_name}</p>
                   <p className="text-[13px] font-bold text-gray-400 mt-0.5">{selectedReservation.salon_name || selectedReservation.pro_name}</p>
                 </div>
-                <span className={`shrink-0 text-[10px] font-black uppercase px-3 py-1.5 rounded-full ${selectedReservation.status === "confirme" ? "bg-green-50 text-green-600" : "bg-primary/10 text-primary"}`}>
-                  {selectedReservation.status === "confirme" ? "Confirmé ✓" : "En attente"}
+                <span className={`shrink-0 text-[10px] font-black uppercase px-3 py-1.5 rounded-full ${selectedReservation.status === "confirme" ? "bg-green-50 text-green-600" : selectedReservation.status === "termine" ? "bg-gray-100 text-gray-500" : "bg-primary/10 text-primary"}`}>
+                  {selectedReservation.status === "confirme" ? "Confirmé ✓" : selectedReservation.status === "termine" ? "Terminé" : "En attente"}
                 </span>
               </div>
 
@@ -630,7 +647,7 @@ export default function RendezVous() {
                   <div>
                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Heure</p>
                     <p className="text-[13px] font-black text-gray-900">
-                      {selectedReservation.time_slot}{selectedReservation.end_time_slot ? ` → ${selectedReservation.end_time_slot}` : ""}
+                      {selectedReservation.time_slot || selectedReservation.time}{selectedReservation.end_time_slot ? ` → ${selectedReservation.end_time_slot}` : ""}
                       {selectedReservation.duration_min ? ` (${selectedReservation.duration_min} min)` : ""}
                     </p>
                   </div>
@@ -689,6 +706,75 @@ export default function RendezVous() {
                   <p className="text-[12px] text-gray-700 font-medium">{selectedReservation.notes}</p>
                 </div>
               )}
+
+              {/* Client */}
+              {selectedReservation.client_name && (
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                    <User className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Client</p>
+                    <p className="text-[13px] font-black text-gray-900">{selectedReservation.client_name}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Boutons calendrier */}
+              <div className="space-y-2 pt-2">
+                <a
+                  href={(() => {
+                    const pad = (n) => String(n).padStart(2, "0");
+                    const [y, mo, d] = (selectedReservation.date || "2000-01-01").split("-").map(Number);
+                    const [sh, sm] = (selectedReservation.time_slot || selectedReservation.time || "00:00").split(":").map(Number);
+                    const endT = sh * 60 + sm + (selectedReservation.duration_min || 60);
+                    const eh = Math.floor(endT / 60) % 24, em = endT % 60;
+                    const fmt = (yy, mm, dd, hh, min) => `${yy}${pad(mm)}${pad(dd)}T${pad(hh)}${pad(min)}00`;
+                    const p = new URLSearchParams({
+                      action: "TEMPLATE",
+                      text: `BeautyBook - ${selectedReservation.service_name || "RDV"}`,
+                      dates: `${fmt(y, mo, d, sh, sm)}/${fmt(y, mo, d, eh, em)}`,
+                      details: `Prestataire: ${selectedReservation.salon_name || selectedReservation.pro_name || ""}\nCode: ${selectedReservation.crg_code || ""}`,
+                      location: selectedReservation.salon_address || selectedReservation.salon_name || "",
+                    });
+                    return `https://calendar.google.com/calendar/render?${p.toString()}`;
+                  })()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#4285F4] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all w-full"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Ajouter à Google Calendar
+                </a>
+                {(() => {
+                  const pad = (n) => String(n).padStart(2, "0");
+                  const [y, mo, d] = (selectedReservation.date || "2000-01-01").split("-").map(Number);
+                  const [sh, sm] = (selectedReservation.time_slot || selectedReservation.time || "00:00").split(":").map(Number);
+                  const endT = sh * 60 + sm + (selectedReservation.duration_min || 60);
+                  const eh = Math.floor(endT / 60) % 24, em = endT % 60;
+                  const fmt = (yy, mm, dd, hh, min) => `${yy}${pad(mm)}${pad(dd)}T${pad(hh)}${pad(min)}00`;
+                  const ics = [
+                    "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//BeautyBook//FR",
+                    "BEGIN:VEVENT",
+                    `DTSTART:${fmt(y, mo, d, sh, sm)}`,
+                    `DTEND:${fmt(y, mo, d, eh, em)}`,
+                    `SUMMARY:BeautyBook - ${selectedReservation.service_name || "RDV"}`,
+                    `DESCRIPTION:Prestataire: ${selectedReservation.salon_name || ""}\\nCode: ${selectedReservation.crg_code || ""}`,
+                    `LOCATION:${selectedReservation.salon_address || selectedReservation.salon_name || ""}`,
+                    "STATUS:CONFIRMED",
+                    "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:Rappel: votre RDV BeautyBook demain","END:VALARM",
+                    "END:VEVENT","END:VCALENDAR"
+                  ].join("\r\n");
+                  const blob = new Blob([ics], { type: "text/calendar" });
+                  const appleUrl = URL.createObjectURL(blob);
+                  return (
+                    <button onClick={() => window.open(appleUrl, "_blank")}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl text-[13px] font-black active:scale-95 transition-all">
+                      <Calendar className="w-4 h-4" /> Ajouter à Apple Calendar
+                    </button>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         </div>
