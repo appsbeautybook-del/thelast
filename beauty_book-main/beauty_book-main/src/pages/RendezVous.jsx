@@ -92,6 +92,7 @@ function routineToEvents(routine) {
         icon: routine.emoji || "✨",
         detail: `${routine.duration_min || 20} min`,
         ...colorInfo,
+        raw: routine,
       });
     }
     cur.setDate(cur.getDate() + 1);
@@ -99,7 +100,7 @@ function routineToEvents(routine) {
   return events;
 }
 
-function CalendarView({ reservations }) {
+function CalendarView({ reservations, onEventClick }) {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -231,7 +232,7 @@ function CalendarView({ reservations }) {
             </div>
           ) : (
             selectedEvents.map((ev) => (
-              <EventCard key={ev.id} event={ev} />
+              <EventCard key={ev.id} event={ev} onClick={onEventClick} />
             ))
           )}
         </div>
@@ -251,7 +252,7 @@ function CalendarView({ reservations }) {
               .filter(e => e.dateObj >= today)
               .sort((a, b) => a.dateObj - b.dateObj)
               .slice(0, 5)
-              .map(ev => <EventCard key={ev.id} event={ev} />)
+              .map(ev => <EventCard key={ev.id} event={ev} onClick={onEventClick} />)
           )}
         </div>
       )}
@@ -259,7 +260,7 @@ function CalendarView({ reservations }) {
   );
 }
 
-function EventCard({ event }) {
+function EventCard({ event, onClick }) {
   const dateObj = new Date(event.date);
   const dayName = DAYS_FR[dateObj.getDay()];
   const dayNum = dateObj.getDate();
@@ -267,7 +268,7 @@ function EventCard({ event }) {
 
   if (event.type === "routine") {
     return (
-      <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 overflow-hidden`}>
+      <button onClick={() => onClick?.(event)} className={`bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 overflow-hidden w-full text-left active:scale-[0.98] transition-all`}>
         <div className={`w-16 shrink-0 ${event.color} flex flex-col items-center justify-center py-4`}>
           <span className="text-2xl">{event.icon}</span>
           <span className="text-[9px] font-black text-gray-500 uppercase mt-1">{dayName}</span>
@@ -284,12 +285,12 @@ function EventCard({ event }) {
             <span className="text-[11px] font-bold text-gray-400">{event.time}</span>
           </div>
         </div>
-      </div>
+      </button>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 overflow-hidden">
+    <button onClick={() => onClick?.(event)} className="bg-white rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 overflow-hidden w-full text-left active:scale-[0.98] transition-all">
       <div className="w-16 shrink-0 bg-primary/10 flex flex-col items-center justify-center py-4">
         <span className="text-[9px] font-black text-primary uppercase">{dayName}</span>
         <span className="text-[20px] font-black text-primary">{dayNum}</span>
@@ -315,7 +316,7 @@ function EventCard({ event }) {
             <span className="text-[11px] font-bold text-gray-400">{event.location}</span>
           </div>
         </div>
-      </div>
+      </button>
     </div>
   );
 }
@@ -324,6 +325,7 @@ export default function RendezVous() {
   const [activeTab, setActiveTab] = useState(0);
   const [reviewModal, setReviewModal] = useState(null);
   const [selectedReservation, setSelectedReservation] = useState(null);
+  const [selectedRoutine, setSelectedRoutine] = useState(null);
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -827,7 +829,13 @@ export default function RendezVous() {
       )}
 
       {/* Calendrier */}
-      {activeTab === 3 && <CalendarView reservations={reservations} />}
+      {activeTab === 3 && <CalendarView reservations={reservations} onEventClick={(ev) => {
+        if (ev.type === "rdv" && ev.raw) {
+          setSelectedReservation(ev.raw);
+        } else if (ev.type === "routine") {
+          setSelectedRoutine(ev);
+        }
+      }} />}
 
       {/* Modal récapitulatif RDV */}
       {selectedReservation && (
@@ -1037,6 +1045,44 @@ export default function RendezVous() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal détails routine */}
+      {selectedRoutine && (
+        <div className="fixed inset-0 z-[300] flex items-end" onClick={() => setSelectedRoutine(null)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative bg-white w-full rounded-t-3xl z-10 overflow-hidden" onClick={e => e.stopPropagation()}
+            style={{ paddingBottom: "calc(90px + env(safe-area-inset-bottom, 16px))" }}>
+            <div className="flex justify-center pt-3 pb-2">
+              <div className="w-10 h-1 bg-gray-200 rounded-full" />
+            </div>
+            <div className="flex items-center justify-between px-5 pb-3 border-b border-gray-100">
+              <h3 className="text-[17px] font-black text-gray-900">Détails Routine</h3>
+              <button onClick={() => setSelectedRoutine(null)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="text-[36px]">{selectedRoutine.icon}</span>
+                <div>
+                  <p className="text-[18px] font-black text-gray-900">{selectedRoutine.service}</p>
+                  <p className="text-[12px] text-gray-400 font-medium capitalize">{selectedRoutine.date} — {selectedRoutine.time}</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1 bg-gray-50 rounded-2xl p-3 text-center">
+                  <Clock className="w-4 h-4 text-primary mx-auto mb-1" />
+                  <p className="text-[12px] font-black text-gray-900">{selectedRoutine.detail}</p>
+                  <p className="text-[10px] text-gray-400 font-medium">Durée</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedRoutine(null)} className="w-full py-3.5 bg-gray-100 text-gray-600 text-[13px] font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all">
+                Fermer
+              </button>
             </div>
           </div>
         </div>
