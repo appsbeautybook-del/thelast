@@ -126,7 +126,7 @@ export default function Boutique() {
         const products = res.data?.products || [];
         return products;
       }).catch(() => []),
-      entities.Produit.filter({ status: "actif" }, "-created_at", 200)
+      entities.Produit.filter({ status: "actif" }, "-created_at", 500)
         .then(items => items.map(p => ({
             id: p.id,
             name: p.name,

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Shield, Download, Heart, Check, Search, Sparkles, ImageIcon, GalleryHorizontalEnd, Loader2, Camera } from "lucide-react";
+import { ArrowLeft, ArrowRight, Shield, Download, Heart, Check, Search, Sparkles, ImageIcon, GalleryHorizontalEnd, Loader2, Camera, Scissors } from "lucide-react";
 import { entities, uploadFile } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { apiClient } from '@/lib/apiClient';
@@ -565,70 +565,55 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
 
           {/* ── STEP 3: Loading ── */}
           {step === 3 && (
-            <div className="flex flex-col items-center justify-center py-8 gap-8">
-              <div className="flex gap-4 w-full">
-                <div className="flex-1 flex flex-col items-center gap-2">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">VOUS</p>
-                  <div className="relative w-full aspect-square rounded-2xl overflow-hidden">
-                    {userPhotoUrl ? (
-                      <img src={userPhotoUrl} alt="Vous" className="w-full h-full object-cover opacity-40" />
-                    ) : (
-                      <div className="w-full h-full rounded-2xl bg-gray-100 flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-gray-300" strokeWidth={1.2} />
-                      </div>
-                    )}
-                    {/* Barre de chargement orange superposée */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/20 border-2 border-primary/40 flex items-center justify-center mb-3">
-                        <Sparkles className="w-6 h-6 text-primary animate-spin" />
-                      </div>
-                      <div className="w-4/5 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-white text-[11px] font-black drop-shadow-md">{progressMsg}</p>
-                          <p className="text-primary text-[13px] font-black drop-shadow-md">{progress}%</p>
-                        </div>
-                        <div className="h-2.5 bg-white/20 rounded-full overflow-hidden border border-white/10">
-                          <div
-                            className="h-full rounded-full transition-[width] duration-300 ease-out"
-                            style={{
-                              width: `${progress}%`,
-                              background: 'linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fdba74 100%)',
-                              boxShadow: '0 0 12px rgba(249, 115, 22, 0.6)',
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+            <div className="relative -mx-5 -my-4 flex flex-col items-center justify-center min-h-[70vh] overflow-hidden">
+              {/* Blurred background with user photo */}
+              {userPhotoUrl ? (
+                <div className="absolute inset-0">
+                  <img src={userPhotoUrl} alt="" className="w-full h-full object-cover scale-110 blur-sm" />
+                  <div className="absolute inset-0 bg-black/40" />
                 </div>
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30">
-                    <ArrowRight className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-                <div className="flex-1 flex flex-col items-center gap-2">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">STYLE</p>
-                  {selectedStyle && (
-                    <div className="w-full aspect-square rounded-2xl overflow-hidden">
-                      <img src={selectedStyle.img} alt={selectedStyle.label} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
-              </div>
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900" />
+              )}
 
-              <div className="flex items-center gap-2">
-                {[0, 1, 2, 3, 4].map(i => (
+              {/* Content */}
+              <div className="relative z-10 flex flex-col items-center w-full px-8">
+                {/* Scissors icon */}
+                <div className="w-16 h-16 rounded-2xl bg-primary/20 border-2 border-primary/50 flex items-center justify-center mb-8">
+                  <Scissors className="w-8 h-8 text-primary" />
+                </div>
+
+                {/* Title + percentage */}
+                <div className="w-full flex items-center justify-between mb-3">
+                  <p className="text-white text-[18px] font-black drop-shadow-lg">{progressMsg}</p>
+                  <p className="text-primary text-[22px] font-black drop-shadow-lg">{progress}%</p>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full h-3 bg-white/15 rounded-full overflow-hidden border border-white/10 mb-4">
                   <div
-                    key={i}
-                    className="w-2.5 h-2.5 bg-primary/40 rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 0.12}s` }}
+                    className="h-full rounded-full transition-[width] duration-300 ease-out"
+                    style={{
+                      width: `${progress}%`,
+                      background: 'linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fdba74 100%)',
+                      boxShadow: '0 0 16px rgba(249, 115, 22, 0.7)',
+                    }}
                   />
-                ))}
-              </div>
+                </div>
 
-              <p className="text-[11px] text-gray-400 font-medium text-center leading-relaxed max-w-[260px]">
-                Nano Banana AI génère une vraie photo de vous avec cette coiffure. Cela peut prendre 30 à 90 secondes…
-              </p>
+                {/* Subtitle */}
+                <p className="text-white/60 text-[13px] font-medium text-center mb-6">
+                  Simulation IA en cours — patientez...
+                </p>
+
+                {/* Cancel */}
+                <button
+                  onClick={onClose}
+                  className="text-white/50 text-[13px] font-medium underline underline-offset-2 active:scale-95 transition-all"
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
           )}
 

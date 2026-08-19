@@ -895,7 +895,7 @@ function YouMayAlsoLike({ currentProductId }) {
 
       if (dead) return;
       const shuffled = all.sort(() => Math.random() - 0.5);
-      setProducts(shuffled.slice(0, 150));
+      setProducts(shuffled);
       setLoading(false);
     })();
     return () => { dead = true; };
