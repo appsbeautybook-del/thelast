@@ -127,8 +127,6 @@ export default function AdminImmobilier() {
             <input value={form.extra} onChange={e => setForm(f => ({ ...f, extra: e.target.value }))} placeholder="Extra (ex: Parking)" className={inputCls} />
           </div>
 
-          </div>
-
           {/* Images */}
           <div>
             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-2">Photos (plusieurs possibles)</label>
