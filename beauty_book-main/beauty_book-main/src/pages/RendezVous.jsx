@@ -1067,42 +1067,96 @@ export default function RendezVous() {
       )}
 
       {/* Modal détails routine */}
-      {selectedRoutine && (
-        <div className="fixed inset-0 z-[300] flex items-end" onClick={() => setSelectedRoutine(null)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative bg-white w-full rounded-t-3xl z-10 overflow-hidden" onClick={e => e.stopPropagation()}
-            style={{ paddingBottom: "calc(90px + env(safe-area-inset-bottom, 16px))" }}>
-            <div className="flex justify-center pt-3 pb-2">
-              <div className="w-10 h-1 bg-gray-200 rounded-full" />
-            </div>
-            <div className="flex items-center justify-between px-5 pb-3 border-b border-gray-100">
-              <h3 className="text-[17px] font-black text-gray-900">Détails Routine</h3>
-              <button onClick={() => setSelectedRoutine(null)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                <X className="w-4 h-4 text-gray-500" />
-              </button>
-            </div>
-            <div className="px-5 py-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <span className="text-[36px]">{selectedRoutine.icon}</span>
-                <div>
-                  <p className="text-[18px] font-black text-gray-900">{selectedRoutine.service}</p>
-                  <p className="text-[12px] text-gray-400 font-medium capitalize">{selectedRoutine.date} — {selectedRoutine.time}</p>
-                </div>
+      {selectedRoutine && (() => {
+        const r = selectedRoutine.raw || {};
+        const tasks = r.tasks || [];
+        const freqLabel = r.frequency === "quotidien" ? "Quotidien" : r.days_of_week?.length ? `Les ${r.days_of_week.map(d => ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][d]).join(", ")}` : "Personnalisé";
+        return (
+          <div className="fixed inset-0 z-[300] flex items-end" onClick={() => setSelectedRoutine(null)}>
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="relative bg-white w-full rounded-t-3xl z-10 overflow-hidden max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}
+              style={{ paddingBottom: "calc(90px + env(safe-area-inset-bottom, 16px))" }}>
+              <div className="flex justify-center pt-3 pb-2 shrink-0">
+                <div className="w-10 h-1 bg-gray-200 rounded-full" />
               </div>
-              <div className="flex gap-3">
-                <div className="flex-1 bg-gray-50 rounded-2xl p-3 text-center">
-                  <Clock className="w-4 h-4 text-primary mx-auto mb-1" />
-                  <p className="text-[12px] font-black text-gray-900">{selectedRoutine.detail}</p>
-                  <p className="text-[10px] text-gray-400 font-medium">Durée</p>
-                </div>
+              <div className="flex items-center justify-between px-5 pb-3 border-b border-gray-100 shrink-0">
+                <h3 className="text-[17px] font-black text-gray-900">Détails Routine</h3>
+                <button onClick={() => setSelectedRoutine(null)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <X className="w-4 h-4 text-gray-500" />
+                </button>
               </div>
-              <button onClick={() => setSelectedRoutine(null)} className="w-full py-3.5 bg-gray-100 text-gray-600 text-[13px] font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all">
-                Fermer
-              </button>
+              <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1">
+                {/* Header routine */}
+                <div className="flex items-center gap-3">
+                  <span className="text-[40px]">{selectedRoutine.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-[18px] font-black text-gray-900">{selectedRoutine.service}</p>
+                    {r.description && (
+                      <p className="text-[12px] text-gray-400 font-medium mt-0.5 leading-relaxed">{r.description}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Infos rapides */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-gray-50 rounded-2xl p-3 text-center">
+                    <Clock className="w-4 h-4 text-primary mx-auto mb-1" />
+                    <p className="text-[12px] font-black text-gray-900">{selectedRoutine.detail}</p>
+                    <p className="text-[10px] text-gray-400 font-medium">Durée</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-2xl p-3 text-center">
+                    <Calendar className="w-4 h-4 text-primary mx-auto mb-1" />
+                    <p className="text-[11px] font-black text-gray-900 leading-tight">{freqLabel}</p>
+                    <p className="text-[10px] text-gray-400 font-medium">Fréquence</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-2xl p-3 text-center">
+                    <span className="text-[14px] block mb-1">⏰</span>
+                    <p className="text-[12px] font-black text-gray-900">{r.time || "—"}</p>
+                    <p className="text-[10px] text-gray-400 font-medium">Heure</p>
+                  </div>
+                </div>
+
+                {/* Objectif */}
+                {r.objectif && (
+                  <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4">
+                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Objectif</p>
+                    <p className="text-[13px] font-medium text-gray-700 leading-relaxed">{r.objectif}</p>
+                  </div>
+                )}
+
+                {/* Étapes / Produits */}
+                {tasks.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Étapes ({tasks.length})</p>
+                    <div className="space-y-2">
+                      {tasks.map((t, i) => (
+                        <div key={t.id || i} className="flex items-center gap-3 bg-gray-50 rounded-2xl p-3">
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <span className="text-[11px] font-black text-primary">{i + 1}</span>
+                          </div>
+                          <p className="text-[13px] font-medium text-gray-800">{t.label || t}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Catégorie */}
+                {r.category && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Catégorie</span>
+                    <span className="text-[12px] font-bold text-gray-700 bg-gray-100 px-3 py-1 rounded-full">{r.category}</span>
+                  </div>
+                )}
+
+                <button onClick={() => setSelectedRoutine(null)} className="w-full py-3.5 bg-gray-100 text-gray-600 text-[13px] font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all">
+                  Fermer
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Modal confirmation annulation */}
       {showCancelConfirm && (
