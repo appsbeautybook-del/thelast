@@ -125,20 +125,32 @@ export default function AdminImmobilier() {
     setSaving(true);
     setError("");
     try {
+      const toNum = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+      const toInt = (v) => { const n = parseInt(v); return isNaN(n) ? 0 : n; };
       const payload = {
-        ...form,
-        price: parseFloat(form.price) || 0,
-        price_per_m2: parseFloat(form.price_per_m2) || computePricePerM2(form.price, form.surface) || 0,
-        surface: parseFloat(form.surface) || 0,
-        rooms: parseInt(form.rooms) || 0,
+        title: form.title || "",
+        description: form.description || "",
+        type: form.type || "location",
+        price: toNum(form.price),
+        price_per_m2: toNum(form.price_per_m2) || computePricePerM2(form.price, form.surface) || 0,
+        unit: form.unit || "",
+        surface: toNum(form.surface),
+        rooms: toInt(form.rooms),
         floor: form.floor || "",
+        location: form.location || "",
+        area: form.area || "",
+        postal_code: form.postal_code || "",
+        equip: form.equip || "",
+        extra: form.extra || "",
+        badge: form.badge || "PRO",
+        images: form.images || [],
+        video_url: form.video_url || "",
+        contact_email: form.contact_email || "",
+        contact_phone: form.contact_phone || "",
+        status: form.status || "actif",
         latitude: form._lat || null,
         longitude: form._lng || null,
       };
-      delete payload._lat;
-      delete payload._lng;
-      delete payload._draftId;
-      delete payload._draftDate;
       const result = await adminApi.createImmobilier(payload);
       const newItem = result?.data ? result.data : result;
       setListings(prev => [newItem, ...prev]);
