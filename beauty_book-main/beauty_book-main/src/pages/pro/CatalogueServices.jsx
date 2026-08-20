@@ -314,7 +314,7 @@ export default function CatalogueServices() {
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
         {isPackTab ? (
-          <button onClick={() => navigate("/profil-pro", { state: { openPacks: true } })}
+          <button onClick={() => navigate("/pro/creer-bundle")}
             className="w-full bg-pink-500 text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-pink-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
             <Plus className="w-5 h-5" />
             Créer un Bundle
