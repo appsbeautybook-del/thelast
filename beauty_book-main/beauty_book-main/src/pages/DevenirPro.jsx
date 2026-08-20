@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, X, Clock, Phone, Mail, Building2, Car, Moon, ImagePlus, CheckCircle, Store, AtSign, Plus, Trash2, AlertCircle, Camera, Upload, MapPin, Wifi, ParkingCircle, Wind, Baby, Coffee, CreditCard, Sofa, Music, UtensilsCrossed, Wine, Tv, Lightbulb, Thermometer, Star, Lock, Sun, GripVertical, Volume2 } from "lucide-react";
+import { ArrowLeft, X, Clock, Phone, Mail, Building2, Car, Moon, ImagePlus, CheckCircle, Store, AtSign, Plus, Trash2, AlertCircle, Camera, Upload, MapPin, Wifi, ParkingCircle, Wind, Baby, Coffee, CreditCard, Sofa, Music, UtensilsCrossed, Wine, Tv, Lightbulb, Thermometer, Star, Lock, Sun, GripVertical, Volume2, Accessibility, Shirt, ShowerHead, PawPrint, BookOpen, Sparkles, Zap } from "lucide-react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { useAuth } from "@/lib/AuthContext";
 import { entities, uploadFile } from "@/api/entities";
@@ -261,25 +261,34 @@ function Step2({ data, setData }) {
   const cheveux = ["Lisses", "Bouclés", "Frisés", "Crépus", "Fins", "Épais"];
   const toggle = (arr, val) => arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val];
 
-  const equipements = [
-    { label: "Climatisation", Icon: Wind },
-    { label: "Chauffage", Icon: Thermometer },
-    { label: "Miroir éclairé", Icon: Lightbulb },
-    { label: "Espace VIP", Icon: Star },
-    { label: "Loge privée", Icon: Lock },
-    { label: "Sono/Musique", Icon: Music },
-    { label: "TV écran", Icon: Tv },
-    { label: "Lumière naturelle", Icon: Sun },
-  ];
   const commoditesOptions = [
     { label: "Wifi", Icon: Wifi },
     { label: "Parking", Icon: ParkingCircle },
     { label: "Climatisation", Icon: Wind },
+    { label: "Chauffage", Icon: Thermometer },
     { label: "Espace bébé", Icon: Baby },
     { label: "Café / Thé", Icon: Coffee },
     { label: "Paiement CB", Icon: CreditCard },
     { label: "Salle d'attente", Icon: Sofa },
-    { label: "Musique", Icon: Music },
+    { label: "Musique d'ambiance", Icon: Music },
+    { label: "Miroir éclairé", Icon: Lightbulb },
+    { label: "Espace VIP", Icon: Star },
+    { label: "Loge privée", Icon: Lock },
+    { label: "TV écran", Icon: Tv },
+    { label: "Lumière naturelle", Icon: Sun },
+    { label: "Accessible PMR", Icon: Accessibility },
+    { label: "Vestiaire", Icon: Shirt },
+    { label: "Douches", Icon: ShowerHead },
+    { label: "Champagne", Icon: Wine },
+    { label: "Animaux acceptés", Icon: PawPrint },
+    { label: "Terrasse", Icon: Sun },
+    { label: "Bar à jus", Icon: Coffee },
+    { label: "Bibliothèque", Icon: BookOpen },
+    { label: "Coin enfants", Icon: Baby },
+    { label: "Stationnement privé", Icon: ParkingCircle },
+    { label: "Prise électrique", Icon: Zap },
+    { label: "Miroirs plein corps", Icon: Sparkles },
+    { label: "Éclairage pro", Icon: Lightbulb },
   ];
 
   const [uploadingMenuImg, setUploadingMenuImg] = useState({});
@@ -377,31 +386,14 @@ function Step2({ data, setData }) {
         </div>
       </div>
 
-      {/* Équipement & Confort */}
-      <div>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Équipement & Confort</p>
-        <div className="grid grid-cols-2 gap-2">
-          {equipements.map(({ label, Icon: EqIcon }) => {
-            const selected = (data.equipements || []).includes(label);
-            return (
-              <button key={label} onClick={() => setData(d => ({ ...d, equipements: toggle(d.equipements || [], label) }))}
-                className={`flex items-center gap-2.5 px-3 py-3 rounded-2xl border-2 text-[12px] font-bold transition-all active:scale-95 ${selected ? "bg-primary border-primary text-white" : "bg-white border-gray-200 text-gray-600"}`}>
-                <EqIcon className={`w-4 h-4 shrink-0 ${selected ? "text-white" : "text-gray-400"}`} />
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
       {/* Commodités */}
       <div>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Commodités</p>
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Commodités & Équipements</p>
         <div className="grid grid-cols-4 gap-2">
           {commoditesOptions.map(({ label, Icon }) => {
-            const selected = (data.commodites2 || []).includes(label);
+            const selected = (data.commodites || []).includes(label);
             return (
-              <button key={label} onClick={() => setData(d => ({ ...d, commodites2: toggle(d.commodites2 || [], label) }))}
+              <button key={label} onClick={() => setData(d => ({ ...d, commodites: toggle(d.commodites || [], label) }))}
                 className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-2xl border-2 transition-all active:scale-95 ${selected ? "bg-primary border-primary" : "bg-white border-gray-200"}`}>
                 <Icon className={`w-4 h-4 ${selected ? "text-white" : "text-gray-400"}`} />
                 <span className={`text-[9px] font-black text-center leading-tight ${selected ? "text-white" : "text-gray-500"}`}>{label}</span>

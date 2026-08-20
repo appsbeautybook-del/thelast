@@ -5,7 +5,7 @@ import {
   Scissors, Clock, Star, Zap, Check, Store, Phone, MapPin,
   Building2, FileText, Image, Palette, Wifi, Car, Snowflake,
   Baby, Coffee, CreditCard, Accessibility, Shirt, Sofa, ShowerHead,
-  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save
+  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, PawPrint
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -25,6 +25,7 @@ const COMMODITES_LIST = [
   { name: "Wifi", Icon: Wifi },
   { name: "Parking", Icon: Car },
   { name: "Climatisation", Icon: Snowflake },
+  { name: "Chauffage", Icon: Snowflake },
   { name: "Espace bébé", Icon: Baby },
   { name: "Café offert", Icon: Coffee },
   { name: "Paiement CB", Icon: CreditCard },
@@ -33,7 +34,21 @@ const COMMODITES_LIST = [
   { name: "Salle d'attente", Icon: Sofa },
   { name: "Douches", Icon: ShowerHead },
   { name: "Champagne", Icon: Wine },
-  { name: "Musique live", Icon: Music },
+  { name: "Musique d'ambiance", Icon: Music },
+  { name: "Miroir éclairé", Icon: Star },
+  { name: "Espace VIP", Icon: Star },
+  { name: "Loge privée", Icon: Star },
+  { name: "TV écran", Icon: Sofa },
+  { name: "Lumière naturelle", Icon: Sun },
+  { name: "Animaux acceptés", Icon: PawPrint },
+  { name: "Terrasse", Icon: Sun },
+  { name: "Bar à jus", Icon: Coffee },
+  { name: "Bibliothèque", Icon: FileText },
+  { name: "Coin enfants", Icon: Baby },
+  { name: "Stationnement privé", Icon: Car },
+  { name: "Prise électrique", Icon: Zap },
+  { name: "Miroirs plein corps", Icon: Star },
+  { name: "Éclairage pro", Icon: Star },
 ];
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];

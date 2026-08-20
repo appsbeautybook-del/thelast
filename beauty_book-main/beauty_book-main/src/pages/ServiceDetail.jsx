@@ -593,21 +593,6 @@ export default function ServiceDetail() {
           </div>
         )}
 
-        {/* Equipements */}
-        {(s.equipments || []).length > 0 && (
-          <div>
-            <SectionTitle>Équipements & Confort</SectionTitle>
-            <div className="flex flex-wrap gap-2">
-              {s.equipments.map((eq, i) => (
-                <div key={i} className="flex items-center gap-1.5 bg-gray-50 rounded-full px-3 py-2 border border-gray-100">
-                  <MapPin className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-[12px] font-bold text-gray-700">{eq}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Personnaliser */}
         <div>
           <SectionTitle>Personnalisez votre soin</SectionTitle>

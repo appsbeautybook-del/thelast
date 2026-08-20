@@ -8,6 +8,7 @@ import { GLOBAL_CATEGORIES } from "@/lib/categories";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { useLocale } from "@/hooks/useLocale";
+import UserGuide from "@/components/UserGuide";
 
 
 function getSectionBg() {
@@ -278,6 +279,8 @@ export default function Home() {
 
   return (
     <div ref={containerRef} className="font-display pb-6 bg-white">
+      {/* Guide d'utilisation premier accès */}
+      <UserGuide />
       {/* Pull to refresh */}
       {pullDistance > 10 && (
         <div className="flex items-center justify-center overflow-hidden transition-all" style={{ height: pullDistance * 0.5 }}>
