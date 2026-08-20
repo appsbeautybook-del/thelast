@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
 import { supabase } from "@/api/supabaseClient";
+import { useRateLimit } from "@/hooks/useRateLimit";
 
 const SPLASH_IMG = "https://media.base44.com/images/public/6a0ba7bd3d55dddeb85a8366/39cb4873a_generated_image.png";
 
@@ -172,12 +173,17 @@ function ForgotPassword({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const { isLimited, remainingTime, checkLimit } = useRateLimit({ maxAttempts: 3, windowMs: 300000 });
 
   const inputClass = "w-full bg-gray-100 rounded-2xl px-4 py-4 text-[14px] font-medium text-gray-800 outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-gray-400";
   const labelClass = "text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block";
 
   const handleSend = async () => {
     if (!email || loading) return;
+    if (!checkLimit()) {
+      setError(`Trop de tentatives. Réessayez dans ${remainingTime}s.`);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
@@ -315,6 +321,7 @@ export default function Connexion() {
   const [emailNotConfirmed, setEmailNotConfirmed] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [resending, setResending] = useState(false);
+  const { isLimited, remainingTime, checkLimit } = useRateLimit({ maxAttempts: 5, windowMs: 300000 });
 
   // Restore saved email if "remember me" was checked
   useEffect(() => {
@@ -351,6 +358,11 @@ export default function Connexion() {
 
   const handleLogin = async () => {
     if (!email || !password || loading) return;
+    if (!checkLimit()) {
+      setError(`Trop de tentatives. Réessayez dans ${remainingTime}s.`);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError("");
     setEmailNotConfirmed(false);

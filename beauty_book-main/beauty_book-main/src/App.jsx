@@ -113,6 +113,10 @@ import VendeurSignup from '@/pages/VendeurSignup';
 import OrderTracking from '@/pages/OrderTracking';
 import Checkout from '@/pages/Checkout';
 import SupprimerCompte from '@/pages/SupprimerCompte';
+import MentionsLegales from '@/pages/parametres/MentionsLegales';
+import PolitiqueConfidentialite from '@/pages/parametres/PolitiqueConfidentialite';
+import MesDonnees from '@/pages/parametres/MesDonnees';
+import CookieConsent from '@/components/CookieConsent';
 import ShAI from '@/pages/ShAI';
 import Explorer from '@/pages/Explorer';
 import About from '@/pages/About';
@@ -281,6 +285,9 @@ const AuthenticatedApp = () => {
         <Route path="/parametres/conditions" element={<Conditions />} />
         <Route path="/parametres/contact" element={<Contactez />} />
         <Route path="/parametres/a-propos" element={<APropos />} />
+        <Route path="/parametres/mentions-legales" element={<MentionsLegales />} />
+        <Route path="/parametres/politique-confidentialite" element={<PolitiqueConfidentialite />} />
+        <Route path="/parametres/mes-donnees" element={<MesDonnees />} />
         <Route path="/produit" element={<ProduitDetail />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/notifications" element={<NotificationsPage />} />
@@ -325,6 +332,7 @@ function App() {
             <VoiceAgentProvider>
               <CallManager>
                 <AuthenticatedApp />
+                <CookieConsent />
               </CallManager>
               <FloatingVoiceAgent />
             </VoiceAgentProvider>

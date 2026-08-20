@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, User, Shield, CreditCard, Bell, Globe, HelpCircle, Mail, Lock, FileText, LogOut, ChevronRight, BadgeCheck, Scissors, BarChart2, Star, RefreshCw, UserPlus, Trash2, Moon, Sun } from "lucide-react";
+import { ArrowLeft, User, Shield, CreditCard, Bell, Globe, HelpCircle, Mail, Lock, FileText, LogOut, ChevronRight, BadgeCheck, Scissors, BarChart2, Star, RefreshCw, UserPlus, Trash2, Moon, Sun, Download } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -153,7 +153,10 @@ export default function Parametres() {
         <SectionLabel>Assistance et légal</SectionLabel>
         <div className="space-y-2">
           <SettingRow icon={HelpCircle} iconBg="bg-orange-50" iconColor="text-primary" label="Centre d'aide" sublabel="FAQ et support" onClick={() => navigate("/parametres/aide")} />
-          <SettingRow icon={FileText} iconBg="bg-gray-100" iconColor="text-gray-500" label="Conditions & Légal" sublabel="CGU, confidentialité, annulation" onClick={() => navigate("/parametres/conditions")} />
+          <SettingRow icon={FileText} iconBg="bg-gray-100" iconColor="text-gray-500" label="Conditions Générales" sublabel="CGU et conditions d'utilisation" onClick={() => navigate("/parametres/conditions")} />
+          <SettingRow icon={Shield} iconBg="bg-blue-50" iconColor="text-blue-500" label="Politique de Confidentialité" sublabel="RGPD, données, droits" onClick={() => navigate("/parametres/politique-confidentialite")} />
+          <SettingRow icon={Lock} iconBg="bg-green-50" iconColor="text-green-500" label="Mentions Légales" sublabel="Éditeur, hébergeur, contact" onClick={() => navigate("/parametres/mentions-legales")} />
+          <SettingRow icon={Download} iconBg="bg-indigo-50" iconColor="text-indigo-500" label="Mes Données" sublabel="Exporter mes données (RGPD)" onClick={() => navigate("/parametres/mes-donnees")} />
         </div>
 
         {/* COMPTE PRO */}

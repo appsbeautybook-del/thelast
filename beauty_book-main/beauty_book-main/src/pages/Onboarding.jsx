@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, Camera, RotateCcw } from "lucide-react";
+import { Eye, EyeOff, Camera, RotateCcw, Check } from "lucide-react";
 import { entities, uploadFile } from '@/api/entities';
 import { useAuth } from "@/lib/AuthContext";
 import { apiClient } from "@/lib/apiClient";
 import { supabase } from '@/api/supabaseClient';
+import { useRateLimit } from '@/hooks/useRateLimit';
 
 const SPLASH_IMG = "https://media.base44.com/images/public/6a0ba7bd3d55dddeb85a8366/39cb4873a_generated_image.png";
 const LOGO_IMG = "https://media.base44.com/images/public/6a0ba7bd3d55dddeb85a8366/47f6dcd4b_generated_image.png";
@@ -129,6 +130,7 @@ function StepSignup({ onNext, onBack }) {
   const [selectedCountry, setSelectedCountry] = useState(COUNTRIES[0]);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
+  const { isLimited, remainingTime, checkLimit } = useRateLimit({ maxAttempts: 5, windowMs: 300000 });
 
   const inputClass = "w-full bg-gray-100 rounded-2xl px-4 py-3.5 text-[14px] font-medium text-gray-800 outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-gray-400";
   const labelClass = "text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block";
@@ -144,11 +146,16 @@ function StepSignup({ onNext, onBack }) {
   const pwdStrong = pwdScore >= 3;
 
   const [touched, setTouched] = useState(false);
-  const isValid = form.prenom && form.nom && form.email && pwdStrong && form.password === form.confirm;
+  const [consentChecked, setConsentChecked] = useState(false);
+  const isValid = form.prenom && form.nom && form.email && pwdStrong && form.password === form.confirm && consentChecked;
 
   const handleSubmit = async () => {
     setTouched(true);
     if (!isValid) return;
+    if (!checkLimit()) {
+      setError(`Trop de tentatives. Réessayez dans ${remainingTime}s.`);
+      return;
+    }
     setError("");
 
     // Vérifier si un compte existe déjà (profiles table)
@@ -316,6 +323,18 @@ function StepSignup({ onNext, onBack }) {
             <button onClick={() => setShowConfirm(!showConfirm)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
               {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
+          </div>
+        </div>
+
+        {/* RGPD Consent */}
+        <div className="bg-gray-50 rounded-2xl p-4 space-y-3">
+          <div onClick={() => setConsentChecked(!consentChecked)} className="flex items-start gap-3 cursor-pointer">
+            <div className={`w-5 h-5 rounded-md border-2 shrink-0 mt-0.5 flex items-center justify-center transition-all ${consentChecked ? "bg-primary border-primary" : "border-gray-300"}`}>
+              {consentChecked && <Check className="w-3 h-3 text-white" />}
+            </div>
+            <p className="text-[12px] text-gray-500 font-medium leading-relaxed">
+              J'accepte les <span className="text-primary font-bold">Conditions d'Utilisation</span> et la <span className="text-primary font-bold">Politique de Confidentialité</span> de BeautyBook. Je consens au traitement de mes données conformément au RGPD.
+            </p>
           </div>
         </div>
 

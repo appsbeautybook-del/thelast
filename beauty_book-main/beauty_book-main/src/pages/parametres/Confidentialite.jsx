@@ -113,17 +113,27 @@ export default function Confidentialite() {
         <div>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Mes données</p>
           <div className="space-y-2">
-            <button onClick={handleExport} disabled={exporting} className="w-full bg-white rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.99] transition-all">
+            <button onClick={() => navigate("/parametres/mes-donnees")} className="w-full bg-white rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.99] transition-all">
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0">
-                {exporting ? <div className="w-5 h-5 border-2 border-blue-300 border-t-blue-500 rounded-full animate-spin" /> : exportDone ? <CheckCircle2 className="w-5 h-5 text-green-500" /> : <Download className="w-5 h-5 text-blue-500" />}
+                <Download className="w-5 h-5 text-blue-500" />
               </div>
               <div className="flex-1 text-left">
                 <p className="text-[14px] font-black text-gray-900">Exporter mes données</p>
-                <p className="text-[11px] text-gray-400 font-medium">{exportDone ? "Export téléchargé !" : exporting ? "Export en cours..." : "Télécharger toutes vos données (JSON)"}</p>
+                <p className="text-[11px] text-gray-400 font-medium">Télécharger toutes vos données (RGPD)</p>
               </div>
-              {!exporting && !exportDone && <ArrowLeft className="w-4 h-4 text-gray-300 rotate-180 shrink-0" />}
+              <ArrowLeft className="w-4 h-4 text-gray-300 rotate-180 shrink-0" />
             </button>
-            <button className="w-full bg-red-50 border border-red-100 rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.99] transition-all">
+            <button onClick={() => navigate("/parametres/politique-confidentialite")} className="w-full bg-white rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.99] transition-all">
+              <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="text-[14px] font-black text-gray-900">Politique de confidentialité</p>
+                <p className="text-[11px] text-gray-400 font-medium">Détails du traitement de vos données</p>
+              </div>
+              <ArrowLeft className="w-4 h-4 text-gray-300 rotate-180 shrink-0" />
+            </button>
+            <button onClick={() => navigate("/supprimer-compte")} className="w-full bg-red-50 border border-red-100 rounded-2xl px-4 py-4 flex items-center gap-3 active:scale-[0.99] transition-all">
               <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
                 <Trash2 className="w-5 h-5 text-red-400" />
               </div>
