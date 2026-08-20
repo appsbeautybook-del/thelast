@@ -183,6 +183,21 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
       return;
     }
     await supabase.from("Reservation").update({ status: "termine", code_validated: true }).eq("id", rdv.id);
+
+    // Créditer points fidélité client (+50) et pro (+30)
+    try {
+      await apiClient.callFunction("addFidelitePoints", {
+        action: "reservation",
+        label: `Prestation : ${rdv.service_name || "Service beauté"}`,
+      });
+    } catch (e) { console.error("Fidelite client error:", e); }
+    try {
+      await apiClient.callFunction("addFidelitePoints", {
+        action: "pro_reservation",
+        label: `Réservation terminée : ${rdv.service_name || "Service beauté"}`,
+      });
+    } catch (e) { console.error("Fidelite pro error:", e); }
+
     setShowReliability(true);
   };
 

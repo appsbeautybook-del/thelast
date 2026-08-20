@@ -23,36 +23,70 @@ export const completeReservation = async (req, res) => {
       status: 'termine', completed_at: new Date().toISOString(),
     }).eq('id', reservation_id);
 
-    // Loyalty points: 1 point per euro
-    const pts = Math.floor(r.total_price || r.service_price || 0);
+    // Loyalty points: client +50 pts, pro +30 pts
+    const dateStr = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+    const clientPts = 50;
+    const proPts = 30;
 
-    const { data: existingPoints } = await supabaseAdmin
-      .from('PointsFidelite').select('*').eq('user_email', r.client_email).limit(1);
+    // Créditer CLIENT (+50 pts)
+    if (r.client_email) {
+      const { data: existingPoints } = await supabaseAdmin
+        .from('PointsFidelite').select('*').eq('user_email', r.client_email).limit(1);
+      const rec = existingPoints?.[0];
+      if (rec) {
+        const newTotal = (rec.points_total || 0) + clientPts;
+        const niveau = newTotal >= 2500 ? 'Platinum' : newTotal >= 1000 ? 'Gold' : 'Silver';
+        const entry = { label: `Prestation : ${r.service_name}`, pts: clientPts, date: dateStr, type: 'credit' };
+        await supabaseAdmin.from('PointsFidelite').update({
+          points_total: newTotal, niveau,
+          historique: [entry, ...(rec.historique || [])].slice(0, 50),
+        }).eq('id', rec.id);
+      } else {
+        const prenom = r.client_name || r.client_email.split('@')[0];
+        const code = prenom.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4) + Math.floor(1000 + Math.random() * 9000);
+        await supabaseAdmin.from('PointsFidelite').insert({
+          user_email: r.client_email, points_total: clientPts, points_depenses: 0,
+          niveau: clientPts >= 2500 ? 'Platinum' : clientPts >= 1000 ? 'Gold' : 'Silver',
+          historique: [{ label: `Prestation : ${r.service_name}`, pts: clientPts, date: dateStr, type: 'credit' }],
+          code_parrainage: code,
+        });
+      }
+    }
 
-    if (existingPoints?.[0]) {
-      const current = existingPoints[0];
-      const newTotal = (current.points_total || 0) + pts;
-      const niveau = newTotal >= 500 ? 'Platinum' : newTotal >= 150 ? 'Gold' : 'Silver';
-      const historique = [
-        ...(current.historique || []),
-        { label: `Prestation : ${r.service_name}`, pts, date: new Date().toISOString().slice(0, 10), type: 'credit' }
-      ];
-      await supabaseAdmin.from('PointsFidelite').update({ points_total: newTotal, niveau, historique }).eq('id', current.id);
-    } else {
-      await supabaseAdmin.from('PointsFidelite').insert({
-        user_email: r.client_email, points_total: pts, points_depenses: 0,
-        niveau: pts >= 500 ? 'Platinum' : pts >= 150 ? 'Gold' : 'Silver',
-        historique: [{ label: `Prestation : ${r.service_name}`, pts, date: new Date().toISOString().slice(0, 10), type: 'credit' }],
-      });
+    // Créditer PRO (+30 pts)
+    if (r.pro_email) {
+      const { data: existingPro } = await supabaseAdmin
+        .from('PointsFidelitePro').select('*').eq('pro_email', r.pro_email).limit(1);
+      const proRec = existingPro?.[0];
+      if (proRec) {
+        const newTotal = (proRec.points_total || 0) + proPts;
+        const niveau = newTotal >= 5000 ? 'Elite' : newTotal >= 2000 ? 'Gold' : newTotal >= 500 ? 'Silver' : 'Bronze';
+        const entry = { label: `Réservation terminée : ${r.service_name}`, pts: proPts, date: dateStr, type: 'credit' };
+        await supabaseAdmin.from('PointsFidelitePro').update({
+          points_total: newTotal, niveau,
+          reservations_count: (proRec.reservations_count || 0) + 1,
+          historique: [entry, ...(proRec.historique || [])].slice(0, 50),
+        }).eq('id', proRec.id);
+      } else {
+        const proName = (r.pro_name || r.pro_email.split('@')[0]).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4);
+        const code = proName + 'PRO' + Math.floor(1000 + Math.random() * 9000);
+        await supabaseAdmin.from('PointsFidelitePro').insert({
+          pro_email: r.pro_email, points_total: proPts, points_depenses: 0,
+          niveau: proPts >= 5000 ? 'Elite' : proPts >= 2000 ? 'Gold' : proPts >= 500 ? 'Silver' : 'Bronze',
+          historique: [{ label: `Réservation terminée : ${r.service_name}`, pts: proPts, date: dateStr, type: 'credit' }],
+          reservations_count: 1,
+          code_parrainage: code,
+        });
+      }
     }
 
     // Notifications
     await supabaseAdmin.from('Notification').insert([
       {
         user_email: r.client_email, type: 'promo',
-        title: `🌟 +${pts} points fidélité gagnés !`,
-        body: `Bravo ! Vous avez gagné ${pts} points suite à votre prestation "${r.service_name}" chez ${r.salon_name || r.pro_name}.`,
-        link: '/programme-fidelite', read: false, data: { pts_earned: pts, reservation_id },
+        title: `🌟 +${clientPts} points fidélité gagnés !`,
+        body: `Bravo ! Vous avez gagné ${clientPts} points suite à votre prestation "${r.service_name}" chez ${r.salon_name || r.pro_name}.`,
+        link: '/programme-fidelite', read: false, data: { pts_earned: clientPts, reservation_id },
       },
       {
         user_email: r.client_email, type: 'avis',
@@ -63,7 +97,7 @@ export const completeReservation = async (req, res) => {
       }
     ]);
 
-    return res.json({ success: true, pts_earned: pts, reservation_id });
+    return res.json({ success: true, pts_earned: clientPts, reservation_id });
   } catch (error) {
     console.error('❌ completeReservation error:', error.message);
     return res.status(500).json({ error: error.message });

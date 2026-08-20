@@ -5,6 +5,7 @@ import { entities, uploadFile } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { Search, Camera, ShoppingCart, Shield, Truck, Flame, ChevronRight, Sparkles, X, Heart, Check } from "lucide-react";
 import { DEFAULT_BOUTIQUE_CATS, CONFIG_KEY } from "@/components/admin/AdminBoutiqueCategories";
+import { adminApi } from "@/lib/adminApiClient";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import { useLikedProducts } from "@/hooks/useLikedProducts";
 import { useCartSync } from "@/hooks/useCartSync";
@@ -67,6 +68,7 @@ export default function Boutique() {
   const [imageSearching, setImageSearching] = useState(false);
   const [imageSearchResults, setImageSearchResults] = useState(null);
   const imgInputRef = useRef();
+  const [shopifyCategoryMap, setShopifyCategoryMap] = useState({});
 
   const handleRefresh = useCallback(() => {
     return new Promise(resolve => setTimeout(() => { setRefreshKey(k => k + 1); resolve(); }, 800));
@@ -99,6 +101,12 @@ export default function Boutique() {
           setMainCategories(cats);
         }
       }).catch(() => {});
+
+    // Charger les mappings catégories Shopify
+    entities.AppConfig.filter({ key: "shopify_category_mappings" }, "-created_at", 50)
+      .then(rows => {
+        if (rows[0]?.value) setShopifyCategoryMap(rows[0].value);
+      }).catch(() => {});
   }, []);
 
   const CACHE_KEY = "bb_boutique_products_cache_v3";
@@ -115,7 +123,15 @@ export default function Boutique() {
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
       if (cached && Date.now() - cached.ts < CACHE_TTL && cached.products?.length > 0) {
-        setShopifyProducts(cached.products);
+        // Appliquer les mappings catégories aux produits en cache
+        const withCats = cached.products.map(p => {
+          if (p._shopify) {
+            const saved = shopifyCategoryMap[p.id];
+            if (saved) return { ...p, category: saved.category || p.category, sub_category: saved.sub_category || "" };
+          }
+          return p;
+        });
+        setShopifyProducts(withCats);
         setLoadingProducts(false);
       }
     } catch {}
@@ -147,7 +163,15 @@ export default function Boutique() {
     ]).then(([shopifyResult, dbResult]) => {
       const shopify = shopifyResult.status === "fulfilled" ? shopifyResult.value : [];
       const db = dbResult.status === "fulfilled" ? dbResult.value : [];
-      const merged = [...db, ...shopify];
+      // Appliquer les mappings catégories aux produits Shopify
+      const shopifyWithCats = shopify.map(p => {
+        const saved = shopifyCategoryMap[p.id];
+        if (saved) {
+          return { ...p, category: saved.category || p.category, sub_category: saved.sub_category || "" };
+        }
+        return p;
+      });
+      const merged = [...db, ...shopifyWithCats];
       if (merged.length > 0) {
         setShopifyProducts(merged);
         // Mettre en cache les nouveaux produits
@@ -163,6 +187,18 @@ export default function Boutique() {
       setLoadingProducts(false);
     });
   }, [refreshKey]);
+
+  // Réappliquer les mappings catégories quand ils changent
+  useEffect(() => {
+    if (Object.keys(shopifyCategoryMap).length === 0) return;
+    setShopifyProducts(prev => prev.map(p => {
+      if (p._shopify) {
+        const saved = shopifyCategoryMap[p.id];
+        if (saved) return { ...p, category: saved.category || p.category, sub_category: saved.sub_category || "" };
+      }
+      return p;
+    }));
+  }, [shopifyCategoryMap]);
 
   const handleImageSearch = async (e) => {
     const file = e.target.files[0];

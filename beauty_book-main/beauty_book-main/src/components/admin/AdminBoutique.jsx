@@ -6,6 +6,8 @@ import { Plus, X, Upload, Loader2, Check, Pencil, Trash2, ToggleLeft, ToggleRigh
 import AdminBoutiqueBanners from "@/components/admin/AdminBoutiqueBanners";
 import AdminBoutiqueCategories, { DEFAULT_BOUTIQUE_CATS, CONFIG_KEY } from "@/components/admin/AdminBoutiqueCategories";
 
+const SHOPIFY_MAP_KEY = "shopify_category_mappings";
+
 
 const inputCls = "w-full bg-gray-50 border border-gray-200 text-gray-800 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-primary transition-colors";
 
@@ -21,6 +23,11 @@ export default function AdminBoutique() {
   const [shopifyProducts, setShopifyProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [allCategories, setAllCategories] = useState(DEFAULT_BOUTIQUE_CATS);
+  const [shopifyCategoryMap, setShopifyCategoryMap] = useState({});
+  const [categorizeProduct, setCategorizeProduct] = useState(null);
+  const [categCategory, setCategCategory] = useState("");
+  const [categSubCategory, setCategSubCategory] = useState("");
+  const [savingCateg, setSavingCateg] = useState(false);
 
   // Charger les catégories dynamiques
   useEffect(() => {
@@ -28,6 +35,12 @@ export default function AdminBoutique() {
       .then(res => {
         const rows = res || [];
         if (rows[0]?.value?.categories?.length > 0) setAllCategories(rows[0].value.categories);
+      }).catch(() => {});
+    // Charger les mappings catégories Shopify
+    adminApi.getConfig(SHOPIFY_MAP_KEY)
+      .then(res => {
+        const rows = res || [];
+        if (rows[0]?.value) setShopifyCategoryMap(rows[0].value);
       }).catch(() => {});
   }, []);
   const [showForm, setShowForm] = useState(false);
@@ -145,9 +158,39 @@ export default function AdminBoutique() {
     setProducts(prev => prev.filter(p => p.id !== id));
   };
 
+  const saveShopifyCategory = async () => {
+    if (!categorizeProduct) return;
+    setSavingCateg(true);
+    const newMap = { ...shopifyCategoryMap, [categorizeProduct.id]: { category: categCategory, sub_category: categSubCategory } };
+    // Sauvegarder dans AppConfig
+    try {
+      const existing = await adminApi.getConfig(SHOPIFY_MAP_KEY);
+      const rows = existing || [];
+      if (rows[0]) {
+        await adminApi.updateConfig(rows[0].id, { value: newMap });
+      } else {
+        await adminApi.createConfig({ key: SHOPIFY_MAP_KEY, value: newMap });
+      }
+      setShopifyCategoryMap(newMap);
+    } catch (e) { console.error("Save shopify category error:", e); }
+    setSavingCateg(false);
+    setCategorizeProduct(null);
+    setCategCategory("");
+    setCategSubCategory("");
+  };
+
   const allProducts = [
     ...products,
-    ...shopifyProducts.map(p => ({ ...p, image_url: p.img, _shopify: true })),
+    ...shopifyProducts.map(p => {
+      const saved = shopifyCategoryMap[p.id];
+      return {
+        ...p,
+        image_url: p.img,
+        _shopify: true,
+        category: saved?.category || p.category || "",
+        sub_category: saved?.sub_category || "",
+      };
+    }),
   ];
 
   const filtered = allProducts.filter(p =>
@@ -460,7 +503,19 @@ export default function AdminBoutique() {
                   </td>
                   <td className="px-4 py-4">
                     {p._shopify
-                      ? <span className="text-gray-300 text-[11px]">Géré sur Shopify</span>
+                      ? <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setCategorizeProduct(p);
+                              setCategCategory(p.category || "");
+                              setCategSubCategory(p.sub_category || "");
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-700 text-[11px] font-black rounded-full hover:bg-green-200 transition-all"
+                          >
+                            <Tag className="w-3.5 h-3.5" />
+                            {p.category ? "Modifier catégorie" : "Catégoriser"}
+                          </button>
+                        </div>
                       : <div className="flex items-center gap-2">
                           <button onClick={() => toggleFeatured(p)}
                             className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${p.featured ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-400 hover:bg-gray-200"}`}
@@ -483,6 +538,63 @@ export default function AdminBoutique() {
         </div>
       )}
       </div>
+
+      {/* Modal catégorisation Shopify */}
+      {categorizeProduct && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" onClick={() => setCategorizeProduct(null)}>
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="relative bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-[16px] font-black text-gray-900">Catégoriser le produit</h3>
+              <button onClick={() => setCategorizeProduct(null)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                <X className="w-4 h-4 text-gray-500" />
+              </button>
+            </div>
+            <div className="flex items-center gap-3 mb-5 bg-gray-50 rounded-xl p-3">
+              {categorizeProduct.image_url && (
+                <img src={categorizeProduct.image_url} alt="" className="w-12 h-12 rounded-lg object-cover" />
+              )}
+              <div>
+                <p className="text-[13px] font-black text-gray-900">{categorizeProduct.name}</p>
+                {categorizeProduct.brand && <p className="text-[11px] text-gray-400">{categorizeProduct.brand}</p>}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Catégorie</label>
+                <select value={categCategory} onChange={e => { setCategCategory(e.target.value); setCategSubCategory(""); }}
+                  className={inputCls}>
+                  <option value="">-- Choisir --</option>
+                  {allCategories.map(c => (
+                    <optgroup key={c.id} label={c.label}>
+                      {c.subs.map(s => <option key={s} value={s}>{s}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Sous-catégorie</label>
+                <select value={categSubCategory} onChange={e => setCategSubCategory(e.target.value)} className={inputCls}>
+                  <option value="">-- Aucune --</option>
+                  {allCategories.find(c => c.subs.includes(categCategory))?.subs.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={saveShopifyCategory} disabled={savingCateg || !categCategory}
+                className="flex-1 bg-primary text-white py-3 rounded-xl text-[13px] font-black disabled:opacity-50 flex items-center justify-center gap-2">
+                {savingCateg ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                Sauvegarder
+              </button>
+              <button onClick={() => setCategorizeProduct(null)} className="px-5 bg-gray-100 text-gray-600 py-3 rounded-xl text-[13px] font-black">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

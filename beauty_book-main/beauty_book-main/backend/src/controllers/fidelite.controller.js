@@ -136,6 +136,15 @@ export const creditFideliteAuto = async (req, res) => {
           niveau: newNiveau,
           historique: [entry, ...(rec.historique || [])].slice(0, 50),
         }).eq('id', rec.id);
+      } else {
+        const code = (client_email.split('@')[0] || 'USER').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4)
+          + Math.floor(1000 + Math.random() * 9000);
+        await supabaseAdmin.from('PointsFidelite').insert({
+          user_email: client_email, points_total: 50, points_depenses: 0,
+          niveau: 'Silver',
+          historique: [{ label: `Réservation : ${service_name}`, pts: 50, date: dateStr, type: 'credit' }],
+          code_parrainage: code,
+        });
       }
     }
 
@@ -153,6 +162,16 @@ export const creditFideliteAuto = async (req, res) => {
           reservations_count: (rec.reservations_count || 0) + 1,
           historique: [entry, ...(rec.historique || [])].slice(0, 50),
         }).eq('id', rec.id);
+      } else {
+        const code = (pro_email.split('@')[0] || 'PRO').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4)
+          + 'PRO' + Math.floor(1000 + Math.random() * 9000);
+        await supabaseAdmin.from('PointsFidelitePro').insert({
+          pro_email: pro_email, points_total: 30, points_depenses: 0,
+          niveau: 'Bronze',
+          historique: [{ label: `Réservation terminée : ${service_name}`, pts: 30, date: dateStr, type: 'credit' }],
+          reservations_count: 1,
+          code_parrainage: code,
+        });
       }
     }
 
