@@ -5,7 +5,7 @@ import {
   Scissors, Clock, Star, Zap, Check, Store, Phone, MapPin,
   Building2, FileText, Image, Palette, Wifi, Car, Snowflake,
   Baby, Coffee, CreditCard, Accessibility, Shirt, Sofa, ShowerHead,
-  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, PawPrint
+  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, Moon, PawPrint, Copy
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -52,6 +52,8 @@ const COMMODITES_LIST = [
 ];
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+const DAYS_LOW = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+const DEFAULT_DAY = { open: true, start: "09:00", end: "19:00", pause_start: "", pause_end: "" };
 
 export default function ModifierProfilPro() {
   const navigate = useNavigate();
@@ -60,9 +62,10 @@ export default function ModifierProfilPro() {
   const themeBg = useThemeBg();
 
   const [data, setData] = useState({
-    salon_name: "", phone: "", address: "", city: "",
+    salon_name: "", phone: "", address: "", city: "", postal_code: "",
     seats: 1, bio: "", avatar_url: "", cover_url: "",
-    specialites: [], commodites: [], hours: {},
+    specialites: [], commodites: [], hours: {}, conges: [],
+    travail_nuit: false,
     menu_restaurant: [], menu_bar: [], additional_services: [],
     galerie_urls: [],
   });
@@ -82,6 +85,13 @@ export default function ModifierProfilPro() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingGalerie, setUploadingGalerie] = useState(false);
   const [uploadingMenuImg, setUploadingMenuImg] = useState({});
+  const [bundles, setBundles] = useState([]);
+  const [showBundleForm, setShowBundleForm] = useState(false);
+  const [editingBundle, setEditingBundle] = useState(null);
+  const [bundleForm, setBundleForm] = useState({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" });
+  const [proServices, setProServices] = useState([]);
+  const [uploadingBundleImg, setUploadingBundleImg] = useState(false);
+  const bundleImgRef = useRef(null);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -92,26 +102,27 @@ export default function ModifierProfilPro() {
           profile = { user_email: user.email };
         }
         if (profile) {
+          const src = profile.ouverture || profile.horaires || {};
           const h = {};
-          DAYS.forEach(d => { h[d.toLowerCase()] = { open: false, start: "09:00", end: "19:00" }; });
-          const src = profile.horaires || profile.ouverture;
-          if (src && typeof src === 'object' && !Array.isArray(src)) {
-            Object.keys(src).forEach(k => {
-              const lk = k.toLowerCase();
-              const dayNames = ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
-              if (dayNames.includes(lk) && typeof src[k] === 'object' && src[k] !== null) {
-                h[lk] = { ...h[lk], ...src[k] };
-              }
-            });
-          } else if (Array.isArray(src)) {
-            src.forEach(d => { if (h[d.toLowerCase()]) h[d.toLowerCase()].open = true; });
-          }
+          DAYS_LOW.forEach(d => {
+            const existing = src[d] || {};
+            h[d] = {
+              open: existing.open !== undefined ? existing.open : false,
+              start: existing.start || "09:00",
+              end: existing.end || "19:00",
+              pause_start: existing.pause_start || existing.break_start || "",
+              pause_end: existing.pause_end || existing.break_end || "",
+            };
+          });
           setData({
             salon_name: profile.salon_name || "", phone: profile.phone || "", address: profile.address || "",
-            city: profile.city || "", seats: profile.seats_count || 1,
+            city: profile.city || "", postal_code: profile.postal_code || "",
+            seats: profile.seats_count || 1,
             bio: profile.bio || "", avatar_url: profile.avatar_url || "", cover_url: profile.cover_url || "",
             specialites: profile.specialites || [], commodites: profile.commodites || [],
-            hours: h, menu_restaurant: profile.menu_restaurant || [], menu_bar: profile.menu_bar || [],
+            hours: h, conges: (src.conges || []),
+            travail_nuit: !!profile.travail_nuit,
+            menu_restaurant: profile.menu_restaurant || [], menu_bar: profile.menu_bar || [],
             additional_services: profile.additional_services || [],
             galerie_urls: Array.isArray(profile.galerie_urls) ? profile.galerie_urls : [],
           });
@@ -119,6 +130,69 @@ export default function ModifierProfilPro() {
         setLoading(false);
       });
   }, [user?.email]);
+
+  useEffect(() => {
+    if (!user?.email) return;
+    let cancelled = false;
+    supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false })
+      .then(({ data }) => { if (!cancelled) setBundles(data || []); });
+    supabase.from("Service").select("id,title,price,images").eq("pro_email", user.email).eq("status", "actif").order("created_at", { ascending: false })
+      .then(({ data }) => { if (!cancelled) setProServices(data || []); });
+    return () => { cancelled = true; };
+  }, [user?.email]);
+
+  const saveBundle = async () => {
+    if (!bundleForm.name.trim() || !bundleForm.bundle_price || bundleForm.service_ids.length === 0) return;
+    const payload = {
+      pro_email: user.email,
+      name: bundleForm.name.trim(),
+      description: bundleForm.description.trim(),
+      service_ids: bundleForm.service_ids,
+      bundle_price: parseFloat(bundleForm.bundle_price),
+      image_url: bundleForm.image_url || "",
+      is_active: true,
+    };
+    // Calculate discount
+    const selectedSvcs = proServices.filter(s => bundleForm.service_ids.includes(s.id));
+    const regularTotal = selectedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+    payload.discount_percent = regularTotal > 0 ? Math.round(((regularTotal - payload.bundle_price) / regularTotal) * 100) : 0;
+
+    if (editingBundle) {
+      payload.updated_at = new Date().toISOString();
+      await supabase.from("ServiceBundle").update(payload).eq("id", editingBundle.id);
+    } else {
+      await supabase.from("ServiceBundle").insert(payload);
+    }
+    const { data } = await supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false });
+    setBundles(data || []);
+    setShowBundleForm(false);
+    setEditingBundle(null);
+    setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" });
+  };
+
+  const deleteBundle = async (id) => {
+    await supabase.from("ServiceBundle").delete().eq("id", id);
+    setBundles(b => b.filter(x => x.id !== id));
+  };
+
+  const toggleBundleService = (svcId) => {
+    setBundleForm(f => ({
+      ...f,
+      service_ids: f.service_ids.includes(svcId)
+        ? f.service_ids.filter(id => id !== svcId)
+        : [...f.service_ids, svcId],
+    }));
+  };
+
+  const toggleBundleImg = async (file) => {
+    if (!file || !editingBundle) return;
+    setUploadingBundleImg(true);
+    try {
+      const url = await uploadFile(file, 'uploads');
+      setBundleForm(f => ({ ...f, image_url: url }));
+    } catch (e) { console.error(e); }
+    setUploadingBundleImg(false);
+  };
 
   const toggleSection = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -136,12 +210,34 @@ export default function ModifierProfilPro() {
     }));
   };
 
-  const updateHours = (day, field, value) => {
-    setData(d => ({ ...d, hours: { ...d.hours, [day]: { ...d.hours[day], [field]: value } } }));
+  const updateHours = (day, value) => {
+    setData(d => ({ ...d, hours: { ...d.hours, [day]: value } }));
   };
 
   const toggleDay = (day) => {
     setData(d => ({ ...d, hours: { ...d.hours, [day]: { ...d.hours[day], open: !d.hours[day]?.open } } }));
+  };
+
+  const handleBulkApply = () => {
+    const open = data.hours[DAYS_LOW[0]] || DEFAULT_DAY;
+    const newHours = {};
+    DAYS_LOW.forEach(d => { newHours[d] = { ...open }; });
+    setData(d => ({ ...d, hours: newHours }));
+  };
+
+  const handleToggleNuit = (val) => {
+    const newHours = {};
+    DAYS_LOW.forEach(d => {
+      const prev = data.hours[d] || DEFAULT_DAY;
+      if (val && prev.open) {
+        newHours[d] = { ...prev, start: "21:00", end: "07:00" };
+      } else if (!val && prev.open) {
+        newHours[d] = { ...prev, start: "09:00", end: "19:00" };
+      } else {
+        newHours[d] = prev;
+      }
+    });
+    setData(d => ({ ...d, hours: newHours, travail_nuit: val }));
   };
 
   // Menu restaurant helpers
@@ -243,9 +339,11 @@ export default function ModifierProfilPro() {
         phone: data.phone || "",
         address: data.address || "",
         city: data.city || "",
+        postal_code: data.postal_code || "",
         bio: data.bio || "",
         avatar_url: data.avatar_url || "",
         cover_url: data.cover_url || "",
+        travail_nuit: data.travail_nuit,
         ...coords,
       };
 
@@ -263,8 +361,8 @@ export default function ModifierProfilPro() {
         seats_count: data.seats,
         specialites: data.specialites,
         commodites: data.commodites,
-        horaires: data.hours,
-        ouverture: data.hours,
+        ouverture: { ...data.hours, conges: data.conges },
+        horaires: { ...data.hours, conges: data.conges },
         galerie_urls: data.galerie_urls || [],
         menu_restaurant: data.menu_restaurant || [],
         menu_bar: data.menu_bar || [],
@@ -448,11 +546,19 @@ export default function ModifierProfilPro() {
                   className={inputCls}
                 />
               </div>
-              <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-                  <Building2 className="w-3 h-3" /> Ville
-                </p>
-                <input value={data.city} onChange={e => setData(d => ({ ...d, city: e.target.value }))} placeholder="Paris" className={inputCls} />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <Building2 className="w-3 h-3" /> Ville
+                  </p>
+                  <input value={data.city} onChange={e => setData(d => ({ ...d, city: e.target.value }))} placeholder="Paris" className={inputCls} />
+                </div>
+                <div className="w-24">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                    <FileText className="w-3 h-3" /> CP
+                  </p>
+                  <input value={data.postal_code} onChange={e => setData(d => ({ ...d, postal_code: e.target.value }))} placeholder="75001" maxLength={5} className={inputCls} />
+                </div>
               </div>
               <div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Nombre de postes simultanés</p>
@@ -481,22 +587,42 @@ export default function ModifierProfilPro() {
           )}
         </div>
 
-        {/* Horaires d'ouverture */}
+        {/* Horaires & Congés */}
         <div className={sectionCls}>
           <button onClick={() => toggleSection('horaires')} className="w-full flex items-center gap-3 p-4">
             <div className="w-11 h-11 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl flex items-center justify-center">
               <Clock className="w-5 h-5 text-violet-500" />
             </div>
-            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Horaires d'ouverture</p>
+            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Horaires & Congés</p>
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform ${expanded.horaires ? 'rotate-180' : ''}`}>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </div>
           </button>
           {expanded.horaires && (
-            <div className="px-4 pb-4 space-y-2">
+            <div className="px-4 pb-4 space-y-4">
+              {/* Mode nuit toggle */}
+              <div className="bg-gray-50 rounded-2xl p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Moon className="w-4 h-4 text-indigo-500" />
+                  <p className="text-[13px] font-black text-gray-900">Mode nuit</p>
+                </div>
+                <div onClick={() => handleToggleNuit(!data.travail_nuit)} className={`w-11 h-6 rounded-full transition-all flex items-center px-0.5 cursor-pointer ${data.travail_nuit ? "bg-[#E8732A]" : "bg-gray-300"}`}>
+                  <div className={`w-5 h-5 bg-white rounded-full shadow transition-all ${data.travail_nuit ? "translate-x-5" : "translate-x-0"}`} />
+                </div>
+              </div>
+
+              {/* Action bar */}
+              <div className="flex gap-2">
+                <button onClick={handleBulkApply} className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-violet-50 text-violet-600 rounded-xl text-[11px] font-black">
+                  <Copy className="w-3.5 h-3.5" />
+                  Appliquer à tous les jours
+                </button>
+              </div>
+
+              {/* Day rows */}
               {DAYS.map(day => {
                 const lk = day.toLowerCase();
-                const h = data.hours[lk] || { open: false, start: "09:00", end: "19:00", break_start: "", break_end: "" };
+                const h = data.hours[lk] || DEFAULT_DAY;
                 return (
                   <div key={day} className="bg-gray-50 rounded-2xl p-3.5">
                     <div className="flex items-center justify-between mb-2.5">
@@ -508,21 +634,56 @@ export default function ModifierProfilPro() {
                     {h.open && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <input type="time" value={h.start} onChange={e => updateHours(lk, 'start', e.target.value)} className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
+                          <input type="time" value={h.start} onChange={e => updateHours(lk, { ...h, start: e.target.value })} className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
                           <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                          <input type="time" value={h.end} onChange={e => updateHours(lk, 'end', e.target.value)} className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
+                          <input type="time" value={h.end} onChange={e => updateHours(lk, { ...h, end: e.target.value })} className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-gray-400 font-bold w-12">Pause</span>
-                          <input type="time" value={h.break_start || ""} onChange={e => updateHours(lk, 'break_start', e.target.value)} placeholder="Début" className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
+                          <input type="time" value={h.pause_start || ""} onChange={e => updateHours(lk, { ...h, pause_start: e.target.value })} placeholder="Début" className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
                           <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                          <input type="time" value={h.break_end || ""} onChange={e => updateHours(lk, 'break_end', e.target.value)} placeholder="Fin" className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
+                          <input type="time" value={h.pause_end || ""} onChange={e => updateHours(lk, { ...h, pause_end: e.target.value })} placeholder="Fin" className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
                         </div>
                       </div>
                     )}
                   </div>
                 );
               })}
+
+              {/* Congés section */}
+              <div className="border-t border-gray-200 pt-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[13px] font-black text-gray-900">Congés</p>
+                  <button onClick={() => {
+                    const today = new Date().toISOString().split('T')[0];
+                    setData(d => ({ ...d, conges: [...d.conges, { start: today, end: today }] }));
+                  }} className="flex items-center gap-1 bg-[#E8732A] text-white px-3 py-1.5 rounded-xl text-[11px] font-black">
+                    <Plus className="w-3.5 h-3.5" />
+                    Ajouter
+                  </button>
+                </div>
+                {data.conges.length === 0 && (
+                  <p className="text-[12px] text-gray-400 text-center py-4">Aucun congé configuré</p>
+                )}
+                <div className="space-y-2">
+                  {data.conges.map((c, i) => (
+                    <div key={i} className="bg-white border border-gray-200 rounded-xl p-3 flex items-center gap-2">
+                      <div className="flex-1 flex items-center gap-2">
+                        <input type="date" value={c.start} onChange={e => {
+                          const nc = [...data.conges]; nc[i] = { ...nc[i], start: e.target.value }; setData(d => ({ ...d, conges: nc }));
+                        }} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] text-gray-700" />
+                        <span className="text-[11px] text-gray-400">→</span>
+                        <input type="date" value={c.end} onChange={e => {
+                          const nc = [...data.conges]; nc[i] = { ...nc[i], end: e.target.value }; setData(d => ({ ...d, conges: nc }));
+                        }} className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] text-gray-700" />
+                      </div>
+                      <button onClick={() => setData(d => ({ ...d, conges: d.conges.filter((_, j) => j !== i) }))} className="p-1.5 hover:bg-red-50 rounded-lg">
+                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -624,6 +785,152 @@ export default function ModifierProfilPro() {
                 className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-[#E8732A]/40 hover:text-[#E8732A] transition-colors active:scale-95 disabled:opacity-40">
                 <Plus className="w-4 h-4" /> AJOUTER UN SERVICE
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* Mes Packs */}
+        <div className={sectionCls}>
+          <button onClick={() => toggleSection('packs')} className="w-full flex items-center gap-3 p-4">
+            <div className="w-11 h-11 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl flex items-center justify-center">
+              <Zap className="w-5 h-5 text-pink-500" />
+            </div>
+            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Mes Packs</p>
+            {bundles.length > 0 && (
+              <span className="bg-pink-100 text-pink-700 text-[10px] font-black px-2 py-0.5 rounded-full">{bundles.length}</span>
+            )}
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform ${expanded.packs ? 'rotate-180' : ''}`}>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </div>
+          </button>
+          {expanded.packs && (
+            <div className="px-4 pb-4 space-y-3">
+              {bundles.length > 0 && !showBundleForm && (
+                <div className="space-y-2">
+                  {bundles.map((b) => {
+                    const includedSvcs = proServices.filter(s => b.service_ids?.includes(s.id));
+                    const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+                    return (
+                      <div key={b.id} className="bg-gray-50 rounded-2xl p-3.5">
+                        <div className="flex items-start gap-3">
+                          {b.image_url && <img src={b.image_url} alt="" className="w-14 h-14 rounded-xl object-cover" />}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-black text-gray-900 truncate">{b.name}</p>
+                            {b.description && <p className="text-[11px] text-gray-500 truncate">{b.description}</p>}
+                            <div className="flex items-center gap-2 mt-1">
+                              {regularTotal > 0 && <span className="text-[11px] text-gray-400 line-through">{regularTotal}€</span>}
+                              <span className="text-[13px] font-black text-[#E8732A]">{b.bundle_price}€</span>
+                              {b.discount_percent > 0 && (
+                                <span className="bg-green-100 text-green-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">-{b.discount_percent}%</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-gray-400 mt-1">{includedSvcs.length} service(s)</p>
+                          </div>
+                          <div className="flex gap-1.5 shrink-0">
+                            <button onClick={() => {
+                              setEditingBundle(b);
+                              setBundleForm({ name: b.name, description: b.description || "", service_ids: b.service_ids || [], bundle_price: b.bundle_price.toString(), image_url: b.image_url || "" });
+                              setShowBundleForm(true);
+                            }} className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                              <FileText className="w-4 h-4 text-blue-500" />
+                            </button>
+                            <button onClick={() => deleteBundle(b.id)} className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                              <Trash2 className="w-4 h-4 text-red-400" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {showBundleForm && (
+                <div className="bg-pink-50 rounded-2xl p-4 space-y-3 border border-pink-200">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[13px] font-black text-gray-900">{editingBundle ? 'Modifier le pack' : 'Nouveau pack'}</p>
+                    <button onClick={() => { setShowBundleForm(false); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" }); }} className="p-1">
+                      <X className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+
+                  {/* Cover image */}
+                  <div className="flex items-center gap-3">
+                    <input type="file" ref={bundleImgRef} accept="image/*" className="hidden" onChange={e => toggleBundleImg(e.target.files?.[0])} />
+                    <button onClick={() => bundleImgRef.current?.click()} disabled={uploadingBundleImg}
+                      className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
+                      {bundleForm.image_url ? (
+                        <img src={bundleForm.image_url} alt="" className="w-full h-full object-cover" />
+                      ) : uploadingBundleImg ? (
+                        <div className="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Camera className="w-5 h-5 text-gray-300" />
+                      )}
+                    </button>
+                    <div className="flex-1">
+                      <input value={bundleForm.name} onChange={e => setBundleForm(f => ({ ...f, name: e.target.value }))}
+                        placeholder="Nom du pack (ex: Pack Roots)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+                    </div>
+                  </div>
+
+                  <input value={bundleForm.description} onChange={e => setBundleForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Description (optionnel)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+
+                  {/* Service selection */}
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Services inclus</p>
+                    {proServices.length === 0 ? (
+                      <p className="text-[12px] text-gray-400 text-center py-3">Aucun service disponible</p>
+                    ) : (
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                        {proServices.map(s => {
+                          const selected = bundleForm.service_ids.includes(s.id);
+                          return (
+                            <div key={s.id} onClick={() => toggleBundleService(s.id)}
+                              className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${selected ? 'bg-pink-100 border border-pink-300' : 'bg-white border border-gray-200'}`}>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selected ? 'bg-[#E8732A] border-[#E8732A]' : 'border-gray-300'}`}>
+                                {selected && <Check className="w-3 h-3 text-white" />}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[12px] font-black text-gray-900 truncate">{s.title || s.name}</p>
+                                <p className="text-[11px] text-gray-400">{s.price}€</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bundle price */}
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Prix du pack</p>
+                      <input type="number" value={bundleForm.bundle_price} onChange={e => setBundleForm(f => ({ ...f, bundle_price: e.target.value }))}
+                        placeholder="Prix €" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+                    </div>
+                    {bundleForm.service_ids.length > 0 && bundleForm.bundle_price && (() => {
+                      const regTotal = proServices.filter(s => bundleForm.service_ids.includes(s.id)).reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+                      const disc = regTotal > 0 ? Math.round(((regTotal - parseFloat(bundleForm.bundle_price)) / regTotal) * 100) : 0;
+                      return disc > 0 ? (
+                        <div className="mt-5 bg-green-100 text-green-700 text-[11px] font-black px-2 py-1 rounded-full">-{disc}%</div>
+                      ) : null;
+                    })()}
+                  </div>
+
+                  <button onClick={saveBundle} disabled={!bundleForm.name.trim() || !bundleForm.bundle_price || bundleForm.service_ids.length === 0}
+                    className="w-full bg-[#E8732A] text-white rounded-2xl py-3 text-[13px] font-black active:scale-95 transition-transform disabled:opacity-40">
+                    {editingBundle ? 'ENREGISTRER' : 'CRÉER LE PACK'}
+                  </button>
+                </div>
+              )}
+
+              {!showBundleForm && (
+                <button onClick={() => { setShowBundleForm(true); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" }); }}
+                  className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-pink-400/40 hover:text-pink-500 transition-colors active:scale-95">
+                  <Plus className="w-4 h-4" /> CRÉER UN PACK
+                </button>
+              )}
             </div>
           )}
         </div>

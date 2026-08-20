@@ -15,7 +15,7 @@ const quickLinks = [
   { id: "commandes", label: "COMMANDES", icon: ShoppingBag, bg: "bg-blue-100", color: "text-blue-500", path: "/mes-commandes", statKey: "commandes" },
   { id: "rdv", label: "RDV", icon: Calendar, bg: "bg-green-100", color: "text-green-500", path: "/rendez-vous", statKey: "rdv" },
   { id: "points", label: "POINTS", icon: Star, bg: "bg-orange-100", color: "text-primary", path: "/programme-fidelite", statKey: "points" },
-  { id: "solde", label: "SOLDE", icon: CreditCard, bg: "bg-amber-100", color: "text-amber-500", path: "/mon-solde", statKey: "solde" },
+  { id: "solde", label: "SOLDE", icon: CreditCard, bg: "bg-amber-100", color: "text-amber-500", path: "/mon-solde", statKey: "solde", comingSoon: true },
 ];
 
 // ── Grille Instagram ──────────────────────────────────────────────────────────
@@ -126,6 +126,8 @@ export default function Profil() {
   const [shareOpen, setShareOpen] = useState(false);
   const [stats, setStats] = useState({ commandes: 0, rdv: 0, points: 0, solde: 0 });
   const [followersCount, setFollowersCount] = useState(0);
+  const [toast, setToast] = useState(null);
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
 
   useEffect(() => {
     loadData();
@@ -385,14 +387,24 @@ export default function Profil() {
 
       {/* Quick Links */}
       <div className="px-5 flex justify-between mb-5">
+        {toast && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[999] bg-gray-900 text-white text-[13px] font-bold px-5 py-3 rounded-2xl shadow-xl max-w-[320px] text-center flex items-center gap-2">
+            <span className="text-primary text-[11px]">⏳</span> {toast}
+          </div>
+        )}
         {quickLinks.map((q) => {
           const Icon = q.icon;
           const val = stats[q.statKey];
           return (
-            <button key={q.id} onClick={() => navigate(q.path)} className="flex flex-col items-center gap-2 active:scale-95 transition-all">
+            <button key={q.id} onClick={() => q.comingSoon ? showToast("Bientôt disponible !") : navigate(q.path)} className="flex flex-col items-center gap-2 active:scale-95 transition-all">
               <div className={`relative w-14 h-14 ${q.bg} rounded-2xl flex items-center justify-center`}>
                 <Icon className={`w-6 h-6 ${q.color}`} />
-                {val > 0 && (
+                {q.comingSoon && (
+                  <div className="absolute -bottom-1 -right-1 bg-gray-900 text-white text-[6px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider whitespace-nowrap">
+                    Bientôt
+                  </div>
+                )}
+                {!q.comingSoon && val > 0 && (
                   <span className={`absolute -top-1 -right-1 min-w-[18px] h-[18px] ${q.id === "solde" ? "bg-amber-500" : q.id === "points" ? "bg-primary" : "bg-gray-800"} text-white text-[9px] font-black rounded-full flex items-center justify-center px-1 border border-white`}>
                     {val > 999 ? "999+" : val}
                   </span>

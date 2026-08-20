@@ -33,7 +33,7 @@ import VueClient from "@/pages/pro/VueClient";
 import ShareSheet from "@/components/ui/ShareSheet";
 
 const quickActions = [
-  { id: "beauty_pay", label: "BEAUTY PAY", Icon: CreditCard, bg: "bg-orange-100", color: "text-orange-400", route: "/pro/beauty-pay" },
+  { id: "beauty_pay", label: "BEAUTY PAY", Icon: CreditCard, bg: "bg-orange-100", color: "text-orange-400", route: "/pro/beauty-pay", comingSoon: true },
   { id: "services", label: "SERVICES", Icon: Scissors, bg: "bg-blue-100", color: "text-blue-400", route: "/pro/catalogue-services" },
   { id: "avis", label: "AVIS CLIENTS", Icon: Star, bg: "bg-green-100", color: "text-green-500", route: "/pro/avis-clients" },
   { id: "equipe", label: "ÉQUIPE", Icon: Users, bg: "bg-purple-100", color: "text-purple-500", route: "/pro/equipe" },

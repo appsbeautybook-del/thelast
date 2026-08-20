@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useThemeBg } from "@/hooks/useTheme";
 import { useAuth } from "@/lib/AuthContext";
-import { Search, Heart, Clock, MapPin, Share2, MessageSquare, Star, Send, X, SlidersHorizontal, Plus, Play, Tag, Volume2, VolumeX, Sparkles, Palette, Scissors, Store, User } from "lucide-react";
+import { Search, Heart, Clock, MapPin, Share2, MessageSquare, Star, Send, X, SlidersHorizontal, Plus, Play, Tag, Volume2, VolumeX, Sparkles, Palette, Scissors, Store, User, Zap } from "lucide-react";
 import ProfilSheet from "@/components/salons/ProfilSheet";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -1685,9 +1685,142 @@ function ParticuliersTab({ activeCategory }) {
   );
 }
 
+function BundlesTab() {
+  const navigate = useNavigate();
+  const [bundles, setBundles] = useState([]);
+  const [profilsMap, setProfilsMap] = useState({});
+  const [servicesMap, setServicesMap] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    entities.ServiceBundle.filter({ is_active: true }, "-created_at", 200)
+      .then(async (bundles) => {
+        if (cancelled) return;
+        setBundles(bundles);
+        const emails = [...new Set(bundles.map(b => b.pro_email).filter(Boolean))];
+        const svcIds = [...new Set(bundles.flatMap(b => b.service_ids || []).filter(Boolean))];
+        const [profilsResults, svcResults] = await Promise.all([
+          Promise.all(emails.map(e => entities.ProfilPro.filter({ user_email: e }, "-created_at", 1).catch(() => []))),
+          svcIds.length > 0 ? entities.Service.filter({ status: "actif" }, "-created_at", 500).catch(() => []) : Promise.resolve([]),
+        ]);
+        if (cancelled) return;
+        const pMap = {};
+        emails.forEach((e, i) => { if (profilsResults[i]?.[0]) pMap[e] = profilsResults[i][0]; });
+        setProfilsMap(pMap);
+        const sMap = {};
+        svcResults.forEach(s => { sMap[s.id] = s; });
+        setServicesMap(sMap);
+      })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      {loading ? (
+        <div className="flex justify-center py-12"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+      ) : bundles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-pink-50 flex items-center justify-center">
+            <Zap className="w-10 h-10 text-pink-400" />
+          </div>
+          <p className="text-[16px] font-black text-gray-700">Aucun pack disponible</p>
+          <p className="text-[13px] text-gray-400">Les professionnels n'ont pas encore créé de packs.</p>
+        </div>
+      ) : bundles.map((b) => {
+        const pro = profilsMap[b.pro_email];
+        const includedSvcs = (b.service_ids || []).map(id => servicesMap[id]).filter(Boolean);
+        const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+        const isOnline = pro?.status === "actif";
+        return (
+          <div key={b.id} className="mx-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl overflow-hidden shadow-sm border border-pink-100">
+            {b.image_url && (
+              <div className="relative h-48">
+                <img src={b.image_url} alt="" className="w-full h-full object-cover" />
+                {isOnline && (
+                  <span className="absolute top-3 left-3 bg-teal-400 text-white text-[9px] font-black uppercase px-3 py-1.5 rounded-full tracking-widest z-10">
+                    Disponible
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="p-4">
+              {/* Pro info */}
+              {pro?.salon_name && (
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-5 h-5 rounded-full overflow-hidden bg-white shrink-0">
+                    {pro.avatar_url
+                      ? <img src={pro.avatar_url} alt="" className="w-full h-full object-cover" />
+                      : <span className="w-full h-full flex items-center justify-center text-[9px] font-black text-gray-400">{pro.salon_name[0]}</span>}
+                  </div>
+                  <span className="text-[12px] font-semibold text-gray-400 truncate">{pro.salon_name}</span>
+                </div>
+              )}
+
+              {/* Bundle title + badge */}
+              <div className="flex items-center gap-2 mb-1">
+                <Zap className="w-4 h-4 text-pink-500" />
+                <h3 className="text-[18px] font-black text-gray-900 leading-tight">{b.name}</h3>
+                {b.discount_percent > 0 && (
+                  <span className="bg-green-100 text-green-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">-{b.discount_percent}%</span>
+                )}
+              </div>
+              {b.description && <p className="text-[13px] text-gray-500 mb-3">{b.description}</p>}
+
+              {/* Included services chips */}
+              {includedSvcs.length > 0 && (
+                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                  {includedSvcs.map(s => (
+                    <span key={s.id} className="bg-white border border-pink-200 rounded-full px-2.5 py-1 text-[10px] font-bold text-pink-600 truncate max-w-[130px]">
+                      {s.title || s.name}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Badges: city, type */}
+              {pro && (
+                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                  {pro.city && (
+                    <span className="flex items-center gap-1 bg-white/70 rounded-full px-2.5 py-1">
+                      <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+                      <span className="text-[11px] text-gray-500 font-semibold">{pro.city}</span>
+                    </span>
+                  )}
+                  {pro.rating > 0 && (
+                    <span className="flex items-center gap-1">
+                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                      <span className="text-[11px] font-black text-gray-700">{pro.rating}</span>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Price + CTA */}
+              <div className="flex items-center justify-between pt-2 border-t border-pink-100">
+                <div className="flex items-center gap-2">
+                  {regularTotal > 0 && <span className="text-[14px] text-gray-400 line-through">{regularTotal}€</span>}
+                  <span className="text-[24px] font-black text-[#E8732A]">{b.bundle_price}€</span>
+                </div>
+                <button onClick={() => {
+                  const bundleServices = includedSvcs.map(s => ({ ...s, persons: 1 }));
+                  navigate(`/reservation?pro=${b.pro_email}&bundle=${b.id}`, { state: { services: bundleServices, bundle: b } });
+                }} className="bg-[#E8732A] text-white px-6 py-2.5 rounded-2xl text-[13px] font-black active:scale-95 transition-transform">
+                  Réserver
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const TABS = ["STYLES", "SERVICES", "SALONS", "PARTICULIERS"];
+const TABS = ["STYLES", "SERVICES", "SALONS", "PARTICULIERS", "BUNDLES"];
 
 // ── Mini Publication Wizard inline ───────────────────────────────────────────
 function QuickPublishModal({ onClose }) {
@@ -1909,6 +2042,7 @@ export default function ServicesSalons() {
         {activeTab === "SERVICES" && <ServicesTab activeCategory={activeCategoryMap["SERVICES"]} />}
         {activeTab === "SALONS" && <SalonsTab activeCategory={activeCategoryMap["SALONS"]} />}
         {activeTab === "PARTICULIERS" && <ParticuliersTab activeCategory={activeCategoryMap["PARTICULIERS"]} />}
+        {activeTab === "BUNDLES" && <BundlesTab />}
       </div>
     </div>
   );

@@ -535,7 +535,9 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
   };
 
   const totalPersons = booking.services.reduce((s, svc) => s + (svc.persons || 1), 0);
-  const basePrice = booking.services.reduce((s, svc) => s + svc.price * (svc.persons || 1), 0);
+  const basePrice = booking.bundle?.bundle_price
+    ? booking.bundle.bundle_price
+    : booking.services.reduce((s, svc) => s + svc.price * (svc.persons || 1), 0);
   const totalDuration = booking.services.reduce((s, svc) => s + (svc.duration_min || parseInt(svc.duration) || 60), 0);
 
   // ── Majoration nocturne (+50%) si créneau entre 21h et 07h ──
@@ -621,6 +623,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       payment_type: pType,
       crg_code: crgCode,
       notes: clientNotes || "",
+      addons: booking.bundle ? { bundle_id: booking.bundle.id, bundle_name: booking.bundle.name, bundle_price: booking.bundle.bundle_price } : null,
       source: "app",
     };
   };

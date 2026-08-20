@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Tag, Scissors } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -9,6 +9,7 @@ import { useThemeBg } from "@/hooks/useTheme";
 
 function ImageSlider({ images, onClick }) {
   const [current, setCurrent] = useState(0);
+  const [failed, setFailed] = useState({});
   const touchStartX = useRef(null);
 
   const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
@@ -22,19 +23,24 @@ function ImageSlider({ images, onClick }) {
     touchStartX.current = null;
   };
 
-  if (!images || images.length === 0) {
+  const validImages = (images || []).filter(u => u && !failed[u]);
+
+  if (validImages.length === 0) {
     return <div className="w-full h-full bg-gray-100 flex items-center justify-center"><Scissors className="w-10 h-10 text-gray-300" /></div>;
   }
 
   return (
     <div className="relative w-full h-full overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onClick={onClick}>
       {images.map((url, i) => (
-        <img key={i} src={url} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out"
-          style={{ transform: `translateX(${(i - current) * 100}%)` }} />
+        url && (
+          <img key={i} src={url} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out"
+            style={{ transform: `translateX(${(i - current) * 100}%)` }}
+            onError={() => setFailed(p => ({ ...p, [url]: true }))} />
+        )
       ))}
-      {images.length > 1 && (
+      {validImages.length > 1 && (
         <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1 z-10">
-          {images.map((_, i) => (
+          {validImages.map((_, i) => (
             <div key={i} className={`rounded-full transition-all ${i === current ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/60"}`} />
           ))}
         </div>
@@ -51,6 +57,7 @@ export default function CatalogueServices() {
   const themeBg = useThemeBg();
   const [activeFilter, setActiveFilter] = useState("Tous");
   const [services, setServices] = useState([]);
+  const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Charger une seule fois au montage
@@ -64,6 +71,8 @@ export default function CatalogueServices() {
         setServices(data || []);
       })
       .finally(() => { if (!cancelled) setLoading(false); });
+    supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false })
+      .then(({ data }) => { if (!cancelled) setBundles(data || []); });
     return () => { cancelled = true; };
   }, []);
 
@@ -100,6 +109,12 @@ export default function CatalogueServices() {
       console.error("Delete error:", err);
       entities.Service.filter({ pro_email: user?.email }, "-created_at", 100).then(setServices).catch(() => {});
     }
+  };
+
+  const deleteBundle = async (id) => {
+    if (!confirm("Supprimer ce pack ?")) return;
+    setBundles(b => b.filter(x => x.id !== id));
+    await supabase.from("ServiceBundle").delete().eq("id", id);
   };
 
   const filtered = services.filter(s => {
@@ -267,6 +282,50 @@ export default function CatalogueServices() {
           </div>
         )}
       </div>
+
+      {/* Packs Section */}
+      {bundles.length > 0 && (
+        <div className="px-5 pb-24">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="w-4 h-4 text-pink-500" />
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Mes Packs ({bundles.length})</p>
+          </div>
+          <div className="space-y-3">
+            {bundles.map(b => {
+              const includedSvcs = services.filter(s => b.service_ids?.includes(s.id));
+              const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+              return (
+                <div key={b.id} className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl p-4 border border-pink-100">
+                  <div className="flex items-start gap-3">
+                    {b.image_url && <img src={b.image_url} alt="" className="w-14 h-14 rounded-xl object-cover" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-black text-gray-900 truncate">{b.name}</p>
+                      {b.description && <p className="text-[11px] text-gray-500 truncate">{b.description}</p>}
+                      <div className="flex items-center gap-2 mt-1">
+                        {regularTotal > 0 && <span className="text-[11px] text-gray-400 line-through">{regularTotal}€</span>}
+                        <span className="text-[14px] font-black text-[#E8732A]">{b.bundle_price}€</span>
+                        {b.discount_percent > 0 && (
+                          <span className="bg-green-100 text-green-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">-{b.discount_percent}%</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                        {includedSvcs.map(s => (
+                          <span key={s.id} className="bg-white border border-pink-200 rounded-full px-2 py-0.5 text-[9px] font-bold text-pink-600 truncate max-w-[100px]">
+                            {s.title || s.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <button onClick={() => deleteBundle(b.id)} className="p-2 bg-white rounded-xl border border-pink-200">
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* CTA fixe en bas */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>

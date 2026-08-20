@@ -10,9 +10,9 @@ import StepConfirmation from "@/components/reservation/StepConfirmation";
 export default function Reservation() {
   const navigate = useNavigate();
   const { state } = useLocation();
-  const proEmail = state?.service?.pro_email || state?.proEmail || null;
+  const proEmail = state?.services?.[0]?.pro_email || state?.service?.pro_email || state?.proEmail || null;
 
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(state?.services?.length ? 1 : 0);
   const [proProfile, setProProfile] = useState(null);
   const [resolvedProEmail, setResolvedProEmail] = useState(proEmail);
 
@@ -39,13 +39,22 @@ export default function Reservation() {
   }, [proEmail]);
 
   const [booking, setBooking] = useState({
-    services: state?.service ? [{ ...state.service, persons: 1 }] : [],
+    services: state?.services?.length
+      ? state.services.map(s => ({ ...s, persons: s.persons || 1 }))
+      : state?.service
+        ? [{ ...state.service, persons: 1 }]
+        : [],
     expert: null,
     date: null,
     time: null,
     seat: null,
     notes: "",
-    salon: { name: state?.service?.pro_name || "Professionnel BeautyBook", address: state?.service?.pro_city || "", pro_email: proEmail || resolvedProEmail || "" },
+    bundle: state?.bundle || null,
+    salon: {
+      name: state?.service?.pro_name || "Professionnel BeautyBook",
+      address: state?.service?.pro_city || "",
+      pro_email: proEmail || resolvedProEmail || "",
+    },
   });
 
   const update = (key, value) => setBooking(prev => ({ ...prev, [key]: value }));

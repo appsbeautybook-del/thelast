@@ -565,6 +565,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
   });
   const [publications, setPublications] = useState([]);
   const [services, setServices] = useState([]);
+  const [bundles, setBundles] = useState([]);
   const [proInfo, setProInfo] = useState(null);
   const [proInfoId, setProInfoId] = useState(null);
   const [showMenuModal, setShowMenuModal] = useState(false);
@@ -605,15 +606,17 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
       return { ...p, avatar_url: cached.avatar_url || p.avatar_url, cover_url: cached.cover_url || p.cover_url, salon_name: cached.salon_name || p.salon_name, bio: cached.bio || p.bio, city: cached.city || p.city, phone: cached.phone || p.phone, address: cached.address || p.address };
     };
     const fetchData = async () => {
-      const [reels, profileRaw, svcs, avis, demandes] = await Promise.all([
+      const [reels, profileRaw, svcs, avis, demandes, bundleData] = await Promise.all([
         entities.Reel.filter({ author_email: targetEmail, status: "publie" }, "-created_at", 30).catch(() => []),
         fetchProfil(),
         entities.Service.filter({ pro_email: targetEmail, status: "actif" }, "-created_at", 50).catch(() => []),
         entities.Avis.filter({ cible_email: targetEmail, type: "client_to_pro" }, "-created_at", 100).catch(() => []),
         entities.DemandeProV2.filter({ user_email: targetEmail, statut: "approuvee" }, "-created_at", 1).catch(() => []),
+        entities.ServiceBundle.filter({ pro_email: targetEmail, is_active: true }, "-created_at", 20).catch(() => []),
       ]);
       setPublications(reels);
       setServices(svcs);
+      setBundles(bundleData);
       const profile = applyCache(profileRaw);
       if (profile) {
         setProInfo(profile);
@@ -1244,10 +1247,57 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               ))}
             </div>
           )}
+
+          {/* Packs section */}
+          {bundles.length > 0 && (
+            <div className="px-4 mt-4">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                {bundles.length} pack{bundles.length !== 1 ? "s" : ""}
+              </p>
+              <div className="space-y-3">
+                {bundles.map((b) => {
+                  const includedSvcs = services.filter(s => b.service_ids?.includes(s.id));
+                  const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+                  return (
+                    <div key={b.id} className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl overflow-hidden border border-pink-100 shadow-sm">
+                      {b.image_url && <img src={b.image_url} alt="" className="w-full h-36 object-cover" />}
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Zap className="w-4 h-4 text-pink-500" />
+                          <h3 className="text-[16px] font-black text-gray-900">{b.name}</h3>
+                          {b.discount_percent > 0 && (
+                            <span className="bg-green-100 text-green-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">-{b.discount_percent}%</span>
+                          )}
+                        </div>
+                        {b.description && <p className="text-[12px] text-gray-600 mb-3">{b.description}</p>}
+                        <div className="flex items-center gap-2 mb-3">
+                          {includedSvcs.map(s => (
+                            <span key={s.id} className="bg-white border border-pink-200 rounded-full px-2 py-0.5 text-[10px] font-bold text-pink-600 truncate max-w-[120px]">
+                              {s.title || s.name}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {regularTotal > 0 && <span className="text-[13px] text-gray-400 line-through">{regularTotal}€</span>}
+                            <span className="text-[22px] font-black text-[#E8732A]">{b.bundle_price}€</span>
+                          </div>
+                          <button onClick={() => {
+                            const bundleServices = includedSvcs.map(s => ({ ...s, persons: 1 }));
+                            navigate(`/reservation?pro=${targetEmail}&bundle=${b.id}`, { state: { services: bundleServices, bundle: b } });
+                          }} className="bg-[#E8732A] text-white px-5 py-2.5 rounded-2xl text-[12px] font-black active:scale-95 transition-transform">
+                            Réserver
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
-
-      {/* TAB: PUB — Grille mosaïque TikTok/Pinterest */}
       {activeTab === "pub" && (
         <div className="bg-white pb-6">
           <div className="flex items-center justify-between px-4 pt-4 pb-3">
