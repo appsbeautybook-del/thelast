@@ -581,13 +581,13 @@ export default function ModifierProfilPro() {
           )}
         </div>
 
-        {/* Services additionnels */}
+        {/* Services supplémentaires */}
         <div className={sectionCls}>
           <button onClick={() => toggleSection('services')} className="w-full flex items-center gap-3 p-4">
             <div className="w-11 h-11 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl flex items-center justify-center">
               <Scissors className="w-5 h-5 text-emerald-500" />
             </div>
-            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Services additionnels</p>
+            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Services supplémentaires</p>
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform ${expanded.services ? 'rotate-180' : ''}`}>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </div>

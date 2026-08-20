@@ -1130,15 +1130,15 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
             />
           </div>
 
-          {/* Services Additionnels */}
-          {proInfo?.services_additionnels?.length > 0 && (
+          {/* Services Supplémentaires */}
+          {proInfo?.additional_services?.length > 0 && (
             <div className="px-4 mt-4 pb-4">
-              <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-3">Services Additionnels</p>
+              <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-3">Services Supplémentaires</p>
               <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                {proInfo.services_additionnels.map((s, i) => (
-                  <div key={i} className={`flex items-center justify-between gap-3 p-4 ${i < proInfo.services_additionnels.length - 1 ? "border-b border-gray-100" : ""}`}>
-                    <p className="text-[13px] font-black text-gray-800">{s.nom}</p>
-                    {s.prix > 0 && <span className="text-[13px] font-black text-primary">{s.prix}€</span>}
+                {proInfo.additional_services.map((s, i) => (
+                  <div key={i} className={`flex items-center justify-between gap-3 p-4 ${i < proInfo.additional_services.length - 1 ? "border-b border-gray-100" : ""}`}>
+                    <p className="text-[13px] font-black text-gray-800">{s.name}</p>
+                    {s.price > 0 && <span className="text-[13px] font-black text-primary">{s.price}€</span>}
                   </div>
                 ))}
               </div>
