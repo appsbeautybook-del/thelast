@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Share2, Heart, MapPin, Clock, Star, CheckCircle, ShoppingCart, Play, Calendar, ChevronRight, Scissors, Sparkles, Wand2, X, ChevronLeft, ArrowUp, Wifi, Car, Thermometer, CreditCard, Accessibility, PawPrint, Baby, Coffee } from "lucide-react";
+import { ArrowLeft, Share2, Heart, MapPin, Clock, Star, CheckCircle, ShoppingCart, Play, Calendar, ChevronRight, Scissors, Sparkles, Wand2, X, ChevronLeft, ArrowUp, Wifi, Car, Thermometer, CreditCard, Accessibility, PawPrint, Baby, Coffee, Package } from "lucide-react";
 import VTCSection from "@/components/service/VTCSection";
 import CommandeModal from "@/components/restaurant/CommandeModal";
 import PostServiceReview from "@/components/reservation/PostServiceReview";
@@ -214,6 +214,7 @@ export default function ServiceDetail() {
   const [reviewReservation, setReviewReservation] = useState(null);
   const [showFiltreAI, setShowFiltreAI] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(null);
+  const [bundles, setBundles] = useState([]);
   const scrollRef = useRef(null);
   const { formatPrice } = useLocale();
 
@@ -310,6 +311,20 @@ export default function ServiceDetail() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [id, state?.id]);
+
+  useEffect(() => {
+    const svc = service || state;
+    if (!svc?.pro_email) return;
+    entities.ServiceBundle.filter({ pro_email: svc.pro_email, status: "actif" }, "-created_at", 50)
+      .then(all => {
+        const matched = all.filter(b => {
+          const ids = (b.service_ids || []).map(String);
+          return ids.includes(String(svc.id));
+        });
+        setBundles(matched);
+      })
+      .catch(() => {});
+  }, [service, state]);
 
   const s = service || state || {};
 
@@ -510,6 +525,55 @@ export default function ServiceDetail() {
           <div>
             <SectionTitle>À propos de ce service</SectionTitle>
             <p className="text-[13px] text-gray-600 leading-relaxed">{s.description}</p>
+          </div>
+        )}
+
+        {/* Bundles incluant ce service */}
+        {bundles.length > 0 && (
+          <div>
+            <SectionTitle>
+              <span className="inline-flex items-center gap-1.5">
+                <Package className="w-4 h-4" />
+                Bundles incluant ce service
+              </span>
+            </SectionTitle>
+            <div className="space-y-3">
+              {bundles.map(b => {
+                const svcIds = (b.service_ids || []).map(String);
+                const includedServices = (b.services_list || []).filter(sv => sv && sv.id && svcIds.includes(String(sv.id)));
+                const originalTotal = includedServices.reduce((sum, sv) => sum + (sv.price || 0), 0);
+                const discount = originalTotal > 0 ? Math.round(((originalTotal - b.price) / originalTotal) * 100) : 0;
+                return (
+                  <button
+                    key={b.id}
+                    onClick={() => navigate("/reservation", { state: { bundle: b, services: includedServices, service: { ...s, price: b.price, addons: [], pro_name: proData?.salon_name, pro_avatar: proData?.avatar_url, pro_city: proData?.city } } })}
+                    className="w-full flex items-center gap-3 p-3 bg-gradient-to-br from-orange-50 to-white border border-orange-100 rounded-2xl active:scale-[0.98] transition-all"
+                  >
+                    {b.image_url ? (
+                      <img src={b.image_url} alt={b.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                    ) : (
+                      <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
+                        <Package className="w-6 h-6 text-orange-400" />
+                      </div>
+                    )}
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="font-bold text-[13px] text-gray-900 truncate">{b.name}</p>
+                      {b.description && <p className="text-[11px] text-gray-400 truncate mt-0.5">{b.description}</p>}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        {originalTotal > b.price && (
+                          <span className="text-[11px] text-gray-400 line-through">{formatPrice(originalTotal)}</span>
+                        )}
+                        <span className="text-[14px] font-black text-orange-600">{formatPrice(b.price)}</span>
+                        {discount > 0 && (
+                          <span className="text-[10px] font-bold text-white bg-orange-500 rounded-full px-2 py-0.5">-{discount}%</span>
+                        )}
+                      </div>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-orange-300 shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
