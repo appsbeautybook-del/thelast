@@ -1820,7 +1820,7 @@ function BundlesTab() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const TABS = ["STYLES", "SERVICES", "SALONS", "PARTICULIERS", "BUNDLES"];
+const TABS = ["STYLES", "SERVICES", "BUNDLES", "SALONS", "PARTICULIERS"];
 
 // ── Mini Publication Wizard inline ───────────────────────────────────────────
 function QuickPublishModal({ onClose }) {
