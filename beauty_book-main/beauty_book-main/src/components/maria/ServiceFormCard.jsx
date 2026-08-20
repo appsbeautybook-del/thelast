@@ -12,7 +12,6 @@ export default function ServiceFormCard({ prefill = {}, onSuccess, onCancel }) {
     category: prefill.category || "",
     price: prefill.price ?? "",
     duration_min: prefill.duration_min ?? 60,
-    audience: prefill.audience || "",
     addons: prefill.addons || [],
     images: prefill.images || [],
   });
@@ -46,7 +45,6 @@ export default function ServiceFormCard({ prefill = {}, onSuccess, onCancel }) {
       category: data.category,
       price: parseFloat(data.price) || 0,
       duration: parseInt(data.duration_min) || 60,
-      audience: data.audience || "",
       image_url: (data.images || [])[0] || "",
       images: data.images || [],
       addons: (data.addons || []).filter(a => a.name),
@@ -109,10 +107,6 @@ export default function ServiceFormCard({ prefill = {}, onSuccess, onCancel }) {
             <div className="bg-gray-50 rounded-2xl px-3 py-3 text-center">
               <p className="text-[20px] font-black text-gray-800">{data.duration_min || "—"}</p>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Minutes</p>
-            </div>
-            <div className="bg-gray-50 rounded-2xl px-3 py-3 text-center">
-              <p className="text-[12px] font-black text-gray-800 leading-tight">{data.audience || "Tous"}</p>
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Public</p>
             </div>
           </div>
 
@@ -181,12 +175,6 @@ export default function ServiceFormCard({ prefill = {}, onSuccess, onCancel }) {
                 <option value="">Choisir...</option>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-            </div>
-            <div>
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Public cible</p>
-              <input value={data.audience} onChange={e => setData(d => ({ ...d, audience: e.target.value }))}
-                placeholder="Tous publics"
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] font-medium text-gray-700 outline-none focus:border-primary" />
             </div>
           </div>
 

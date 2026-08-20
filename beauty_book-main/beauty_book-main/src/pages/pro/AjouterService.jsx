@@ -238,17 +238,6 @@ function Step1({ data, setData }) {
           />
         </div>
       </div>
-      <div>
-        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Audience</p>
-        <div className="flex gap-3">
-          {audience.map(a => (
-            <button key={a} onClick={() => setData(d => ({ ...d, audience: a }))}
-              className={`flex-1 py-3 rounded-2xl border text-[14px] font-black transition-all ${data.audience === a ? "bg-primary text-white border-primary shadow-md shadow-primary/30" : "bg-white text-gray-700 border-gray-200"}`}>
-              {a}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -676,7 +665,6 @@ export default function AjouterService() {
         name: editService.title || "",
         description: editService.description || "",
         category: editService.category || "",
-        audience: editService.audience || "",
         style: editService.style || "",
         price: editService.price ?? "",
         duration_min: editService.duration_min ?? "",
@@ -710,7 +698,6 @@ export default function AjouterService() {
         description: data.description || "",
         category: data.category || "",
         style: data.style || null,
-        audience: data.audience || "",
         price: parseFloat(data.price) || 0,
         price_ht: data.price ? (parseFloat(data.price) / 1.2) : 0,
         tva_rate: 20,
@@ -758,7 +745,6 @@ export default function AjouterService() {
         description: data.description || "",
         category: data.category,
         style: data.style || null,
-        audience: data.audience || "",
         price: parseFloat(data.price) || 0,
         price_ht: data.price ? (parseFloat(data.price) / 1.2) : 0,
         tva_rate: 20,
