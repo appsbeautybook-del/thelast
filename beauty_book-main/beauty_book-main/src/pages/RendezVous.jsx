@@ -793,10 +793,9 @@ export default function RendezVous() {
           "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:Rappel: votre RDV BeautyBook demain","END:VALARM",
           "END:VEVENT","END:VCALENDAR"
         ].join("\r\n");
-        const blob = new Blob([ics], { type: "text/calendar" });
-        const appleUrl = URL.createObjectURL(blob);
+        const dataUri = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
         return (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => { setCalendarSuggestion(null); URL.revokeObjectURL(appleUrl); }}>
+          <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setCalendarSuggestion(null)}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
             <div className="relative bg-white w-[90%] max-w-sm rounded-3xl p-6 z-10 text-center" onClick={e => e.stopPropagation()}>
               <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -811,12 +810,12 @@ export default function RendezVous() {
                   className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#4285F4] text-white rounded-2xl text-[13px] font-black active:scale-95 transition-all">
                   <Calendar className="w-4 h-4" /> Google Calendar
                 </a>
-                <button onClick={() => { window.open(appleUrl, "_blank"); }}
+                <a href={dataUri} download="rdv-beautybook.ics"
                   className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl text-[13px] font-black active:scale-95 transition-all">
                   <Calendar className="w-4 h-4" /> Apple Calendar
-                </button>
+                </a>
               </div>
-              <button onClick={() => { setCalendarSuggestion(null); URL.revokeObjectURL(appleUrl); }}
+              <button onClick={() => setCalendarSuggestion(null)}
                 className="mt-4 text-[12px] font-black text-gray-400 uppercase tracking-widest">
                 Plus tard
               </button>
@@ -1030,16 +1029,16 @@ export default function RendezVous() {
                     "BEGIN:VALARM","TRIGGER:-PT2H","ACTION:DISPLAY","DESCRIPTION:Rappel: votre RDV BeautyBook dans 2 heures","END:VALARM",
                     "END:VEVENT","END:VCALENDAR"
                   ].join("\r\n");
-                  const blob = new Blob([ics], { type: "text/calendar" });
-                  const url = URL.createObjectURL(blob);
+                  const dataUri = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
                   return (
-                    <button
-                      onClick={() => window.open(url, "_blank")}
+                    <a
+                      href={dataUri}
+                      download="rdv-beautybook.ics"
                       className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all w-full"
                     >
                       <Calendar className="w-4 h-4" />
                       Ajouter à Apple Calendar
-                    </button>
+                    </a>
                   );
                 })()}
               </div>
@@ -1078,6 +1077,11 @@ export default function RendezVous() {
                   </button>
                 </div>
               )}
+
+              {/* Fermer */}
+              <button onClick={() => setSelectedReservation(null)} className="w-full py-3.5 bg-gray-100 text-gray-600 text-[13px] font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all">
+                Fermer
+              </button>
             </div>
           </div>
         </div>
