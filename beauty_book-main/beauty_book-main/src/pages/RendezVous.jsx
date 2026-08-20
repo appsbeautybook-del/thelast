@@ -793,7 +793,18 @@ export default function RendezVous() {
           "BEGIN:VALARM","TRIGGER:-P1D","ACTION:DISPLAY","DESCRIPTION:Rappel: votre RDV BeautyBook demain","END:VALARM",
           "END:VEVENT","END:VCALENDAR"
         ].join("\r\n");
-        const dataUri = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+        const downloadICS = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "rdv-beautybook.ics";
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+        };
         return (
           <div className="fixed inset-0 z-[300] flex items-center justify-center" onClick={() => setCalendarSuggestion(null)}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
@@ -810,10 +821,10 @@ export default function RendezVous() {
                   className="flex items-center justify-center gap-2 w-full py-3.5 bg-[#4285F4] text-white rounded-2xl text-[13px] font-black active:scale-95 transition-all">
                   <Calendar className="w-4 h-4" /> Google Calendar
                 </a>
-                <a href={dataUri} download="rdv-beautybook.ics"
+                <button onClick={downloadICS}
                   className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl text-[13px] font-black active:scale-95 transition-all">
-                  <Calendar className="w-4 h-4" /> Apple Calendar
-                </a>
+                  <Calendar className="w-4 h-4" /> Ajouter à Apple Calendar
+                </button>
               </div>
               <button onClick={() => setCalendarSuggestion(null)}
                 className="mt-4 text-[12px] font-black text-gray-400 uppercase tracking-widest">
@@ -1030,15 +1041,26 @@ export default function RendezVous() {
                     "END:VEVENT","END:VCALENDAR"
                   ].join("\r\n");
                   const dataUri = `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+                  const downloadICS = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "rdv-beautybook.ics";
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+                  };
                   return (
-                    <a
-                      href={dataUri}
-                      download="rdv-beautybook.ics"
+                    <button
+                      onClick={downloadICS}
                       className="flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all w-full"
                     >
                       <Calendar className="w-4 h-4" />
                       Ajouter à Apple Calendar
-                    </a>
+                    </button>
                   );
                 })()}
               </div>
