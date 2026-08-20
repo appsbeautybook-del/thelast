@@ -3,57 +3,195 @@ import { useAuth } from "@/lib/AuthContext";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { useState, useEffect } from "react";
-import { ArrowLeft, Clock, Save, Plus, X, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Clock, Save, Plus, X, Trash2, Loader2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
 const DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
 const DAY_LABELS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-const DEFAULT_DAY = { open: true, start: "09:00", end: "19:00" };
+const DEFAULT_DAY = { open: true, start: "09:00", end: "19:00", pause_start: "", pause_end: "" };
 
 // ── Horaires Form ──────────────────────────────────────────────────────────────
 function HorairesForm({ horaires, onChange }) {
+  const [bulkOpen, setBulkOpen] = useState("09:00");
+  const [bulkEnd, setBulkEnd] = useState("19:00");
+  const [bulkPauseStart, setBulkPauseStart] = useState("");
+  const [bulkPauseEnd, setBulkPauseEnd] = useState("");
+  const [applied, setApplied] = useState(false);
+
+  const handleApplyToAll = () => {
+    DAYS.forEach(day => {
+      onChange(day, {
+        open: true,
+        start: bulkOpen,
+        end: bulkEnd,
+        pause_start: bulkPauseStart,
+        pause_end: bulkPauseEnd,
+      });
+    });
+    setApplied(true);
+    setTimeout(() => setApplied(false), 2000);
+  };
+
   return (
-    <div className="space-y-2">
-      {DAYS.map((day, i) => {
-        const h = horaires[day] || DEFAULT_DAY;
-        const nightColors = h.start >= "21" || h.start < "05";
-        return (
-          <div key={day} className={`flex items-center gap-3 rounded-2xl p-3 transition-all ${h.open ? nightColors ? "bg-indigo-50 border border-indigo-100" : "bg-white border border-gray-100 shadow-sm" : "bg-gray-50 border border-gray-100"}`}>
-            {/* Toggle jour */}
-            <button
-              onClick={() => onChange(day, { ...h, open: !h.open })}
-              className={`w-9 h-6 rounded-full transition-colors shrink-0 relative ${h.open ? "bg-primary" : "bg-gray-200"}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${h.open ? "translate-x-4" : "translate-x-0.5"}`} />
-            </button>
-
-            <span className={`text-[13px] font-black w-16 shrink-0 ${h.open ? "text-gray-900" : "text-gray-300"}`}>
-              {DAY_LABELS[i]}
-            </span>
-
-            {h.open ? (
-              <div className="flex items-center gap-2 flex-1">
-                <input
-                  type="time"
-                  value={h.start}
-                  onChange={e => onChange(day, { ...h, start: e.target.value })}
-                  className="bg-gray-100 rounded-xl px-3 py-2 text-[13px] font-black text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 w-full"
-                />
-                <span className="text-[12px] font-medium text-gray-300 shrink-0">à</span>
-                <input
-                  type="time"
-                  value={h.end}
-                  onChange={e => onChange(day, { ...h, end: e.target.value })}
-                  className="bg-gray-100 rounded-xl px-3 py-2 text-[13px] font-black text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 w-full"
-                />
-              </div>
-            ) : (
-              <span className="text-[12px] font-medium text-gray-300 flex-1">Fermé</span>
-            )}
+    <div className="space-y-4">
+      {/* ── Configuration rapide ── */}
+      <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center">
+            <Copy className="w-4 h-4 text-primary" />
           </div>
-        );
-      })}
+          <div>
+            <p className="text-[13px] font-black text-gray-900">Appliquer à tous les jours</p>
+            <p className="text-[10px] font-medium text-gray-400">Définissez une fois, activez partout</p>
+          </div>
+        </div>
+
+        {/* Ouverturaire */}
+        <div className="mb-4">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Horaires d'ouverture</p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <input
+                type="time"
+                value={bulkOpen}
+                onChange={e => setBulkOpen(e.target.value)}
+                className="w-full bg-gray-100 rounded-xl px-3 py-2.5 text-[13px] font-black text-gray-900 outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <span className="text-[12px] font-bold text-gray-300 shrink-0">→</span>
+            <div className="flex-1">
+              <input
+                type="time"
+                value={bulkEnd}
+                onChange={e => setBulkEnd(e.target.value)}
+                className="w-full bg-gray-100 rounded-xl px-3 py-2.5 text-[13px] font-black text-gray-900 outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Pause */}
+        <div className="mb-4">
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">Pause</p>
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <input
+                type="time"
+                value={bulkPauseStart}
+                onChange={e => setBulkPauseStart(e.target.value)}
+                placeholder="Début"
+                className="w-full bg-gray-100 rounded-xl px-3 py-2.5 text-[13px] font-black text-gray-900 outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <span className="text-[12px] font-bold text-gray-300 shrink-0">→</span>
+            <div className="flex-1">
+              <input
+                type="time"
+                value={bulkPauseEnd}
+                onChange={e => setBulkPauseEnd(e.target.value)}
+                placeholder="Fin"
+                className="w-full bg-gray-100 rounded-xl px-3 py-2.5 text-[13px] font-black text-gray-900 outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={handleApplyToAll}
+          className={`w-full py-3 rounded-xl text-[12px] font-black uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 ${
+            applied
+              ? "bg-green-500 text-white"
+              : "bg-primary text-white shadow-md shadow-primary/20"
+          }`}
+        >
+          {applied ? (
+            <><Check className="w-4 h-4" /> Appliqué à tous les jours</>
+          ) : (
+            <><Copy className="w-4 h-4" /> Appliquer à tous les jours</>
+          )}
+        </button>
+      </div>
+
+      {/* ── Horaires par jour ── */}
+      <div className="space-y-2">
+        {DAYS.map((day, i) => {
+          const h = horaires[day] || DEFAULT_DAY;
+          const hasPause = h.pause_start && h.pause_end;
+          const nightColors = h.start >= "21" || h.start < "05";
+          return (
+            <div key={day} className={`rounded-2xl p-4 transition-all ${h.open ? nightColors ? "bg-indigo-50 border border-indigo-100" : "bg-white border border-gray-100 shadow-sm" : "bg-gray-50 border border-gray-100"}`}>
+              {/* Ligne principale : toggle + jour + horaires */}
+              <div className="flex items-center gap-3">
+                {/* Toggle */}
+                <button
+                  onClick={() => onChange(day, { ...h, open: !h.open })}
+                  className={`w-11 h-6 rounded-full transition-colors shrink-0 relative ${h.open ? "bg-primary" : "bg-gray-200"}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${h.open ? "translate-x-6" : "translate-x-1"}`} />
+                </button>
+
+                {/* Nom du jour */}
+                <span className={`text-[13px] font-black w-20 shrink-0 ${h.open ? "text-gray-900" : "text-gray-300"}`}>
+                  {DAY_LABELS[i]}
+                </span>
+
+                {/* Horaires ouverture/fermeture */}
+                {h.open ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="time"
+                      value={h.start}
+                      onChange={e => onChange(day, { ...h, start: e.target.value })}
+                      className="bg-gray-100 rounded-xl px-3 py-2 text-[13px] font-black text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 w-full"
+                    />
+                    <span className="text-[12px] font-medium text-gray-300 shrink-0">→</span>
+                    <input
+                      type="time"
+                      value={h.end}
+                      onChange={e => onChange(day, { ...h, end: e.target.value })}
+                      className="bg-gray-100 rounded-xl px-3 py-2 text-[13px] font-black text-gray-900 outline-none focus:ring-2 focus:ring-primary/30 w-full"
+                    />
+                  </div>
+                ) : (
+                  <span className="text-[12px] font-medium text-gray-300 flex-1">Fermé</span>
+                )}
+              </div>
+
+              {/* Ligne pause (seulement si jour ouvert) */}
+              {h.open && (
+                <div className="flex items-center gap-3 mt-2.5">
+                  <div className="w-11 shrink-0" />
+                  <span className="text-[10px] font-bold text-gray-300 w-20 shrink-0 uppercase tracking-wider">Pause</span>
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="time"
+                      value={h.pause_start || ""}
+                      onChange={e => onChange(day, { ...h, pause_start: e.target.value })}
+                      className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-[12px] font-bold text-gray-500 outline-none focus:ring-2 focus:ring-primary/30 w-full placeholder:text-gray-300"
+                    />
+                    <span className="text-[12px] font-medium text-gray-300 shrink-0">→</span>
+                    <input
+                      type="time"
+                      value={h.pause_end || ""}
+                      onChange={e => onChange(day, { ...h, pause_end: e.target.value })}
+                      className="bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 text-[12px] font-bold text-gray-500 outline-none focus:ring-2 focus:ring-primary/30 w-full placeholder:text-gray-300"
+                    />
+                    {(h.pause_start || h.pause_end) && (
+                      <button
+                        onClick={() => onChange(day, { ...h, pause_start: "", pause_end: "" })}
+                        className="w-7 h-7 flex items-center justify-center shrink-0 active:scale-90"
+                      >
+                        <X className="w-3.5 h-3.5 text-gray-300" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -210,7 +348,14 @@ export default function HorairesConges() {
           const ouv = rows[0].ouverture || {};
           const init = {};
           DAYS.forEach(d => {
-            init[d] = ouv[d] || { ...DEFAULT_DAY };
+            const existing = ouv[d] || { ...DEFAULT_DAY };
+            init[d] = {
+              open: existing.open !== undefined ? existing.open : true,
+              start: existing.start || "09:00",
+              end: existing.end || "19:00",
+              pause_start: existing.pause_start || "",
+              pause_end: existing.pause_end || "",
+            };
           });
           setHoraires(init);
           setConges(ouv.conges || []);
@@ -226,8 +371,6 @@ export default function HorairesConges() {
       .catch(() => setLoading(false));
   }, [user?.email]);
 
-  useEffect(() => {}, []);
-
   const handleDayChange = (day, value) => {
     setHoraires(prev => ({ ...prev, [day]: value }));
   };
@@ -236,8 +379,24 @@ export default function HorairesConges() {
     if (!profil) return;
     setSaving(true);
     const ouverture = { ...horaires, conges };
+
+    // Générer les pauses au format attendu par StepCalendar
+    const pauseMap = {};
+    DAYS.forEach(day => {
+      const h = horaires[day] || DEFAULT_DAY;
+      if (h.open && h.pause_start && h.pause_end) {
+        const key = `${h.pause_start}-${h.pause_end}`;
+        if (!pauseMap[key]) {
+          pauseMap[key] = { start: h.pause_start, end: h.pause_end, days: [] };
+        }
+        pauseMap[key].days.push(day);
+      }
+    });
+    const pauses = Object.values(pauseMap);
+
     const { error } = await supabase.from('ProfilPro').update({
       ouverture,
+      pauses,
       travail_nuit: travailNuit,
     }).eq('user_email', profil.user_email);
     if (error) console.error('[HorairesConges] Save error:', error.message);
@@ -291,7 +450,7 @@ export default function HorairesConges() {
         {/* Mode Nuit */}
         <ModeNuitCard travailNuit={travailNuit} onToggle={handleToggleNuit} />
 
-        {/* Horaires par jour */}
+        {/* Horaires */}
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Clock className="w-4 h-4 text-gray-400" />
