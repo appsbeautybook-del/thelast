@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { apiClient } from '@/lib/apiClient';
+import { creditClientFidelite, creditProFidelite } from '@/lib/fideliteClient';
 import {
   notifyReservationConfirmed,
   notifyReservationCancelled,
@@ -106,6 +107,9 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
       const result = await apiClient.callFunction("completeReservation", { reservation_id: rdv.id }).catch(() => null);
       if (!result || result.data?.fallback || result.data?.success === false) {
         await supabase.from("Reservation").update({ status }).eq("id", rdv.id);
+        // Fallback Vercel: crédit fidelite direct via Supabase
+        await creditClientFidelite("reservation", `Prestation : ${rdv.service_name || "Service beauté"}`, rdv.client_email);
+        await creditProFidelite("pro_reservation", `Réservation terminée : ${rdv.service_name || "Service beauté"}`, rdv.pro_email);
       }
     } else {
       await supabase.from("Reservation").update({ status }).eq("id", rdv.id);
@@ -184,19 +188,9 @@ function RdvDetailModal({ rdv, onClose, onUpdateStatus, proEmail }) {
     }
     await supabase.from("Reservation").update({ status: "termine", code_validated: true }).eq("id", rdv.id);
 
-    // Créditer points fidélité client (+50) et pro (+30)
-    try {
-      await apiClient.callFunction("addFidelitePoints", {
-        action: "reservation",
-        label: `Prestation : ${rdv.service_name || "Service beauté"}`,
-      });
-    } catch (e) { console.error("Fidelite client error:", e); }
-    try {
-      await apiClient.callFunction("addFidelitePoints", {
-        action: "pro_reservation",
-        label: `Réservation terminée : ${rdv.service_name || "Service beauté"}`,
-      });
-    } catch (e) { console.error("Fidelite pro error:", e); }
+    // Créditer points fidélité client (+50) et pro (+30) via Supabase direct
+    await creditClientFidelite("reservation", `Prestation : ${rdv.service_name || "Service beauté"}`, rdv.client_email);
+    await creditProFidelite("pro_reservation", `Réservation terminée : ${rdv.service_name || "Service beauté"}`, rdv.pro_email);
 
     setShowReliability(true);
   };

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Star, X, Loader, Heart, Coffee, Gift, MessageSquare, PenLine, CreditCard, Lock, CheckCircle2, ChevronLeft } from "lucide-react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
-import { apiClient } from '@/lib/apiClient';
+import { creditClientFidelite } from '@/lib/fideliteClient';
 
 const TIP_PRESETS = [0, 2, 5, 10];
 
@@ -118,12 +118,7 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
       } catch (e) { console.error("Mark review_done error:", e); }
 
       // Créditer points fidélité pour avis (+30 pts client)
-      try {
-        await apiClient.callFunction("addFidelitePoints", {
-          action: "avis",
-          label: "Avis laissé",
-        });
-      } catch (e) { console.error("Fidelite avis error:", e); }
+      await creditClientFidelite("avis", "Avis laissé");
     }
 
     // Update pro rating
