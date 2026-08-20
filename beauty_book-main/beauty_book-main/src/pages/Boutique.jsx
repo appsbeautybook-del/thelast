@@ -251,7 +251,7 @@ export default function Boutique() {
 
       {/* ── Search Bar ── */}
       <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSearch} />
-      <div className="px-3 pt-4 pb-3 flex items-center gap-2 sticky top-0 bg-white z-30">
+      <div data-tour="boutique-search" className="px-3 pt-4 pb-3 flex items-center gap-2 sticky top-0 bg-white z-30">
         {/* Search input compact */}
         <div className="flex items-center gap-1.5 bg-gray-100 rounded-full px-3 py-2 flex-1 min-w-0">
           <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
@@ -276,6 +276,7 @@ export default function Boutique() {
 
         {/* Styliste IA button */}
         <button
+          data-tour="boutique-styliste"
           onClick={() => navigate("/sh-ai")}
           className="flex items-center gap-1.5 shrink-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full px-3 py-2 shadow-sm shadow-purple-300/40 active:scale-95 transition-all"
         >

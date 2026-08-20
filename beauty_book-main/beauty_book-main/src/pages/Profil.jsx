@@ -376,7 +376,7 @@ export default function Profil() {
             MON PROFIL PRO
           </button>
         ) : (
-          <button onClick={() => navigate("/devenir-pro")}
+          <button data-tour="profil-devenir-pro" onClick={() => navigate("/devenir-pro")}
             className="flex-1 py-3.5 bg-primary rounded-2xl text-white text-[13px] font-black uppercase tracking-widest shadow-md shadow-primary/30 active:scale-95 transition-all">
             DEVENIR PRO
           </button>
@@ -412,7 +412,7 @@ export default function Profil() {
       />
 
       {/* Score de Fiabilité */}
-      <div className="mx-5 mb-5">
+      <div data-tour="profil-score" className="mx-5 mb-5">
         <ScoreFiabilite userEmail={user?.email} />
       </div>
 

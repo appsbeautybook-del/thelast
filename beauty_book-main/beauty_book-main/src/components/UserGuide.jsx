@@ -1,62 +1,111 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { X, ChevronRight, Hand } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { X, ChevronRight, ChevronLeft } from "lucide-react";
 
 const GUIDE_KEY = "bb_didacticiel_seen";
 
+// Page group labels
+const PAGES = {
+  home: "Accueil",
+  maria: "Maria AI",
+  reels: "Social",
+  boutique: "Boutique",
+  immobilier: "Immobilier",
+  rdv: "Rendez-vous",
+  fidelite: "Fidélité",
+  profil: "Profil",
+};
+
+// Steps: navigate + highlight
 const STEPS = [
-  {
-    target: "[data-tour='hero']",
-    title: "Bienvenue !",
-    desc: "Voici votre fil d'actualité beauté. Faites défiler pour découvrir les offres et tendances.",
-    placement: "bottom",
-  },
-  {
-    target: "[data-tour='categories']",
-    title: "Explorez par catégorie",
-    desc: "Coiffure, maquillage, ongles... Trouvez rapidement le service qui vous intéresse.",
-    placement: "bottom",
-  },
-  {
-    target: "[data-tour='services']",
-    title: "Services tendance",
+  // ── HOME ──
+  { page: "home", target: "[data-tour='hero']", title: "Bienvenue sur BeautyBook !",
+    desc: "Votre appli beauté tout-en-un. Ce didacticiel va vous guider à travers les fonctionnalités principales.",
+    placement: "bottom" },
+  { page: "home", target: "[data-tour='categories']", title: "Catégories",
+    desc: "Filtrez par type de service : coiffure, maquillage, ongles, soins, massage, barbier...",
+    placement: "bottom" },
+  { page: "home", target: "[data-tour='services']", title: "Services Tendance",
     desc: "Les prestations les plus populaires du moment. Appuyez pour voir les détails et réserver.",
-    placement: "bottom",
-  },
-  {
-    target: "[data-tour='boutique']",
-    title: "Boutique",
-    desc: "Commandez vos produits beauté préférés directement depuis l'appli.",
-    placement: "top",
-  },
-  {
-    target: "[data-tour='nav-explore']",
-    title: "Services & Salons",
-    desc: "Parcourez le catalogue complet des prestations et trouvez le salon idéal.",
-    placement: "top",
-  },
-  {
-    target: "[data-tour='nav-rdv']",
-    title: "Mes rendez-vous",
-    desc: "Consultez vos réservations à venir, confirmez ou annulez en un tap.",
-    placement: "top",
-  },
+    placement: "bottom" },
+  { page: "home", target: "[data-tour='salon-mois']", title: "Salon du Mois",
+    desc: "Le salon le mieux noté du moment, classé par catégorie. Balayez pour voir les autres catégories.",
+    placement: "bottom" },
+  { page: "home", target: "[data-tour='expert-mois']", title: "Expertise du Mois",
+    desc: "Le particulier le mieux noté, spécialisé par catégorie. Balayez pour explorer.",
+    placement: "bottom" },
+
+  // ── MARIA AI ──
+  { page: "maria", navigate: "/maria", wait: 800,
+    target: "[data-tour='maria-scan']", title: "Scan Capillaire",
+    desc: "Analysez votre cuir chevelu et vos cheveux avec l'IA. Obtenez des recommandations personnalisées.",
+    placement: "bottom" },
+  { page: "maria", target: "[data-tour='maria-simulator']", title: "AI Hairstyle Changer",
+    desc: "Simulez une nouvelle coiffure sur votre photo. Essayez avant de vous décider !",
+    placement: "bottom" },
+  { page: "maria", target: "[data-tour='maria-styliste']", title: "Styliste IA",
+    desc: "L'IA vous recommande le look parfait selon votre visage, votre style et vos envies.",
+    placement: "bottom" },
+
+  // ── REELS / SOCIAL ──
+  { page: "reels", navigate: "/reels", wait: 800,
+    target: "[data-tour='reels-feed']", title: "Fil Social",
+    desc: "Découvrez les publications des coiffeurs, maquilleurs et artistes beauté. Likez, commentez, partagez.",
+    placement: "bottom" },
+  { page: "reels", target: "[data-tour='reels-offre']", title: "Offres & Réservations",
+    desc: "Chaque publication peut contenir un produit à acheter ou un service à réserver. Appuyez sur 'Offre' pour en savoir plus.",
+    placement: "left" },
+
+  // ── BOUTIQUE ──
+  { page: "boutique", navigate: "/boutique", wait: 800,
+    target: "[data-tour='boutique-search']", title: "Recherche de Produits",
+    desc: "Recherchez par nom, marque ou utilisez la recherche par image pour trouver un produit exact.",
+    placement: "bottom" },
+  { page: "boutique", target: "[data-tour='boutique-styliste']", title: "Styliste IA",
+    desc: "Un assistant IA vous recommande les produits adaptés à votre type de cheveux et vos besoins.",
+    placement: "bottom" },
+
+  // ── IMMOBILIER ──
+  { page: "immobilier", navigate: "/immobilier", wait: 800,
+    target: "[data-tour='immobilier-listings']", title: "Offres Immobilières",
+    desc: "Trouvez l'espace idéal pour ouvrir ou étendre votre salon de beauté. Locaux, équipements, tout y est.",
+    placement: "bottom" },
+
+  // ── RENDEZ-VOUS ──
+  { page: "rdv", navigate: "/rendez-vous", wait: 800,
+    target: "[data-tour='rdv-routines']", title: "Mes Routines",
+    desc: "Accédez à vos routines beauté enregistrées. Suivez vos rituels de soin personnalisés.",
+    placement: "bottom" },
+  { page: "rdv", target: "[data-tour='rdv-add']", title: "Créer une Routine",
+    desc: "Créez une nouvelle routine en combinant vos services et soins préférés.",
+    placement: "bottom" },
+
+  // ── FIDÉLITÉ ──
+  { page: "fidelite", navigate: "/programme-fidelite", wait: 800,
+    target: "[data-tour='fidelite-points']", title: "Vos Points",
+    desc: "Gagnez des points à chaque réservation ou achat. Échangez-les contre des récompenses exclusives.",
+    placement: "bottom" },
+  { page: "fidelite", target: "[data-tour='fidelite-rewards']", title: "Récompenses",
+    desc: "Services gratuits, réductions, produits offerts... Découvrez tout ce que vous pouvez obtenir.",
+    placement: "top" },
+
+  // ── PROFIL ──
+  { page: "profil", navigate: "/profil", wait: 800,
+    target: "[data-tour='profil-score']", title: "Score de Fiabilité",
+    desc: "Votre note de confiance basée sur vos avis, réservations et activité sur l'appli.",
+    placement: "bottom" },
+  { page: "profil", target: "[data-tour='profil-devenir-pro']", title: "Devenir Pro",
+    desc: "Passez au niveau supérieur ! Créez votre profil professionnel et proposez vos services.",
+    placement: "top" },
 ];
 
-function getScrollParent(el) {
-  let node = el?.parentElement;
-  while (node) {
-    const style = getComputedStyle(node);
-    if (style.overflow === "auto" || style.overflow === "scroll" || style.overflowY === "auto" || style.overflowY === "scroll") return node;
-    node = node.parentElement;
-  }
-  return window;
-}
-
 export default function UserGuide() {
+  const navigate = useNavigate();
   const [active, setActive] = useState(false);
   const [step, setStep] = useState(0);
   const [targetRect, setTargetRect] = useState(null);
-  const overlayRef = useRef(null);
+  const [navigating, setNavigating] = useState(false);
+  const measureRef = useRef(null);
 
   useEffect(() => {
     const seen = localStorage.getItem(GUIDE_KEY);
@@ -66,29 +115,64 @@ export default function UserGuide() {
     }
   }, []);
 
+  const findTarget = useCallback((sel) => {
+    return document.querySelector(sel);
+  }, []);
+
   const measure = useCallback(() => {
     const s = STEPS[step];
     if (!s) return;
-    const el = document.querySelector(s.target);
+    const el = findTarget(s.target);
     if (!el) {
       setTargetRect(null);
-      return;
+      return false;
     }
     const rect = el.getBoundingClientRect();
     setTargetRect({
-      top: rect.top,
-      left: rect.left,
-      width: rect.width,
-      height: rect.height,
+      top: rect.top, left: rect.left,
+      width: rect.width, height: rect.height,
       bottom: rect.bottom,
       centerX: rect.left + rect.width / 2,
       centerY: rect.top + rect.height / 2,
     });
-  }, [step]);
+    return true;
+  }, [step, findTarget]);
 
+  // Navigate + measure with retry
   useEffect(() => {
     if (!active) return;
-    measure();
+    const s = STEPS[step];
+    if (!s) return;
+
+    setNavigating(true);
+    setTargetRect(null);
+
+    // Navigate if needed
+    if (s.navigate) {
+      navigate(s.navigate, { replace: true });
+    }
+
+    // Measure with retry
+    const waitMs = s.wait || 300;
+    let attempts = 0;
+    const maxAttempts = 20;
+    const interval = setInterval(() => {
+      attempts++;
+      if (measure() || attempts >= maxAttempts) {
+        clearInterval(interval);
+        setNavigating(false);
+        // Scroll into view
+        const el = findTarget(s.target);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, waitMs / 2);
+
+    return () => clearInterval(interval);
+  }, [active, step, navigate, measure, findTarget]);
+
+  // Re-measure on scroll/resize
+  useEffect(() => {
+    if (!active) return;
     const onResize = () => measure();
     const onScroll = () => measure();
     window.addEventListener("resize", onResize);
@@ -98,17 +182,6 @@ export default function UserGuide() {
       window.removeEventListener("scroll", onScroll, true);
     };
   }, [active, measure]);
-
-  // Scroll target into view
-  useEffect(() => {
-    if (!active) return;
-    const s = STEPS[step];
-    if (!s) return;
-    const el = document.querySelector(s.target);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  }, [active, step]);
 
   const close = () => {
     localStorage.setItem(GUIDE_KEY, "1");
@@ -122,10 +195,17 @@ export default function UserGuide() {
     else close();
   };
 
-  if (!active || !targetRect) return null;
+  const prev = () => {
+    if (step > 0) setStep(step - 1);
+  };
+
+  if (!active || navigating) return null;
 
   const s = STEPS[step];
+  if (!s || !targetRect) return null;
+
   const isLast = step === STEPS.length - 1;
+  const isFirst = step === 0;
   const PAD = 12;
   const tooltipWidth = Math.min(300, window.innerWidth - 48);
 
@@ -134,9 +214,13 @@ export default function UserGuide() {
   if (s.placement === "bottom") {
     tooltipTop = targetRect.bottom + PAD + 8;
     tooltipLeft = Math.max(24, Math.min(targetRect.centerX - tooltipWidth / 2, window.innerWidth - tooltipWidth - 24));
-  } else {
-    tooltipTop = Math.max(16, targetRect.top - PAD - 140);
+  } else if (s.placement === "top") {
+    tooltipTop = Math.max(16, targetRect.top - PAD - 160);
     tooltipLeft = Math.max(24, Math.min(targetRect.centerX - tooltipWidth / 2, window.innerWidth - tooltipWidth - 24));
+  } else {
+    // left
+    tooltipTop = Math.max(16, targetRect.top - 20);
+    tooltipLeft = Math.max(16, targetRect.left - tooltipWidth - 20);
   }
 
   return (
@@ -157,7 +241,7 @@ export default function UserGuide() {
               />
             </mask>
           </defs>
-          <rect width="100%" height="100%" fill="rgba(0,0,0,0.55)" mask="url(#tour-mask)" />
+          <rect width="100%" height="100%" fill="rgba(0,0,0,0.6)" mask="url(#tour-mask)" />
         </svg>
 
         {/* Highlight border pulse */}
@@ -175,31 +259,37 @@ export default function UserGuide() {
 
       {/* Tooltip */}
       <div
-        ref={overlayRef}
         className="fixed z-[9999] bg-white rounded-2xl shadow-2xl px-5 py-4"
-        style={{
-          top: tooltipTop,
-          left: tooltipLeft,
-          width: tooltipWidth,
-        }}
+        style={{ top: tooltipTop, left: tooltipLeft, width: tooltipWidth }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Step counter */}
+        {/* Header: page label + step counter */}
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[10px] font-black text-primary uppercase tracking-widest">
-            {step + 1} / {STEPS.length}
+          <span className="text-[9px] font-black text-primary uppercase tracking-widest bg-primary/10 px-2 py-0.5 rounded-full">
+            {PAGES[s.page] || s.page}
           </span>
-          <button onClick={close} className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-            <X className="w-3 h-3 text-gray-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-gray-400">
+              {step + 1}/{STEPS.length}
+            </span>
+            <button onClick={close} className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+              <X className="w-3 h-3 text-gray-500" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <h3 className="text-[15px] font-black text-gray-900 mb-1">{s.title}</h3>
         <p className="text-[12px] text-gray-400 font-medium leading-relaxed mb-4">{s.desc}</p>
 
-        {/* Progress bar */}
+        {/* Navigation + progress */}
         <div className="flex items-center gap-2">
+          {!isFirst && (
+            <button onClick={prev}
+              className="w-10 h-10 border border-gray-200 rounded-full flex items-center justify-center active:scale-95 transition-all shrink-0">
+              <ChevronLeft className="w-4 h-4 text-gray-500" />
+            </button>
+          )}
           <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
             <div
               className="h-full bg-primary rounded-full transition-all duration-500"
@@ -208,7 +298,7 @@ export default function UserGuide() {
           </div>
           <button onClick={next}
             className="flex items-center gap-1.5 bg-primary text-white text-[11px] font-black px-4 py-2 rounded-full active:scale-95 transition-all shrink-0">
-            {isLast ? "C'est parti !" : "Suivant"}
+            {isLast ? "Terminer" : "Suivant"}
             {!isLast && <ChevronRight className="w-3 h-3" />}
           </button>
         </div>
@@ -222,18 +312,23 @@ export default function UserGuide() {
         )}
 
         {/* Arrow */}
-        <div
-          className="absolute w-3 h-3 bg-white rotate-45 -z-10"
-          style={{
-            ...(s.placement === "bottom"
+        {s.placement !== "left" && (
+          <div
+            className="absolute w-3 h-3 bg-white rotate-45 -z-10"
+            style={s.placement === "bottom"
               ? { top: -6, left: targetRect.centerX - tooltipLeft - 6 }
               : { bottom: -6, left: targetRect.centerX - tooltipLeft - 6 }
-            ),
-          }}
-        />
+            }
+          />
+        )}
+        {s.placement === "left" && (
+          <div
+            className="absolute w-3 h-3 bg-white rotate-45 -z-10"
+            style={{ top: 20, right: -6 }}
+          />
+        )}
       </div>
 
-      {/* Pulse animation */}
       <style>{`
         @keyframes tour-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(232,115,42,0.4); }

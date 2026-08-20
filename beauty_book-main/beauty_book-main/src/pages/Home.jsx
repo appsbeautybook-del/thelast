@@ -344,7 +344,7 @@ export default function Home() {
       </div>
 
       {/* ── Salon du Mois — fond nude ── */}
-      <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
+      <div data-tour="salon-mois" className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[18px] font-black text-gray-900">Salon du Mois</h2>
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-[10px] font-black uppercase tracking-widest shadow-md shadow-primary/30" style={{ background: "#E8732A" }}>
@@ -451,7 +451,7 @@ export default function Home() {
       )}
 
       {/* ── Expertise du Mois ── */}
-      <div className="px-4 py-4">
+      <div data-tour="expert-mois" className="px-4 py-4">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[18px] font-black text-gray-900">Expertise du Mois</h2>
           <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 rounded-full text-white text-[10px] font-black uppercase tracking-widest">

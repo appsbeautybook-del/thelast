@@ -190,7 +190,7 @@ export default function ProgrammeFidelite() {
         ) : (
           <>
             {/* Points card */}
-            <div className="bg-gradient-to-br from-primary to-orange-400 rounded-3xl p-5 shadow-lg shadow-primary/30">
+            <div data-tour="fidelite-points" className="bg-gradient-to-br from-primary to-orange-400 rounded-3xl p-5 shadow-lg shadow-primary/30">
               <p className="text-white/80 text-[12px] font-black uppercase tracking-widest mb-0.5">{user?.full_name?.toUpperCase() || "MON COMPTE"}</p>
               <div className="flex items-end justify-between">
                 <p className="text-white text-[48px] font-black leading-none">
@@ -241,7 +241,7 @@ export default function ProgrammeFidelite() {
             </div>
 
             {/* Récompenses */}
-            <div>
+            <div data-tour="fidelite-rewards">
               <p className="text-[13px] font-black text-gray-900 uppercase tracking-widest mb-3 px-1">Récompenses</p>
               <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-3 -mx-4 px-4">
                 {CATS.map(cat => (

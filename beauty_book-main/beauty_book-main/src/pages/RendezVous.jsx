@@ -576,6 +576,7 @@ export default function RendezVous() {
         <div className="flex items-center gap-2">
           {/* Tableau de bord routines */}
           <button
+            data-tour="rdv-routines"
             onClick={() => setShowRoutineDashboard(true)}
             className="w-10 h-10 bg-white border border-gray-200 rounded-2xl flex items-center justify-center shadow-sm active:scale-95 transition-all"
           >
@@ -583,6 +584,7 @@ export default function RendezVous() {
           </button>
           {/* Bouton + */}
           <button
+            data-tour="rdv-add"
             onClick={() => setShowAddMenu(true)}
             className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-md shadow-primary/30 active:scale-95 transition-all"
           >

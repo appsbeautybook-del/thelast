@@ -75,12 +75,13 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
           ) : (
             <>
               {[
-                { icon: Wand2, label: "AI Hairstyle Changer", desc: "Simule une coiffure sur ta photo", action: "simulator" },
-                { icon: Scissors, label: "Scan Capillaire", desc: "Analyse ton cuir chevelu avec IA", action: "scan" },
-                { icon: Sparkles, label: "Styliste IA", desc: "Trouve le look parfait pour toi", action: "styliste" },
-              ].map(({ icon: Icon, label, desc, action }) => (
+                { icon: Wand2, label: "AI Hairstyle Changer", desc: "Simule une coiffure sur ta photo", action: "simulator", tour: "maria-simulator" },
+                { icon: Scissors, label: "Scan Capillaire", desc: "Analyse ton cuir chevelu avec IA", action: "scan", tour: "maria-scan" },
+                { icon: Sparkles, label: "Styliste IA", desc: "Trouve le look parfait pour toi", action: "styliste", tour: "maria-styliste" },
+              ].map(({ icon: Icon, label, desc, action, tour }) => (
                 <button
                   key={label}
+                  data-tour={tour}
                   onClick={() => {
                     if (action === "simulator") { onOpenSimulator(); onClose(); }
                     if (action === "scan") { onScanCapillaire(); onClose(); }

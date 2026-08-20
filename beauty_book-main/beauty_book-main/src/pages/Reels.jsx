@@ -758,7 +758,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
           <span className="text-white text-[10px] font-black">Partager</span>
         </button>
         {/* Offre */}
-        <button onClick={() => {
+        <button data-tour="reels-offre" onClick={() => {
           if (!reel.product_id && !reel.service_id) {
             const t = toast({ title: "Aucun lien", description: "Ce réel n'est lié à aucun produit ou service.", variant: "default" });
             setTimeout(() => t.dismiss(), 3000);
@@ -1187,7 +1187,7 @@ export default function Reels() {
     <div className="relative w-full bg-black overflow-hidden font-display" style={{ height: "100dvh" }}>
 
       {/* Scroll container */}
-      <div ref={scrollRef} className="w-full overflow-y-scroll hide-scrollbar" style={{ height: "100dvh", scrollSnapType: "y mandatory" }}>
+      <div data-tour="reels-feed" ref={scrollRef} className="w-full overflow-y-scroll hide-scrollbar" style={{ height: "100dvh", scrollSnapType: "y mandatory" }}>
         {filteredFeed.map((item, feedIdx) => {
           if (item.type === "ad") {
             const adKey = item.adKey;

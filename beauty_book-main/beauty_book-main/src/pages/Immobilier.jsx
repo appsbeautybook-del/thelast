@@ -411,7 +411,7 @@ export default function Immobilier() {
       </div>
 
       {/* Listings */}
-      <div className="px-4 space-y-4">
+      <div data-tour="immobilier-listings" className="px-4 space-y-4">
         {loading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="bg-white rounded-3xl overflow-hidden animate-pulse">
