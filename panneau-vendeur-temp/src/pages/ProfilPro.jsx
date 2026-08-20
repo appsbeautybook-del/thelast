@@ -31,7 +31,7 @@ import VueClient from "@/pages/pro/VueClient";
 import ShareSheet from "@/components/ui/ShareSheet";
 
 const quickActions = [
-  { id: "beauty_pay", label: "BEAUTY PAY", Icon: CreditCard, bg: "bg-orange-100", color: "text-orange-400", route: "/pro/beauty-pay" },
+  { id: "beauty_pay", label: "BEAUTY PAY", Icon: CreditCard, bg: "bg-orange-100", color: "text-orange-400", route: null, disabled: true, badge: "Bientôt disponible" },
   { id: "services", label: "SERVICES", Icon: Scissors, bg: "bg-blue-100", color: "text-blue-400", route: "/pro/catalogue-services" },
   { id: "avis", label: "AVIS CLIENTS", Icon: Star, bg: "bg-green-100", color: "text-green-500", route: "/pro/avis-clients" },
   { id: "equipe", label: "ÉQUIPE", Icon: Users, bg: "bg-purple-100", color: "text-purple-500", route: "/pro/equipe" },
@@ -458,13 +458,17 @@ export default function ProfilPro() {
               return (
                 <button
                   key={action.id}
-                  onClick={() => action.route && navigate(action.route)}
-                  className="bg-white border border-gray-100 rounded-3xl py-7 px-4 flex flex-col items-center gap-3 shadow-sm active:scale-95 transition-all"
+                  onClick={() => !action.disabled && action.route && navigate(action.route)}
+                  disabled={action.disabled}
+                  className={`bg-white border border-gray-100 rounded-3xl py-7 px-4 flex flex-col items-center gap-3 shadow-sm transition-all ${action.disabled ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
                 >
                   <div className={`w-14 h-14 ${action.bg} rounded-2xl flex items-center justify-center`}>
                     <Icon className={`w-7 h-7 ${action.color}`} />
                   </div>
                   <span className="text-[10px] font-black text-gray-700 uppercase tracking-widest text-center">{action.label}</span>
+                  {action.badge && (
+                    <span className="text-[8px] font-bold text-orange-500 bg-orange-50 rounded-full px-2 py-0.5 mt-[-4px]">{action.badge}</span>
+                  )}
                 </button>
               );
             })}

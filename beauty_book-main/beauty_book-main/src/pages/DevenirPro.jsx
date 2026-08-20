@@ -1304,7 +1304,7 @@ export default function DevenirPro() {
       localStorage.setItem(DRAFT_KEY + "_step", prev);
       setStep(prev);
     } else {
-      navigate("/profil");
+      navigate(-1);
     }
   };
 

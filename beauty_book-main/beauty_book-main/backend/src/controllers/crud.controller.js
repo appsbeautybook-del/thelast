@@ -279,6 +279,7 @@ export const runMigrations = async (req, res) => {
     `ALTER TABLE public."MembreEquipe" ADD COLUMN IF NOT EXISTS name TEXT`,
     `ALTER TABLE public."Service" ADD COLUMN IF NOT EXISTS title TEXT`,
     `ALTER TABLE public."Service" ADD COLUMN IF NOT EXISTS style TEXT`,
+    `ALTER TABLE public."Service" ADD COLUMN IF NOT EXISTS duration_min INTEGER DEFAULT 60`,
     `ALTER TABLE public."Style" ADD COLUMN IF NOT EXISTS image_url TEXT`,
     `ALTER TABLE public."Style" ADD COLUMN IF NOT EXISTS produits_utilises jsonb DEFAULT '[]'::jsonb`,
     `ALTER TABLE public."Reel" ADD COLUMN IF NOT EXISTS images jsonb DEFAULT '[]'::jsonb`,

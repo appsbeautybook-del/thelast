@@ -727,7 +727,7 @@ export default function AjouterService() {
 
   const goBack = () => {
     if (step > 1) setStep(s => s - 1);
-    else navigate("/pro/catalogue-services");
+    else navigate(-1);
   };
 
   const canNext = () => {
@@ -776,7 +776,6 @@ export default function AjouterService() {
         title="Ajouter Service"
         subtitle={`Étape ${step} sur ${TOTAL_STEPS}`}
         dark={false}
-        backTo="/pro/catalogue-services"
       />
 
       {/* Content */}

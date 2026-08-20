@@ -294,7 +294,6 @@ export default function CatalogueServices() {
       <PageHeader
         title="Catalogue Services"
         subtitle="Gestion Professionnelle"
-        backTo="/profil-pro"
         dark={false}
         right={
           <button onClick={() => navigate("/pro/ajouter-service")} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95 transition-all">

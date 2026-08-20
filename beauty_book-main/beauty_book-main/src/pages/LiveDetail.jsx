@@ -641,7 +641,7 @@ export default function LiveDetail() {
       {!loading && !session && (
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "0 32px", textAlign: "center", zIndex: 30 }}>
           <p style={{ color: "#fff", fontSize: 18, fontWeight: 900 }}>Live introuvable ou terminé</p>
-          <button onClick={() => navigate("/live")} style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, textDecoration: "underline" }}>Retour</button>
+          <button onClick={() => navigate(-1)} style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, textDecoration: "underline" }}>Retour</button>
         </div>
       )}
 
@@ -684,7 +684,7 @@ export default function LiveDetail() {
                   {muted ? <VolumeX style={{ width: 16, height: 16, color: "#fff" }} /> : <Volume2 style={{ width: 16, height: 16, color: "#fff" }} />}
                 </button>
               )}
-              <button onClick={() => isHost ? stopLive() : navigate("/live")} style={{ width: 32, height: 32, background: "rgba(0,0,0,0.4)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
+              <button onClick={() => isHost ? stopLive() : navigate(-1)} style={{ width: 32, height: 32, background: "rgba(0,0,0,0.4)", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
                 <X style={{ width: 16, height: 16, color: "#fff" }} />
               </button>
             </div>

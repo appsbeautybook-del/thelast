@@ -1,14 +1,15 @@
 import { ArrowLeft, Sparkles, Users, MapPin, Shield, Star } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function About() {
+  const navigate = useNavigate();
   return (
     <div className="font-display min-h-full pb-24 bg-[#f8f9fa]">
       {/* Header */}
       <div className="px-5 pt-5 pb-3 flex items-center gap-3 sticky top-0 z-10 bg-white border-b border-gray-100">
-        <Link to="/profil" className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
+        <button onClick={() => navigate(-1)} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
           <ArrowLeft className="w-4 h-4 text-gray-700" />
-        </Link>
+        </button>
         <div>
           <h1 className="text-[22px] font-black text-gray-900">À propos</h1>
           <p className="text-[9px] font-black text-primary uppercase tracking-widest">BeautyBook</p>

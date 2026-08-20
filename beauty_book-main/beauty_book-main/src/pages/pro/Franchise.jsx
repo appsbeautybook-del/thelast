@@ -415,7 +415,7 @@ export default function Franchise() {
     <div className="font-display min-h-full bg-[#f5f5f5]">
       {/* Header Hero */}
       <div className="bg-[#1a2035] px-5 pt-10 pb-6">
-        <button onClick={() => navigate("/profil-pro")} className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center active:scale-95 mb-5">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center active:scale-95 mb-5">
           <ArrowLeft className="w-5 h-5 text-white" />
         </button>
         <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">BeautyBook Pro</p>

@@ -87,7 +87,6 @@ export default function AvisClients() {
         title="Avis & Notations"
         subtitle="Gestion des évaluations"
         dark={false}
-        backTo="/profil-pro"
       />
       {/* Tabs */}
       <div className="bg-white px-5 pt-4 pb-0 flex p-1 bg-gray-100 rounded-2xl mx-5 mt-4">

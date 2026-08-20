@@ -51,7 +51,7 @@ export default function Equipe() {
 
   return (
     <div className="font-display min-h-full bg-[#f0f0f0]">
-      <PageHeader title="Mon Équipe" subtitle="Administration" dark={false} backTo="/profil-pro" />
+      <PageHeader title="Mon Équipe" subtitle="Administration" dark={false} />
 
       {/* Stats Row */}
       <div className="mx-5 -mt-5 z-10 relative flex gap-3">

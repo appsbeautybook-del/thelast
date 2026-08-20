@@ -63,7 +63,7 @@ export default function CreerBundle() {
 
   return (
     <div className="font-display min-h-full" style={{ background: themeBg }}>
-      <PageHeader title="Créer un Bundle" subtitle="Gestion Professionnelle" backTo="/profil-pro" dark={false} />
+      <PageHeader title="Créer un Bundle" subtitle="Gestion Professionnelle" dark={false} />
 
       <div className="px-5 pt-5 pb-32 space-y-4">
         {/* Image + Nom */}
