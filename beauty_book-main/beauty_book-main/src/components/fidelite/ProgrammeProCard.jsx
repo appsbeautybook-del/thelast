@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
+import { reconcileProPoints } from '@/lib/fideliteClient';
 import {
   Copy, Check, Shield, Crown, Star, Gem, Zap, Users,
   TrendingUp, Eye, Palette, BarChart3, Tag, BadgeCheck,
@@ -70,7 +71,14 @@ export default function ProgrammeProCard({ user }) {
         }
       })
       .catch(() => setLoading(false))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        reconcileProPoints(user.email).then(() => {
+          entities.PointsFidelitePro.filter({ pro_email: user.email }, '-created_at', 1).then(results => {
+            if (results.length > 0) setRecord(results[0]);
+          });
+        }).catch(() => {});
+      });
   }, [user?.email]);
 
   const userPts = (record?.points_total || 0) - (record?.points_depenses || 0);

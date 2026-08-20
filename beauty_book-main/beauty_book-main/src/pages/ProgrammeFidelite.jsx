@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
+import { reconcileClientPoints } from '@/lib/fideliteClient';
 import ProgrammeProCard from "@/components/fidelite/ProgrammeProCard";
 
 const LEVELS = [
@@ -99,7 +100,16 @@ export default function ProgrammeFidelite() {
             .catch(() => entities.PointsFidelite.create(payload).then(r => { if (!cancelled) setRecord(r); }));
         }
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+        reconcileClientPoints(email).then(() => {
+          if (!cancelled) {
+            entities.PointsFidelite.filter({ user_email: email }, null, 1).then(results => {
+              if (!cancelled && results.length > 0) setRecord(results[0]);
+            });
+          }
+        }).catch(() => {});
+      });
     return () => { cancelled = true; };
   }, [email]);
 
