@@ -173,6 +173,7 @@ function ForgotPassword({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [resending, setResending] = useState(false);
   const { isLimited, remainingTime, checkLimit } = useRateLimit({ maxAttempts: 3, windowMs: 300000 });
 
   const inputClass = "w-full bg-gray-100 rounded-2xl px-4 py-4 text-[14px] font-medium text-gray-800 outline-none focus:ring-2 focus:ring-primary/40 transition-all placeholder:text-gray-400";
@@ -269,25 +270,11 @@ function ForgotPassword({ onBack }) {
           {error && (
             <div>
               <p className="text-[12px] text-red-500 font-medium">{error}</p>
-              {emailNotConfirmed && (
-                <button
-                  onClick={handleResendConfirmation}
-                  disabled={resending}
-                  className="mt-2 text-[12px] font-black underline active:scale-95 transition-all"
-                  style={{ color: "#E8732A" }}
-                >
-                  {resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
-                </button>
-              )}
-              {!emailNotConfirmed && error && (
-                <button
-                  onClick={() => setShowForgot(true)}
-                  className="mt-2 text-[12px] font-black underline active:scale-95 transition-all"
-                  style={{ color: "#E8732A" }}
-                >
-                  Réinitialiser le mot de passe
-                </button>
-              )}
+              {error.includes("impossible") || error.includes("Vérifiez") ? (
+                <p className="text-[11px] text-gray-400 font-medium mt-1">
+                  Vérifiez votre adresse email et réessayez.
+                </p>
+              ) : null}
             </div>
           )}
         </div>
@@ -387,11 +374,12 @@ export default function Connexion() {
       navigate("/", { replace: true });
     } catch (e) {
       const msg = e?.message || "";
-      if (msg.includes("Invalid login credentials") || msg.includes("invalid")) {
-        setError("Email ou mot de passe incorrect. Vérifiez vos identifiants ou créez un compte.");
-      } else if (msg.includes("Email not confirmed") || msg.includes("not confirmed")) {
+      if (msg.includes("Email not confirmed") || msg.includes("not confirmed")) {
         setEmailNotConfirmed(true);
-        setError("Votre email n'est pas encore confirmé.");
+        setError("Votre email n'est pas encore confirmé. Vérifiez votre boîte mail.");
+      } else if (msg.includes("Invalid login credentials") || msg.includes("invalid")) {
+        setEmailNotConfirmed(true);
+        setError("Email ou mot de passe incorrect. Vérifiez vos identifiants ou créez un compte.");
       } else if (msg.includes("Too many")) {
         setError("Trop de tentatives. Réessayez dans quelques minutes.");
       } else if (msg.includes("provider") || msg.includes("not enabled")) {
@@ -519,7 +507,30 @@ export default function Connexion() {
             </button>
           </div>
 
-          {error && <p className="text-[12px] text-red-500 font-medium">{error}</p>}
+          {error && (
+            <div>
+              <p className="text-[12px] text-red-500 font-medium">{error}</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                {emailNotConfirmed && (
+                  <button
+                    onClick={handleResendConfirmation}
+                    disabled={resending}
+                    className="text-[12px] font-black underline active:scale-95 transition-all"
+                    style={{ color: "#E8732A" }}
+                  >
+                    {resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowForgot(true)}
+                  className="text-[12px] font-black underline active:scale-95 transition-all"
+                  style={{ color: "#E8732A" }}
+                >
+                  Réinitialiser le mot de passe
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4 mt-6">

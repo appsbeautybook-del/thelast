@@ -5,7 +5,7 @@ import {
   Scissors, Clock, Star, Zap, Check, Store, Phone, MapPin,
   Building2, FileText, Image, Palette, Wifi, Car, Snowflake,
   Baby, Coffee, CreditCard, Accessibility, Shirt, Sofa, ShowerHead,
-  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, Moon, PawPrint, Copy
+  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, Moon, PawPrint, Copy, Search
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -74,6 +74,7 @@ export default function ModifierProfilPro() {
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState({ infos: true });
   const [newService, setNewService] = useState({ name: "", price: "" });
+  const [catalogueOptions, setCatalogueOptions] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const avatarRef = useRef(null);
@@ -92,6 +93,7 @@ export default function ModifierProfilPro() {
   const [proServices, setProServices] = useState([]);
   const [uploadingBundleImg, setUploadingBundleImg] = useState(false);
   const bundleImgRef = useRef(null);
+  const [bundleServiceSearch, setBundleServiceSearch] = useState("");
 
   useEffect(() => {
     if (!user?.email) return;
@@ -136,8 +138,10 @@ export default function ModifierProfilPro() {
     let cancelled = false;
     supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false })
       .then(({ data }) => { if (!cancelled) setBundles(data || []); });
-    supabase.from("Service").select("id,title,price,images").eq("pro_email", user.email).eq("status", "actif").order("created_at", { ascending: false })
+    supabase.from("Service").select("id,title,name,price,images,status").eq("pro_email", user.email).order("created_at", { ascending: false })
       .then(({ data }) => { if (!cancelled) setProServices(data || []); });
+    supabase.from("CatalogueOption").select("*").eq("pro_email", user.email).order("usage_count", { ascending: false })
+      .then(({ data }) => { if (!cancelled) setCatalogueOptions(data || []); });
     return () => { cancelled = true; };
   }, [user?.email]);
 
@@ -742,20 +746,46 @@ export default function ModifierProfilPro() {
           )}
         </div>
 
-        {/* Services supplémentaires */}
+        {/* Services supplémentaires — synchronisé avec Catalogue d'options */}
         <div className={sectionCls}>
           <button onClick={() => toggleSection('services')} className="w-full flex items-center gap-3 p-4">
             <div className="w-11 h-11 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl flex items-center justify-center">
               <Scissors className="w-5 h-5 text-emerald-500" />
             </div>
             <p className="flex-1 text-left text-[14px] font-black text-gray-900">Services supplémentaires</p>
+            {catalogueOptions.length > 0 && (
+              <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full">{catalogueOptions.length}</span>
+            )}
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform ${expanded.services ? 'rotate-180' : ''}`}>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </div>
           </button>
           {expanded.services && (
             <div className="px-4 pb-4 space-y-3">
-              {data.additional_services.length > 0 && (
+              {catalogueOptions.length > 0 ? (
+                <div className="space-y-2">
+                  {catalogueOptions.map((opt) => (
+                    <div key={opt.id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-black text-gray-900 truncate">{opt.name}</p>
+                        <div className="flex items-center gap-2">
+                          {opt.price > 0 && <p className="text-[11px] font-bold text-primary">{opt.price}€</p>}
+                          {opt.usage_count > 0 && <p className="text-[10px] text-gray-400">{opt.usage_count} utilisation(s)</p>}
+                          {opt.category && <p className="text-[10px] text-gray-400">· {opt.category}</p>}
+                        </div>
+                      </div>
+                      <button onClick={async () => {
+                        await supabase.from("CatalogueOption").delete().eq("id", opt.id);
+                        setCatalogueOptions(prev => prev.filter(o => o.id !== opt.id));
+                        setData(d => ({ ...d, additional_services: d.additional_services.filter(s => s.name !== opt.name) }));
+                      }}
+                        className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 active:scale-95">
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : data.additional_services.length > 0 ? (
                 <div className="space-y-2">
                   {data.additional_services.map((s, i) => (
                     <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
@@ -770,6 +800,8 @@ export default function ModifierProfilPro() {
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p className="text-[12px] text-gray-400 text-center py-2">Aucun service supplémentaire</p>
               )}
               <div className="flex gap-2">
                 <input value={newService.name} onChange={e => setNewService(s => ({ ...s, name: e.target.value }))}
@@ -777,9 +809,15 @@ export default function ModifierProfilPro() {
                 <input value={newService.price} onChange={e => setNewService(s => ({ ...s, price: e.target.value }))}
                   placeholder="Prix €" type="number" className="w-20 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
               </div>
-              <button onClick={() => {
+              <button onClick={async () => {
                 if (!newService.name.trim()) return;
-                setData(d => ({ ...d, additional_services: [...d.additional_services, { name: newService.name.trim(), price: newService.price || "" }] }));
+                const name = newService.name.trim();
+                const price = newService.price || "";
+                const { data: inserted } = await supabase.from("CatalogueOption").insert({
+                  name, price: parseFloat(price) || 0, pro_email: user.email, usage_count: 1, category: "Supplément"
+                }).select();
+                if (inserted?.[0]) setCatalogueOptions(prev => [inserted[0], ...prev]);
+                setData(d => ({ ...d, additional_services: [...d.additional_services, { name, price }] }));
                 setNewService({ name: "", price: "" });
               }} disabled={!newService.name.trim()}
                 className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-[#E8732A]/40 hover:text-[#E8732A] transition-colors active:scale-95 disabled:opacity-40">
@@ -882,23 +920,42 @@ export default function ModifierProfilPro() {
                     {proServices.length === 0 ? (
                       <p className="text-[12px] text-gray-400 text-center py-3">Aucun service disponible</p>
                     ) : (
-                      <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                        {proServices.map(s => {
-                          const selected = bundleForm.service_ids.includes(s.id);
-                          return (
-                            <div key={s.id} onClick={() => toggleBundleService(s.id)}
-                              className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${selected ? 'bg-pink-100 border border-pink-300' : 'bg-white border border-gray-200'}`}>
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selected ? 'bg-[#E8732A] border-[#E8732A]' : 'border-gray-300'}`}>
-                                {selected && <Check className="w-3 h-3 text-white" />}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-[12px] font-black text-gray-900 truncate">{s.title || s.name}</p>
-                                <p className="text-[11px] text-gray-400">{s.price}€</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <>
+                        <div className="relative mb-2">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <input
+                            type="text"
+                            value={bundleServiceSearch}
+                            onChange={e => setBundleServiceSearch(e.target.value)}
+                            placeholder="Rechercher un service..."
+                            className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-[12px] outline-none focus:border-[#E8732A]"
+                          />
+                          {bundleServiceSearch && (
+                            <button onClick={() => setBundleServiceSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                              <X className="w-3.5 h-3.5 text-gray-400" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                          {proServices
+                            .filter(s => !bundleServiceSearch || (s.title || s.name || "").toLowerCase().includes(bundleServiceSearch.toLowerCase()))
+                            .map(s => {
+                              const selected = bundleForm.service_ids.includes(s.id);
+                              return (
+                                <div key={s.id} onClick={() => toggleBundleService(s.id)}
+                                  className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${selected ? 'bg-pink-100 border border-pink-300' : 'bg-white border border-gray-200'}`}>
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selected ? 'bg-[#E8732A] border-[#E8732A]' : 'border-gray-300'}`}>
+                                    {selected && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[12px] font-black text-gray-900 truncate">{s.title || s.name}</p>
+                                    <p className="text-[11px] text-gray-400">{s.price}€</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </>
                     )}
                   </div>
 
@@ -927,8 +984,8 @@ export default function ModifierProfilPro() {
 
               {!showBundleForm && (
                 <button onClick={() => { setShowBundleForm(true); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" }); }}
-                  className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-pink-400/40 hover:text-pink-500 transition-colors active:scale-95">
-                  <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
+                  className="w-full bg-gradient-to-r from-[#E8732A] to-[#F59E0B] text-white rounded-2xl py-4 flex items-center justify-center gap-2 text-[13px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/25 active:scale-95 transition-all">
+                  <Plus className="w-5 h-5" /> AJOUTER UN BUNDLE
                 </button>
               )}
             </div>

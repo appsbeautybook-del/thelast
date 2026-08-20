@@ -573,7 +573,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
       try { return JSON.parse(localStorage.getItem('pro_profile_cache') || 'null'); } catch { return null; }
     };
     const fetchProfil = async () => {
-      const { data: profiles, error } = await supabase.from('ProfilPro').select('id, user_email, salon_name, phone, address, city, bio, avatar_url, cover_url, galerie_urls, followers').eq('user_email', targetEmail).order('created_at', { ascending: false });
+      const { data: profiles, error } = await supabase.from('ProfilPro').select('id, user_email, salon_name, phone, address, city, bio, avatar_url, cover_url, galerie_urls, followers, ouverture, horaires, pauses, travail_nuit, conges').eq('user_email', targetEmail).order('created_at', { ascending: false });
       if (error || !profiles || profiles.length === 0) return null;
       // Priority: 1) actif with images, 2) actif, 3) any with images, 4) latest
       const activeWithImages = profiles.find(p => p.status === 'actif' && (p.avatar_url || p.cover_url));
@@ -803,7 +803,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
           {(() => {
             const days = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
             const now = new Date();
-            const d = proInfo?.ouverture?.[days[now.getDay()]];
+            const d = proInfo?.ouverture?.[days[now.getDay()]] || proInfo?.horaires?.[days[now.getDay()]];
             if (!d) return null;
             if (!d.open) return <span className="bg-red-50 text-red-500 text-[10px] font-black px-2.5 py-1 rounded-full border border-red-200">● Fermé</span>;
             const [sh, sm] = (d.start || "00:00").split(":").map(Number);
@@ -948,8 +948,8 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0"><Calendar className="w-5 h-5 text-blue-500" /></div>
                 <div className="flex-1">
                   <p className="text-[13px] font-black text-gray-800 mb-2">Horaires d'ouverture</p>
-                  {proInfo?.ouverture ? (
-                    Object.entries(proInfo.ouverture)
+                  {(proInfo?.ouverture || proInfo?.horaires) ? (
+                    Object.entries(proInfo.ouverture || proInfo.horaires)
                       .filter(([day]) => ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"].includes(day))
                       .map(([day, d]) => (
                       <div key={day} className="flex items-center justify-between py-0.5">

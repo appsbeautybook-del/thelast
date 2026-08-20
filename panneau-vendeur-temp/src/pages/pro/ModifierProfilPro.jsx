@@ -46,6 +46,7 @@ export default function ModifierProfilPro() {
     salon_name: "", phone: "", address: "", city: "",
     seats: 1, bio: "", avatar_url: "", cover_url: "",
     specialites: [], commodites: [], hours: {},
+    conges: [], travail_nuit: false,
     menu_items: [], additional_services: [],
     galerie_urls: [],
   });
@@ -63,7 +64,7 @@ export default function ModifierProfilPro() {
 
   useEffect(() => {
     if (!user?.email) return;
-    supabase.from('ProfilPro').select('id, user_email, salon_name, phone, address, city, bio, avatar_url, cover_url, galerie_urls, horaires, ouverture, seats_count, specialites, commodites').eq('user_email', user.email).maybeSingle()
+    supabase.from('ProfilPro').select('id, user_email, salon_name, phone, address, city, bio, avatar_url, cover_url, galerie_urls, horaires, ouverture, seats_count, specialites, commodites, pauses, travail_nuit, conges').eq('user_email', user.email).maybeSingle()
       .then(({ data: p }) => {
         let profile = p;
         if (!profile) {
@@ -81,14 +82,20 @@ export default function ModifierProfilPro() {
         }
         if (profile) {
           const h = {};
-          DAYS.forEach(d => { h[d.toLowerCase()] = { open: false, start: "09:00", end: "19:00" }; });
-          const src = profile.horaires || profile.ouverture;
+          const dayNames = ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
+          dayNames.forEach(d => { h[d] = { open: false, start: "09:00", end: "19:00", pause_start: "", pause_end: "" }; });
+          const src = profile.ouverture || profile.horaires;
           if (src && typeof src === 'object' && !Array.isArray(src)) {
             Object.keys(src).forEach(k => {
               const lk = k.toLowerCase();
-              const dayNames = ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
-              if (dayNames.includes(lk) && typeof src[k] === 'object' && src[k] !== null) {
-                h[lk] = { ...h[lk], ...src[k] };
+              if (dayNames.includes(lk) && typeof src[lk] === 'object' && src[lk] !== null) {
+                h[lk] = {
+                  open: src[lk].open !== undefined ? src[lk].open : true,
+                  start: src[lk].start || "09:00",
+                  end: src[lk].end || "19:00",
+                  pause_start: src[lk].pause_start || "",
+                  pause_end: src[lk].pause_end || "",
+                };
               }
             });
           } else if (Array.isArray(src)) {
@@ -99,7 +106,10 @@ export default function ModifierProfilPro() {
             city: profile.city || "", seats: profile.seats_count || 1,
             bio: profile.bio || "", avatar_url: profile.avatar_url || "", cover_url: profile.cover_url || "",
             specialites: profile.specialites || [], commodites: profile.commodites || [],
-            hours: h, menu_items: profile.menu_restaurant || [], additional_services: profile.additional_services || [],
+            hours: h,
+            conges: profile.conges || (src?.conges) || [],
+            travail_nuit: profile.travail_nuit || false,
+            menu_items: profile.menu_restaurant || [], additional_services: profile.additional_services || [],
             galerie_urls: Array.isArray(profile.galerie_urls) ? profile.galerie_urls : [],
           });
         }
@@ -212,10 +222,27 @@ export default function ModifierProfilPro() {
         seats_count: data.seats,
         specialites: data.specialites,
         commodites: data.commodites,
+        ouverture: { ...data.hours, conges: data.conges },
         horaires: data.hours,
+        travail_nuit: data.travail_nuit,
         galerie_urls: data.galerie_urls || [],
         updated_at: new Date().toISOString(),
       };
+
+      // Générer les pauses au format attendu par StepCalendar
+      const pauseMap = {};
+      const dayNames = ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
+      dayNames.forEach(day => {
+        const h = data.hours[day] || { open: false, start: "09:00", end: "19:00", pause_start: "", pause_end: "" };
+        if (h.open && h.pause_start && h.pause_end) {
+          const key = `${h.pause_start}-${h.pause_end}`;
+          if (!pauseMap[key]) {
+            pauseMap[key] = { start: h.pause_start, end: h.pause_end, days: [] };
+          }
+          pauseMap[key].days.push(day);
+        }
+      });
+      extra.pauses = Object.values(pauseMap);
       if (existing?.id) {
         await supabase.from('ProfilPro').update(extra).eq('id', existing.id);
       }
@@ -432,9 +459,24 @@ export default function ModifierProfilPro() {
           </button>
           {expanded.horaires && (
             <div className="px-4 pb-4 space-y-2">
+              {/* Mode Nuit */}
+              <div onClick={() => setData(d => ({ ...d, travail_nuit: !d.travail_nuit }))} className={`rounded-2xl p-3.5 flex items-center gap-3 cursor-pointer transition-all ${data.travail_nuit ? "bg-indigo-50 border border-indigo-100" : "bg-gray-50 border border-gray-100"}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${data.travail_nuit ? "bg-indigo-100" : "bg-gray-200"}`}>
+                  <Clock className={`w-5 h-5 ${data.travail_nuit ? "text-indigo-500" : "text-gray-400"}`} />
+                </div>
+                <div className="flex-1">
+                  <p className={`text-[12px] font-black ${data.travail_nuit ? "text-indigo-700" : "text-gray-700"}`}>Mode Nuit</p>
+                  <p className="text-[10px] text-gray-400">{data.travail_nuit ? "21h – 07h" : "09h – 19h"}</p>
+                </div>
+                <div className={`w-10 h-5 rounded-full transition-colors flex items-center px-0.5 ${data.travail_nuit ? "bg-indigo-500" : "bg-gray-300"}`}>
+                  <div className={`w-4 h-4 bg-white rounded-full shadow transition-all ${data.travail_nuit ? "translate-x-5" : "translate-x-0"}`} />
+                </div>
+              </div>
+
               {DAYS.map(day => {
                 const lk = day.toLowerCase();
-                const h = data.hours[lk] || { open: false, start: "09:00", end: "19:00" };
+                const h = data.hours[lk] || { open: false, start: "09:00", end: "19:00", pause_start: "", pause_end: "" };
+                const hasPause = h.pause_start || h.pause_end;
                 return (
                   <div key={day} className="bg-gray-50 rounded-2xl p-3.5">
                     <div className="flex items-center justify-between mb-2.5">
@@ -444,15 +486,69 @@ export default function ModifierProfilPro() {
                       </div>
                     </div>
                     {h.open && (
-                      <div className="flex items-center gap-2">
-                        <input type="time" value={h.start} onChange={e => updateHours(lk, 'start', e.target.value)} className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
-                        <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
-                        <input type="time" value={h.end} onChange={e => updateHours(lk, 'end', e.target.value)} className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
-                      </div>
+                      <>
+                        <div className="flex items-center gap-2">
+                          <input type="time" value={h.start} onChange={e => updateHours(lk, 'start', e.target.value)} className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
+                          <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                          <input type="time" value={h.end} onChange={e => updateHours(lk, 'end', e.target.value)} className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-700" />
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-12">Pause</span>
+                          <input type="time" value={h.pause_start || ""} onChange={e => updateHours(lk, 'pause_start', e.target.value)} className="flex-1 bg-white border border-gray-100 rounded-xl px-3 py-2 text-[12px] text-gray-500 placeholder:text-gray-300" placeholder="Début" />
+                          <ArrowRight className="w-3.5 h-3.5 text-gray-300 flex-shrink-0" />
+                          <input type="time" value={h.pause_end || ""} onChange={e => updateHours(lk, 'pause_end', e.target.value)} className="flex-1 bg-white border border-gray-100 rounded-xl px-3 py-2 text-[12px] text-gray-500 placeholder:text-gray-300" placeholder="Fin" />
+                          {hasPause && (
+                            <button onClick={() => { updateHours(lk, 'pause_start', ''); updateHours(lk, 'pause_end', ''); }} className="w-7 h-7 flex items-center justify-center">
+                              <Trash2 className="w-3 h-3 text-gray-300" />
+                            </button>
+                          )}
+                        </div>
+                      </>
                     )}
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Congés */}
+        <div className={sectionCls}>
+          <button onClick={() => toggleSection('conges')} className="w-full flex items-center gap-3 p-4">
+            <div className="w-11 h-11 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl flex items-center justify-center">
+              <Trash2 className="w-5 h-5 text-red-400" />
+            </div>
+            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Congés</p>
+            {data.conges.length > 0 && (
+              <span className="bg-red-100 text-red-600 text-[10px] font-black px-2 py-0.5 rounded-full">{data.conges.length}</span>
+            )}
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform ${expanded.conges ? 'rotate-180' : ''}`}>
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            </div>
+          </button>
+          {expanded.conges && (
+            <div className="px-4 pb-4 space-y-3">
+              {data.conges.length > 0 && data.conges.sort((a, b) => a.debut?.localeCompare(b.debut)).map(c => (
+                <div key={c.id} className="flex items-center gap-3 bg-red-50 rounded-2xl px-4 py-3 border border-red-100">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-black text-gray-900">{c.label || "Congés"}</p>
+                    <p className="text-[11px] font-medium text-gray-500">{c.debut} → {c.fin}</p>
+                  </div>
+                  <button onClick={() => setData(d => ({ ...d, conges: d.conges.filter(x => x.id !== c.id) }))} className="w-8 h-8 flex items-center justify-center">
+                    <Trash2 className="w-4 h-4 text-red-400" />
+                  </button>
+                </div>
+              ))}
+              <button onClick={() => {
+                const debut = prompt("Date de début (YYYY-MM-DD):");
+                const fin = prompt("Date de fin (YYYY-MM-DD):");
+                const label = prompt("Motif (optionnel):");
+                if (debut && fin) {
+                  setData(d => ({ ...d, conges: [...d.conges, { id: Date.now().toString(), debut, fin, label: label || "" }] }));
+                }
+              }} className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-4 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-red-300 hover:text-red-400 transition-colors">
+                <Plus className="w-4 h-4" /> AJOUTER UNE PERIODE DE CONGES
+              </button>
             </div>
           )}
         </div>

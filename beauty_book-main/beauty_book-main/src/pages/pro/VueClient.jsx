@@ -566,6 +566,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
   const [publications, setPublications] = useState([]);
   const [services, setServices] = useState([]);
   const [bundles, setBundles] = useState([]);
+  const [catalogueOptions, setCatalogueOptions] = useState([]);
   const [proInfo, setProInfo] = useState(null);
   const [proInfoId, setProInfoId] = useState(null);
   const [showMenuModal, setShowMenuModal] = useState(false);
@@ -606,17 +607,19 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
       return { ...p, avatar_url: cached.avatar_url || p.avatar_url, cover_url: cached.cover_url || p.cover_url, salon_name: cached.salon_name || p.salon_name, bio: cached.bio || p.bio, city: cached.city || p.city, phone: cached.phone || p.phone, address: cached.address || p.address };
     };
     const fetchData = async () => {
-      const [reels, profileRaw, svcs, avis, demandes, bundleData] = await Promise.all([
+      const [reels, profileRaw, svcs, avis, demandes, bundleData, catOpts] = await Promise.all([
         entities.Reel.filter({ author_email: targetEmail, status: "publie" }, "-created_at", 30).catch(() => []),
         fetchProfil(),
         entities.Service.filter({ pro_email: targetEmail, status: "actif" }, "-created_at", 50).catch(() => []),
         entities.Avis.filter({ cible_email: targetEmail, type: "client_to_pro" }, "-created_at", 100).catch(() => []),
         entities.DemandeProV2.filter({ user_email: targetEmail, statut: "approuvee" }, "-created_at", 1).catch(() => []),
         entities.ServiceBundle.filter({ pro_email: targetEmail, is_active: true }, "-created_at", 20).catch(() => []),
+        supabase.from("CatalogueOption").select("*").eq("pro_email", targetEmail).order("usage_count", { ascending: false }).then(r => r.data || []).catch(() => []),
       ]);
       setPublications(reels);
       setServices(svcs);
       setBundles(bundleData);
+      setCatalogueOptions(catOpts);
       const profile = applyCache(profileRaw);
       if (profile) {
         setProInfo(profile);
@@ -1133,15 +1136,18 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
             />
           </div>
 
-          {/* Services Supplémentaires */}
-          {proInfo?.additional_services?.length > 0 && (
+          {/* Services Supplémentaires — synchronisé avec Catalogue d'options */}
+          {catalogueOptions.length > 0 && (
             <div className="px-4 mt-4 pb-4">
               <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-3">Services Supplémentaires</p>
               <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                {proInfo.additional_services.map((s, i) => (
-                  <div key={i} className={`flex items-center justify-between gap-3 p-4 ${i < proInfo.additional_services.length - 1 ? "border-b border-gray-100" : ""}`}>
-                    <p className="text-[13px] font-black text-gray-800">{s.name}</p>
-                    {s.price > 0 && <span className="text-[13px] font-black text-primary">{s.price}€</span>}
+                {catalogueOptions.map((opt, i) => (
+                  <div key={opt.id} className={`flex items-center justify-between gap-3 p-4 ${i < catalogueOptions.length - 1 ? "border-b border-gray-100" : ""}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-black text-gray-800 truncate">{opt.name}</p>
+                      {opt.category && <p className="text-[10px] text-gray-400">{opt.category}</p>}
+                    </div>
+                    {opt.price > 0 && <span className="text-[13px] font-black text-primary">{opt.price}€</span>}
                   </div>
                 ))}
               </div>
