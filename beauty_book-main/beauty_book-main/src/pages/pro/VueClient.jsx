@@ -15,6 +15,7 @@ import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { useCall } from "@/components/call/CallManager";
 import { useTheme } from "@/hooks/useTheme";
+import VTCSection from "@/components/service/VTCSection";
 
 function getBannerGradient(theme) {
   if (theme === "night") return "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 60%, #000000 100%)";
@@ -1035,7 +1036,6 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
             <div className="px-4 mt-4">
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Menu / Carte</p>
-                {/* Boutons commande livraison */}
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
@@ -1078,6 +1078,42 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               </div>
             </div>
           )}
+
+          {/* Menu Bar & Boissons */}
+          {proInfo?.menu_bar?.length > 0 && (
+            <div className="px-4 mt-4">
+              <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-3">Menu Bar & Boissons</p>
+              <div className="space-y-2">
+                {proInfo.menu_bar.map((item, i) => (
+                  <div key={i} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm flex cursor-pointer active:scale-[0.99] transition-all" onClick={() => setSelectedPlat(item)}>
+                    {item.image_url ? (
+                      <div className="w-24 h-24 shrink-0">
+                        <img src={item.image_url} alt={item.nom} className="w-full h-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 shrink-0 bg-gray-100 flex items-center justify-center">
+                        <span className="text-[28px]">🍷</span>
+                      </div>
+                    )}
+                    <div className="flex-1 p-3 flex flex-col justify-center">
+                      <p className="text-[14px] font-black text-gray-800">{item.nom}</p>
+                      {item.description && <p className="text-[11px] text-gray-400 font-medium mt-0.5 line-clamp-2">{item.description}</p>}
+                      {item.prix > 0 && <span className="text-[15px] font-black text-primary mt-1">{item.prix}€</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* VTC & Taxis */}
+          <div className="px-4 mt-4">
+            <VTCSection
+              destinationLat={proInfo?.latitude}
+              destinationLng={proInfo?.longitude}
+              destinationAddress={proInfo?.address || proAddress}
+            />
+          </div>
 
           {/* Services Additionnels */}
           {proInfo?.services_additionnels?.length > 0 && (

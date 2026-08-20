@@ -1273,6 +1273,8 @@ export default function DevenirPro() {
           has_diplome: (data.diplomes || []).length > 0,
           address: data.address || "",
           city: data.city || "",
+          menu_restaurant: data.menu_restaurant || [],
+          menu_bar: data.menu_bar || [],
           statut: "en_attente",
         };
 

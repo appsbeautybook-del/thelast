@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Camera, Plus, Trash2, ChevronDown, ChevronUp,
+  ArrowLeft, Camera, Plus, Trash2, ChevronDown, ChevronUp, X,
   Scissors, Clock, Star, Zap, Check, Store, Phone, MapPin,
   Building2, FileText, Image, Palette, Wifi, Car, Snowflake,
   Baby, Coffee, CreditCard, Accessibility, Shirt, Sofa, ShowerHead,
@@ -48,7 +48,7 @@ export default function ModifierProfilPro() {
     salon_name: "", phone: "", address: "", city: "",
     seats: 1, bio: "", avatar_url: "", cover_url: "",
     specialites: [], commodites: [], hours: {},
-    menu_items: [], additional_services: [],
+    menu_restaurant: [], menu_bar: [], additional_services: [],
     galerie_urls: [],
   });
   const [coords, setCoords] = useState(null);
@@ -56,15 +56,17 @@ export default function ModifierProfilPro() {
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState({ infos: true });
   const [newService, setNewService] = useState({ name: "", price: "" });
-  const [newMenuItem, setNewMenuItem] = useState({ name: "", price: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const avatarRef = useRef(null);
   const bannerRef = useRef(null);
   const galerieRef = useRef(null);
+  const menuImgRefs = useRef({});
+  const barImgRefs = useRef({});
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingGalerie, setUploadingGalerie] = useState(false);
+  const [uploadingMenuImg, setUploadingMenuImg] = useState({});
 
   useEffect(() => {
     if (!user?.email) return;
@@ -94,7 +96,8 @@ export default function ModifierProfilPro() {
             city: profile.city || "", seats: profile.seats_count || 1,
             bio: profile.bio || "", avatar_url: profile.avatar_url || "", cover_url: profile.cover_url || "",
             specialites: profile.specialites || [], commodites: profile.commodites || [],
-            hours: h, menu_items: profile.menu_restaurant || [], additional_services: profile.additional_services || [],
+            hours: h, menu_restaurant: profile.menu_restaurant || [], menu_bar: profile.menu_bar || [],
+            additional_services: profile.additional_services || [],
             galerie_urls: Array.isArray(profile.galerie_urls) ? profile.galerie_urls : [],
           });
         }
@@ -124,6 +127,43 @@ export default function ModifierProfilPro() {
 
   const toggleDay = (day) => {
     setData(d => ({ ...d, hours: { ...d.hours, [day]: { ...d.hours[day], open: !d.hours[day]?.open } } }));
+  };
+
+  // Menu restaurant helpers
+  const addMenuItem = () => setData(d => ({ ...d, menu_restaurant: [...(d.menu_restaurant || []), { nom: "", prix: "", description: "", image_url: "" }] }));
+  const updateMenuItem = (i, field, val) => {
+    const arr = [...(data.menu_restaurant || [])];
+    arr[i] = { ...arr[i], [field]: val };
+    setData(d => ({ ...d, menu_restaurant: arr }));
+  };
+  const removeMenuItem = (i) => setData(d => ({ ...d, menu_restaurant: (d.menu_restaurant || []).filter((_, idx) => idx !== i) }));
+
+  // Menu bar helpers
+  const addBarItem = () => setData(d => ({ ...d, menu_bar: [...(d.menu_bar || []), { nom: "", prix: "", description: "", image_url: "" }] }));
+  const updateBarItem = (i, field, val) => {
+    const arr = [...(data.menu_bar || [])];
+    arr[i] = { ...arr[i], [field]: val };
+    setData(d => ({ ...d, menu_bar: arr }));
+  };
+  const removeBarItem = (i) => setData(d => ({ ...d, menu_bar: (d.menu_bar || []).filter((_, idx) => idx !== i) }));
+
+  const uploadMenuImg = async (i, file, type) => {
+    if (!file) return;
+    const key = `${type}_${i}`;
+    setUploadingMenuImg(u => ({ ...u, [key]: true }));
+    const { file_url } = await uploadFile({ file });
+    if (type === "resto") updateMenuItem(i, "image_url", file_url);
+    else updateBarItem(i, "image_url", file_url);
+    setUploadingMenuImg(u => ({ ...u, [key]: false }));
+  };
+
+  const openUber = () => {
+    const addr = encodeURIComponent(data.address || "");
+    window.open(`https://www.ubereats.com/fr/search?q=${addr}`, "_blank");
+  };
+  const openDeliveroo = () => {
+    const addr = encodeURIComponent(data.address || "");
+    window.open(`https://deliveroo.fr/fr/restaurants?q=${addr}`, "_blank");
   };
 
   const handlePhotoUpload = async (e, type) => {
@@ -211,7 +251,8 @@ export default function ModifierProfilPro() {
         horaires: data.hours,
         ouverture: data.hours,
         galerie_urls: data.galerie_urls || [],
-        menu_restaurant: data.menu_items || [],
+        menu_restaurant: data.menu_restaurant || [],
+        menu_bar: data.menu_bar || [],
         additional_services: data.additional_services || [],
         updated_at: new Date().toISOString(),
       };
@@ -584,37 +625,141 @@ export default function ModifierProfilPro() {
             </div>
           </button>
           {expanded.menu && (
-            <div className="px-4 pb-4 space-y-3">
-              {data.menu_items.length > 0 && (
+            <div className="px-4 pb-4 space-y-6">
+              {/* Menu Restaurant */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Menu Restaurant</p>
+                    <p className="text-[11px] text-gray-300 font-medium mt-0.5">Plats & boissons proposés</p>
+                  </div>
+                  <button onClick={addMenuItem} className="flex items-center gap-1.5 bg-primary/10 rounded-full px-3 py-1.5 active:scale-95 transition-all">
+                    <Plus className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[11px] font-black text-primary">Ajouter</span>
+                  </button>
+                </div>
                 <div className="space-y-2">
-                  {data.menu_items.map((m, i) => (
-                    <div key={i} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-2.5">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-black text-gray-900 truncate">{m.name}</p>
-                        {m.price && <p className="text-[11px] font-bold text-primary">{m.price}€</p>}
+                  {(data.menu_restaurant || []).map((item, i) => (
+                    <div key={i} className="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="relative shrink-0">
+                          <input ref={el => menuImgRefs.current[i] = el} type="file" accept="image/*" className="hidden"
+                            onChange={e => uploadMenuImg(i, e.target.files?.[0], "resto")} />
+                          <div onClick={() => menuImgRefs.current[i]?.click()}
+                            className="w-12 h-12 rounded-xl overflow-hidden bg-white border-2 border-dashed border-gray-200 flex items-center justify-center cursor-pointer active:scale-95 transition-all">
+                            {uploadingMenuImg[`resto_${i}`] ? (
+                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            ) : item.image_url ? (
+                              <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Camera className="w-4 h-4 text-gray-300" />
+                            )}
+                          </div>
+                        </div>
+                        <input value={item.nom} onChange={e => updateMenuItem(i, "nom", e.target.value)} placeholder="Nom du plat"
+                          className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[13px] font-bold text-gray-700 outline-none" />
+                        <div className="flex items-center gap-1 shrink-0">
+                          <input type="number" value={item.prix} onChange={e => updateMenuItem(i, "prix", e.target.value)} placeholder="0"
+                            className="w-14 bg-white border border-gray-200 rounded-xl px-2 py-2 text-[13px] font-black text-primary text-right outline-none" />
+                          <span className="text-[12px] font-black text-primary">€</span>
+                        </div>
+                        <button onClick={() => removeMenuItem(i)} className="w-7 h-7 bg-red-50 rounded-full flex items-center justify-center active:scale-95">
+                          <X className="w-3.5 h-3.5 text-red-400" />
+                        </button>
                       </div>
-                      <button onClick={() => setData(d => ({ ...d, menu_items: d.menu_items.filter((_, j) => j !== i) }))}
-                        className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0 active:scale-95">
-                        <Trash2 className="w-4 h-4 text-red-400" />
-                      </button>
+                      <input value={item.description} onChange={e => updateMenuItem(i, "description", e.target.value)} placeholder="Description (optionnel)"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-400 outline-none" />
                     </div>
                   ))}
+                  {(data.menu_restaurant || []).length === 0 && (
+                    <button onClick={addMenuItem} className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 text-[12px] font-black text-gray-300 uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                      <UtensilsCrossed className="w-4 h-4" /> Ajouter un plat
+                    </button>
+                  )}
                 </div>
-              )}
-              <div className="flex gap-2">
-                <input value={newMenuItem.name} onChange={e => setNewMenuItem(m => ({ ...m, name: e.target.value }))}
-                  placeholder="Nom de l'élément" className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
-                <input value={newMenuItem.price} onChange={e => setNewMenuItem(m => ({ ...m, price: e.target.value }))}
-                  placeholder="Prix €" type="number" className="w-20 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+                {data.address && (
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={openUber}
+                      className="flex-1 flex items-center justify-center gap-2 bg-black text-white rounded-2xl py-3 text-[12px] font-black active:scale-95 transition-all">
+                      <span className="text-[16px]">🚗</span> Uber Eats
+                    </button>
+                    <button onClick={openDeliveroo}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-[12px] font-black active:scale-95 transition-all border-2 border-[#00CCBC]"
+                      style={{ color: "#00CCBC" }}>
+                      <span className="text-[16px]">🛵</span> Deliveroo
+                    </button>
+                  </div>
+                )}
+                {!data.address && (
+                  <p className="text-[11px] text-gray-300 font-medium mt-2 text-center">Renseignez votre adresse pour activer Uber Eats & Deliveroo</p>
+                )}
               </div>
-              <button onClick={() => {
-                if (!newMenuItem.name.trim()) return;
-                setData(d => ({ ...d, menu_items: [...d.menu_items, { name: newMenuItem.name.trim(), price: newMenuItem.price || "" }] }));
-                setNewMenuItem({ name: "", price: "" });
-              }} disabled={!newMenuItem.name.trim()}
-                className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-[#E8732A]/40 hover:text-[#E8732A] transition-colors active:scale-95 disabled:opacity-40">
-                <Plus className="w-4 h-4" /> AJOUTER UN ELEMENT
-              </button>
+
+              {/* Menu Bar & Boissons */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Menu Bar & Boissons</p>
+                    <p className="text-[11px] text-gray-300 font-medium mt-0.5">Cocktails, vins, softs...</p>
+                  </div>
+                  <button onClick={addBarItem} className="flex items-center gap-1.5 bg-primary/10 rounded-full px-3 py-1.5 active:scale-95 transition-all">
+                    <Plus className="w-3.5 h-3.5 text-primary" />
+                    <span className="text-[11px] font-black text-primary">Ajouter</span>
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {(data.menu_bar || []).map((item, i) => (
+                    <div key={i} className="bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="relative shrink-0">
+                          <input ref={el => barImgRefs.current[i] = el} type="file" accept="image/*" className="hidden"
+                            onChange={e => uploadMenuImg(i, e.target.files?.[0], "bar")} />
+                          <div onClick={() => barImgRefs.current[i]?.click()}
+                            className="w-12 h-12 rounded-xl overflow-hidden bg-white border-2 border-dashed border-gray-200 flex items-center justify-center cursor-pointer active:scale-95 transition-all">
+                            {uploadingMenuImg[`bar_${i}`] ? (
+                              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            ) : item.image_url ? (
+                              <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Camera className="w-4 h-4 text-gray-300" />
+                            )}
+                          </div>
+                        </div>
+                        <input value={item.nom} onChange={e => updateBarItem(i, "nom", e.target.value)} placeholder="Nom de la boisson"
+                          className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-[13px] font-bold text-gray-700 outline-none" />
+                        <div className="flex items-center gap-1 shrink-0">
+                          <input type="number" value={item.prix} onChange={e => updateBarItem(i, "prix", e.target.value)} placeholder="0"
+                            className="w-14 bg-white border border-gray-200 rounded-xl px-2 py-2 text-[13px] font-black text-primary text-right outline-none" />
+                          <span className="text-[12px] font-black text-primary">€</span>
+                        </div>
+                        <button onClick={() => removeBarItem(i)} className="w-7 h-7 bg-red-50 rounded-full flex items-center justify-center active:scale-95">
+                          <X className="w-3.5 h-3.5 text-red-400" />
+                        </button>
+                      </div>
+                      <input value={item.description} onChange={e => updateBarItem(i, "description", e.target.value)} placeholder="Description (optionnel)"
+                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-[12px] text-gray-400 outline-none" />
+                    </div>
+                  ))}
+                  {(data.menu_bar || []).length === 0 && (
+                    <button onClick={addBarItem} className="w-full py-4 rounded-2xl border-2 border-dashed border-gray-200 text-[12px] font-black text-gray-300 uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                      <Wine className="w-4 h-4" /> Ajouter une boisson
+                    </button>
+                  )}
+                </div>
+                {data.address && (
+                  <div className="mt-3 flex gap-2">
+                    <button onClick={openUber}
+                      className="flex-1 flex items-center justify-center gap-2 bg-black text-white rounded-2xl py-3 text-[12px] font-black active:scale-95 transition-all">
+                      <span className="text-[16px]">🚗</span> Uber Eats
+                    </button>
+                    <button onClick={openDeliveroo}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 text-[12px] font-black active:scale-95 transition-all border-2 border-[#00CCBC]"
+                      style={{ color: "#00CCBC" }}>
+                      <span className="text-[16px]">🛵</span> Deliveroo
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
