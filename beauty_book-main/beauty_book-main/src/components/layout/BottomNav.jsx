@@ -142,6 +142,7 @@ export default function BottomNav() {
 
       <button
         onClick={() => handleTabPress("services", "/services-salons")}
+        data-tour="nav-explore"
         className="flex-1 flex flex-col items-center justify-center gap-1 active:scale-90 transition-all"
       >
         <Scissors className={iconClass(currentTab === "services")} strokeWidth={currentTab === "services" ? 2.5 : 1.8} />
@@ -164,6 +165,7 @@ export default function BottomNav() {
 
       <button
         onClick={() => handleTabPress("rendezvous", isPro ? "/pro/gestion-agenda" : "/rendez-vous")}
+        data-tour="nav-rdv"
         className="flex-1 flex flex-col items-center justify-center gap-1 active:scale-90 transition-all relative"
       >
         {hasNewEvents && (

@@ -289,10 +289,12 @@ export default function Home() {
       )}
 
       {/* ── Hero ── */}
-      <HeroSlider banners={heroBanners} user={user} navigate={navigate} />
+      <div data-tour="hero">
+        <HeroSlider banners={heroBanners} user={user} navigate={navigate} />
+      </div>
 
       {/* ── Catégories — fond nude ── */}
-      <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
+      <div data-tour="categories" className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
         <SectionTitle title="Catégories" />
         <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-1">
           {GLOBAL_CATEGORIES.map((cat) => {
@@ -314,7 +316,7 @@ export default function Home() {
       </div>
 
       {/* ── Services Tendance ── */}
-      <div className="px-4 py-4">
+      <div data-tour="services" className="px-4 py-4">
         <SectionTitle title="Services Tendance" action="Voir tout" onAction={() => navigate("/services-salons")} />
         <div className="grid grid-cols-2 gap-3">
           {servicesTendance.slice(0, 4).map((s) => {
@@ -363,7 +365,7 @@ export default function Home() {
       </div>
 
       {/* ── Produits Tendance ── */}
-      <div className="px-4 py-4">
+      <div data-tour="boutique" className="px-4 py-4">
         <SectionTitle title="Produits Tendance" action="Boutique" onAction={() => navigate("/boutique")} />
         <div className="grid grid-cols-2 gap-3">
           {produitsTendance.slice(0, 4).map((p) => (
