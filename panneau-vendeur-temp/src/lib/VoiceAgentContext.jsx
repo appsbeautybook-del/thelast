@@ -138,7 +138,7 @@ export function VoiceAgentProvider({ children }) {
     setTimeout(() => { abortSpeakRef.current = false; }, 100);
   }, []);
 
-  // ── Lecteur TTS via Voicebox (fallback: Web Speech API) ──────────────────
+  // ── Lecteur TTS via Microsoft Edge-TTS (fallback: Web Speech API) ──────────
   const speakText = useCallback(async (text) => {
     if (!text?.trim()) return;
 
@@ -150,7 +150,7 @@ export function VoiceAgentProvider({ children }) {
     isSpeakingRef.current = true;
 
     try {
-      // Try Voicebox first
+      // 1. Try Voicebox first
       const res = await fetch(`${API_BASE}/ai/voicebox-speak`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -160,11 +160,7 @@ export function VoiceAgentProvider({ children }) {
       if (res.ok) {
         const data = await res.json();
         if (data.audio_url) {
-          if (abortSpeakRef.current) {
-            setSpeaking(false);
-            isSpeakingRef.current = false;
-            return;
-          }
+          if (abortSpeakRef.current) { setSpeaking(false); isSpeakingRef.current = false; return; }
           if (audioRef.current) {
             audioRef.current.src = data.audio_url;
             try { await audioRef.current.play(); } catch {}
@@ -187,7 +183,44 @@ export function VoiceAgentProvider({ children }) {
         }
       }
 
-      // Fallback: Web Speech API
+      // 2. Microsoft Edge-TTS via /api/ai/tts (voix haute qualité, gratuite)
+      try {
+        const ttsRes = await fetch(`${API_BASE}/api/ai/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: voiceText, voice: 'fr-FR' }),
+        });
+
+        if (ttsRes.ok) {
+          const blob = await ttsRes.blob();
+          if (blob.size > 0) {
+            if (abortSpeakRef.current) { setSpeaking(false); isSpeakingRef.current = false; return; }
+            const url = URL.createObjectURL(blob);
+            if (audioRef.current) {
+              audioRef.current.src = url;
+              try { await audioRef.current.play(); } catch {}
+              await new Promise((resolve) => {
+                if (!audioRef.current) { resolve(); return; }
+                const checkAbort = setInterval(() => {
+                  if (abortSpeakRef.current) {
+                    clearInterval(checkAbort);
+                    if (audioRef.current) { audioRef.current.pause(); audioRef.current.src = ""; }
+                    URL.revokeObjectURL(url);
+                    resolve();
+                  }
+                }, 200);
+                audioRef.current.onended = () => { clearInterval(checkAbort); URL.revokeObjectURL(url); resolve(); };
+                audioRef.current.onerror = () => { clearInterval(checkAbort); URL.revokeObjectURL(url); resolve(); };
+              });
+            }
+            isSpeakingRef.current = false;
+            setSpeaking(false);
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // 3. Fallback: Web Speech API (navigation vocale native du navigateur)
       const clean = voiceText.slice(0, 400);
       if (clean && window.speechSynthesis) {
         window.speechSynthesis.cancel();

@@ -199,12 +199,12 @@ function HorairesForm({ horaires, onChange }) {
 // ── Congés Section ─────────────────────────────────────────────────────────────
 function CongesSection({ conges, onChange }) {
   const [adding, setAdding] = useState(false);
-  const [newConge, setNewConge] = useState({ debut: "", fin: "", label: "" });
+  const [newConge, setNewConge] = useState({ start: "", end: "", label: "" });
 
   const handleAdd = () => {
-    if (!newConge.debut || !newConge.fin) return;
+    if (!newConge.start || !newConge.end) return;
     onChange([...conges, { ...newConge, id: Date.now().toString() }]);
-    setNewConge({ debut: "", fin: "", label: "" });
+    setNewConge({ start: "", end: "", label: "" });
     setAdding(false);
   };
 
