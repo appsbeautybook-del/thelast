@@ -49,7 +49,7 @@ function ImageSlider({ images, onClick }) {
   );
 }
 
-const filterTabs = ["Tous", "Actifs", "Brouillons", "Packs"];
+const filterTabs = ["Tous", "Actifs", "Brouillons", "Bundles"];
 
 export default function CatalogueServices() {
   const navigate = useNavigate();
@@ -114,7 +114,7 @@ export default function CatalogueServices() {
   });
 
   const draftsCount = services.filter(s => s.status !== "actif").length;
-  const isPackTab = activeFilter === "Packs";
+  const isPackTab = activeFilter === "Bundles";
 
   const renderContent = () => {
     if (loading) {
@@ -300,7 +300,7 @@ export default function CatalogueServices() {
                   {draftsCount}
                 </span>
               )}
-              {tab === "Packs" && bundles.length > 0 && (
+              {tab === "Bundles" && bundles.length > 0 && (
                 <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${activeFilter === tab ? "bg-white/20 text-white" : "bg-pink-100 text-pink-600"}`}>
                   {bundles.length}
                 </span>
@@ -317,7 +317,7 @@ export default function CatalogueServices() {
           <button onClick={() => navigate("/profil-pro", { state: { openPacks: true } })}
             className="w-full bg-pink-500 text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-pink-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
             <Plus className="w-5 h-5" />
-            Créer un Pack
+            Créer un Bundle
           </button>
         ) : (
           <button onClick={() => navigate("/pro/ajouter-service")}
