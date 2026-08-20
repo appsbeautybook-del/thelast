@@ -102,7 +102,7 @@ export default function CatalogueServices() {
   };
 
   const deleteBundle = async (id) => {
-    if (!confirm("Supprimer ce pack ?")) return;
+    if (!confirm("Supprimer ce bundle ?")) return;
     setBundles(b => b.filter(x => x.id !== id));
     await supabase.from("ServiceBundle").delete().eq("id", id);
   };
@@ -132,8 +132,8 @@ export default function CatalogueServices() {
             <div className="w-20 h-20 rounded-full bg-pink-50 flex items-center justify-center">
               <Zap className="w-10 h-10 text-pink-400" />
             </div>
-            <p className="text-[16px] font-black text-gray-700">Aucun pack</p>
-            <p className="text-[13px] text-gray-400">Créez votre premier pack de services.</p>
+            <p className="text-[16px] font-black text-gray-700">Aucun bundle</p>
+            <p className="text-[13px] text-gray-400">Créez votre premier bundle de services.</p>
           </div>
         );
       }

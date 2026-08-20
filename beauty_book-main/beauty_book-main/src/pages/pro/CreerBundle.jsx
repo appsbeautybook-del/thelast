@@ -79,7 +79,7 @@ export default function CreerBundle() {
               <Camera className="w-5 h-5 text-gray-300" />
             )}
           </button>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du bundle (ex: Pack Roots)"
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="Nom du bundle (ex: Bundle Roots)"
             className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-[#E8732A]" />
         </div>
 

@@ -1248,11 +1248,11 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
             </div>
           )}
 
-          {/* Packs section */}
+          {/* Bundles section */}
           {bundles.length > 0 && (
             <div className="px-4 mt-4">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
-                {bundles.length} pack{bundles.length !== 1 ? "s" : ""}
+                {bundles.length} bundle{bundles.length !== 1 ? "s" : ""}
               </p>
               <div className="space-y-3">
                 {bundles.map((b) => {

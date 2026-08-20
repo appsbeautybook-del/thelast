@@ -1725,7 +1725,7 @@ function BundlesTab() {
           <div className="w-20 h-20 rounded-3xl bg-pink-50 flex items-center justify-center">
             <Zap className="w-10 h-10 text-pink-400" />
           </div>
-          <p className="text-[16px] font-black text-gray-700">Aucun pack disponible</p>
+          <p className="text-[16px] font-black text-gray-700">Aucun bundle disponible</p>
           <p className="text-[13px] text-gray-400">Les professionnels n'ont pas encore créé de packs.</p>
         </div>
       ) : bundles.map((b) => {

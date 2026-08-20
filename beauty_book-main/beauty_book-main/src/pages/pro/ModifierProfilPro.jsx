@@ -795,7 +795,7 @@ export default function ModifierProfilPro() {
             <div className="w-11 h-11 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl flex items-center justify-center">
               <Zap className="w-5 h-5 text-pink-500" />
             </div>
-            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Mes Packs</p>
+            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Mes Bundles</p>
             {bundles.length > 0 && (
               <span className="bg-pink-100 text-pink-700 text-[10px] font-black px-2 py-0.5 rounded-full">{bundles.length}</span>
             )}
@@ -848,7 +848,7 @@ export default function ModifierProfilPro() {
               {showBundleForm && (
                 <div className="bg-pink-50 rounded-2xl p-4 space-y-3 border border-pink-200">
                   <div className="flex items-center justify-between">
-                    <p className="text-[13px] font-black text-gray-900">{editingBundle ? 'Modifier le pack' : 'Nouveau pack'}</p>
+                    <p className="text-[13px] font-black text-gray-900">{editingBundle ? 'Modifier le bundle' : 'Nouveau bundle'}</p>
                     <button onClick={() => { setShowBundleForm(false); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" }); }} className="p-1">
                       <X className="w-4 h-4 text-gray-400" />
                     </button>
@@ -869,7 +869,7 @@ export default function ModifierProfilPro() {
                     </button>
                     <div className="flex-1">
                       <input value={bundleForm.name} onChange={e => setBundleForm(f => ({ ...f, name: e.target.value }))}
-                        placeholder="Nom du pack (ex: Pack Roots)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+                        placeholder="Nom du bundle (ex: Bundle Roots)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
                     </div>
                   </div>
 
@@ -905,7 +905,7 @@ export default function ModifierProfilPro() {
                   {/* Bundle price */}
                   <div className="flex gap-2 items-center">
                     <div className="flex-1">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Prix du pack</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Prix du bundle</p>
                       <input type="number" value={bundleForm.bundle_price} onChange={e => setBundleForm(f => ({ ...f, bundle_price: e.target.value }))}
                         placeholder="Prix €" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
                     </div>
@@ -920,7 +920,7 @@ export default function ModifierProfilPro() {
 
                   <button onClick={saveBundle} disabled={!bundleForm.name.trim() || !bundleForm.bundle_price || bundleForm.service_ids.length === 0}
                     className="w-full bg-[#E8732A] text-white rounded-2xl py-3 text-[13px] font-black active:scale-95 transition-transform disabled:opacity-40">
-                    {editingBundle ? 'ENREGISTRER' : 'CRÉER LE PACK'}
+                    {editingBundle ? 'ENREGISTRER' : 'CRÉER LE BUNDLE'}
                   </button>
                 </div>
               )}
@@ -928,7 +928,7 @@ export default function ModifierProfilPro() {
               {!showBundleForm && (
                 <button onClick={() => { setShowBundleForm(true); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" }); }}
                   className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-pink-400/40 hover:text-pink-500 transition-colors active:scale-95">
-                  <Plus className="w-4 h-4" /> CRÉER UN PACK
+                  <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
                 </button>
               )}
             </div>
