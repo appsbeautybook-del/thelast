@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -24,6 +24,7 @@ function ImageSlider({ images, onClick }) {
   };
 
   const validImages = (images || []).filter(u => u && !failed[u]);
+  const clampedCurrent = Math.min(current, Math.max(validImages.length - 1, 0));
 
   if (validImages.length === 0) {
     return <div className="w-full h-full bg-gray-100 flex items-center justify-center"><Scissors className="w-10 h-10 text-gray-300" /></div>;
@@ -31,17 +32,15 @@ function ImageSlider({ images, onClick }) {
 
   return (
     <div className="relative w-full h-full overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onClick={onClick}>
-      {images.map((url, i) => (
-        url && (
-          <img key={i} src={url} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out"
-            style={{ transform: `translateX(${(i - current) * 100}%)` }}
-            onError={() => setFailed(p => ({ ...p, [url]: true }))} />
-        )
+      {validImages.map((url, i) => (
+        <img key={url} src={url} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out"
+          style={{ transform: `translateX(${(i - clampedCurrent) * 100}%)` }}
+          onError={() => setFailed(p => ({ ...p, [url]: true }))} />
       ))}
       {validImages.length > 1 && (
         <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1 z-10">
           {validImages.map((_, i) => (
-            <div key={i} className={`rounded-full transition-all ${i === current ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/60"}`} />
+            <div key={i} className={`rounded-full transition-all ${i === clampedCurrent ? "w-4 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/60"}`} />
           ))}
         </div>
       )}
@@ -128,19 +127,23 @@ export default function CatalogueServices() {
     if (isPackTab) {
       if (bundles.length === 0) {
         return (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+          <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
             <div className="w-20 h-20 rounded-full bg-pink-50 flex items-center justify-center">
               <Zap className="w-10 h-10 text-pink-400" />
             </div>
             <p className="text-[16px] font-black text-gray-700">Aucun bundle</p>
             <p className="text-[13px] text-gray-400">Créez votre premier bundle de services.</p>
+            <button onClick={() => navigate("/pro/creer-bundle")}
+              className="mt-2 bg-pink-500 text-white font-black text-[13px] uppercase tracking-widest px-6 py-3 rounded-2xl shadow-lg shadow-pink-500/30 active:scale-95 transition-all flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Créer un Bundle
+            </button>
           </div>
         );
       }
       return (
         <div className="space-y-3">
           {bundles.map(b => {
-            const includedSvcs = services.filter(s => b.service_ids?.includes(s.id));
+            const includedSvcs = services.filter(s => b.service_ids?.map(String).includes(String(s.id)));
             const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
             return (
               <div key={b.id} className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl overflow-hidden border border-pink-100">
@@ -153,19 +156,35 @@ export default function CatalogueServices() {
                         <p className="text-[16px] font-black text-gray-900 truncate">{b.name}</p>
                       </div>
                       {b.description && <p className="text-[12px] text-gray-500 mb-2">{b.description}</p>}
-                      <div className="flex items-center gap-2 mb-2">
+
+                      {/* Services inclus — style formulaire */}
+                      <div className="bg-white rounded-2xl p-3 border border-pink-100 mb-3">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Services inclus ({includedSvcs.length})</p>
+                        {includedSvcs.length === 0 ? (
+                          <p className="text-[11px] text-gray-400 italic">Aucun service trouvé</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {includedSvcs.map(s => (
+                              <div key={s.id} className="flex items-center gap-2 p-2 bg-pink-50 rounded-xl">
+                                <div className="w-5 h-5 rounded-full bg-[#E8732A] flex items-center justify-center shrink-0">
+                                  <Check className="w-3 h-3 text-white" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[12px] font-bold text-gray-900 truncate">{s.title || s.name}</p>
+                                </div>
+                                <span className="text-[11px] font-bold text-gray-500 shrink-0">{s.price}€</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
                         {regularTotal > 0 && <span className="text-[13px] text-gray-400 line-through">{regularTotal}€</span>}
                         <span className="text-[20px] font-black text-[#E8732A]">{b.bundle_price}€</span>
                         {b.discount_percent > 0 && (
                           <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
                         )}
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {includedSvcs.map(s => (
-                          <span key={s.id} className="bg-white border border-pink-200 rounded-full px-2.5 py-1 text-[10px] font-bold text-pink-600 truncate max-w-[120px]">
-                            {s.title || s.name}
-                          </span>
-                        ))}
                       </div>
                     </div>
                     <button onClick={() => deleteBundle(b.id)} className="p-2.5 bg-white rounded-xl border border-pink-200 shrink-0">
