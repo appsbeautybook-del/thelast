@@ -8,7 +8,7 @@ const ALLOWED_TABLES = [
   'LiveSession', 'MariaConversation', 'MembreEquipe', 'PointsFidelite',
   'PointsFidelitePro', 'Publication', 'Repub', 'RoutineBeaute',
   'SoldeBeautyPay', 'Panier', 'UserMemory', 'VerificationCode',
-  'VisiteVirtuelle', 'profiles',
+  'VisiteVirtuelle', 'ServiceBundle', 'profiles',
   'user_like', 'reel_comment', 'reel_comment_report', 'user_follow', 'user_favorite',
 ];
 
@@ -33,6 +33,7 @@ const FALLBACK_COLUMNS = {
   DemandeProV2: ['id','user_email','username','nom','prenom','phone','address','city','specialite','experience','description','cv_url','portfolio_urls','status','admin_notes','statut','siret','salon_name','bio','type_activite','years_experience','services','categories','specialites_cheveux','salon_photo','portfolio','email_pro','doc_identite_recto','doc_identite_verso','doc_siret','doc_assurance','days','time_slots','commodites','seats_count','se_deplace','travail_nuit','visite_video_url','diplomes','has_diplome','created_at','updated_at','created_by_id'],
   DemandefFranchise: ['id','user_email','user_name','full_name','email','phone','city','budget','experience','message','status','created_at','updated_at','created_by_id'],
   CatalogueOption: ['id','name','description','price','duration_min','service_id','pro_email','category','usage_count','created_at','updated_at','created_by_id'],
+  ServiceBundle: ['id','pro_email','name','description','service_ids','bundle_price','discount_percent','image_url','is_active','is_group','min_persons','max_persons','bundle_price_per_person','category','bonus','created_at','updated_at'],
   AppConfig: ['id','key','value','description','created_at','updated_at'],
   ImmobilierListing: ['id','title','description','price','images','address','city','type','status','pro_email','bedrooms','bathrooms','area','features','created_at','updated_at','created_by_id'],
   PointsFidelite: ['id','user_email','points','points_total','total_earned','total_spent','points_depenses','level','niveau','history','historique','code_parrainage','created_at','updated_at','created_by_id'],
@@ -285,6 +286,13 @@ export const runMigrations = async (req, res) => {
     `ALTER TABLE public."Style" ADD COLUMN IF NOT EXISTS produits_utilises jsonb DEFAULT '[]'::jsonb`,
     `ALTER TABLE public."Reel" ADD COLUMN IF NOT EXISTS images jsonb DEFAULT '[]'::jsonb`,
     `ALTER TABLE public."Reel" ADD COLUMN IF NOT EXISTS comments_count integer DEFAULT 0`,
+    // ServiceBundle new columns
+    `ALTER TABLE public."ServiceBundle" ADD COLUMN IF NOT EXISTS is_group BOOLEAN DEFAULT false`,
+    `ALTER TABLE public."ServiceBundle" ADD COLUMN IF NOT EXISTS min_persons INTEGER DEFAULT 1`,
+    `ALTER TABLE public."ServiceBundle" ADD COLUMN IF NOT EXISTS max_persons INTEGER DEFAULT 1`,
+    `ALTER TABLE public."ServiceBundle" ADD COLUMN IF NOT EXISTS bundle_price_per_person NUMERIC(10,2)`,
+    `ALTER TABLE public."ServiceBundle" ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'autre'`,
+    `ALTER TABLE public."ServiceBundle" ADD COLUMN IF NOT EXISTS bonus TEXT`,
   ];
 
   let success = 0, failed = 0, errors = [];

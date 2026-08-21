@@ -315,7 +315,7 @@ export default function ServiceDetail() {
   useEffect(() => {
     const svc = service || state;
     if (!svc?.pro_email) return;
-    entities.ServiceBundle.filter({ pro_email: svc.pro_email, status: "actif" }, "-created_at", 50)
+    entities.ServiceBundle.filter({ pro_email: svc.pro_email, is_active: true }, "-created_at", 50)
       .then(all => {
         const matched = all.filter(b => {
           const ids = (b.service_ids || []).map(String);
