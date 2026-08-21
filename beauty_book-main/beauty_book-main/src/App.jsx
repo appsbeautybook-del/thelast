@@ -53,6 +53,8 @@ import PaiementFacturation from '@/pages/pro/PaiementFacturation';
 import CatalogueServices from '@/pages/pro/CatalogueServices';
 import AjouterService from '@/pages/pro/AjouterService';
 import CreerBundle from '@/pages/pro/CreerBundle';
+import BundleDetail from '@/pages/BundleDetail';
+import BundleGroupeDetail from '@/pages/BundleGroupeDetail';
 import AvisClients from '@/pages/pro/AvisClients.jsx';
 import Equipe from '@/pages/pro/Equipe';
 import NouveauMembre from '@/pages/pro/NouveauMembre';
@@ -246,6 +248,8 @@ const AuthenticatedApp = () => {
         <Route path="/pro/catalogue-services" element={<CatalogueServices />} />
         <Route path="/pro/ajouter-service" element={<AjouterService />} />
         <Route path="/pro/creer-bundle" element={<CreerBundle />} />
+        <Route path="/bundle/:id" element={<BundleDetail />} />
+        <Route path="/bundle-groupe/:id" element={<BundleGroupeDetail />} />
         <Route path="/pro/avis-clients" element={<AvisClients />} />
         <Route path="/pro/equipe" element={<Equipe />} />
         <Route path="/pro/planning-membre" element={<PlanningMembre />} />

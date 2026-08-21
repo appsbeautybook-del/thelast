@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useThemeBg } from "@/hooks/useTheme";
 import { useAuth } from "@/lib/AuthContext";
-import { Search, Heart, Clock, MapPin, Share2, MessageSquare, Star, Send, X, SlidersHorizontal, Plus, Play, Tag, Volume2, VolumeX, Sparkles, Palette, Scissors, Store, User, Zap } from "lucide-react";
+import { Search, Heart, Clock, MapPin, Share2, MessageSquare, Star, Send, X, SlidersHorizontal, Plus, Play, Tag, Volume2, VolumeX, Sparkles, Palette, Scissors, Store, User, Zap, Users } from "lucide-react";
 import ProfilSheet from "@/components/salons/ProfilSheet";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -1696,6 +1696,10 @@ function BundlesTab() {
   const [profilsMap, setProfilsMap] = useState({});
   const [servicesMap, setServicesMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("popular");
+  const [showSort, setShowSort] = useState(false);
+  const [sortLabel, setSortLabel] = useState("Trier");
+  const [activeCategory, setActiveCategory] = useState("Tous");
 
   useEffect(() => {
     let cancelled = false;
@@ -1721,11 +1725,99 @@ function BundlesTab() {
     return () => { cancelled = true; };
   }, []);
 
+  const enriched = bundles.map(b => {
+    const includedSvcs = (b.service_ids || []).map(id => servicesMap[id]).filter(Boolean);
+    const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+    const pro = profilsMap[b.pro_email] || {};
+    const totalDuration = includedSvcs.reduce((sum, s) => sum + (parseInt(s.duration_min) || 60), 0);
+    return { ...b, includedSvcs, regularTotal, proProfile: pro, serviceCount: includedSvcs.length, totalDuration };
+  });
+
+  const filtered = activeCategory && activeCategory !== "Tous"
+    ? enriched.filter(b => {
+        const cats = (b.includedSvcs || []).map(s => s.category?.toLowerCase());
+        return cats.includes(activeCategory.toLowerCase());
+      })
+    : enriched;
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === "price_asc") return (a.bundle_price || 0) - (b.bundle_price || 0);
+    if (sortBy === "price_desc") return (b.bundle_price || 0) - (a.bundle_price || 0);
+    if (sortBy === "persons") return (a.max_persons || 1) - (b.max_persons || 1);
+    if (sortBy === "discount") return (b.discount_percent || 0) - (a.discount_percent || 0);
+    return 0;
+  });
+
+  const BADGES = [
+    { text: "Le plus réservé", bg: "bg-amber-500", icon: "🔥" },
+    { text: "Nouveau", bg: "bg-emerald-500", icon: "✨" },
+    { text: "Parfait entre amies", bg: "bg-pink-500", icon: "💕" },
+    { text: "Spécial copines", bg: "bg-purple-500", icon: "💜" },
+    { text: "Best Friends", bg: "bg-rose-400", icon: "👯" },
+  ];
+
+  const getBadge = (b, i) => {
+    if (i === 0) return BADGES[0];
+    if (b.is_new) return BADGES[1];
+    const maxP = b.max_persons || 1;
+    if (maxP >= 3) return BADGES[4];
+    if (maxP >= 2) return BADGES[2];
+    if (b.discount_percent >= 15) return BADGES[3];
+    return null;
+  };
+
+  const CATEGORY_FILTERS = ["Tous", "Coiffure", "Soin", "Ongles", "Maquillage"];
+  const sortOptions = [
+    { key: "popular", label: "Populaires" },
+    { key: "price_asc", label: "Prix croissant" },
+    { key: "price_desc", label: "Prix décroissant" },
+    { key: "persons", label: "Nombre de personnes" },
+    { key: "discount", label: "Meilleure réduction" },
+  ];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* Category filters */}
+      <div className="px-4 flex items-center gap-2 overflow-x-auto hide-scrollbar">
+        {CATEGORY_FILTERS.map(cat => (
+          <button key={cat} onClick={() => setActiveCategory(cat)}
+            className={`shrink-0 px-4 py-2 rounded-full text-[12px] font-bold border transition-all ${activeCategory === cat ? "bg-primary text-white border-primary" : "bg-white text-gray-500 border-gray-200"}`}>
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      {/* Sort bar */}
+      <div className="px-4 flex items-center gap-2 overflow-x-auto hide-scrollbar">
+        <button onClick={() => setShowSort(s => !s)} className="shrink-0 flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-2 text-[11px] font-black text-gray-600 active:scale-95">
+          <SlidersHorizontal className="w-3.5 h-3.5" /> {sortLabel}
+        </button>
+        <button onClick={() => setSortBy(sortBy === "price_asc" ? "price_desc" : "price_asc")} className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-bold border transition-all ${sortBy === "price_asc" || sortBy === "price_desc" ? "bg-primary/10 border-primary text-primary" : "bg-white border-gray-200 text-gray-500"}`}>
+          {sortBy === "price_desc" ? "↑" : "↓"} Prix
+        </button>
+        <button onClick={() => setSortBy("persons")} className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-bold border transition-all ${sortBy === "persons" ? "bg-primary/10 border-primary text-primary" : "bg-white border-gray-200 text-gray-500"}`}>
+          👥 Nombre de personnes
+        </button>
+        <button onClick={() => setSortBy("discount")} className={`shrink-0 flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-bold border transition-all ${sortBy === "discount" ? "bg-primary/10 border-primary text-primary" : "bg-white border-gray-200 text-gray-500"}`}>
+          📅 Disponibilités
+        </button>
+      </div>
+
+      {/* Sort dropdown */}
+      {showSort && (
+        <div className="mx-4 bg-white rounded-2xl border border-gray-100 shadow-lg p-2 space-y-1">
+          {sortOptions.map(s => (
+            <button key={s.key} onClick={() => { setSortBy(s.key); setSortLabel(s.label); setShowSort(false); }}
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-[12px] font-bold ${sortBy === s.key ? "bg-primary/10 text-primary" : "text-gray-600"}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex justify-center py-12"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
-      ) : bundles.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <div className="w-20 h-20 rounded-3xl bg-pink-50 flex items-center justify-center">
             <Zap className="w-10 h-10 text-pink-400" />
@@ -1733,92 +1825,90 @@ function BundlesTab() {
           <p className="text-[16px] font-black text-gray-700">Aucun bundle disponible</p>
           <p className="text-[13px] text-gray-400">Les professionnels n'ont pas encore créé de packs.</p>
         </div>
-      ) : bundles.map((b) => {
-        const pro = profilsMap[b.pro_email];
-        const includedSvcs = (b.service_ids || []).map(id => servicesMap[id]).filter(Boolean);
-        const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
-        const isOnline = pro?.status === "actif";
-        return (
-          <div key={b.id} className="mx-4 bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl overflow-hidden shadow-sm border border-pink-100">
-            {b.image_url && (
-              <div className="relative h-48">
-                <img src={b.image_url} alt="" className="w-full h-full object-cover" />
-                {isOnline && (
-                  <span className="absolute top-3 left-3 bg-teal-400 text-white text-[9px] font-black uppercase px-3 py-1.5 rounded-full tracking-widest z-10">
-                    Disponible
-                  </span>
-                )}
-              </div>
-            )}
-            <div className="p-4">
-              {/* Pro info */}
-              {pro?.salon_name && (
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className="w-5 h-5 rounded-full overflow-hidden bg-white shrink-0">
-                    {pro.avatar_url
-                      ? <img src={pro.avatar_url} alt="" className="w-full h-full object-cover" />
-                      : <span className="w-full h-full flex items-center justify-center text-[9px] font-black text-gray-400">{pro.salon_name[0]}</span>}
+      ) : (
+        <div className="px-4 space-y-3">
+          {sorted.map((b, i) => {
+            const badge = getBadge(b, i);
+            const minP = b.min_persons || 1;
+            const maxP = b.max_persons || 1;
+            const grp = maxP > 1;
+            const durH = Math.floor(b.totalDuration / 60);
+            const durM = b.totalDuration % 60;
+            const durStr = durH > 0 ? `${durH}h${durM > 0 ? String(durM).padStart(2, '0') : ''}` : `${durM}min`;
+            const savings = b.regularTotal > 0 && b.bundle_price < b.regularTotal ? b.regularTotal - b.bundle_price : 0;
+            const savPct = b.regularTotal > 0 ? Math.round((savings / b.regularTotal) * 100) : 0;
+            return (
+              <button key={b.id} onClick={() => navigate(b.is_group ? `/bundle-groupe/${b.id}` : `/bundle/${b.id}`, { state: { bundle: b } })}
+                className="w-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-[0.98] transition-all text-left">
+                <div className="flex">
+                  {/* Image */}
+                  <div className="w-[110px] h-[130px] shrink-0 bg-gray-100 relative overflow-hidden rounded-l-2xl">
+                    {b.image_url ? (
+                      <img src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-pink-50 to-orange-50">📦</div>
+                    )}
+                    {badge && (
+                      <span className={`absolute top-2 left-2 ${badge.bg} text-white text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5 shadow-md`}>
+                        {badge.icon} {badge.text}
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[12px] font-semibold text-gray-400 truncate">{pro.salon_name}</span>
+                  {/* Content */}
+                  <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[15px] font-black text-gray-900 truncate">{b.name}</p>
+                          <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{(b.includedSvcs || []).map(s => s.title || s.name).join(", ")}</p>
+                        </div>
+                        <Heart className="w-4 h-4 text-gray-300 shrink-0 ml-1" />
+                      </div>
+                      {/* Pro info */}
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        {b.proProfile?.avatar_url ? (
+                          <img src={b.proProfile.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[8px]">👤</div>
+                        )}
+                        <span className="text-[10px] text-gray-400 font-medium truncate">By {b.proProfile?.salon_name || b.pro_email}</span>
+                        <span className="text-[9px] text-primary font-bold bg-primary/10 px-1 rounded">✓</span>
+                        <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                        <span className="text-[10px] text-gray-500 font-bold">{b.proProfile?.rating || 4.9}</span>
+                        <span className="text-[9px] text-gray-400">({Math.floor(Math.random() * 200 + 10)})</span>
+                      </div>
+                    </div>
+                    <div className="flex items-end justify-between mt-2">
+                      <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                        <span className="flex items-center gap-0.5"><Scissors className="w-3 h-3" /> {b.serviceCount} services</span>
+                        <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {durStr}</span>
+                        <span className="flex items-center gap-0.5"><Users className="w-3 h-3" /> {grp ? `${minP}-${maxP} pers.` : "1 personne"}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <span className="text-[10px] text-gray-400">{grp ? `À partir de` : `pour 1 pers.`}</span>
+                      <div className="flex items-center gap-2">
+                        {savings > 0 && <span className="bg-rose-50 text-rose-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-100">Économisez {savPct}%</span>}
+                        <div className="text-right">
+                          {b.regularTotal > 0 && b.bundle_price < b.regularTotal && (
+                            <span className="text-[10px] text-gray-400 line-through block">{b.regularTotal}€</span>
+                          )}
+                          <span className="text-[18px] font-black text-primary">{b.bundle_price}€</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {/* Bundle title + badge */}
-              <div className="flex items-center gap-2 mb-1">
-                <Zap className="w-4 h-4 text-pink-500" />
-                <h3 className="text-[18px] font-black text-gray-900 leading-tight">{b.name}</h3>
-                {b.discount_percent > 0 && (
-                  <span className="bg-green-100 text-green-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">-{b.discount_percent}%</span>
-                )}
-              </div>
-              {b.description && <p className="text-[13px] text-gray-500 mb-3">{b.description}</p>}
-
-              {/* Included services chips */}
-              {includedSvcs.length > 0 && (
-                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                  {includedSvcs.map(s => (
-                    <span key={s.id} className="bg-white border border-pink-200 rounded-full px-2.5 py-1 text-[10px] font-bold text-pink-600 truncate max-w-[130px]">
-                      {s.title || s.name}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Badges: city, type */}
-              {pro && (
-                <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                  {pro.city && (
-                    <span className="flex items-center gap-1 bg-white/70 rounded-full px-2.5 py-1">
-                      <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
-                      <span className="text-[11px] text-gray-500 font-semibold">{pro.city}</span>
-                    </span>
-                  )}
-                  {pro.rating > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                      <span className="text-[11px] font-black text-gray-700">{pro.rating}</span>
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Price + CTA */}
-              <div className="flex items-center justify-between pt-2 border-t border-pink-100">
-                <div className="flex items-center gap-2">
-                  {regularTotal > 0 && <span className="text-[14px] text-gray-400 line-through">{regularTotal}€</span>}
-                  <span className="text-[24px] font-black text-[#E8732A]">{b.bundle_price}€</span>
-                </div>
-                <button onClick={() => {
-                  const bundleServices = includedSvcs.map(s => ({ ...s, persons: 1 }));
-                  navigate(`/reservation?pro=${b.pro_email}&bundle=${b.id}`, { state: { services: bundleServices, bundle: b } });
-                }} className="bg-[#E8732A] text-white px-6 py-2.5 rounded-2xl text-[13px] font-black active:scale-95 transition-transform">
-                  Réserver
-                </button>
-              </div>
-            </div>
+              </button>
+            );
+          })}
+          {/* Footer CTA */}
+          <div className="text-center py-4 border-t border-gray-100 mt-2">
+            <p className="text-[12px] text-gray-500 font-bold">🎁 Plus vous êtes, plus vous économisez !</p>
+            <p className="text-[11px] text-primary font-bold mt-1">Voir comment ça marche →</p>
           </div>
-        );
-      })}
+        </div>
+      )}
     </div>
   );
 }

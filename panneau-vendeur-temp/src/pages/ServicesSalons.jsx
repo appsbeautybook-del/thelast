@@ -1734,7 +1734,7 @@ function BundlesTab({ activeCategory }) {
             const savings = b.regularTotal > 0 && b.bundle_price < b.regularTotal ? b.regularTotal - b.bundle_price : 0;
             const savPct = b.regularTotal > 0 ? Math.round((savings / b.regularTotal) * 100) : 0;
             return (
-              <button key={b.id} onClick={() => navigate(`/bundle/${b.id}`, { state: { bundle: b } })}
+              <button key={b.id} onClick={() => navigate(b.is_group ? `/bundle-groupe/${b.id}` : `/bundle/${b.id}`, { state: { bundle: b } })}
                 className="w-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-[0.98] transition-all text-left">
                 <div className="flex">
                   {/* Image */}
