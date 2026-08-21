@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Tag } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Tag, Zap } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -43,7 +43,104 @@ function ImageSlider({ images, onClick }) {
   );
 }
 
-const filterTabs = ["Tous", "Actifs", "Brouillons"];
+const filterTabs = ["Tous", "Actifs", "Brouillons", "BUNDLES"];
+
+function BundlesTab({ userEmail }) {
+  const navigate = useNavigate();
+  const [bundles, setBundles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userEmail) return;
+    entities.ServiceBundle.filter({ pro_email: userEmail }, "-created_at", 200)
+      .then(data => setBundles(data || []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [userEmail]);
+
+  const totalServices = bundles.reduce((sum, b) => sum + (b.service_ids?.length || 0), 0);
+
+  if (loading) return (
+    <div className="flex justify-center py-12">
+      <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Orange header */}
+      <div className="rounded-3xl overflow-hidden shadow-lg" style={{ background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c42 100%)" }}>
+        <div className="px-5 py-6 text-white relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+                <Zap className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-[11px] font-black tracking-widest opacity-80">BEAUTYBOOK BUNDLES</span>
+            </div>
+            <h2 className="text-[24px] font-black leading-tight mb-2">Créez des bundles irrésistibles</h2>
+            <p className="text-[13px] opacity-85 leading-relaxed">Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.</p>
+            <div className="flex items-center gap-4 mt-4">
+              <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
+                <span className="text-[14px]">✨</span>
+                <span className="text-[12px] font-bold">{bundles.length} bundles</span>
+              </div>
+              <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
+                <span className="text-[14px]">✓</span>
+                <span className="text-[12px] font-bold">{totalServices} services</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Empty state or bundle list */}
+      {bundles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="w-16 h-16 bg-pink-50 rounded-3xl flex items-center justify-center mb-4">
+            <Zap className="w-8 h-8 text-pink-300" />
+          </div>
+          <p className="text-[18px] font-black text-gray-800 mb-1">Aucun bundle</p>
+          <p className="text-[13px] text-gray-400 mb-5">Créez votre premier bundle de services.</p>
+          <button onClick={() => navigate("/pro/creer-bundle")}
+            className="bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center gap-2">
+            <Plus className="w-5 h-5" /> CRÉER UN BUNDLE
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {bundles.map(b => (
+            <div key={b.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[15px] font-black text-gray-900 truncate">{b.name}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5">{b.service_ids?.length || 0} services inclus</p>
+                </div>
+                <span className="text-[18px] font-black text-primary">{b.bundle_price}€</span>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <button onClick={() => navigate("/pro/creer-bundle", { state: { editBundle: b } })}
+                  className="flex-1 bg-gray-100 text-gray-600 text-[11px] font-bold py-2.5 rounded-xl active:scale-95 transition-all">
+                  Modifier
+                </button>
+                <button onClick={() => navigate(b.is_group ? `/bundle-groupe/${b.id}` : `/bundle/${b.id}`, { state: { bundle: b } })}
+                  className="flex-1 bg-primary/10 text-primary text-[11px] font-bold py-2.5 rounded-xl active:scale-95 transition-all">
+                  Voir
+                </button>
+              </div>
+            </div>
+          ))}
+          <button onClick={() => navigate("/pro/creer-bundle")}
+            className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+            <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CatalogueServices() {
   const navigate = useNavigate();
@@ -130,7 +227,9 @@ export default function CatalogueServices() {
         </div>
 
         {/* Services List */}
-        {loading ? (
+        {activeFilter === "BUNDLES" ? (
+          <BundlesTab userEmail={user?.email} />
+        ) : loading ? (
           <div className="flex justify-center py-12">
             <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
@@ -249,13 +348,23 @@ export default function CatalogueServices() {
 
       {/* CTA fixe en bas */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
-        <button
-          onClick={() => navigate("/pro/ajouter-service")}
-          className="w-full bg-primary text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-primary/40 flex items-center justify-center gap-2 active:scale-95 transition-all"
-        >
-          <Plus className="w-5 h-5" />
-          Ajouter un Service
-        </button>
+        {activeFilter === "BUNDLES" ? (
+          <button
+            onClick={() => navigate("/pro/creer-bundle")}
+            className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            Ajouter un Bundle
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate("/pro/ajouter-service")}
+            className="w-full bg-primary text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-primary/40 flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            Ajouter un Service
+          </button>
+        )}
       </div>
     </div>
   );
