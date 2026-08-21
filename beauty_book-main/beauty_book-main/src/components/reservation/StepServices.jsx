@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Check, ChevronRight, MessageCircle, Minus, Plus, Clock, Users } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, MessageCircle, Minus, Plus, Clock, Users, Zap } from "lucide-react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 
-export default function StepServices({ selected, onSelect, onNext, onBack, proEmail }) {
+export default function StepServices({ selected, onSelect, onNext, onBack, proEmail, bundle }) {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [proProfile, setProProfile] = useState(null);
   const [localSelected, setLocalSelected] = useState(selected.length ? selected : []);
 
-  // Si un service est déjà pré-sélectionné (depuis ServiceDetail), on affiche juste le sélecteur de personnes
   const isPreselected = selected.length > 0;
+  const isBundle = !!bundle;
 
   useEffect(() => {
     const query = proEmail
@@ -55,6 +55,131 @@ export default function StepServices({ selected, onSelect, onNext, onBack, proEm
     onSelect(localSelected);
     onNext();
   };
+
+  // ── VUE BUNDLE : services pré-sélectionnés avec infos bundle ─────────────────
+  if (isBundle && isPreselected) {
+    const totalPrice = localSelected.reduce((sum, s) => sum + (s.bundle_price || s.price) * (s.persons || 1), 0);
+    const bundlePrice = bundle.bundle_price || totalPrice;
+    return (
+      <div className="h-screen bg-white flex flex-col overflow-hidden font-display">
+        <div className="px-5 pt-12 pb-4 flex items-center justify-between flex-shrink-0">
+          <button onClick={onBack} className="w-9 h-9 flex items-center justify-center active:scale-95 transition-all">
+            <ArrowLeft className="w-5 h-5 text-gray-900" />
+          </button>
+          <span className="text-[13px] font-black text-gray-900 uppercase tracking-widest">Réservation Bundle</span>
+          <div className="w-9" />
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 space-y-4 min-h-0">
+          {/* Bundle header card */}
+          <div className="bg-gradient-to-br from-[#E8732A] to-[#F59E0B] rounded-3xl p-5 text-white">
+            <div className="flex items-center gap-2 mb-2">
+              <Zap className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Bundle</span>
+            </div>
+            <h2 className="text-[20px] font-black leading-tight">{bundle.name}</h2>
+            {bundle.description && <p className="text-[12px] text-white/80 mt-1">{bundle.description}</p>}
+            <div className="flex items-center gap-3 mt-3">
+              <span className="text-[28px] font-black">{bundlePrice}€</span>
+              {bundle.discount_percent > 0 && (
+                <span className="bg-white/20 text-white text-[11px] font-black px-2 py-0.5 rounded-full">-{bundle.discount_percent}%</span>
+              )}
+            </div>
+            {bundle.bonus && (
+              <div className="mt-3 bg-white/10 rounded-xl px-3 py-2">
+                <p className="text-[11px] text-white/90">🎁 {bundle.bonus}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Services inclus */}
+          <div>
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mb-3">Services inclus ({localSelected.length})</p>
+            <div className="space-y-2">
+              {localSelected.map(svc => {
+                const entry = localSelected.find(s => s.id === svc.id);
+                return (
+                  <div key={svc.id} className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3">
+                    {svc.image_url && (
+                      <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
+                        <img src={svc.image_url} alt={svc.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-black text-gray-900">{svc.title}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Clock className="w-3 h-3 text-gray-400" />
+                        <span className="text-[11px] text-gray-400 font-medium">{svc.duration_min || 60} min</span>
+                      </div>
+                    </div>
+                    <span className="text-[14px] font-black text-gray-900 shrink-0">{svc.price}€</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Nombre de personnes */}
+          <div className="space-y-3">
+            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Nombre de personnes</p>
+            <div className="flex items-center justify-between bg-orange-50 border-2 border-orange-100 rounded-3xl px-6 py-5">
+              <button
+                onClick={() => {
+                  const minP = bundle.min_persons || 1;
+                  setLocalSelected(prev => prev.map(s => ({ ...s, persons: Math.max(minP, (s.persons || 1) - 1) })));
+                }}
+                className="w-12 h-12 rounded-full bg-white border border-orange-200 flex items-center justify-center active:scale-95 transition-all shadow-sm"
+              >
+                <Minus className="w-5 h-5 text-primary" />
+              </button>
+              <div className="text-center">
+                <span className="text-[52px] font-black text-gray-900 leading-none">{localSelected[0]?.persons || 1}</span>
+                <p className="text-[12px] text-gray-400 font-medium mt-1">
+                  {(localSelected[0]?.persons || 1) === 1 ? "personne" : "personnes"}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  const maxP = bundle.max_persons || 10;
+                  setLocalSelected(prev => prev.map(s => ({ ...s, persons: Math.min(maxP, (s.persons || 1) + 1) })));
+                }}
+                className="w-12 h-12 rounded-full bg-primary flex items-center justify-center active:scale-95 transition-all shadow-md shadow-primary/30"
+              >
+                <Plus className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            {bundle.is_group && (
+              <p className="text-center text-[11px] text-gray-400">
+                De {bundle.min_persons || 2} à {bundle.max_persons || 6} personnes
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="px-5 pb-8 pt-4 border-t border-gray-100 bg-white flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total bundle</p>
+              <span className="text-[18px] font-black text-primary">{bundlePrice}€</span>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Personnes</p>
+              <span className="text-[16px] font-black text-gray-900">{localSelected[0]?.persons || 1}</span>
+            </div>
+          </div>
+          <button
+            onClick={handleNext}
+            className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white flex items-center justify-center gap-2 active:scale-95 transition-all shadow-xl shadow-[#E8732A]/30"
+            style={{ background: "#E8732A" }}
+          >
+            Continuer
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── VUE PRÉ-SÉLECTIONNÉE : juste le sélecteur de personnes ─────────────────
   if (isPreselected) {

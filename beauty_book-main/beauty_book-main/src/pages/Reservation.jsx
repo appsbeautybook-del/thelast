@@ -66,6 +66,7 @@ export default function Reservation() {
       onNext={() => setStep(1)}
       onBack={() => navigate(-1)}
       proEmail={resolvedProEmail}
+      bundle={booking.bundle}
     />,
     <StepExpert
       selected={booking.expert}
@@ -81,7 +82,7 @@ export default function Reservation() {
       selectedSeat={booking.seat}
       expert={booking.expert}
       proEmail={resolvedProEmail}
-      price={booking.services.reduce((s, svc) => s + svc.price * (svc.persons || 1), 0)}
+      price={booking.bundle ? (booking.bundle.bundle_price || 0) : booking.services.reduce((s, svc) => s + svc.price * (svc.persons || 1), 0)}
       duration={booking.services.reduce((s, svc) => s + (svc.duration_min || 60), 0)}
       onSelectDate={d => update("date", d)}
       onSelectTime={t => update("time", t)}

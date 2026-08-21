@@ -70,6 +70,7 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
     localStorage.removeItem("bb_is_pro");
     localStorage.removeItem("bb_onboarded");
+    localStorage.removeItem("pro_profile_cache");
     sessionStorage.clear();
     if (shouldRedirect) {
       window.location.href = '/connexion';

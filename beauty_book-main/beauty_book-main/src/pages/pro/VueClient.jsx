@@ -1302,6 +1302,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               </div>
             </div>
           )}
+          <div className="h-24" />
         </div>
       )}
       {activeTab === "pub" && (

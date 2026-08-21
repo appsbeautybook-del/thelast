@@ -1777,6 +1777,33 @@ function BundlesTab() {
 
   return (
     <div className="space-y-3">
+      {/* Orange header */}
+      <div className="mx-4 rounded-3xl overflow-hidden shadow-lg" style={{ background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c42 100%)" }}>
+        <div className="px-5 py-5 text-white">
+          <p className="text-[10px] font-black tracking-wider opacity-70 mb-1">BUNDLES</p>
+          <h2 className="text-[22px] font-black leading-tight">Créez des bundles irrésistibles</h2>
+          <p className="text-[12px] mt-1 opacity-80">Regroupez vos services et offrez des packs exclusifs à vos clientes</p>
+          <button onClick={() => navigate("/pro/creer-bundle")}
+            className="mt-4 bg-white text-[#f7931e] text-[12px] font-black px-5 py-2.5 rounded-full shadow-md active:scale-95 transition-all">
+            CRÉER UN BUNDLE
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-px bg-white/20">
+          <div className="bg-white/90 py-3 text-center">
+            <p className="text-[20px] font-black text-[#f7931e]">{bundles.length}</p>
+            <p className="text-[9px] font-bold text-gray-500">Bundles actifs</p>
+          </div>
+          <div className="bg-white/90 py-3 text-center">
+            <p className="text-[20px] font-black text-[#f7931e]">{Math.round(bundles.reduce((sum, b) => sum + (b.discount_percent || 0), 0) / (bundles.length || 1))}%</p>
+            <p className="text-[9px] font-bold text-gray-500">Réduction moy.</p>
+          </div>
+          <div className="bg-white/90 py-3 text-center">
+            <p className="text-[20px] font-black text-[#f7931e]">{bundles.filter(b => b.is_group).length}</p>
+            <p className="text-[9px] font-bold text-gray-500">Packs groupe</p>
+          </div>
+        </div>
+      </div>
+
       {/* Category filters */}
       <div className="px-4 flex items-center gap-2 overflow-x-auto hide-scrollbar">
         {CATEGORY_FILTERS.map(cat => (
@@ -1824,6 +1851,10 @@ function BundlesTab() {
           </div>
           <p className="text-[16px] font-black text-gray-700">Aucun bundle disponible</p>
           <p className="text-[13px] text-gray-400">Les professionnels n'ont pas encore créé de packs.</p>
+          <button onClick={() => navigate("/pro/creer-bundle")}
+            className="mt-2 bg-primary text-white text-[12px] font-black px-6 py-3 rounded-full shadow-lg active:scale-95 transition-all">
+            CRÉER MON PREMIER BUNDLE
+          </button>
         </div>
       ) : (
         <div className="px-4 space-y-3">

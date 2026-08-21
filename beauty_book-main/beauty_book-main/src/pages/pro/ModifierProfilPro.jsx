@@ -5,7 +5,7 @@ import {
   Scissors, Clock, Star, Zap, Check, Store, Phone, MapPin,
   Building2, FileText, Image, Palette, Wifi, Car, Snowflake,
   Baby, Coffee, CreditCard, Accessibility, Shirt, Sofa, ShowerHead,
-  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, Moon, PawPrint, Copy, Search, Users, Gift
+  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, Moon, PawPrint, Copy
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -86,14 +86,7 @@ export default function ModifierProfilPro() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [uploadingGalerie, setUploadingGalerie] = useState(false);
   const [uploadingMenuImg, setUploadingMenuImg] = useState({});
-  const [bundles, setBundles] = useState([]);
-  const [showBundleForm, setShowBundleForm] = useState(false);
-  const [editingBundle, setEditingBundle] = useState(null);
-  const [bundleForm, setBundleForm] = useState({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "", category: "Tous", is_group: false, min_persons: 2, max_persons: 6, bonus: "" });
-  const [proServices, setProServices] = useState([]);
-  const [uploadingBundleImg, setUploadingBundleImg] = useState(false);
-  const bundleImgRef = useRef(null);
-  const [bundleServiceSearch, setBundleServiceSearch] = useState("");
+
 
   useEffect(() => {
     if (!user?.email) return;
@@ -136,73 +129,10 @@ export default function ModifierProfilPro() {
   useEffect(() => {
     if (!user?.email) return;
     let cancelled = false;
-    supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false })
-      .then(({ data }) => { if (!cancelled) setBundles(data || []); });
-    supabase.from("Service").select("id,title,name,price,images,status").eq("pro_email", user.email).order("created_at", { ascending: false })
-      .then(({ data }) => { if (!cancelled) setProServices(data || []); });
     supabase.from("CatalogueOption").select("*").eq("pro_email", user.email).order("usage_count", { ascending: false })
       .then(({ data }) => { if (!cancelled) setCatalogueOptions(data || []); });
     return () => { cancelled = true; };
   }, [user?.email]);
-
-  const saveBundle = async () => {
-    if (!bundleForm.name.trim() || !bundleForm.bundle_price || bundleForm.service_ids.length === 0) return;
-    const payload = {
-      pro_email: user.email,
-      name: bundleForm.name.trim(),
-      description: bundleForm.description.trim(),
-      service_ids: bundleForm.service_ids,
-      bundle_price: parseFloat(bundleForm.bundle_price),
-      image_url: bundleForm.image_url || "",
-      category: bundleForm.category !== "Tous" ? bundleForm.category : "",
-      is_group: bundleForm.is_group,
-      min_persons: bundleForm.is_group ? bundleForm.min_persons : 1,
-      max_persons: bundleForm.is_group ? bundleForm.max_persons : 1,
-      bundle_price_per_person: parseFloat(bundleForm.bundle_price),
-      bonus: bundleForm.bonus.trim(),
-      is_active: true,
-    };
-    // Calculate discount
-    const selectedSvcs = proServices.filter(s => bundleForm.service_ids.includes(s.id));
-    const regularTotal = selectedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
-    payload.discount_percent = regularTotal > 0 ? Math.round(((regularTotal - payload.bundle_price) / regularTotal) * 100) : 0;
-
-    if (editingBundle) {
-      payload.updated_at = new Date().toISOString();
-      await supabase.from("ServiceBundle").update(payload).eq("id", editingBundle.id);
-    } else {
-      await supabase.from("ServiceBundle").insert(payload);
-    }
-    const { data } = await supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false });
-    setBundles(data || []);
-    setShowBundleForm(false);
-    setEditingBundle(null);
-    setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "", category: "Tous", is_group: false, min_persons: 2, max_persons: 6, bonus: "" });
-  };
-
-  const deleteBundle = async (id) => {
-    await supabase.from("ServiceBundle").delete().eq("id", id);
-    setBundles(b => b.filter(x => x.id !== id));
-  };
-
-  const toggleBundleService = (svcId) => {
-    setBundleForm(f => ({
-      ...f,
-      service_ids: f.service_ids.includes(svcId)
-        ? f.service_ids.filter(id => id !== svcId)
-        : [...f.service_ids, svcId],
-    }));
-  };
-
-  const toggleBundleImg = async (file) => {
-    if (!file || !editingBundle) return;
-    setUploadingBundleImg(true);
-    try {
-      const url = await uploadFile(file, 'uploads');
-      setBundleForm(f => ({ ...f, image_url: url }));
-    } catch (e) { console.error(e); }
-    setUploadingBundleImg(false);
-  };
 
   const toggleSection = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -841,216 +771,6 @@ export default function ModifierProfilPro() {
                 className="w-full border-2 border-dashed border-gray-200 rounded-2xl py-3 flex items-center justify-center gap-2 text-[12px] font-bold text-gray-400 hover:border-[#E8732A]/40 hover:text-[#E8732A] transition-colors active:scale-95 disabled:opacity-40">
                 <Plus className="w-4 h-4" /> AJOUTER UN SERVICE
               </button>
-            </div>
-          )}
-        </div>
-
-        {/* Mes Packs */}
-        <div className={sectionCls}>
-          <button onClick={() => toggleSection('packs')} className="w-full flex items-center gap-3 p-4">
-            <div className="w-11 h-11 bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl flex items-center justify-center">
-              <Zap className="w-5 h-5 text-pink-500" />
-            </div>
-            <p className="flex-1 text-left text-[14px] font-black text-gray-900">Mes Bundles</p>
-            {bundles.length > 0 && (
-              <span className="bg-pink-100 text-pink-700 text-[10px] font-black px-2 py-0.5 rounded-full">{bundles.length}</span>
-            )}
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform ${expanded.packs ? 'rotate-180' : ''}`}>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
-            </div>
-          </button>
-          {expanded.packs && (
-            <div className="px-4 pb-4 space-y-3">
-              {bundles.length > 0 && !showBundleForm && (
-                <div className="space-y-2">
-                  {bundles.map((b) => {
-                    const includedSvcs = proServices.filter(s => b.service_ids?.includes(s.id));
-                    const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
-                    return (
-                      <div key={b.id} className="bg-gray-50 rounded-2xl p-3.5">
-                        <div className="flex items-start gap-3">
-                          {b.image_url && <img src={b.image_url} alt="" className="w-14 h-14 rounded-xl object-cover" />}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-black text-gray-900 truncate">{b.name}</p>
-                            {b.description && <p className="text-[11px] text-gray-500 truncate">{b.description}</p>}
-                            <div className="flex items-center gap-2 mt-1">
-                              {regularTotal > 0 && <span className="text-[11px] text-gray-400 line-through">{regularTotal}€</span>}
-                              <span className="text-[13px] font-black text-[#E8732A]">{b.bundle_price}€</span>
-                              {b.discount_percent > 0 && (
-                                <span className="bg-green-100 text-green-700 text-[9px] font-black px-1.5 py-0.5 rounded-full">-{b.discount_percent}%</span>
-                              )}
-                            </div>
-                            <p className="text-[10px] text-gray-400 mt-1">{includedSvcs.length} service(s)</p>
-                          </div>
-                          <div className="flex gap-1.5 shrink-0">
-                            <button onClick={() => {
-                              setEditingBundle(b);
-                              setBundleForm({ name: b.name, description: b.description || "", service_ids: b.service_ids || [], bundle_price: b.bundle_price.toString(), image_url: b.image_url || "" });
-                              setShowBundleForm(true);
-                            }} className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                              <FileText className="w-4 h-4 text-blue-500" />
-                            </button>
-                            <button onClick={() => deleteBundle(b.id)} className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
-                              <Trash2 className="w-4 h-4 text-red-400" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {showBundleForm && (
-                <div className="bg-pink-50 rounded-2xl p-4 space-y-3 border border-pink-200">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[13px] font-black text-gray-900">{editingBundle ? 'Modifier le bundle' : 'Nouveau bundle'}</p>
-                    <button onClick={() => { setShowBundleForm(false); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "", category: "Tous", is_group: false, min_persons: 2, max_persons: 6, bonus: "" }); }} className="p-1">
-                      <X className="w-4 h-4 text-gray-400" />
-                    </button>
-                  </div>
-
-                  {/* Cover image */}
-                  <div className="flex items-center gap-3">
-                    <input type="file" ref={bundleImgRef} accept="image/*" className="hidden" onChange={e => toggleBundleImg(e.target.files?.[0])} />
-                    <button onClick={() => bundleImgRef.current?.click()} disabled={uploadingBundleImg}
-                      className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden shrink-0">
-                      {bundleForm.image_url ? (
-                        <img src={bundleForm.image_url} alt="" className="w-full h-full object-cover" />
-                      ) : uploadingBundleImg ? (
-                        <div className="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Camera className="w-5 h-5 text-gray-300" />
-                      )}
-                    </button>
-                    <div className="flex-1">
-                      <input value={bundleForm.name} onChange={e => setBundleForm(f => ({ ...f, name: e.target.value }))}
-                        placeholder="Nom du bundle (ex: Bundle Roots)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
-                    </div>
-                  </div>
-
-                  <input value={bundleForm.description} onChange={e => setBundleForm(f => ({ ...f, description: e.target.value }))}
-                    placeholder="Description (optionnel)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
-
-                  {/* Catégorie */}
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Catégorie</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {["Tous", "Coiffure", "Soin", "Ongles", "Maquillage"].map(c => (
-                        <button key={c} onClick={() => setBundleForm(f => ({ ...f, category: c }))}
-                          className={`px-2.5 py-1.5 rounded-full text-[10px] font-black border transition-all ${bundleForm.category === c ? "border-[#E8732A] bg-[#E8732A] text-white" : "border-gray-200 text-gray-500 bg-white"}`}>
-                          {c}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Bundle Groupe */}
-                  <div className="bg-white rounded-xl p-3 border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <Users className="w-4 h-4 text-purple-500 shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-[12px] font-black text-gray-900">Bundle Groupe</p>
-                        <p className="text-[10px] text-gray-400">Plusieurs personnes</p>
-                      </div>
-                      <div onClick={() => setBundleForm(f => ({ ...f, is_group: !f.is_group }))} className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${bundleForm.is_group ? "bg-primary" : "bg-gray-200"}`}>
-                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${bundleForm.is_group ? "translate-x-5" : "translate-x-0.5"}`} />
-                      </div>
-                    </div>
-                    {bundleForm.is_group && (
-                      <div className="mt-2 pt-2 border-t border-gray-100 flex gap-2">
-                        <div className="flex-1">
-                          <p className="text-[9px] font-black text-gray-400 uppercase">Min</p>
-                          <input type="number" min={2} value={bundleForm.min_persons} onChange={e => setBundleForm(f => ({ ...f, min_persons: Math.max(2, parseInt(e.target.value) || 2) }))}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] font-black text-center outline-none" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-[9px] font-black text-gray-400 uppercase">Max</p>
-                          <input type="number" min={bundleForm.min_persons} value={bundleForm.max_persons} onChange={e => setBundleForm(f => ({ ...f, max_persons: Math.max(f.min_persons, parseInt(e.target.value) || f.min_persons) }))}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] font-black text-center outline-none" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bonus */}
-                  <input value={bundleForm.bonus} onChange={e => setBundleForm(f => ({ ...f, bonus: e.target.value }))}
-                    placeholder="Bonus inclus (ex: Huile capillaire offerte 🎁)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] outline-none focus:border-[#E8732A]" />
-
-                  {/* Service selection */}
-                  <div>
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Services inclus</p>
-                    {proServices.length === 0 ? (
-                      <p className="text-[12px] text-gray-400 text-center py-3">Aucun service disponible</p>
-                    ) : (
-                      <>
-                        <div className="relative mb-2">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                          <input
-                            type="text"
-                            value={bundleServiceSearch}
-                            onChange={e => setBundleServiceSearch(e.target.value)}
-                            placeholder="Rechercher un service..."
-                            className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-[12px] outline-none focus:border-[#E8732A]"
-                          />
-                          {bundleServiceSearch && (
-                            <button onClick={() => setBundleServiceSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                              <X className="w-3.5 h-3.5 text-gray-400" />
-                            </button>
-                          )}
-                        </div>
-                        <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                          {proServices
-                            .filter(s => !bundleServiceSearch || (s.title || s.name || "").toLowerCase().includes(bundleServiceSearch.toLowerCase()))
-                            .map(s => {
-                              const selected = bundleForm.service_ids.includes(s.id);
-                              return (
-                                <div key={s.id} onClick={() => toggleBundleService(s.id)}
-                                  className={`flex items-center gap-3 p-2.5 rounded-xl cursor-pointer transition-colors ${selected ? 'bg-pink-100 border border-pink-300' : 'bg-white border border-gray-200'}`}>
-                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${selected ? 'bg-[#E8732A] border-[#E8732A]' : 'border-gray-300'}`}>
-                                    {selected && <Check className="w-3 h-3 text-white" />}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-[12px] font-black text-gray-900 truncate">{s.title || s.name}</p>
-                                    <p className="text-[11px] text-gray-400">{s.price}€</p>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Bundle price */}
-                  <div className="flex gap-2 items-center">
-                    <div className="flex-1">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Prix du bundle</p>
-                      <input type="number" value={bundleForm.bundle_price} onChange={e => setBundleForm(f => ({ ...f, bundle_price: e.target.value }))}
-                        placeholder="Prix €" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
-                    </div>
-                    {bundleForm.service_ids.length > 0 && bundleForm.bundle_price && (() => {
-                      const regTotal = proServices.filter(s => bundleForm.service_ids.includes(s.id)).reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
-                      const disc = regTotal > 0 ? Math.round(((regTotal - parseFloat(bundleForm.bundle_price)) / regTotal) * 100) : 0;
-                      return disc > 0 ? (
-                        <div className="mt-5 bg-green-100 text-green-700 text-[11px] font-black px-2 py-1 rounded-full">-{disc}%</div>
-                      ) : null;
-                    })()}
-                  </div>
-
-                  <button onClick={saveBundle} disabled={!bundleForm.name.trim() || !bundleForm.bundle_price || bundleForm.service_ids.length === 0}
-                    className="w-full bg-[#E8732A] text-white rounded-2xl py-3 text-[13px] font-black active:scale-95 transition-transform disabled:opacity-40">
-                    {editingBundle ? 'ENREGISTRER' : 'CRÉER LE BUNDLE'}
-                  </button>
-                </div>
-              )}
-
-              {!showBundleForm && (
-                <button onClick={() => { setShowBundleForm(true); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" }); }}
-                  className="w-full bg-gradient-to-r from-[#E8732A] to-[#F59E0B] text-white rounded-2xl py-4 flex items-center justify-center gap-2 text-[13px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/25 active:scale-95 transition-all">
-                  <Plus className="w-5 h-5" /> AJOUTER UN BUNDLE
-                </button>
-              )}
             </div>
           )}
         </div>
