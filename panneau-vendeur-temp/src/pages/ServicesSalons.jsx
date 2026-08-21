@@ -1596,9 +1596,199 @@ function ParticuliersTab({ activeCategory }) {
   );
 }
 
+// ── Bundles Tab ──────────────────────────────────────────────────────────────
+function BundlesTab({ activeCategory }) {
+  const navigate = useNavigate();
+  const [bundles, setBundles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("popular");
+  const [showSort, setShowSort] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    entities.ServiceBundle.filter({ is_active: true }, "-created_at", 200)
+      .then(async (data) => {
+        const b = data || [];
+        const emails = [...new Set(b.map(x => x.pro_email).filter(Boolean))];
+        const svcIds = [...new Set(b.flatMap(x => x.service_ids || []).filter(Boolean))];
+        const [profiles, services] = await Promise.all([
+          emails.length ? entities.ProfilPro.filter({}, "-created_at", 500).catch(() => []) : Promise.resolve([]),
+          svcIds.length ? entities.Service.filter({}, "-created_at", 500).catch(() => []) : Promise.resolve([]),
+        ]);
+        const profileMap = {};
+        profiles.forEach(p => { profileMap[p.user_email] = p; });
+        const svcMap = {};
+        services.forEach(s => { svcMap[s.id] = s; });
+        const enriched = b.map(bn => {
+          const includedSvcs = (bn.service_ids || []).map(id => svcMap[id]).filter(Boolean);
+          const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+          const prof = profileMap[bn.pro_email] || {};
+          return { ...bn, includedSvcs, regularTotal, proProfile: prof, serviceCount: includedSvcs.length };
+        });
+        setBundles(enriched);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = activeCategory && activeCategory !== "Tous"
+    ? bundles.filter(b => {
+        const cats = (b.includedSvcs || []).map(s => s.category?.toLowerCase());
+        return cats.includes(activeCategory.toLowerCase());
+      })
+    : bundles;
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === "price_asc") return (a.bundle_price || 0) - (b.bundle_price || 0);
+    if (sortBy === "price_desc") return (b.bundle_price || 0) - (a.bundle_price || 0);
+    if (sortBy === "discount") return (b.discount_percent || 0) - (a.discount_percent || 0);
+    return 0;
+  });
+
+  const getBadge = (b, i) => {
+    if (i === 0) return { text: "Le plus réservé", bg: "bg-amber-500", icon: "🔥" };
+    if (b.discount_percent >= 20) return { text: "Meilleure offre", bg: "bg-rose-500", icon: "💎" };
+    if (b.is_new) return { text: "Nouveau", bg: "bg-emerald-500", icon: "✨" };
+    return null;
+  };
+
+  const getMinPersons = (b) => b.min_persons || 1;
+  const getMaxPersons = (b) => b.max_persons || 1;
+  const isGroup = getMaxPersons(b) > 1;
+
+  if (loading) return (
+    <div className="flex justify-center py-20">
+      <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="px-4 py-3 space-y-3">
+      {/* Sort bar */}
+      <div className="flex items-center gap-2">
+        <button onClick={() => setShowSort(s => !s)} className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-2 text-[11px] font-black text-gray-600 active:scale-95">
+          <SlidersHorizontal className="w-3.5 h-3.5" /> Trier
+        </button>
+        <button onClick={() => setSortBy("price")} className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-bold border ${sortBy === "price_asc" || sortBy === "price_desc" ? "bg-primary/10 border-primary text-primary" : "bg-white border-gray-200 text-gray-500"}`}>
+          ↓ Prix
+        </button>
+        <button onClick={() => setSortBy("discount")} className={`flex items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-bold border ${sortBy === "discount" ? "bg-primary/10 border-primary text-primary" : "bg-white border-gray-200 text-gray-500"}`}>
+          % Réduction
+        </button>
+      </div>
+
+      {/* Sort dropdown */}
+      {showSort && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-2 space-y-1">
+          {[
+            { key: "popular", label: "Populaires" },
+            { key: "price_asc", label: "Prix croissant" },
+            { key: "price_desc", label: "Prix décroissant" },
+            { key: "discount", label: "Meilleure réduction" },
+          ].map(s => (
+            <button key={s.key} onClick={() => { setSortBy(s.key); setShowSort(false); }}
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-[12px] font-bold ${sortBy === s.key ? "bg-primary/10 text-primary" : "text-gray-600"}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Bundle cards */}
+      {sorted.length === 0 ? (
+        <div className="text-center py-16">
+          <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span className="text-3xl">📦</span>
+          </div>
+          <p className="text-[15px] font-black text-gray-700">Aucun bundle disponible</p>
+          <p className="text-[12px] text-gray-400 mt-1">Créez votre premier bundle depuis votre profil pro.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {sorted.map((b, i) => {
+            const badge = getBadge(b, i);
+            const minP = getMinPersons(b);
+            const maxP = getMaxPersons(b);
+            const grp = maxP > 1;
+            const totalDuration = (b.includedSvcs || []).reduce((sum, s) => sum + (parseInt(s.duration_min) || 60), 0);
+            const durH = Math.floor(totalDuration / 60);
+            const durM = totalDuration % 60;
+            const durStr = durH > 0 ? `${durH}h${durM > 0 ? String(durM).padStart(2, '0') : ''}` : `${durM}min`;
+            return (
+              <button key={b.id} onClick={() => navigate(`/bundle/${b.id}`, { state: { bundle: b } })}
+                className="w-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-[0.98] transition-all text-left">
+                <div className="flex">
+                  {/* Image */}
+                  <div className="w-28 h-32 shrink-0 bg-gray-100 relative overflow-hidden">
+                    {b.image_url ? (
+                      <img src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-pink-50 to-orange-50">📦</div>
+                    )}
+                    {badge && (
+                      <span className={`absolute top-1.5 left-1.5 ${badge.bg} text-white text-[8px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5`}>
+                        {badge.icon} {badge.text}
+                      </span>
+                    )}
+                    {grp && (
+                      <span className="absolute bottom-1.5 left-1.5 bg-black/60 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full">
+                        👥 {minP}-{maxP} pers.
+                      </span>
+                    )}
+                  </div>
+                  {/* Content */}
+                  <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                    <div>
+                      <p className="text-[15px] font-black text-gray-900 truncate">{b.name}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{(b.includedSvcs || []).map(s => s.title || s.name).join(", ")}</p>
+                      {/* Pro info */}
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        {b.proProfile?.avatar_url && <img src={b.proProfile.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />}
+                        <span className="text-[10px] text-gray-400 font-medium truncate">{b.proProfile?.salon_name || b.pro_email}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-end justify-between mt-2">
+                      <div className="flex items-center gap-2 text-[10px] text-gray-400">
+                        <span className="flex items-center gap-0.5"><Scissors className="w-3 h-3" /> {b.serviceCount} services</span>
+                        <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {durStr}</span>
+                      </div>
+                      <div className="text-right">
+                        {b.regularTotal > 0 && b.bundle_price < b.regularTotal && (
+                          <span className="text-[10px] text-gray-400 line-through block">{b.regularTotal}€</span>
+                        )}
+                        <span className="text-[17px] font-black text-primary">{b.bundle_price}€</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {/* Discount banner */}
+                {b.discount_percent > 0 && (
+                  <div className="bg-rose-50 border-t border-rose-100 px-3 py-1.5 flex items-center justify-between">
+                    <span className="text-[10px] font-black text-rose-500">Économisez {b.discount_percent}%</span>
+                    <span className="text-[10px] text-gray-400">{grp ? `À partir de` : `pour 1 pers.`}</span>
+                  </div>
+                )}
+              </button>
+            );
+          })}
+          {/* Footer CTA */}
+          <div className="text-center py-4">
+            <p className="text-[11px] text-gray-400 font-medium">Plus vous êtes, plus vous économisez !</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const TABS = ["STYLES", "SERVICES", "SALONS", "PARTICULIERS"];
+const TABS = [
+  { id: "STYLES", icon: "✨", label: "Styles" },
+  { id: "SERVICES", icon: "✂️", label: "Services" },
+  { id: "BUNDLES", icon: "📦", label: "Bundles" },
+  { id: "SALONS", icon: "🏪", label: "Salons" },
+  { id: "PARTICULIERS", icon: "👤", label: "Particuliers" },
+];
 
 // ── Mini Publication Wizard inline ───────────────────────────────────────────
 function QuickPublishModal({ onClose }) {
@@ -1751,6 +1941,7 @@ export default function ServicesSalons() {
   const [activeCategoryMap, setActiveCategoryMap] = useState({
     STYLES: catMapped?.tab === "STYLES" ? catMapped.sub : "Tous",
     SERVICES: catMapped?.tab === "SERVICES" ? catMapped.sub : "Tous",
+    BUNDLES: "Tous",
     SALONS: "Tous",
     PARTICULIERS: "Tous",
   });
@@ -1793,11 +1984,12 @@ export default function ServicesSalons() {
         {showSearch && <SearchResults query={search} onClose={closeSearch} />}
 
         {/* Main Tabs */}
-        <div className="flex gap-6 overflow-x-auto hide-scrollbar">
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-3">
           {TABS.map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`shrink-0 pb-3 text-[13px] font-black border-b-2 transition-all ${activeTab === tab ? "text-primary border-primary" : "text-gray-400 border-transparent"}`}>
-              {tab}
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-black transition-all ${activeTab === tab.id ? "bg-primary text-white shadow-md shadow-primary/20" : "bg-gray-100 text-gray-500"}`}>
+              <span className="text-[13px]">{tab.icon}</span>
+              {tab.label}
             </button>
           ))}
         </div>
@@ -1809,6 +2001,7 @@ export default function ServicesSalons() {
         {activeTab === "SERVICES" && <FilterChips filters={SERVICE_CATEGORIES} active={activeCategoryMap["SERVICES"]} onChange={v => setActiveCategoryMap(p => ({ ...p, SERVICES: v }))} />}
         {activeTab === "SALONS" && <FilterChips filters={SALON_CATEGORIES} active={activeCategoryMap["SALONS"]} onChange={v => setActiveCategoryMap(p => ({ ...p, SALONS: v }))} />}
         {activeTab === "PARTICULIERS" && <FilterChips filters={PARTICULIER_CATEGORIES} active={activeCategoryMap["PARTICULIERS"]} onChange={v => setActiveCategoryMap(p => ({ ...p, PARTICULIERS: v }))} />}
+        {activeTab === "BUNDLES" && <FilterChips filters={["Tous", "Coiffure", "Soin", "Ongles", "Maquillage"]} active={activeCategoryMap["BUNDLES"]} onChange={v => setActiveCategoryMap(p => ({ ...p, BUNDLES: v }))} />}
       </div>
 
       {/* ── Tab Content ── */}
@@ -1818,6 +2011,7 @@ export default function ServicesSalons() {
       >
         {activeTab === "STYLES" && <StylesTab activeCategory={activeCategoryMap["STYLES"]} />}
         {activeTab === "SERVICES" && <ServicesTab activeCategory={activeCategoryMap["SERVICES"]} />}
+        {activeTab === "BUNDLES" && <BundlesTab activeCategory={activeCategoryMap["BUNDLES"]} />}
         {activeTab === "SALONS" && <SalonsTab activeCategory={activeCategoryMap["SALONS"]} />}
         {activeTab === "PARTICULIERS" && <ParticuliersTab activeCategory={activeCategoryMap["PARTICULIERS"]} />}
       </div>

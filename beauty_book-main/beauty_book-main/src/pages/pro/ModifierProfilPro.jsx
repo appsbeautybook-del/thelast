@@ -89,7 +89,7 @@ export default function ModifierProfilPro() {
   const [bundles, setBundles] = useState([]);
   const [showBundleForm, setShowBundleForm] = useState(false);
   const [editingBundle, setEditingBundle] = useState(null);
-  const [bundleForm, setBundleForm] = useState({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" });
+  const [bundleForm, setBundleForm] = useState({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "", category: "Tous", is_group: false, min_persons: 2, max_persons: 6, bonus: "" });
   const [proServices, setProServices] = useState([]);
   const [uploadingBundleImg, setUploadingBundleImg] = useState(false);
   const bundleImgRef = useRef(null);
@@ -154,6 +154,12 @@ export default function ModifierProfilPro() {
       service_ids: bundleForm.service_ids,
       bundle_price: parseFloat(bundleForm.bundle_price),
       image_url: bundleForm.image_url || "",
+      category: bundleForm.category !== "Tous" ? bundleForm.category : "",
+      is_group: bundleForm.is_group,
+      min_persons: bundleForm.is_group ? bundleForm.min_persons : 1,
+      max_persons: bundleForm.is_group ? bundleForm.max_persons : 1,
+      bundle_price_per_person: parseFloat(bundleForm.bundle_price),
+      bonus: bundleForm.bonus.trim(),
       is_active: true,
     };
     // Calculate discount
@@ -171,7 +177,7 @@ export default function ModifierProfilPro() {
     setBundles(data || []);
     setShowBundleForm(false);
     setEditingBundle(null);
-    setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" });
+    setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "", category: "Tous", is_group: false, min_persons: 2, max_persons: 6, bonus: "" });
   };
 
   const deleteBundle = async (id) => {
@@ -899,7 +905,7 @@ export default function ModifierProfilPro() {
                 <div className="bg-pink-50 rounded-2xl p-4 space-y-3 border border-pink-200">
                   <div className="flex items-center justify-between">
                     <p className="text-[13px] font-black text-gray-900">{editingBundle ? 'Modifier le bundle' : 'Nouveau bundle'}</p>
-                    <button onClick={() => { setShowBundleForm(false); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "" }); }} className="p-1">
+                    <button onClick={() => { setShowBundleForm(false); setEditingBundle(null); setBundleForm({ name: "", description: "", service_ids: [], bundle_price: "", image_url: "", category: "Tous", is_group: false, min_persons: 2, max_persons: 6, bonus: "" }); }} className="p-1">
                       <X className="w-4 h-4 text-gray-400" />
                     </button>
                   </div>
@@ -925,6 +931,51 @@ export default function ModifierProfilPro() {
 
                   <input value={bundleForm.description} onChange={e => setBundleForm(f => ({ ...f, description: e.target.value }))}
                     placeholder="Description (optionnel)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[13px] outline-none focus:border-[#E8732A]" />
+
+                  {/* Catégorie */}
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Catégorie</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["Tous", "Coiffure", "Soin", "Ongles", "Maquillage"].map(c => (
+                        <button key={c} onClick={() => setBundleForm(f => ({ ...f, category: c }))}
+                          className={`px-2.5 py-1.5 rounded-full text-[10px] font-black border transition-all ${bundleForm.category === c ? "border-[#E8732A] bg-[#E8732A] text-white" : "border-gray-200 text-gray-500 bg-white"}`}>
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Bundle Groupe */}
+                  <div className="bg-white rounded-xl p-3 border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <Users className="w-4 h-4 text-purple-500 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-[12px] font-black text-gray-900">Bundle Groupe</p>
+                        <p className="text-[10px] text-gray-400">Plusieurs personnes</p>
+                      </div>
+                      <div onClick={() => setBundleForm(f => ({ ...f, is_group: !f.is_group }))} className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${bundleForm.is_group ? "bg-primary" : "bg-gray-200"}`}>
+                        <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${bundleForm.is_group ? "translate-x-5" : "translate-x-0.5"}`} />
+                      </div>
+                    </div>
+                    {bundleForm.is_group && (
+                      <div className="mt-2 pt-2 border-t border-gray-100 flex gap-2">
+                        <div className="flex-1">
+                          <p className="text-[9px] font-black text-gray-400 uppercase">Min</p>
+                          <input type="number" min={2} value={bundleForm.min_persons} onChange={e => setBundleForm(f => ({ ...f, min_persons: Math.max(2, parseInt(e.target.value) || 2) }))}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] font-black text-center outline-none" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-[9px] font-black text-gray-400 uppercase">Max</p>
+                          <input type="number" min={bundleForm.min_persons} value={bundleForm.max_persons} onChange={e => setBundleForm(f => ({ ...f, max_persons: Math.max(f.min_persons, parseInt(e.target.value) || f.min_persons) }))}
+                            className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-[12px] font-black text-center outline-none" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bonus */}
+                  <input value={bundleForm.bonus} onChange={e => setBundleForm(f => ({ ...f, bonus: e.target.value }))}
+                    placeholder="Bonus inclus (ex: Huile capillaire offerte 🎁)" className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[12px] outline-none focus:border-[#E8732A]" />
 
                   {/* Service selection */}
                   <div>

@@ -73,6 +73,8 @@ import Immobilier from '@/pages/Immobilier';
 import ImmobilierDetail from '@/pages/ImmobilierDetail';
 import ServiceDetail from '@/pages/ServiceDetail';
 import StyleDetail from '@/pages/StyleDetail';
+import BundleDetail from '@/pages/BundleDetail';
+import BundleGroupeDetail from '@/pages/BundleGroupeDetail';
 import ModifierProfilClient from '@/pages/ModifierProfilClient';
 import Parametres from '@/pages/Parametres';
 import MesCommandes from '@/pages/MesCommandes';
@@ -206,6 +208,8 @@ const AuthenticatedApp = () => {
         <Route path="/immobilier" element={<Immobilier />} />
         <Route path="/immobilier/:id" element={<ImmobilierDetail />} />
         <Route path="/service/:id" element={<ServiceDetail />} />
+        <Route path="/bundle/:id" element={<BundleDetail />} />
+        <Route path="/bundle-groupe/:id" element={<BundleGroupeDetail />} />
         <Route path="/style/:id" element={<StyleDetail />} />
         <Route path="/modifier-profil-client" element={<ModifierProfilClient />} />
         <Route path="/parametres" element={<Parametres />} />

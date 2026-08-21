@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check, Pencil } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -58,6 +58,7 @@ export default function CatalogueServices() {
   const [services, setServices] = useState([]);
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmModal, setConfirmModal] = useState(null);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -92,18 +93,29 @@ export default function CatalogueServices() {
     }
   };
 
-  const deleteService = async (id) => {
-    if (!confirm("Supprimer ce service ?")) return;
-    setServices(s => s.filter(sv => sv.id !== id));
-    try { await entities.Service.delete(id); } catch {
-      entities.Service.filter({ pro_email: user?.email }, "-created_at", 100).then(setServices).catch(() => {});
-    }
+  const confirmDeleteService = (id) => {
+    const svc = services.find(s => s.id === id);
+    setConfirmModal({ type: "service", id, name: svc?.title || svc?.name || "Ce service" });
   };
 
-  const deleteBundle = async (id) => {
-    if (!confirm("Supprimer ce bundle ?")) return;
-    setBundles(b => b.filter(x => x.id !== id));
-    await supabase.from("ServiceBundle").delete().eq("id", id);
+  const confirmDeleteBundle = (id) => {
+    const b = bundles.find(x => x.id === id);
+    setConfirmModal({ type: "bundle", id, name: b?.name || "Ce bundle" });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmModal) return;
+    const { type, id } = confirmModal;
+    if (type === "service") {
+      setServices(s => s.filter(sv => sv.id !== id));
+      try { await entities.Service.delete(id); } catch {
+        entities.Service.filter({ pro_email: user?.email }, "-created_at", 100).then(setServices).catch(() => {});
+      }
+    } else {
+      setBundles(b => b.filter(x => x.id !== id));
+      await supabase.from("ServiceBundle").delete().eq("id", id);
+    }
+    setConfirmModal(null);
   };
 
   const filtered = services.filter(s => {
@@ -187,9 +199,15 @@ export default function CatalogueServices() {
                         )}
                       </div>
                     </div>
-                    <button onClick={() => deleteBundle(b.id)} className="p-2.5 bg-white rounded-xl border border-pink-200 shrink-0">
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <button onClick={() => navigate("/pro/creer-bundle", { state: { editBundle: b } })}
+                        className="p-2.5 bg-white rounded-xl border border-pink-200 active:scale-95 transition-all">
+                        <Pencil className="w-4 h-4 text-blue-500" />
+                      </button>
+                      <button onClick={() => confirmDeleteBundle(b.id)} className="p-2.5 bg-white rounded-xl border border-pink-200 active:scale-95 transition-all">
+                        <Trash2 className="w-4 h-4 text-red-400" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -244,7 +262,7 @@ export default function CatalogueServices() {
                       className={`relative w-12 h-6 rounded-full transition-colors ${isActive ? "bg-primary" : "bg-gray-300"}`}>
                       <div className={`absolute top-1 w-4 h-4 rounded-full shadow transition-transform bg-white ${isActive ? "translate-x-7" : "translate-x-1"}`} />
                     </button>
-                    <button onClick={() => deleteService(service.id)} className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors">
+                    <button onClick={() => confirmDeleteService(service.id)} className="w-8 h-8 flex items-center justify-center text-gray-300 hover:text-red-400 transition-colors">
                       <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
@@ -333,7 +351,7 @@ export default function CatalogueServices() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
         {isPackTab ? (
           <button onClick={() => navigate("/pro/creer-bundle")}
-            className="w-full bg-pink-500 text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-pink-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
+            className="w-full bg-primary text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-primary/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
             <Plus className="w-5 h-5" />
             Créer un Bundle
           </button>
@@ -345,6 +363,40 @@ export default function CatalogueServices() {
           </button>
         )}
       </div>
+
+      {/* Modal de confirmation suppression */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[200] flex items-end justify-center" onClick={() => setConfirmModal(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl px-5 pt-6 pb-8 space-y-4 animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Trash2 className="w-7 h-7 text-red-500" />
+              </div>
+              <p className="text-[16px] font-black text-gray-900">Supprimer « {confirmModal.name} » ?</p>
+              <p className="text-[13px] text-gray-400 mt-1">Cette action est irréversible.</p>
+            </div>
+            <div className="space-y-2">
+              <button onClick={() => {
+                setConfirmModal(null);
+                if (confirmModal.type === "service") navigate("/pro/ajouter-service", { state: { editService: services.find(s => s.id === confirmModal.id) } });
+                else navigate("/pro/creer-bundle", { state: { editBundle: bundles.find(b => b.id === confirmModal.id) } });
+              }}
+                className="w-full bg-gray-100 text-gray-700 font-black text-[13px] uppercase tracking-widest py-3.5 rounded-2xl active:scale-95 transition-all">
+                Modifier
+              </button>
+              <button onClick={handleConfirmDelete}
+                className="w-full bg-red-500 text-white font-black text-[13px] uppercase tracking-widest py-3.5 rounded-2xl shadow-lg shadow-red-500/30 active:scale-95 transition-all">
+                Supprimer définitivement
+              </button>
+              <button onClick={() => setConfirmModal(null)}
+                className="w-full text-gray-400 font-bold text-[12px] py-2 active:scale-95 transition-all">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
