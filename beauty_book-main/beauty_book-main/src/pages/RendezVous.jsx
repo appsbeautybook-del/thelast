@@ -503,7 +503,7 @@ export default function RendezVous() {
   }, []);
 
   const today = new Date().toISOString().slice(0, 10);
-  const upcoming = reservations.filter(r => r.date >= today && r.status === "confirme");
+  const upcoming = reservations.filter(r => r.date >= today && ["confirme", "en_attente"].includes(r.status));
   const past = reservations.filter(r => r.status === "termine" || r.date < today);
   const cancelled = reservations.filter(r => r.status === "annule");
 

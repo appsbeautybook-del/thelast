@@ -1699,7 +1699,7 @@ function BundlesTab() {
   const [sortBy, setSortBy] = useState("popular");
   const [showSort, setShowSort] = useState(false);
   const [sortLabel, setSortLabel] = useState("Trier");
-  const [activeCategory, setActiveCategory] = useState("Tous");
+  const [localCategory, setLocalCategory] = useState("Tous");
 
   useEffect(() => {
     let cancelled = false;
@@ -1733,10 +1733,10 @@ function BundlesTab() {
     return { ...b, includedSvcs, regularTotal, proProfile: pro, serviceCount: includedSvcs.length, totalDuration };
   });
 
-  const filtered = activeCategory && activeCategory !== "Tous"
+  const filtered = localCategory !== "Tous"
     ? enriched.filter(b => {
         const cats = (b.includedSvcs || []).map(s => s.category?.toLowerCase());
-        return cats.includes(activeCategory.toLowerCase());
+        return cats.includes(localCategory.toLowerCase());
       })
     : enriched;
 
@@ -1766,7 +1766,14 @@ function BundlesTab() {
     return null;
   };
 
-  const CATEGORY_FILTERS = ["Tous", "Coiffure", "Soin", "Ongles", "Maquillage"];
+  const CATEGORY_FILTERS = [
+    { label: "Tous", icon: null },
+    { label: "Coiffure", icon: Scissors },
+    { label: "Soin", icon: Heart },
+    { label: "Ongles", icon: Sparkles },
+    { label: "Maquillage", icon: Palette },
+  ];
+
   const sortOptions = [
     { key: "popular", label: "Populaires" },
     { key: "price_asc", label: "Prix croissant" },
@@ -1777,41 +1784,18 @@ function BundlesTab() {
 
   return (
     <div className="space-y-3">
-      {/* Orange header */}
-      <div className="mx-4 rounded-3xl overflow-hidden shadow-lg" style={{ background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c42 100%)" }}>
-        <div className="px-5 py-5 text-white">
-          <p className="text-[10px] font-black tracking-wider opacity-70 mb-1">BUNDLES</p>
-          <h2 className="text-[22px] font-black leading-tight">Créez des bundles irrésistibles</h2>
-          <p className="text-[12px] mt-1 opacity-80">Regroupez vos services et offrez des packs exclusifs à vos clientes</p>
-          <button onClick={() => navigate("/pro/creer-bundle")}
-            className="mt-4 bg-white text-[#f7931e] text-[12px] font-black px-5 py-2.5 rounded-full shadow-md active:scale-95 transition-all">
-            CRÉER UN BUNDLE
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-px bg-white/20">
-          <div className="bg-white/90 py-3 text-center">
-            <p className="text-[20px] font-black text-[#f7931e]">{bundles.length}</p>
-            <p className="text-[9px] font-bold text-gray-500">Bundles actifs</p>
-          </div>
-          <div className="bg-white/90 py-3 text-center">
-            <p className="text-[20px] font-black text-[#f7931e]">{Math.round(bundles.reduce((sum, b) => sum + (b.discount_percent || 0), 0) / (bundles.length || 1))}%</p>
-            <p className="text-[9px] font-bold text-gray-500">Réduction moy.</p>
-          </div>
-          <div className="bg-white/90 py-3 text-center">
-            <p className="text-[20px] font-black text-[#f7931e]">{bundles.filter(b => b.is_group).length}</p>
-            <p className="text-[9px] font-bold text-gray-500">Packs groupe</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Category filters */}
+      {/* Icon-based category filters */}
       <div className="px-4 flex items-center gap-2 overflow-x-auto hide-scrollbar">
-        {CATEGORY_FILTERS.map(cat => (
-          <button key={cat} onClick={() => setActiveCategory(cat)}
-            className={`shrink-0 px-4 py-2 rounded-full text-[12px] font-bold border transition-all ${activeCategory === cat ? "bg-primary text-white border-primary" : "bg-white text-gray-500 border-gray-200"}`}>
-            {cat}
-          </button>
-        ))}
+        {CATEGORY_FILTERS.map(cat => {
+          const Icon = cat.icon;
+          return (
+            <button key={cat.label} onClick={() => setLocalCategory(cat.label)}
+              className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold border transition-all ${localCategory === cat.label ? "bg-primary text-white border-primary" : "bg-white text-gray-500 border-gray-200"}`}>
+              {Icon && <Icon className="w-3.5 h-3.5" />}
+              {cat.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Sort bar */}
@@ -1872,8 +1856,7 @@ function BundlesTab() {
               <button key={b.id} onClick={() => navigate(b.is_group ? `/bundle-groupe/${b.id}` : `/bundle/${b.id}`, { state: { bundle: b } })}
                 className="w-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-[0.98] transition-all text-left">
                 <div className="flex">
-                  {/* Image */}
-                  <div className="w-[110px] h-[130px] shrink-0 bg-gray-100 relative overflow-hidden rounded-l-2xl">
+                  <div className="w-[110px] h-[140px] shrink-0 bg-gray-100 relative overflow-hidden rounded-l-2xl">
                     {b.image_url ? (
                       <img src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
                     ) : (
@@ -1885,17 +1868,15 @@ function BundlesTab() {
                       </span>
                     )}
                   </div>
-                  {/* Content */}
                   <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
                     <div>
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <p className="text-[15px] font-black text-gray-900 truncate">{b.name}</p>
+                          <p className="text-[15px] font-black text-gray-900 truncate">{b.name} ✨</p>
                           <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{(b.includedSvcs || []).map(s => s.title || s.name).join(", ")}</p>
                         </div>
                         <Heart className="w-4 h-4 text-gray-300 shrink-0 ml-1" />
                       </div>
-                      {/* Pro info */}
                       <div className="flex items-center gap-1.5 mt-1.5">
                         {b.proProfile?.avatar_url ? (
                           <img src={b.proProfile.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
@@ -1903,37 +1884,34 @@ function BundlesTab() {
                           <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[8px]">👤</div>
                         )}
                         <span className="text-[10px] text-gray-400 font-medium truncate">By {b.proProfile?.salon_name || b.pro_email}</span>
-                        <span className="text-[9px] text-primary font-bold bg-primary/10 px-1 rounded">✓</span>
+                        <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                         <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
                         <span className="text-[10px] text-gray-500 font-bold">{b.proProfile?.rating || 4.9}</span>
                         <span className="text-[9px] text-gray-400">({Math.floor(Math.random() * 200 + 10)})</span>
                       </div>
                     </div>
-                    <div className="flex items-end justify-between mt-2">
+                    <div className="flex items-center justify-between mt-1.5">
+                      {savings > 0 && <span className="bg-rose-50 text-rose-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-100">Économisez {savPct}%</span>}
+                      <div className="flex items-center gap-2 ml-auto">
+                        {b.regularTotal > 0 && b.bundle_price < b.regularTotal && (
+                          <span className="text-[10px] text-gray-400 line-through">{b.regularTotal}€</span>
+                        )}
+                        <span className="text-[18px] font-black text-primary">{b.bundle_price}€</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
                       <div className="flex items-center gap-2 text-[10px] text-gray-400">
                         <span className="flex items-center gap-0.5"><Scissors className="w-3 h-3" /> {b.serviceCount} services</span>
                         <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {durStr}</span>
                         <span className="flex items-center gap-0.5"><Users className="w-3 h-3" /> {grp ? `${minP}-${maxP} pers.` : "1 personne"}</span>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-1.5">
-                      <span className="text-[10px] text-gray-400">{grp ? `À partir de` : `pour 1 pers.`}</span>
-                      <div className="flex items-center gap-2">
-                        {savings > 0 && <span className="bg-rose-50 text-rose-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-100">Économisez {savPct}%</span>}
-                        <div className="text-right">
-                          {b.regularTotal > 0 && b.bundle_price < b.regularTotal && (
-                            <span className="text-[10px] text-gray-400 line-through block">{b.regularTotal}€</span>
-                          )}
-                          <span className="text-[18px] font-black text-primary">{b.bundle_price}€</span>
-                        </div>
-                      </div>
+                      <Heart className="w-4 h-4 text-gray-300 shrink-0" />
                     </div>
                   </div>
                 </div>
               </button>
             );
           })}
-          {/* Footer CTA */}
           <div className="text-center py-4 border-t border-gray-100 mt-2">
             <p className="text-[12px] text-gray-500 font-bold">🎁 Plus vous êtes, plus vous économisez !</p>
             <p className="text-[11px] text-primary font-bold mt-1">Voir comment ça marche →</p>

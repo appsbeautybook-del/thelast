@@ -1597,46 +1597,55 @@ function ParticuliersTab({ activeCategory }) {
 }
 
 // ── Bundles Tab ──────────────────────────────────────────────────────────────
-function BundlesTab({ activeCategory }) {
+function BundlesTab() {
   const navigate = useNavigate();
   const [bundles, setBundles] = useState([]);
+  const [profilsMap, setProfilsMap] = useState({});
+  const [servicesMap, setServicesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState("popular");
   const [showSort, setShowSort] = useState(false);
   const [sortLabel, setSortLabel] = useState("Trier");
+  const [localCategory, setLocalCategory] = useState("Tous");
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     entities.ServiceBundle.filter({ is_active: true }, "-created_at", 200)
-      .then(async (data) => {
-        const b = data || [];
-        const emails = [...new Set(b.map(x => x.pro_email).filter(Boolean))];
-        const svcIds = [...new Set(b.flatMap(x => x.service_ids || []).filter(Boolean))];
-        const [profiles, services] = await Promise.all([
-          emails.length ? entities.ProfilPro.filter({}, "-created_at", 500).catch(() => []) : Promise.resolve([]),
-          svcIds.length ? entities.Service.filter({}, "-created_at", 500).catch(() => []) : Promise.resolve([]),
+      .then(async (bundles) => {
+        if (cancelled) return;
+        setBundles(bundles);
+        const emails = [...new Set(bundles.map(b => b.pro_email).filter(Boolean))];
+        const svcIds = [...new Set(bundles.flatMap(b => b.service_ids || []).filter(Boolean))];
+        const [profilsResults, svcResults] = await Promise.all([
+          Promise.all(emails.map(e => entities.ProfilPro.filter({ user_email: e }, "-created_at", 1).catch(() => []))),
+          svcIds.length > 0 ? entities.Service.filter({ status: "actif" }, "-created_at", 500).catch(() => []) : Promise.resolve([]),
         ]);
-        const profileMap = {};
-        profiles.forEach(p => { profileMap[p.user_email] = p; });
-        const svcMap = {};
-        services.forEach(s => { svcMap[s.id] = s; });
-        const enriched = b.map(bn => {
-          const includedSvcs = (bn.service_ids || []).map(id => svcMap[id]).filter(Boolean);
-          const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
-          const prof = profileMap[bn.pro_email] || {};
-          return { ...bn, includedSvcs, regularTotal, proProfile: prof, serviceCount: includedSvcs.length };
-        });
-        setBundles(enriched);
+        if (cancelled) return;
+        const pMap = {};
+        emails.forEach((e, i) => { if (profilsResults[i]?.[0]) pMap[e] = profilsResults[i][0]; });
+        setProfilsMap(pMap);
+        const sMap = {};
+        svcResults.forEach(s => { sMap[s.id] = s; });
+        setServicesMap(sMap);
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
-  const filtered = activeCategory && activeCategory !== "Tous"
-    ? bundles.filter(b => {
+  const enriched = bundles.map(b => {
+    const includedSvcs = (b.service_ids || []).map(id => servicesMap[id]).filter(Boolean);
+    const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
+    const pro = profilsMap[b.pro_email] || {};
+    const totalDuration = includedSvcs.reduce((sum, s) => sum + (parseInt(s.duration_min) || 60), 0);
+    return { ...b, includedSvcs, regularTotal, proProfile: pro, serviceCount: includedSvcs.length, totalDuration };
+  });
+
+  const filtered = localCategory !== "Tous"
+    ? enriched.filter(b => {
         const cats = (b.includedSvcs || []).map(s => s.category?.toLowerCase());
-        return cats.includes(activeCategory.toLowerCase());
+        return cats.includes(localCategory.toLowerCase());
       })
-    : bundles;
+    : enriched;
 
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === "price_asc") return (a.bundle_price || 0) - (b.bundle_price || 0);
@@ -1664,8 +1673,13 @@ function BundlesTab({ activeCategory }) {
     return null;
   };
 
-  const getMinPersons = (b) => b.min_persons || 1;
-  const getMaxPersons = (b) => b.max_persons || 1;
+  const CATEGORY_FILTERS = [
+    { label: "Tous", icon: null },
+    { label: "Coiffure", icon: Scissors },
+    { label: "Soin", icon: Heart },
+    { label: "Ongles", icon: Sparkles },
+    { label: "Maquillage", icon: Palette },
+  ];
 
   const sortOptions = [
     { key: "popular", label: "Populaires" },
@@ -1675,43 +1689,24 @@ function BundlesTab({ activeCategory }) {
     { key: "discount", label: "Meilleure réduction" },
   ];
 
-  if (loading) return (
-    <div className="flex justify-center py-20">
-      <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
   return (
-    <div className="px-4 py-3 space-y-3">
-      {/* Orange header */}
-      <div className="rounded-3xl overflow-hidden shadow-lg" style={{ background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c42 100%)" }}>
-        <div className="px-5 py-5 text-white">
-          <p className="text-[10px] font-black tracking-wider opacity-70 mb-1">BUNDLES</p>
-          <h2 className="text-[22px] font-black leading-tight">Créez des bundles irrésistibles</h2>
-          <p className="text-[12px] mt-1 opacity-80">Regroupez vos services et offrez des packs exclusifs à vos clientes</p>
-          <button onClick={() => navigate("/pro/creer-bundle")}
-            className="mt-4 bg-white text-[#f7931e] text-[12px] font-black px-5 py-2.5 rounded-full shadow-md active:scale-95 transition-all">
-            CRÉER UN BUNDLE
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-px bg-white/20">
-          <div className="bg-white/90 py-3 text-center">
-            <p className="text-[20px] font-black text-[#f7931e]">{bundles.length}</p>
-            <p className="text-[9px] font-bold text-gray-500">Bundles actifs</p>
-          </div>
-          <div className="bg-white/90 py-3 text-center">
-            <p className="text-[20px] font-black text-[#f7931e]">{Math.round(bundles.reduce((sum, b) => sum + (b.discount_percent || 0), 0) / (bundles.length || 1))}%</p>
-            <p className="text-[9px] font-bold text-gray-500">Réduction moy.</p>
-          </div>
-          <div className="bg-white/90 py-3 text-center">
-            <p className="text-[20px] font-black text-[#f7931e]">{bundles.filter(b => b.is_group).length}</p>
-            <p className="text-[9px] font-bold text-gray-500">Packs groupe</p>
-          </div>
-        </div>
+    <div className="space-y-3">
+      {/* Icon-based category filters */}
+      <div className="px-4 flex items-center gap-2 overflow-x-auto hide-scrollbar">
+        {CATEGORY_FILTERS.map(cat => {
+          const Icon = cat.icon;
+          return (
+            <button key={cat.label} onClick={() => setLocalCategory(cat.label)}
+              className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-bold border transition-all ${localCategory === cat.label ? "bg-primary text-white border-primary" : "bg-white text-gray-500 border-gray-200"}`}>
+              {Icon && <Icon className="w-3.5 h-3.5" />}
+              {cat.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Sort bar */}
-      <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
+      <div className="px-4 flex items-center gap-2 overflow-x-auto hide-scrollbar">
         <button onClick={() => setShowSort(s => !s)} className="shrink-0 flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-2 text-[11px] font-black text-gray-600 active:scale-95">
           <SlidersHorizontal className="w-3.5 h-3.5" /> {sortLabel}
         </button>
@@ -1728,7 +1723,7 @@ function BundlesTab({ activeCategory }) {
 
       {/* Sort dropdown */}
       {showSort && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-lg p-2 space-y-1">
+        <div className="mx-4 bg-white rounded-2xl border border-gray-100 shadow-lg p-2 space-y-1">
           {sortOptions.map(s => (
             <button key={s.key} onClick={() => { setSortBy(s.key); setSortLabel(s.label); setShowSort(false); }}
               className={`w-full text-left px-3 py-2.5 rounded-xl text-[12px] font-bold ${sortBy === s.key ? "bg-primary/10 text-primary" : "text-gray-600"}`}>
@@ -1738,29 +1733,29 @@ function BundlesTab({ activeCategory }) {
         </div>
       )}
 
-      {/* Bundle cards */}
-      {sorted.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="w-16 h-16 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-3">
-            <span className="text-3xl">📦</span>
+      {loading ? (
+        <div className="flex justify-center py-12"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+      ) : sorted.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-pink-50 flex items-center justify-center">
+            <Zap className="w-10 h-10 text-pink-400" />
           </div>
-          <p className="text-[15px] font-black text-gray-700">Aucun bundle disponible</p>
-          <p className="text-[12px] text-gray-400 mt-1">Créez votre premier bundle depuis votre profil pro.</p>
+          <p className="text-[16px] font-black text-gray-700">Aucun bundle disponible</p>
+          <p className="text-[13px] text-gray-400">Les professionnels n'ont pas encore créé de packs.</p>
           <button onClick={() => navigate("/pro/creer-bundle")}
-            className="mt-3 bg-primary text-white text-[12px] font-black px-6 py-3 rounded-full shadow-lg active:scale-95 transition-all">
+            className="mt-2 bg-primary text-white text-[12px] font-black px-6 py-3 rounded-full shadow-lg active:scale-95 transition-all">
             CRÉER MON PREMIER BUNDLE
           </button>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="px-4 space-y-3">
           {sorted.map((b, i) => {
             const badge = getBadge(b, i);
-            const minP = getMinPersons(b);
-            const maxP = getMaxPersons(b);
+            const minP = b.min_persons || 1;
+            const maxP = b.max_persons || 1;
             const grp = maxP > 1;
-            const totalDuration = (b.includedSvcs || []).reduce((sum, s) => sum + (parseInt(s.duration_min) || 60), 0);
-            const durH = Math.floor(totalDuration / 60);
-            const durM = totalDuration % 60;
+            const durH = Math.floor(b.totalDuration / 60);
+            const durM = b.totalDuration % 60;
             const durStr = durH > 0 ? `${durH}h${durM > 0 ? String(durM).padStart(2, '0') : ''}` : `${durM}min`;
             const savings = b.regularTotal > 0 && b.bundle_price < b.regularTotal ? b.regularTotal - b.bundle_price : 0;
             const savPct = b.regularTotal > 0 ? Math.round((savings / b.regularTotal) * 100) : 0;
@@ -1768,8 +1763,7 @@ function BundlesTab({ activeCategory }) {
               <button key={b.id} onClick={() => navigate(b.is_group ? `/bundle-groupe/${b.id}` : `/bundle/${b.id}`, { state: { bundle: b } })}
                 className="w-full bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm active:scale-[0.98] transition-all text-left">
                 <div className="flex">
-                  {/* Image */}
-                  <div className="w-[110px] h-[130px] shrink-0 bg-gray-100 relative overflow-hidden rounded-l-2xl">
+                  <div className="w-[110px] h-[140px] shrink-0 bg-gray-100 relative overflow-hidden rounded-l-2xl">
                     {b.image_url ? (
                       <img src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
                     ) : (
@@ -1781,17 +1775,15 @@ function BundlesTab({ activeCategory }) {
                       </span>
                     )}
                   </div>
-                  {/* Content */}
                   <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
                     <div>
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <p className="text-[15px] font-black text-gray-900 truncate">{b.name}</p>
+                          <p className="text-[15px] font-black text-gray-900 truncate">{b.name} ✨</p>
                           <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{(b.includedSvcs || []).map(s => s.title || s.name).join(", ")}</p>
                         </div>
                         <Heart className="w-4 h-4 text-gray-300 shrink-0 ml-1" />
                       </div>
-                      {/* Pro info */}
                       <div className="flex items-center gap-1.5 mt-1.5">
                         {b.proProfile?.avatar_url ? (
                           <img src={b.proProfile.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
@@ -1799,37 +1791,34 @@ function BundlesTab({ activeCategory }) {
                           <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[8px]">👤</div>
                         )}
                         <span className="text-[10px] text-gray-400 font-medium truncate">By {b.proProfile?.salon_name || b.pro_email}</span>
-                        <span className="text-[9px] text-primary font-bold bg-primary/10 px-1 rounded">✓</span>
+                        <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                         <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
-                        <span className="text-[10px] text-gray-500 font-bold">4.9</span>
+                        <span className="text-[10px] text-gray-500 font-bold">{b.proProfile?.rating || 4.9}</span>
                         <span className="text-[9px] text-gray-400">({Math.floor(Math.random() * 200 + 10)})</span>
                       </div>
                     </div>
-                    <div className="flex items-end justify-between mt-2">
+                    <div className="flex items-center justify-between mt-1.5">
+                      {savings > 0 && <span className="bg-rose-50 text-rose-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-100">Économisez {savPct}%</span>}
+                      <div className="flex items-center gap-2 ml-auto">
+                        {b.regularTotal > 0 && b.bundle_price < b.regularTotal && (
+                          <span className="text-[10px] text-gray-400 line-through">{b.regularTotal}€</span>
+                        )}
+                        <span className="text-[18px] font-black text-primary">{b.bundle_price}€</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-1.5">
                       <div className="flex items-center gap-2 text-[10px] text-gray-400">
                         <span className="flex items-center gap-0.5"><Scissors className="w-3 h-3" /> {b.serviceCount} services</span>
                         <span className="flex items-center gap-0.5"><Clock className="w-3 h-3" /> {durStr}</span>
                         <span className="flex items-center gap-0.5"><Users className="w-3 h-3" /> {grp ? `${minP}-${maxP} pers.` : "1 personne"}</span>
                       </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-1.5">
-                      <span className="text-[10px] text-gray-400">{grp ? `À partir de` : `pour 1 pers.`}</span>
-                      <div className="flex items-center gap-2">
-                        {savings > 0 && <span className="bg-rose-50 text-rose-500 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-100">Économisez {savPct}%</span>}
-                        <div className="text-right">
-                          {b.regularTotal > 0 && b.bundle_price < b.regularTotal && (
-                            <span className="text-[10px] text-gray-400 line-through block">{b.regularTotal}€</span>
-                          )}
-                          <span className="text-[18px] font-black text-primary">{b.bundle_price}€</span>
-                        </div>
-                      </div>
+                      <Heart className="w-4 h-4 text-gray-300 shrink-0" />
                     </div>
                   </div>
                 </div>
               </button>
             );
           })}
-          {/* Footer CTA */}
           <div className="text-center py-4 border-t border-gray-100 mt-2">
             <p className="text-[12px] text-gray-500 font-bold">🎁 Plus vous êtes, plus vous économisez !</p>
             <p className="text-[11px] text-primary font-bold mt-1">Voir comment ça marche →</p>
@@ -2071,7 +2060,7 @@ export default function ServicesSalons() {
       >
         {activeTab === "STYLES" && <StylesTab activeCategory={activeCategoryMap["STYLES"]} />}
         {activeTab === "SERVICES" && <ServicesTab activeCategory={activeCategoryMap["SERVICES"]} />}
-        {activeTab === "BUNDLES" && <BundlesTab activeCategory={activeCategoryMap["BUNDLES"]} />}
+        {activeTab === "BUNDLES" && <BundlesTab />}
         {activeTab === "SALONS" && <SalonsTab activeCategory={activeCategoryMap["SALONS"]} />}
         {activeTab === "PARTICULIERS" && <ParticuliersTab activeCategory={activeCategoryMap["PARTICULIERS"]} />}
       </div>
