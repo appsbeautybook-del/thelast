@@ -234,8 +234,8 @@ function CongesSection({ conges, onChange }) {
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Début</p>
               <input
                 type="date"
-                value={newConge.debut}
-                onChange={e => setNewConge(c => ({ ...c, debut: e.target.value }))}
+                value={newConge.start}
+                onChange={e => setNewConge(c => ({ ...c, start: e.target.value }))}
                 className="w-full bg-gray-100 rounded-xl px-3 py-2.5 text-[13px] font-medium text-gray-900 outline-none"
               />
             </div>
@@ -243,8 +243,8 @@ function CongesSection({ conges, onChange }) {
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Fin</p>
               <input
                 type="date"
-                value={newConge.fin}
-                onChange={e => setNewConge(c => ({ ...c, fin: e.target.value }))}
+                value={newConge.end}
+                onChange={e => setNewConge(c => ({ ...c, end: e.target.value }))}
                 className="w-full bg-gray-100 rounded-xl px-3 py-2.5 text-[13px] font-medium text-gray-900 outline-none"
               />
             </div>
@@ -258,14 +258,14 @@ function CongesSection({ conges, onChange }) {
           />
           <div className="flex gap-2">
             <button
-              onClick={() => { setAdding(false); setNewConge({ debut: "", fin: "", label: "" }); }}
+              onClick={() => { setAdding(false); setNewConge({ start: "", end: "", label: "" }); }}
               className="flex-1 py-2.5 rounded-xl border border-gray-200 text-[12px] font-black text-gray-500 active:scale-95 transition-all"
             >
               Annuler
             </button>
             <button
               onClick={handleAdd}
-              disabled={!newConge.debut || !newConge.fin}
+              disabled={!newConge.start || !newConge.end}
               className="flex-1 py-2.5 rounded-xl bg-primary text-white text-[12px] font-black active:scale-95 transition-all disabled:opacity-40"
             >
               Ajouter
@@ -276,7 +276,7 @@ function CongesSection({ conges, onChange }) {
 
       {conges.length > 0 ? (
         <div className="space-y-2">
-          {conges.sort((a, b) => a.debut.localeCompare(b.debut)).map(c => (
+          {conges.sort((a, b) => (a.start || "").localeCompare(b.start || "")).map(c => (
             <div key={c.id} className="flex items-center gap-3 bg-red-50 rounded-2xl px-4 py-3 border border-red-100">
               <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center shrink-0">
                 <Clock className="w-5 h-5 text-red-400" />
@@ -284,7 +284,7 @@ function CongesSection({ conges, onChange }) {
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-black text-gray-900">{c.label || "Congés"}</p>
                 <p className="text-[11px] font-medium text-gray-500">
-                  {c.debut} → {c.fin}
+                  {c.start} → {c.end}
                 </p>
               </div>
               <button onClick={() => handleRemove(c.id)} className="w-8 h-8 flex items-center justify-center active:scale-90">

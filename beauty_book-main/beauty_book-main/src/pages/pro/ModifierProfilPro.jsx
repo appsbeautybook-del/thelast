@@ -109,7 +109,7 @@ export default function ModifierProfilPro() {
           DAYS_LOW.forEach(d => {
             const existing = src[d] || {};
             h[d] = {
-              open: existing.open !== undefined ? existing.open : false,
+              open: existing.open !== undefined ? existing.open : true,
               start: existing.start || "09:00",
               end: existing.end || "19:00",
               pause_start: existing.pause_start || existing.break_start || "",
@@ -367,6 +367,18 @@ export default function ModifierProfilPro() {
         commodites: data.commodites,
         ouverture: { ...data.hours, conges: data.conges },
         horaires: { ...data.hours, conges: data.conges },
+        pauses: (() => {
+          const pauseMap = {};
+          DAYS_LOW.forEach(day => {
+            const h = data.hours[day] || {};
+            if (h.open && h.pause_start && h.pause_end) {
+              const key = `${h.pause_start}-${h.pause_end}`;
+              if (!pauseMap[key]) pauseMap[key] = { start: h.pause_start, end: h.pause_end, days: [] };
+              pauseMap[key].days.push(day);
+            }
+          });
+          return Object.values(pauseMap);
+        })(),
         galerie_urls: data.galerie_urls || [],
         menu_restaurant: data.menu_restaurant || [],
         menu_bar: data.menu_bar || [],

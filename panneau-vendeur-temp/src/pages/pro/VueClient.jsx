@@ -948,18 +948,52 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                 <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0"><Calendar className="w-5 h-5 text-blue-500" /></div>
                 <div className="flex-1">
                   <p className="text-[13px] font-black text-gray-800 mb-2">Horaires d'ouverture</p>
-                  {(proInfo?.ouverture || proInfo?.horaires) ? (
-                    Object.entries(proInfo.ouverture || proInfo.horaires)
-                      .filter(([day]) => ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"].includes(day))
-                      .map(([day, d]) => (
-                      <div key={day} className="flex items-center justify-between py-0.5">
-                        <span className={`text-[12px] font-medium capitalize ${!d.open ? "text-red-400" : "text-gray-600"}`}>{day}</span>
-                        <span className={`text-[12px] font-bold ${!d.open ? "text-red-400" : "text-gray-800"}`}>
-                          {d.open ? `${d.start || "09:00"} – ${d.end || "18:00"}` : "Fermé"}
-                        </span>
+                  {(proInfo?.ouverture || proInfo?.horaires) ? (() => {
+                    const src = proInfo.ouverture || proInfo.horaires;
+                    const DAYS_ORDER = ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"];
+                    const dayLabels = { lundi: "Lun", mardi: "Mar", mercredi: "Mer", jeudi: "Jeu", vendredi: "Ven", samedi: "Sam", dimanche: "Dim" };
+                    const groups = [];
+                    DAYS_ORDER.forEach(d => {
+                      const h = src[d];
+                      if (!h) return;
+                      const key = h.open ? `${h.start}-${h.end}-${h.pause_start || ""}-${h.pause_end || ""}` : "closed";
+                      const last = groups[groups.length - 1];
+                      if (last && last.key === key) {
+                        last.days.push(d);
+                      } else {
+                        groups.push({ key, days: [d], open: h.open, start: h.start, end: h.end, pause_start: h.pause_start, pause_end: h.pause_end });
+                      }
+                    });
+                    return (
+                      <div className="space-y-0.5">
+                        {groups.map((g, i) => {
+                          const label = g.days.length === 7 ? "Tous les jours"
+                            : g.days.length >= 5 && g.days[0] === "lundi" && g.days[g.days.length - 1] === "vendredi"
+                              ? "Lun – Ven"
+                            : g.days.map(d => dayLabels[d]).join(" – ");
+                          return (
+                            <div key={i} className="flex items-center justify-between py-0.5">
+                              <span className={`text-[12px] font-medium ${!g.open ? "text-red-400" : "text-gray-600"}`}>{label}</span>
+                              <span className={`text-[12px] font-bold ${!g.open ? "text-red-400" : "text-gray-800"}`}>
+                                {g.open ? `${g.start || "09:00"} – ${g.end || "18:00"}` : "Fermé"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {src.conges?.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-gray-100">
+                            <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Congés</p>
+                            {src.conges.map((c, i) => (
+                              <div key={i} className="flex items-center justify-between py-0.5">
+                                <span className="text-[11px] text-red-400">{c.label || "Congés"}</span>
+                                <span className="text-[10px] text-red-400 font-medium">{c.debut} → {c.fin}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ))
-                  ) : HOURS.map(({ day, hours, closed }) => (
+                    );
+                  })() : HOURS.map(({ day, hours, closed }) => (
                     <div key={day} className="flex items-center justify-between">
                       <span className={`text-[12px] font-medium ${closed ? "text-red-400" : "text-gray-600"}`}>{day}</span>
                       <span className={`text-[12px] font-bold ${closed ? "text-red-400" : "text-gray-800"}`}>{hours}</span>
