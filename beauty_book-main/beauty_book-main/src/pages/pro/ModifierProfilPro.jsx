@@ -5,7 +5,7 @@ import {
   Scissors, Clock, Star, Zap, Check, Store, Phone, MapPin,
   Building2, FileText, Image, Palette, Wifi, Car, Snowflake,
   Baby, Coffee, CreditCard, Accessibility, Shirt, Sofa, ShowerHead,
-  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, Moon, PawPrint, Copy, Search
+  Wine, Music, UtensilsCrossed, ArrowRight, CircleDot, Save, Sun, Moon, PawPrint, Copy, Search, Users, Gift
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";

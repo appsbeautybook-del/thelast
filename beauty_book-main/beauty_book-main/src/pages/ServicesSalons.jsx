@@ -1113,6 +1113,7 @@ function ServicesTab({ activeCategory }) {
   const [filters, setFilters] = useState({});
   const [services, setServices] = useState([]);
   const [profilsMap, setProfilsMap] = useState({});
+  const [bundleServiceIds, setBundleServiceIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [filtreAIStyle, setFiltreAIStyle] = useState(null); // { title, id } du style à pré-sélectionner
 
@@ -1134,7 +1135,6 @@ function ServicesTab({ activeCategory }) {
     entities.Service.filter({ status: "actif" }, "-created_at", 500)
       .then(async (svcs) => {
         setServices(svcs);
-        // Charger les profils pro pour chaque service
         const emails = [...new Set(svcs.map(s => s.pro_email).filter(Boolean))];
         const profils = await Promise.all(
           emails.map(e => entities.ProfilPro.filter({ user_email: e }, "-created_at", 1).catch(() => []))
@@ -1143,6 +1143,11 @@ function ServicesTab({ activeCategory }) {
         emails.forEach((e, i) => { if (profils[i]?.[0]) map[e] = profils[i][0]; });
         setProfilsMap(map);
       }).catch(() => {}).finally(() => setLoading(false));
+    entities.ServiceBundle.filter({ is_active: true }, "-created_at", 200)
+      .then(bundles => {
+        const ids = new Set(bundles.flatMap(b => (b.service_ids || []).map(String)));
+        setBundleServiceIds(ids);
+      }).catch(() => {});
   }, []);
 
   let filtered = activeCategory === "Tous" ? services : services.filter(s => s.category === activeCategory);
@@ -1185,10 +1190,10 @@ function ServicesTab({ activeCategory }) {
               ) : (
                 <div className="h-52 bg-gray-100 flex items-center justify-center" onClick={() => navigate(`/service/${item.id}`, { state: { id: item.id } })}><span className="text-[48px]">✂️</span></div>
               )}
-              {/* Badge Disponible si pro en ligne */}
-              {isOnline && (
-                <span className="absolute top-3 left-3 bg-teal-400 text-white text-[9px] font-black uppercase px-3 py-1.5 rounded-full tracking-widest z-10">
-                  Disponible
+              {/* Badge BUNDLE si le service est inclus dans un bundle */}
+              {bundleServiceIds.has(String(item.id)) && (
+                <span className="absolute top-3 left-3 bg-primary text-white text-[9px] font-black uppercase px-3 py-1.5 rounded-full tracking-widest z-10">
+                  Bundle
                 </span>
               )}
               <button onClick={(e) => {

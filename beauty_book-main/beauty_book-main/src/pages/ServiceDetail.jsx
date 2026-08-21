@@ -424,6 +424,9 @@ export default function ServiceDetail() {
             <span className="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-0.5 rounded-full">{proData.type_activite}</span>
           )}
           {(() => {
+            if (bundles.length > 0) {
+              return <span className="ml-auto bg-primary/10 text-primary text-[10px] font-black px-2.5 py-1 rounded-full border border-primary/20 flex items-center gap-1">Bundle</span>;
+            }
             if (!proData?.ouverture) return proData?.status === "actif"
               ? <span className="ml-auto bg-teal-50 text-teal-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-teal-200 flex items-center gap-1"><span className="w-1.5 h-1.5 bg-teal-500 rounded-full inline-block" />Disponible</span>
               : null;
