@@ -1830,15 +1830,11 @@ function BundlesTab() {
         <div className="flex justify-center py-12"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
       ) : sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <div className="w-20 h-20 rounded-3xl bg-pink-50 flex items-center justify-center">
-            <Zap className="w-10 h-10 text-pink-400" />
+          <div className="w-20 h-20 rounded-full bg-pink-50 flex items-center justify-center">
+            <Sparkles className="w-9 h-9 text-pink-400" />
           </div>
           <p className="text-[16px] font-black text-gray-700">Aucun bundle disponible</p>
           <p className="text-[13px] text-gray-400">Les professionnels n'ont pas encore créé de packs.</p>
-          <button onClick={() => navigate("/pro/creer-bundle")}
-            className="mt-2 bg-primary text-white text-[12px] font-black px-6 py-3 rounded-full shadow-lg active:scale-95 transition-all">
-            CRÉER MON PREMIER BUNDLE
-          </button>
         </div>
       ) : (
         <div className="px-4 space-y-3">
