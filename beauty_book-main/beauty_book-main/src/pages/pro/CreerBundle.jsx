@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Camera, Plus, Trash2, Zap, Check, Users, Gift, Tag, FileText, Search, X, Pencil, Sparkles, Save } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Trash2, Zap, Check, Users, Gift, Tag, FileText, Search, X, Pencil, Sparkles, Save, Image } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -26,6 +26,7 @@ export default function CreerBundle() {
   const { user } = useAuth();
   const themeBg = useThemeBg();
   const imgRef = useRef(null);
+  const bannerImgRef = useRef(null);
 
   const [bundles, setBundles] = useState([]);
   const [showForm, setShowForm] = useState(false);
@@ -34,6 +35,7 @@ export default function CreerBundle() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [bundleServiceSearch, setBundleServiceSearch] = useState("");
   const [deleteModal, setDeleteModal] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -42,6 +44,7 @@ export default function CreerBundle() {
   const [description, setDescription] = useState("");
   const [bundlePrice, setBundlePrice] = useState("");
   const [imageUrl, setImageUrl] = useState("");
+  const [coverUrl, setCoverUrl] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
   const [category, setCategory] = useState("Tous");
   const [svcCategoryFilter, setSvcCategoryFilter] = useState("Tous");
@@ -86,6 +89,7 @@ export default function CreerBundle() {
       setDescription(edit.description || "");
       setBundlePrice(edit.bundle_price?.toString() || "");
       setImageUrl(edit.image_url || "");
+      setCoverUrl(edit.cover_url || edit.banner_url || "");
       setSelectedIds(edit.service_ids || []);
       setCategory(edit.category || "Tous");
       setIsGroup(edit.is_group || false);
@@ -101,6 +105,7 @@ export default function CreerBundle() {
         setDescription(draft.description || "");
         setBundlePrice(draft.bundlePrice || "");
         setImageUrl(draft.imageUrl || "");
+        setCoverUrl(draft.coverUrl || "");
         setSelectedIds(draft.selectedIds || []);
         setCategory(draft.category || "Tous");
         setIsGroup(draft.isGroup || false);
@@ -118,6 +123,7 @@ export default function CreerBundle() {
         setDescription(draft.description || "");
         setBundlePrice(draft.bundlePrice || "");
         setImageUrl(draft.imageUrl || "");
+        setCoverUrl(draft.coverUrl || "");
         setSelectedIds(draft.selectedIds || []);
         setCategory(draft.category || "Tous");
         setIsGroup(draft.isGroup || false);
@@ -133,15 +139,15 @@ export default function CreerBundle() {
     if (!showForm || editingBundle) return;
     if (!name && !description && !bundlePrice && selectedIds.length === 0) return;
     const timer = setTimeout(() => {
-      saveDraft({ name, description, bundlePrice, imageUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus });
+      saveDraft({ name, description, bundlePrice, imageUrl, coverUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus });
       setDraftSaved(true);
       setTimeout(() => setDraftSaved(false), 2000);
     }, 1500);
     return () => clearTimeout(timer);
-  }, [name, description, bundlePrice, imageUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus, showForm, editingBundle]);
+  }, [name, description, bundlePrice, imageUrl, coverUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus, showForm, editingBundle]);
 
   const resetForm = () => {
-    setName(""); setDescription(""); setBundlePrice(""); setImageUrl("");
+    setName(""); setDescription(""); setBundlePrice(""); setImageUrl(""); setCoverUrl("");
     setSelectedIds([]); setCategory("Tous"); setIsGroup(false);
     setMinPersons(2); setMaxPersons(6); setBonus("");
     setEditingBundle(null); setBundleServiceSearch("");
@@ -157,6 +163,13 @@ export default function CreerBundle() {
     setUploadingImg(true);
     try { const url = await uploadFile(file, "uploads"); setImageUrl(url); } catch (e) { console.error(e); }
     setUploadingImg(false);
+  };
+
+  const handleBannerUpload = async (file) => {
+    if (!file) return;
+    setUploadingBanner(true);
+    try { const url = await uploadFile(file, "uploads"); setCoverUrl(url); } catch (e) { console.error(e); }
+    setUploadingBanner(false);
   };
 
   const filteredServices = svcCategoryFilter === "Tous"
@@ -181,6 +194,8 @@ export default function CreerBundle() {
       bundle_price: parseFloat(bundlePrice),
       discount_percent: discount > 0 ? discount : 0,
       image_url: imageUrl || "",
+      cover_url: coverUrl || imageUrl || "",
+      banner_url: coverUrl || imageUrl || "",
       category: category !== "Tous" ? category : "",
       is_group: isGroup,
       min_persons: isGroup ? minPersons : 1,
@@ -203,7 +218,7 @@ export default function CreerBundle() {
   };
 
   const handleSaveDraft = () => {
-    saveDraft({ name, description, bundlePrice, imageUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus });
+    saveDraft({ name, description, bundlePrice, imageUrl, coverUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus });
     setDraftSaved(true);
     setTimeout(() => setDraftSaved(false), 2000);
   };
@@ -220,6 +235,7 @@ export default function CreerBundle() {
     setDescription(b.description || "");
     setBundlePrice(b.bundle_price?.toString() || "");
     setImageUrl(b.image_url || "");
+    setCoverUrl(b.cover_url || b.banner_url || "");
     setSelectedIds(b.service_ids || []);
     setCategory(b.category || "Tous");
     setIsGroup(b.is_group || false);
@@ -227,6 +243,7 @@ export default function CreerBundle() {
     setMaxPersons(b.max_persons || 6);
     setBonus(b.bonus || "");
     setShowForm(true);
+  };
   };
 
   const startCreate = () => {
@@ -302,6 +319,38 @@ export default function CreerBundle() {
 
             <input value={description} onChange={e => setDescription(e.target.value)} placeholder="Description (optionnel)"
               className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-[#E8732A]" />
+
+            {/* Section Bannière Bundle */}
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <Image className="w-3.5 h-3.5 text-[#ff6b35]" /> BANNIÈRE BUNDLE (Page Détaillée)
+              </p>
+              <input type="file" ref={bannerImgRef} accept="image/*" className="hidden" onChange={e => handleBannerUpload(e.target.files?.[0])} />
+              <div onClick={() => bannerImgRef.current?.click()}
+                className="relative h-36 w-full rounded-2xl border-2 border-dashed border-gray-300 overflow-hidden bg-white flex flex-col items-center justify-center cursor-pointer hover:border-[#ff6b35] transition-all group shadow-sm">
+                {coverUrl ? (
+                  <>
+                    <img src={coverUrl} alt="Bannière Bundle" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <span className="text-white text-[12px] font-black uppercase tracking-wider bg-black/60 px-3 py-1.5 rounded-full">Changer la bannière</span>
+                    </div>
+                  </>
+                ) : uploadingBanner ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-6 h-6 border-2 border-[#ff6b35] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[11px] text-gray-400 font-bold">Téléversement...</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1.5 p-4 text-center">
+                    <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
+                      <Image className="w-5 h-5 text-[#ff6b35]" />
+                    </div>
+                    <p className="text-[12px] font-black text-gray-700">Ajouter une photo de bannière</p>
+                    <p className="text-[10px] text-gray-400 font-medium">Recommandé : image grand format (ex: 800x400) pour la vue détaillée</p>
+                  </div>
+                )}
+              </div>
+            </div>
 
             <div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5"><Tag className="w-3 h-3" /> Catégorie</p>
@@ -500,7 +549,7 @@ export default function CreerBundle() {
       )}
 
       {showForm && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
+        <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 px-5 z-[200] shadow-[0_-8px_24px_rgba(0,0,0,0.08)]" style={{ paddingTop: "12px", paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}>
           {draftSaved && (
             <p className="text-center text-[11px] text-green-500 font-bold mb-1 flex items-center justify-center gap-1"><Save className="w-3 h-3" /> Brouillon sauvegardé</p>
           )}

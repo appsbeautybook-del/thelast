@@ -9,7 +9,7 @@ import { supabase } from "@/api/supabaseClient";
 
 // Pages où la nav ne doit PAS s'afficher (parcours internes)
 const HIDDEN_PATHS = [
-  "/pro/beauty-pay", "/pro/catalogue-services", "/pro/ajouter-service",
+  "/pro/beauty-pay", "/pro/catalogue-services", "/pro/ajouter-service", "/pro/creer-bundle",
   "/pro/avis-clients", "/pro/equipe", "/pro/nouveau-membre",
   "/pro/analytics", "/pro/publication", "/pro/visite-3d",
   "/pro/franchise", "/pro/lancer-direct", "/pro/modifier-profil",
