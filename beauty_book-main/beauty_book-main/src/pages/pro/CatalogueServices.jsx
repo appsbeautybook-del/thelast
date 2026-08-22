@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check, Pencil, Users, Gift, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check, Pencil, Users, Gift, Sparkles, X, Package } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -146,19 +146,19 @@ export default function CatalogueServices() {
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-sm">
+                    <Sparkles className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-[11px] font-black tracking-widest opacity-80">BEAUTYBOOK BUNDLES</span>
+                  <span className="text-[11px] font-black tracking-widest opacity-90">BEAUTYBOOK BUNDLES</span>
                 </div>
                 <h2 className="text-[22px] font-black leading-tight mb-1.5">Créez des bundles irrésistibles</h2>
                 <p className="text-[12px] opacity-80 leading-relaxed">Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.</p>
                 <div className="flex items-center gap-3 mt-4">
-                  <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
+                  <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/20">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span className="text-[11px] font-bold">{bundles.length} bundle{bundles.length !== 1 ? "s" : ""}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
+                  <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/20">
                     <Check className="w-3.5 h-3.5" />
                     <span className="text-[11px] font-bold">{totalBundleServices} service{totalBundleServices !== 1 ? "s" : ""}</span>
                   </div>
@@ -169,13 +169,13 @@ export default function CatalogueServices() {
 
           {bundles.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mb-4">
-                <Zap className="w-9 h-9 text-pink-400" strokeWidth={2.5} />
+              <div className="w-20 h-20 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center mb-4 shadow-sm">
+                <Package className="w-9 h-9 text-[#ff6b35]" strokeWidth={2.2} />
               </div>
               <p className="text-[18px] font-black text-gray-800 mb-1">Aucun bundle</p>
               <p className="text-[13px] text-gray-400 mb-6">Créez votre premier bundle de services.</p>
               <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
-                className="bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-pink-500/30 active:scale-95 transition-all flex items-center gap-2">
+                className="bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center gap-2">
                 <Plus className="w-5 h-5" /> CRÉER UN BUNDLE
               </button>
             </div>
@@ -186,11 +186,11 @@ export default function CatalogueServices() {
                 return (
                   <div key={b.id} className="bg-white rounded-[20px] border border-gray-100 shadow-sm overflow-hidden">
                     <div className="flex items-stretch">
-                      <div className="w-28 shrink-0 bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center relative">
+                      <div className="w-28 shrink-0 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center relative">
                         {b.image_url ? (
                           <img src={b.image_url} alt="" className="w-full h-full object-cover" />
                         ) : (
-                          <Zap className="w-8 h-8 text-pink-300" />
+                          <Package className="w-8 h-8 text-orange-300" />
                         )}
                         {savPct > 0 && (
                           <div className="absolute top-2 left-2 bg-[#E8732A] text-white text-[9px] font-black px-2 py-0.5 rounded-full">
@@ -246,7 +246,7 @@ export default function CatalogueServices() {
                 );
               })}
               <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
-                className="w-full bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-pink-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
                 <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
               </button>
             </div>
@@ -358,7 +358,7 @@ export default function CatalogueServices() {
         }
       />
 
-      <div className="px-5 pt-5 space-y-5 pb-32">
+      <div className={`px-5 pt-5 space-y-5 ${isPackTab ? "pb-8" : "pb-32"}`}>
         <div className="flex items-center gap-2 bg-white rounded-2xl p-1.5 border border-gray-100">
           {filterTabs.map(tab => (
             <button
@@ -374,8 +374,8 @@ export default function CatalogueServices() {
                   {draftsCount}
                 </span>
               )}
-              {tab === "Bundles" && bundles.length > 0 && (
-                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${activeFilter === tab ? "bg-white/20 text-white" : "bg-pink-100 text-pink-600"}`}>
+              {tab === "BUNDLES" && bundles.length > 0 && (
+                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${activeFilter === tab ? "bg-white/20 text-white" : "bg-orange-100 text-orange-600"}`}>
                   {bundles.length}
                 </span>
               )}
@@ -386,21 +386,15 @@ export default function CatalogueServices() {
         {renderContent()}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
-        {isPackTab ? (
-          <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
-            className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
-            <Plus className="w-5 h-5" />
-            Ajouter un Bundle
-          </button>
-        ) : (
+      {!isPackTab && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
           <button onClick={() => navigate("/pro/ajouter-service")}
             className="w-full bg-primary text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-primary/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
             <Plus className="w-5 h-5" />
             Ajouter un Service
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modal de confirmation suppression */}
       {confirmModal && (
