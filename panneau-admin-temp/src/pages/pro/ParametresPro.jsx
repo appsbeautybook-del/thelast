@@ -92,8 +92,8 @@ export default function ParametresPro() {
             label="Services & Tarifs" sublabel="Gérer les prestations"
             onClick={() => navigate("/pro/catalogue-services")} />
           <SettingRow icon={Clock} iconBg="bg-green-50" iconColor="text-green-500"
-            label="Horaires & Disponibilités" sublabel="Planning hebdomadaire"
-            onClick={() => navigate("/pro/gestion-agenda")} />
+            label="Horaires & Congés" sublabel="Planning hebdomadaire"
+            onClick={() => navigate("/pro/horaires-conges")} />
           <SettingRow icon={Users} iconBg="bg-purple-50" iconColor="text-purple-500"
             label="Équipe & Staff" sublabel="Membres et rôles"
             onClick={() => navigate("/pro/equipe")} />
