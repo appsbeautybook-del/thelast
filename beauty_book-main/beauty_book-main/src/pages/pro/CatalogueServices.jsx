@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check, Pencil, Users, Gift, Sparkles, X, Package } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check, Pencil, Users, Gift, Sparkles, X, Clock, Star, Heart } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from "@/lib/AuthContext";
 import { useThemeBg } from "@/hooks/useTheme";
+import BundleFormModal from "@/components/pro/BundleFormModal";
 
 function ImageSlider({ images, onClick }) {
   const [current, setCurrent] = useState(0);
@@ -58,22 +59,37 @@ export default function CatalogueServices() {
   const [services, setServices] = useState([]);
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [proName, setProName] = useState("");
+  const [proAvatar, setProAvatar] = useState("");
   const [confirmModal, setConfirmModal] = useState(null);
+  const [bundleModal, setBundleModal] = useState({ open: false, editBundle: null });
 
   useEffect(() => {
     if (!user?.email) return;
     let cancelled = false;
+
+    // Fetch pro profile for card display
+    supabase.from("ProfilPro").select("salon_name, avatar_url").eq("user_email", user.email).maybeSingle()
+      .then(({ data }) => {
+        if (data && !cancelled) {
+          setProName(data.salon_name || "");
+          setProAvatar(data.avatar_url || "");
+        }
+      });
+
+    // Fetch services
     supabase.from("Service").select("*").eq("pro_email", user.email).order("created_at", { ascending: false }).limit(100)
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) console.error("Load services error:", error);
-        setServices(data || []);
+      .then(({ data }) => {
+        if (!cancelled) setServices(data || []);
       })
       .finally(() => { if (!cancelled) setLoading(false); });
+
+    // Fetch bundles
     supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false })
       .then(({ data }) => { if (!cancelled) setBundles(data || []); });
+
     return () => { cancelled = true; };
-  }, []);
+  }, [user?.email]);
 
   const toggleActive = async (id) => {
     const svc = services.find(s => s.id === id);
@@ -83,13 +99,24 @@ export default function CatalogueServices() {
     setServices(s => s.map(sv => sv.id === id ? { ...sv, status: newStatus } : sv));
     try {
       const { data, error } = await supabase.from("Service").update({ status: newStatus, updated_at: new Date().toISOString() }).eq("id", id).select();
-      if (error) {
-        setServices(s => s.map(sv => sv.id === id ? { ...sv, status: svc.status } : sv));
-      } else if (data?.[0]) {
-        setServices(s => s.map(sv => sv.id === id ? { ...sv, status: data[0].status } : sv));
-      }
+      if (error) setServices(s => s.map(sv => sv.id === id ? { ...sv, status: svc.status } : sv));
+      else if (data?.[0]) setServices(s => s.map(sv => sv.id === id ? { ...sv, status: data[0].status } : sv));
     } catch (e) {
       setServices(s => s.map(sv => sv.id === id ? { ...sv, status: svc.status } : sv));
+    }
+  };
+
+  const toggleBundleActive = async (bundleId) => {
+    const b = bundles.find(x => x.id === bundleId);
+    if (!b) return;
+    const newActive = b.is_active === false ? true : false;
+    setBundles(prev => prev.map(x => x.id === bundleId ? { ...x, is_active: newActive } : x));
+    try {
+      const { error } = await supabase.from("ServiceBundle").update({ is_active: newActive, updated_at: new Date().toISOString() }).eq("id", bundleId);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Toggle bundle active error:", err);
+      setBundles(prev => prev.map(x => x.id === bundleId ? { ...x, is_active: b.is_active } : x));
     }
   };
 
@@ -126,7 +153,6 @@ export default function CatalogueServices() {
 
   const draftsCount = services.filter(s => s.status !== "actif").length;
   const isPackTab = activeFilter === "BUNDLES";
-  const totalBundleServices = bundles.reduce((sum, b) => sum + (b.service_ids?.length || 0), 0);
 
   const renderContent = () => {
     if (loading) {
@@ -140,89 +166,154 @@ export default function CatalogueServices() {
     if (isPackTab) {
       return (
         <div className="space-y-4">
-
           {bundles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
               <div className="w-20 h-20 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center mb-4 shadow-sm">
-                <Package className="w-9 h-9 text-[#ff6b35]" strokeWidth={2.2} />
+                <Zap className="w-9 h-9 text-[#ff6b35]" strokeWidth={2.2} />
               </div>
               <p className="text-[18px] font-black text-gray-800 mb-1">Aucun bundle</p>
-              <p className="text-[13px] text-gray-400 mb-6">Créez votre premier bundle de services.</p>
-              <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
+              <p className="text-[13px] text-gray-400 mb-6 max-w-xs leading-relaxed">Créez des packs de services pour fidéliser vos clients et augmenter vos revenus.</p>
+              <button onClick={() => setBundleModal({ open: true, editBundle: null })}
                 className="bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center gap-2">
                 <Plus className="w-5 h-5" /> CRÉER UN BUNDLE
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {bundles.map(b => {
-                const savPct = b.discount_percent || 0;
+                const isActive = b.is_active !== false;
+                const includedSvcs = services.filter(s => b.service_ids?.includes(s.id));
+                const totalSvcCount = includedSvcs.length || b.service_ids?.length || 1;
+                const totalDuration = includedSvcs.reduce((sum, s) => sum + (parseInt(s.duration || s.duration_min) || 60), 0);
+                const durationStr = totalDuration >= 60 ? `${Math.floor(totalDuration / 60)}h${totalDuration % 60 > 0 ? String(totalDuration % 60).padStart(2, '0') : '00'}` : `${totalDuration}min`;
+                const regTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0) || Math.round((b.bundle_price || 100) * 1.25);
+                const savPct = b.discount_percent || (regTotal > b.bundle_price ? Math.round(((regTotal - b.bundle_price) / regTotal) * 100) : 15);
+                const badgeText = b.bonus || b.category || (b.is_group ? "Parfait entre amies" : "Offre Spéciale ✨");
+
                 return (
-                  <div key={b.id} className="bg-white rounded-[20px] border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="flex items-stretch">
-                      <div className="w-28 shrink-0 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center relative">
+                  <div key={b.id} className={`bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-3.5 transition-all ${!isActive ? "opacity-60 grayscale" : ""}`}>
+                    {/* Top Row: Thumbnail + Details + Price */}
+                    <div className="flex items-start gap-3.5">
+                      {/* Thumbnail with Badge */}
+                      <div className="relative w-28 h-36 shrink-0 rounded-2xl overflow-hidden shadow-sm bg-gradient-to-br from-pink-100 to-orange-100">
                         {b.image_url ? (
-                          <img src={b.image_url} alt="" className="w-full h-full object-cover" />
+                          <img src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
                         ) : (
-                          <Package className="w-8 h-8 text-orange-300" />
-                        )}
-                        {savPct > 0 && (
-                          <div className="absolute top-2 left-2 bg-[#E8732A] text-white text-[9px] font-black px-2 py-0.5 rounded-full">
-                            -{savPct}%
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Zap className="w-10 h-10 text-orange-400" />
                           </div>
                         )}
-                        {b.is_group && (
-                          <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                            <Users className="w-2.5 h-2.5" /> Groupe
-                          </div>
-                        )}
+                        {/* Top-left Badge on Image */}
+                        <div className="absolute top-2 left-2 max-w-[90%] bg-gradient-to-r from-orange-500 to-pink-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-md truncate">
+                          {badgeText}
+                        </div>
                       </div>
-                      <div className="flex-1 p-4 flex flex-col justify-between">
+
+                      {/* Main Details */}
+                      <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-between self-stretch">
                         <div>
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-[15px] font-black text-gray-900 leading-tight">{b.name}</p>
-                            <p className="text-[17px] font-black text-[#E8732A] shrink-0">{b.bundle_price}€</p>
-                          </div>
-                          {b.description && (
-                            <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{b.description}</p>
-                          )}
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
-                            <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                              <Tag className="w-2.5 h-2.5" /> {b.service_ids?.length || 0} services
+                          {/* Title */}
+                          <h4 className="text-[16px] font-black text-gray-900 leading-snug truncate">
+                            {b.name}
+                          </h4>
+
+                          {/* Subtitle / Description */}
+                          <p className="text-[12px] font-medium text-gray-400 line-clamp-2 mt-0.5 leading-tight">
+                            {b.description || includedSvcs.map(s => s.title || s.name).join(" + ") || "Formule complète avec soin et finition"}
+                          </p>
+
+                          {/* Author line */}
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <div className="w-5 h-5 rounded-full bg-orange-100 overflow-hidden flex items-center justify-center shrink-0 border border-orange-200">
+                              {proAvatar ? (
+                                <img src={proAvatar} alt="" className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[9px] font-black text-orange-600">{(proName || "P")[0]}</span>
+                              )}
+                            </div>
+                            <span className="text-[11px] font-bold text-gray-700 truncate">
+                              By {proName || "Salon Pro"}
                             </span>
-                            {b.category && b.category !== "Tous" && (
-                              <span className="bg-purple-50 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{b.category}</span>
-                            )}
-                            {b.bonus && (
-                              <span className="bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                                <Gift className="w-2.5 h-2.5" /> Bonus
-                              </span>
-                            )}
+                            <span className="w-3.5 h-3.5 rounded-full bg-blue-500 text-white flex items-center justify-center text-[8px] font-black shrink-0">✓</span>
+                            <div className="flex items-center gap-0.5 text-[11px] font-bold text-gray-600 ml-1">
+                              <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                              <span>4.9</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2 mt-3">
-                          <button onClick={() => navigate("/pro/creer-bundle", { state: { editBundle: b } })}
-                            className="flex-1 bg-gray-100 text-gray-600 text-[11px] font-bold py-2 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
-                            <Pencil className="w-3 h-3" /> Modifier
-                          </button>
-                          <button onClick={() => navigate(b.is_group ? "/bundle-groupe/" + b.id : "/bundle/" + b.id, { state: { bundle: b } })}
-                            className="flex-1 bg-[#E8732A]/10 text-[#E8732A] text-[11px] font-bold py-2 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
-                            Voir
-                          </button>
-                          <button onClick={() => setConfirmModal({ type: "bundle", id: b.id, name: b.name })}
-                            className="w-8 h-8 bg-red-50 text-red-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+
+                        {/* Metrics Bar */}
+                        <div className="flex items-center gap-3 text-[11px] font-bold text-gray-400 mt-2">
+                          <span className="flex items-center gap-1">
+                            <Scissors className="w-3.5 h-3.5 text-gray-400" /> {totalSvcCount} service{totalSvcCount !== 1 ? 's' : ''}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-gray-400" /> {durationStr}
+                          </span>
                         </div>
+                      </div>
+
+                      {/* Right Price Column */}
+                      <div className="flex flex-col items-end justify-between self-stretch py-0.5 shrink-0 pl-1">
+                        {/* Savings Badge */}
+                        <span className="bg-pink-50 border border-pink-100 text-pink-600 text-[10px] font-black px-2.5 py-1 rounded-full whitespace-nowrap">
+                          Économisez {savPct}%
+                        </span>
+
+                        {/* Price */}
+                        <div className="text-right mt-2">
+                          <div className="flex items-baseline justify-end gap-1.5">
+                            <span className="text-[22px] font-black text-gray-900 leading-none">{b.bundle_price} €</span>
+                            {regTotal > b.bundle_price && (
+                              <span className="text-[12px] font-bold text-gray-400 line-through leading-none">{regTotal} €</span>
+                            )}
+                          </div>
+                          <p className="text-[10px] font-bold text-gray-400 mt-0.5">
+                            {b.is_group ? `pour ${b.min_persons || 2} pers.` : "à partir de"}
+                          </p>
+                        </div>
+
+                        {/* Persons */}
+                        <span className="text-[10px] font-bold text-gray-500 flex items-center gap-1 mt-2">
+                          <Users className="w-3 h-3 text-gray-400" /> {b.min_persons && b.min_persons > 1 ? `${b.min_persons} personnes` : "1 personne"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Controls Footer for Seller */}
+                    <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-3">
+                      {/* Active Status Toggle */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => toggleBundleActive(b.id)}
+                          className={`relative w-11 h-6 rounded-full transition-colors shrink-0 ${isActive ? "bg-primary" : "bg-gray-300"}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full shadow transition-transform bg-white ${isActive ? "translate-x-6" : "translate-x-1"}`} />
+                        </button>
+                        <span className={`text-[11px] font-black ${isActive ? "text-green-600" : "text-gray-400"}`}>
+                          {isActive ? "Bundle Actif" : "Désactivé"}
+                        </span>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setBundleModal({ open: true, editBundle: b })}
+                          className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-[11px] px-3.5 py-1.5 rounded-xl active:scale-95 transition-all flex items-center gap-1"
+                        >
+                          <Pencil className="w-3.5 h-3.5" /> Modifier
+                        </button>
+                        <button
+                          onClick={() => confirmDeleteBundle(b.id)}
+                          className="bg-red-50 hover:bg-red-100 text-red-500 font-bold text-[11px] px-3.5 py-1.5 rounded-xl active:scale-95 transition-all flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                        </button>
                       </div>
                     </div>
                   </div>
                 );
               })}
-              <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
-                className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
-                <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
-              </button>
             </div>
           )}
         </div>
@@ -305,9 +396,9 @@ export default function CatalogueServices() {
                       <span className="text-[12px] font-black text-gray-600 uppercase tracking-widest">✏️ Modifier</span>
                     </button>
                     <button onClick={() => navigate(`/pro/promo-service/${service.id}`, { state: { service } })}
-                      className="flex-1 flex items-center justify-center gap-2 bg-orange-50 border border-primary/20 rounded-2xl py-3 active:scale-[0.98] transition-all">
-                      <Tag className="w-4 h-4 text-primary" />
-                      <span className="text-[12px] font-black text-primary uppercase tracking-widest">Pub</span>
+                      className="flex-1 flex items-center justify-center gap-2 bg-[#ff6b35]/10 text-[#ff6b35] border border-[#ff6b35]/20 rounded-2xl py-3 active:scale-[0.98] transition-all">
+                      <Tag className="w-4 h-4 text-[#ff6b35]" />
+                      <span className="text-[12px] font-black text-[#ff6b35] uppercase tracking-widest">Pub</span>
                     </button>
                   </div>
                 )}
@@ -326,13 +417,14 @@ export default function CatalogueServices() {
         subtitle="Gestion Professionnelle"
         dark={false}
         right={
-          <button onClick={() => navigate("/pro/ajouter-service")} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95 transition-all">
+          <button onClick={() => isPackTab ? setBundleModal({ open: true, editBundle: null }) : navigate("/pro/ajouter-service")} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95 transition-all">
             <Plus className="w-5 h-5 text-gray-700" />
           </button>
         }
       />
 
-      <div className={`px-5 pt-5 space-y-5 ${isPackTab ? "pb-8" : "pb-32"}`}>
+      <div className="px-5 pt-5 space-y-5 pb-32">
+        {/* Filter Tabs */}
         <div className="flex items-center gap-2 bg-white rounded-2xl p-1.5 border border-gray-100">
           {filterTabs.map(tab => (
             <button
@@ -360,21 +452,32 @@ export default function CatalogueServices() {
         {renderContent()}
       </div>
 
-      {!isPackTab && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
-          <button onClick={() => navigate("/pro/ajouter-service")}
-            className="w-full bg-primary text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-primary/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
+      {/* Fixed bottom CTA */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
+        {isPackTab ? (
+          <button
+            onClick={() => setBundleModal({ open: true, editBundle: null })}
+            className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <Plus className="w-5 h-5" />
+            Ajouter un Bundle
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate("/pro/ajouter-service")}
+            className="w-full bg-primary text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-primary/40 flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
             <Plus className="w-5 h-5" />
             Ajouter un Service
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Modal de confirmation suppression */}
+      {/* Confirmation modal for deletion */}
       {confirmModal && (
-        <div className="fixed inset-0 z-[200] flex items-end justify-center" onClick={() => setConfirmModal(null)}>
+        <div className="fixed inset-0 z-[400] flex items-end justify-center" onClick={() => setConfirmModal(null)}>
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-          <div className="relative w-full max-w-md bg-white rounded-t-3xl px-5 pt-6 pb-8 space-y-4 animate-slide-up" onClick={e => e.stopPropagation()}>
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl px-5 pt-6 pb-8 space-y-4" onClick={e => e.stopPropagation()}>
             <div className="text-center">
               <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <Trash2 className="w-7 h-7 text-red-500" />
@@ -383,14 +486,6 @@ export default function CatalogueServices() {
               <p className="text-[13px] text-gray-400 mt-1">Cette action est irréversible.</p>
             </div>
             <div className="space-y-2">
-              <button onClick={() => {
-                setConfirmModal(null);
-                if (confirmModal.type === "service") navigate("/pro/ajouter-service", { state: { editService: services.find(s => s.id === confirmModal.id) } });
-                else navigate("/pro/creer-bundle", { state: { editBundle: bundles.find(b => b.id === confirmModal.id) } });
-              }}
-                className="w-full bg-gray-100 text-gray-700 font-black text-[13px] uppercase tracking-widest py-3.5 rounded-2xl active:scale-95 transition-all">
-                Modifier
-              </button>
               <button onClick={handleConfirmDelete}
                 className="w-full bg-red-500 text-white font-black text-[13px] uppercase tracking-widest py-3.5 rounded-2xl shadow-lg shadow-red-500/30 active:scale-95 transition-all">
                 Supprimer définitivement
@@ -403,6 +498,19 @@ export default function CatalogueServices() {
           </div>
         </div>
       )}
+
+      {/* Bundle creation & edition modal */}
+      <BundleFormModal
+        open={bundleModal.open}
+        editBundle={bundleModal.editBundle}
+        services={services}
+        onClose={() => setBundleModal({ open: false, editBundle: null })}
+        onSaved={(updatedBundles) => {
+          setBundles(updatedBundles);
+          setBundleModal({ open: false, editBundle: null });
+          setActiveFilter("BUNDLES");
+        }}
+      />
     </div>
   );
 }

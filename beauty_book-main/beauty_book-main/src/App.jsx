@@ -52,7 +52,6 @@ import BeautyPay from '@/pages/pro/BeautyPay';
 import PaiementFacturation from '@/pages/pro/PaiementFacturation';
 import CatalogueServices from '@/pages/pro/CatalogueServices';
 import AjouterService from '@/pages/pro/AjouterService';
-import CreerBundle from '@/pages/pro/CreerBundle';
 import BundleDetail from '@/pages/BundleDetail';
 import BundleGroupeDetail from '@/pages/BundleGroupeDetail';
 import AvisClients from '@/pages/pro/AvisClients.jsx';
@@ -247,7 +246,6 @@ const AuthenticatedApp = () => {
         <Route path="/pro/paiement-facturation" element={<PaiementFacturation />} />
         <Route path="/pro/catalogue-services" element={<CatalogueServices />} />
         <Route path="/pro/ajouter-service" element={<AjouterService />} />
-        <Route path="/pro/creer-bundle" element={<CreerBundle />} />
         <Route path="/bundle/:id" element={<BundleDetail />} />
         <Route path="/bundle-groupe/:id" element={<BundleGroupeDetail />} />
         <Route path="/pro/avis-clients" element={<AvisClients />} />

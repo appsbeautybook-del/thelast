@@ -217,17 +217,35 @@ export default function CreerBundle() {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
+  const processUploadedFile = async (file) => {
+    if (!file) return "";
+    try {
+      const res = await uploadFile(file, "uploads");
+      if (typeof res === "string" && res) return res;
+      if (res?.file_url) return res.file_url;
+      if (res?.url) return res.url;
+    } catch (err) {
+      console.warn("Storage upload failed, using Data URL fallback:", err);
+    }
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result || "");
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleImgUpload = async (file) => {
     if (!file) return;
     setUploadingImg(true);
-    try { const url = await uploadFile(file, "uploads"); setImageUrl(url); } catch (e) { console.error(e); }
+    try { const url = await processUploadedFile(file); setImageUrl(url); } catch (e) { console.error(e); }
     setUploadingImg(false);
   };
 
   const handleBannerUpload = async (file) => {
     if (!file) return;
     setUploadingBanner(true);
-    try { const url = await uploadFile(file, "uploads"); setCoverUrl(url); } catch (e) { console.error(e); }
+    try { const url = await processUploadedFile(file); setCoverUrl(url); } catch (e) { console.error(e); }
     setUploadingBanner(false);
   };
 

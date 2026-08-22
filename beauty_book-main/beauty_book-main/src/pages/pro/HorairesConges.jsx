@@ -335,18 +335,26 @@ export default function HorairesConges() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [profil, setProfil] = useState(null);
-  const [horaires, setHoraires] = useState({});
+  const [horaires, setHoraires] = useState(() => {
+    const init = {};
+    DAYS.forEach(d => { init[d] = { ...DEFAULT_DAY }; });
+    return init;
+  });
   const [conges, setConges] = useState([]);
   const [travailNuit, setTravailNuit] = useState(() => localStorage.getItem("bb_night_mode") === "true");
 
   useEffect(() => {
-    if (!user?.email) return;
-    entities.ProfilPro.filter({ user_email: user.email }, "-created_at", 1)
-      .then(rows => {
-        if (rows[0]) {
-          setProfil(rows[0]);
-          const ouv = rows[0].ouverture || {};
+    if (!user?.email) {
+      setLoading(false);
+      return;
+    }
+    supabase.from('ProfilPro').select('*').eq('user_email', user.email).maybeSingle()
+      .then(({ data: row, error }) => {
+        if (row) {
+          setProfil(row);
+          const ouv = row.ouverture || row.horaires || {};
           const init = {};
           DAYS.forEach(d => {
             const existing = ouv[d] || { ...DEFAULT_DAY };
@@ -359,8 +367,8 @@ export default function HorairesConges() {
             };
           });
           setHoraires(init);
-          setConges(ouv.conges || []);
-          const dbNight = !!rows[0].travail_nuit;
+          setConges(row.conges || ouv.conges || []);
+          const dbNight = !!row.travail_nuit;
           const localNight = localStorage.getItem("bb_night_mode") === "true";
           if (dbNight !== localNight) {
             localStorage.setItem("bb_night_mode", String(dbNight));
@@ -369,7 +377,10 @@ export default function HorairesConges() {
         }
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        console.error("[HorairesConges] Fetch error:", err);
+        setLoading(false);
+      });
   }, [user?.email]);
 
   const handleDayChange = (day, value) => {
@@ -377,38 +388,91 @@ export default function HorairesConges() {
   };
 
   const handleSave = async () => {
-    if (!profil) return;
-    setSaving(true);
-    const ouverture = { ...horaires, conges };
-
-    // Générer les pauses au format attendu par StepCalendar
-    const pauseMap = {};
-    DAYS.forEach(day => {
-      const h = horaires[day] || DEFAULT_DAY;
-      if (h.open && h.pause_start && h.pause_end) {
-        const key = `${h.pause_start}-${h.pause_end}`;
-        if (!pauseMap[key]) {
-          pauseMap[key] = { start: h.pause_start, end: h.pause_end, days: [] };
-        }
-        pauseMap[key].days.push(day);
-      }
-    });
-    const pauses = Object.values(pauseMap);
-
-    const { error } = await supabase.from('ProfilPro').update({
-      ouverture,
-      horaires: ouverture,
-      pauses,
-      travail_nuit: travailNuit,
-    }).eq('user_email', profil.user_email);
-    if (error) {
-      console.error('[HorairesConges] Save error:', error.message);
-    } else {
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+    if (!user?.email) {
+      setSaveError("Vous devez être connecté pour modifier vos horaires.");
+      return;
     }
-    window.dispatchEvent(new CustomEvent('pro-profile-updated', { detail: { travail_nuit: travailNuit } }));
-    setSaving(false);
+    setSaving(true);
+    setSaveError("");
+
+    try {
+      const fullHoraires = {};
+      DAYS.forEach(d => {
+        fullHoraires[d] = horaires[d] || { ...DEFAULT_DAY };
+      });
+      const ouverture = { ...fullHoraires, conges };
+
+      // Générer les pauses au format attendu par StepCalendar
+      const pauseMap = {};
+      DAYS.forEach(day => {
+        const h = fullHoraires[day];
+        if (h.open && h.pause_start && h.pause_end) {
+          const key = `${h.pause_start}-${h.pause_end}`;
+          if (!pauseMap[key]) {
+            pauseMap[key] = { start: h.pause_start, end: h.pause_end, days: [] };
+          }
+          pauseMap[key].days.push(day);
+        }
+      });
+      const pauses = Object.values(pauseMap);
+
+      // Check if profile exists
+      let profileId = profil?.id;
+      if (!profileId) {
+        const { data: existing } = await supabase
+          .from('ProfilPro')
+          .select('id')
+          .eq('user_email', user.email)
+          .maybeSingle();
+        if (existing?.id) {
+          profileId = existing.id;
+        }
+      }
+
+      const updateData = {
+        ouverture,
+        horaires: ouverture,
+        pauses,
+        conges,
+        travail_nuit: travailNuit,
+        updated_at: new Date().toISOString(),
+      };
+
+      let saveErr = null;
+      if (profileId) {
+        const { error } = await supabase
+          .from('ProfilPro')
+          .update(updateData)
+          .eq('id', profileId);
+        saveErr = error;
+      } else {
+        const { data: created, error } = await supabase
+          .from('ProfilPro')
+          .insert({
+            user_email: user.email,
+            ...updateData
+          })
+          .select()
+          .single();
+        saveErr = error;
+        if (created) setProfil(created);
+      }
+
+      if (saveErr) {
+        console.error('[HorairesConges] Save error:', saveErr);
+        setSaveError("Erreur lors de la sauvegarde : " + saveErr.message);
+      } else {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
+
+      window.dispatchEvent(new CustomEvent('pro-profile-updated', { detail: { travail_nuit: travailNuit } }));
+    } catch (e) {
+      console.error('[HorairesConges] Save exception:', e);
+      setSaveError("Erreur lors de la sauvegarde : " + e.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleToggleNuit = (val) => {
@@ -455,6 +519,13 @@ export default function HorairesConges() {
       </div>
 
       <div className="px-4 pt-5 space-y-5">
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-red-600 text-xs font-bold flex items-center justify-between">
+            <span>{saveError}</span>
+            <button onClick={() => setSaveError("")} className="text-red-400 hover:text-red-600 font-bold ml-2">✕</button>
+          </div>
+        )}
+
         {/* Mode Nuit */}
         <ModeNuitCard travailNuit={travailNuit} onToggle={handleToggleNuit} />
 
