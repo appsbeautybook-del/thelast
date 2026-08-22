@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Clock, Star, Heart, Shield, Calendar } from "lucide-react";
+import { ArrowLeft, Clock, Star, Heart, Shield, Gift, Calendar } from "lucide-react";
 import { entities } from "@/api/entities";
 
 export default function BundleDetail() {
