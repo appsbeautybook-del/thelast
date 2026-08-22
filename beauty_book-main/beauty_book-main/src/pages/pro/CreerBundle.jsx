@@ -411,18 +411,34 @@ export default function CreerBundle() {
               <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
             ) : bundles.length === 0 ? (
               <div className="flex flex-col items-center py-12 gap-3">
-                <div className="w-16 h-16 bg-pink-50 rounded-2xl flex items-center justify-center">
-                  <Zap className="w-8 h-8 text-pink-300" />
+                <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mb-2">
+                  <Zap className="w-9 h-9 text-pink-400" strokeWidth={2.5} />
                 </div>
-                <p className="text-[16px] font-black text-gray-700">Aucun bundle</p>
-                <p className="text-[13px] text-gray-400 text-center">Créez votre premier bundle de services.</p>
+                <p className="text-[18px] font-black text-gray-800">Aucun bundle</p>
+                <p className="text-[13px] text-gray-400 text-center max-w-[260px]">Créez des packs de services pour fidéliser vos clients et augmenter vos revenus.</p>
                 <button onClick={startCreate}
-                  className="mt-2 bg-gradient-to-r from-[#E8732A] to-[#F59E0B] text-white rounded-2xl px-6 py-3 flex items-center gap-2 text-[13px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/25 active:scale-95 transition-all">
-                  <Plus className="w-5 h-5" /> Créer un Bundle
+                  className="mt-3 bg-gradient-to-r from-[#E8732A] to-[#F59E0B] text-white rounded-2xl px-8 py-3.5 flex items-center gap-2 text-[13px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/25 active:scale-95 transition-all">
+                  <Plus className="w-5 h-5" /> Ajouter un bundle
                 </button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#E8732A] to-[#F59E0B] p-4 text-white">
+                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+                  <div className="relative z-10 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-black leading-tight">Augmentez vos revenus avec les bundles</p>
+                      <p className="text-[11px] opacity-80 mt-0.5">Les bundles génèrent en moyenne +30% de chiffre d'affaires</p>
+                    </div>
+                  </div>
+                </div>
+                <button onClick={startCreate}
+                  className="w-full bg-[#E8732A] text-white text-[12px] font-black py-3 rounded-2xl shadow-lg shadow-[#E8732A]/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <Plus className="w-4 h-4" /> AJOUTER UN BUNDLE
+                </button>
+                <div className="space-y-3">
                 {bundles.map(b => {
                   const includedSvcs = services.filter(s => b.service_ids?.includes(s.id));
                   const regTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
