@@ -280,8 +280,6 @@ export default function CreerBundle() {
               className="flex items-center gap-2 text-[13px] font-bold text-gray-500 active:scale-95 transition-transform">
               <ArrowLeft className="w-4 h-4" /> Retour à la liste
             </button>
-              <ArrowLeft className="w-4 h-4" /> Retour à la liste
-            </button>
 
             <div className="flex items-start gap-3">
               <input type="file" ref={imgRef} accept="image/*" className="hidden" onChange={e => handleImgUpload(e.target.files?.[0])} />
