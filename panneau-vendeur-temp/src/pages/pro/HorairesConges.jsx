@@ -334,6 +334,7 @@ export default function HorairesConges() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [profil, setProfil] = useState(null);
   const [horaires, setHoraires] = useState({});
   const [conges, setConges] = useState([]);
@@ -405,11 +406,18 @@ export default function HorairesConges() {
     });
     const pauses = Object.values(pauseMap);
 
-    await entities.ProfilPro.update(profil.id, {
+    const { error } = await entities.ProfilPro.update(profil.id, {
       ouverture,
+      horaires: ouverture,
       pauses,
       travail_nuit: travailNuit,
     });
+    if (error) {
+      console.error('[HorairesConges] Save error:', error);
+    } else {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
     window.dispatchEvent(new CustomEvent('pro-profile-updated', { detail: { travail_nuit: travailNuit } }));
     setSaving(false);
   };
@@ -481,6 +489,8 @@ export default function HorairesConges() {
         >
           {saving ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Enregistrement...</>
+          ) : saveSuccess ? (
+            <><Check className="w-4 h-4" /> Enregistré !</>
           ) : (
             <><Save className="w-4 h-4" /> Enregistrer</>
           )}

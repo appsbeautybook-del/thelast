@@ -334,6 +334,7 @@ export default function HorairesConges() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [profil, setProfil] = useState(null);
   const [horaires, setHoraires] = useState({});
   const [conges, setConges] = useState([]);
@@ -396,10 +397,17 @@ export default function HorairesConges() {
 
     const { error } = await supabase.from('ProfilPro').update({
       ouverture,
+      horaires: ouverture,
       pauses,
       travail_nuit: travailNuit,
     }).eq('user_email', profil.user_email);
-    if (error) console.error('[HorairesConges] Save error:', error.message);
+    if (error) {
+      console.error('[HorairesConges] Save error:', error.message);
+    } else {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
+    window.dispatchEvent(new CustomEvent('pro-profile-updated', { detail: { travail_nuit: travailNuit } }));
     setSaving(false);
   };
 
@@ -470,6 +478,8 @@ export default function HorairesConges() {
         >
           {saving ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Enregistrement...</>
+          ) : saveSuccess ? (
+            <><Check className="w-4 h-4" /> Enregistré !</>
           ) : (
             <><Save className="w-4 h-4" /> Enregistrer</>
           )}
