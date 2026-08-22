@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check, Pencil } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check, Pencil, Users, Gift, Sparkles, X } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -48,7 +48,7 @@ function ImageSlider({ images, onClick }) {
   );
 }
 
-const filterTabs = ["Tous", "Actifs", "Brouillons", "Bundles"];
+const filterTabs = ["Tous", "Actifs", "Brouillons", "BUNDLES"];
 
 export default function CatalogueServices() {
   const navigate = useNavigate();
@@ -125,7 +125,8 @@ export default function CatalogueServices() {
   });
 
   const draftsCount = services.filter(s => s.status !== "actif").length;
-  const isPackTab = activeFilter === "Bundles";
+  const isPackTab = activeFilter === "BUNDLES";
+  const totalBundleServices = bundles.reduce((sum, b) => sum + (b.service_ids?.length || 0), 0);
 
   const renderContent = () => {
     if (loading) {
@@ -137,82 +138,119 @@ export default function CatalogueServices() {
     }
 
     if (isPackTab) {
-      if (bundles.length === 0) {
-        return (
-          <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
-            <div className="w-20 h-20 rounded-full bg-pink-50 flex items-center justify-center">
-              <Zap className="w-10 h-10 text-pink-400" />
-            </div>
-            <p className="text-[16px] font-black text-gray-700">Aucun bundle</p>
-            <p className="text-[13px] text-gray-400">Créez votre premier bundle de services.</p>
-            <button onClick={() => navigate("/pro/creer-bundle")}
-              className="mt-2 bg-pink-500 text-white font-black text-[13px] uppercase tracking-widest px-6 py-3 rounded-2xl shadow-lg shadow-pink-500/30 active:scale-95 transition-all flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Créer un Bundle
-            </button>
-          </div>
-        );
-      }
       return (
-        <div className="space-y-3">
-          {bundles.map(b => {
-            const includedSvcs = services.filter(s => b.service_ids?.map(String).includes(String(s.id)));
-            const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
-            return (
-              <div key={b.id} className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl overflow-hidden border border-pink-100">
-                {b.image_url && <img src={b.image_url} alt="" className="w-full h-40 object-cover" onError={e => e.target.style.display = 'none'} />}
-                <div className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Zap className="w-4 h-4 text-pink-500" />
-                        <p className="text-[16px] font-black text-gray-900 truncate">{b.name}</p>
-                      </div>
-                      {b.description && <p className="text-[12px] text-gray-500 mb-2">{b.description}</p>}
-
-                      {/* Services inclus — style formulaire */}
-                      <div className="bg-white rounded-2xl p-3 border border-pink-100 mb-3">
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Services inclus ({includedSvcs.length})</p>
-                        {includedSvcs.length === 0 ? (
-                          <p className="text-[11px] text-gray-400 italic">Aucun service trouvé</p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {includedSvcs.map(s => (
-                              <div key={s.id} className="flex items-center gap-2 p-2 bg-pink-50 rounded-xl">
-                                <div className="w-5 h-5 rounded-full bg-[#E8732A] flex items-center justify-center shrink-0">
-                                  <Check className="w-3 h-3 text-white" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[12px] font-bold text-gray-900 truncate">{s.title || s.name}</p>
-                                </div>
-                                <span className="text-[11px] font-bold text-gray-500 shrink-0">{s.price}€</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        {regularTotal > 0 && <span className="text-[13px] text-gray-400 line-through">{regularTotal}€</span>}
-                        <span className="text-[20px] font-black text-[#E8732A]">{b.bundle_price}€</span>
-                        {b.discount_percent > 0 && (
-                          <span className="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-2 shrink-0">
-                      <button onClick={() => navigate("/pro/creer-bundle", { state: { editBundle: b } })}
-                        className="p-2.5 bg-white rounded-xl border border-pink-200 active:scale-95 transition-all">
-                        <Pencil className="w-4 h-4 text-blue-500" />
-                      </button>
-                      <button onClick={() => confirmDeleteBundle(b.id)} className="p-2.5 bg-white rounded-xl border border-pink-200 active:scale-95 transition-all">
-                        <Trash2 className="w-4 h-4 text-red-400" />
-                      </button>
-                    </div>
+        <div className="space-y-4">
+          <div className="rounded-3xl overflow-hidden shadow-lg" style={{ background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c42 100%)" }}>
+            <div className="px-5 py-6 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center">
+                    <Zap className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-[11px] font-black tracking-widest opacity-80">BEAUTYBOOK BUNDLES</span>
+                </div>
+                <h2 className="text-[22px] font-black leading-tight mb-1.5">Créez des bundles irrésistibles</h2>
+                <p className="text-[12px] opacity-80 leading-relaxed">Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.</p>
+                <div className="flex items-center gap-3 mt-4">
+                  <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold">{bundles.length} bundle{bundles.length !== 1 ? "s" : ""}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
+                    <Check className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold">{totalBundleServices} service{totalBundleServices !== 1 ? "s" : ""}</span>
                   </div>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          </div>
+
+          {bundles.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mb-4">
+                <Zap className="w-9 h-9 text-pink-400" strokeWidth={2.5} />
+              </div>
+              <p className="text-[18px] font-black text-gray-800 mb-1">Aucun bundle</p>
+              <p className="text-[13px] text-gray-400 mb-6">Créez votre premier bundle de services.</p>
+              <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
+                className="bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-pink-500/30 active:scale-95 transition-all flex items-center gap-2">
+                <Plus className="w-5 h-5" /> CRÉER UN BUNDLE
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {bundles.map(b => {
+                const savPct = b.discount_percent || 0;
+                return (
+                  <div key={b.id} className="bg-white rounded-[20px] border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="flex items-stretch">
+                      <div className="w-28 shrink-0 bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center relative">
+                        {b.image_url ? (
+                          <img src={b.image_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <Zap className="w-8 h-8 text-pink-300" />
+                        )}
+                        {savPct > 0 && (
+                          <div className="absolute top-2 left-2 bg-[#E8732A] text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                            -{savPct}%
+                          </div>
+                        )}
+                        {b.is_group && (
+                          <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                            <Users className="w-2.5 h-2.5" /> Groupe
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-[15px] font-black text-gray-900 leading-tight">{b.name}</p>
+                            <p className="text-[17px] font-black text-[#E8732A] shrink-0">{b.bundle_price}€</p>
+                          </div>
+                          {b.description && (
+                            <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{b.description}</p>
+                          )}
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <Tag className="w-2.5 h-2.5" /> {b.service_ids?.length || 0} services
+                            </span>
+                            {b.category && b.category !== "Tous" && (
+                              <span className="bg-purple-50 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{b.category}</span>
+                            )}
+                            {b.bonus && (
+                              <span className="bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                                <Gift className="w-2.5 h-2.5" /> Bonus
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          <button onClick={() => navigate("/pro/creer-bundle", { state: { editBundle: b } })}
+                            className="flex-1 bg-gray-100 text-gray-600 text-[11px] font-bold py-2 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
+                            <Pencil className="w-3 h-3" /> Modifier
+                          </button>
+                          <button onClick={() => navigate(b.is_group ? "/bundle-groupe/" + b.id : "/bundle/" + b.id, { state: { bundle: b } })}
+                            className="flex-1 bg-[#E8732A]/10 text-[#E8732A] text-[11px] font-bold py-2 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
+                            Voir
+                          </button>
+                          <button onClick={() => setConfirmModal({ type: "bundle", id: b.id, name: b.name })}
+                            className="w-8 h-8 bg-red-50 text-red-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
+                className="w-full bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-pink-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
+              </button>
+            </div>
+          )}
         </div>
       );
     }
@@ -350,10 +388,10 @@ export default function CatalogueServices() {
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
         {isPackTab ? (
-          <button onClick={() => navigate("/pro/creer-bundle")}
-            className="w-full bg-primary text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-primary/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
+            className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
             <Plus className="w-5 h-5" />
-            Créer un Bundle
+            Ajouter un Bundle
           </button>
         ) : (
           <button onClick={() => navigate("/pro/ajouter-service")}
