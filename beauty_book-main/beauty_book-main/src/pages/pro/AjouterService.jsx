@@ -691,6 +691,7 @@ export default function AjouterService() {
     if (!user?.email) return;
     if (!data.name && !data.description && !data.category) return;
     const timer = setTimeout(async () => {
+      const dur = parseInt(data.duration_min || data.duration) || 60;
       const payload = {
         pro_email: user.email,
         name: data.name || "",
@@ -699,9 +700,10 @@ export default function AjouterService() {
         category: data.category || "",
         style: data.style || null,
         price: parseFloat(data.price) || 0,
-        duration: parseInt(data.duration_min) || 60,
-        duration_min: parseInt(data.duration_min) || 60,
+        duration: dur,
+        duration_min: dur,
         images: (data.images || []),
+        image_url: (data.images && data.images[0]) || "",
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),
         status: data._editId ? (data.status || "brouillon") : "brouillon",
       };
@@ -736,6 +738,7 @@ export default function AjouterService() {
   const handleFinish = async (asDraft = false) => {
     setSaving(true);
     try {
+      const dur = parseInt(data.duration_min || data.duration) || 60;
       const payload = {
         pro_email: user?.email || "",
         name: data.name,
@@ -744,9 +747,10 @@ export default function AjouterService() {
         category: data.category,
         style: data.style || null,
         price: parseFloat(data.price) || 0,
-        duration: parseInt(data.duration_min) || 60,
-        duration_min: parseInt(data.duration_min) || 60,
+        duration: dur,
+        duration_min: dur,
         images: (data.images || []),
+        image_url: (data.images && data.images[0]) || "",
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),
         status: asDraft ? "brouillon" : "actif",
       };
