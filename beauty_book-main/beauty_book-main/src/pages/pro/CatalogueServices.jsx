@@ -140,32 +140,6 @@ export default function CatalogueServices() {
     if (isPackTab) {
       return (
         <div className="space-y-4">
-          <div className="rounded-3xl overflow-hidden shadow-lg" style={{ background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c42 100%)" }}>
-            <div className="px-5 py-6 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/30 shadow-sm">
-                    <Sparkles className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-[11px] font-black tracking-widest opacity-90">BEAUTYBOOK BUNDLES</span>
-                </div>
-                <h2 className="text-[22px] font-black leading-tight mb-1.5">Créez des bundles irrésistibles</h2>
-                <p className="text-[12px] opacity-80 leading-relaxed">Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.</p>
-                <div className="flex items-center gap-3 mt-4">
-                  <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/20">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-bold">{bundles.length} bundle{bundles.length !== 1 ? "s" : ""}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/20">
-                    <Check className="w-3.5 h-3.5" />
-                    <span className="text-[11px] font-bold">{totalBundleServices} service{totalBundleServices !== 1 ? "s" : ""}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
 
           {bundles.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">

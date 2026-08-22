@@ -10,6 +10,58 @@ import { useThemeBg } from "@/hooks/useTheme";
 const BUNDLE_CATEGORIES = ["Tous", "Coiffure", "Soin", "Ongles", "Maquillage"];
 const DRAFT_KEY = "bb_bundle_draft";
 
+const BANNER_THEMES = [
+  { id: "glamour", name: "Glamour Rose & Orange", bg: "from-[#ff6b35] via-[#e84466] to-[#f7931e]", previewBg: "bg-gradient-to-r from-[#ff6b35] to-[#e84466]", badgeDefault: "PACK ÉCLAT ✨" },
+  { id: "luxe", name: "Luxe Noir & Or", bg: "from-[#121212] via-[#2A1D08] to-[#45300B]", previewBg: "bg-gradient-to-r from-gray-900 to-amber-900", badgeDefault: "ÉDITION LIMITÉE 👑" },
+  { id: "spa", name: "Spa & Sérénité Émeraude", bg: "from-[#0F3D3E] via-[#107A72] to-[#149B90]", previewBg: "bg-gradient-to-r from-teal-900 to-emerald-600", badgeDefault: "WELLNESS & DETOX 🌿" },
+  { id: "coiffure", name: "Rituels Capillaires Choco", bg: "from-[#3D1E16] via-[#6B3728] to-[#8A4A36]", previewBg: "bg-gradient-to-r from-stone-900 to-amber-800", badgeDefault: "RITUELS CAPILLAIRES ✂️" },
+  { id: "ongles", name: "Ongles & Beauty Neon", bg: "from-[#4C1D95] via-[#9333EA] to-[#C026D3]", previewBg: "bg-gradient-to-r from-purple-900 to-fuchsia-600", badgeDefault: "MANUCURE VIP 💅" },
+  { id: "bridal", name: "Rose Gold Mariage", bg: "from-[#831843] via-[#BE185D] to-[#DB2777]", previewBg: "bg-gradient-to-r from-rose-900 to-pink-600", badgeDefault: "PACK MARIAGE 💍" },
+];
+
+function escapeXml(unsafe) {
+  return String(unsafe || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function generateBannerSvg({ title, badge, subtitle, theme }) {
+  const themesMap = {
+    glamour: { bg1: "#ff6b35", bg2: "#e84466", text: "#FFFFFF", badgeBg: "rgba(255,255,255,0.25)", badgeText: "#FFFFFF", accent: "#FFE600" },
+    luxe: { bg1: "#121212", bg2: "#45300B", text: "#F59E0B", badgeBg: "rgba(245,158,11,0.25)", badgeText: "#FCD34D", accent: "#F59E0B" },
+    spa: { bg1: "#0F3D3E", bg2: "#149B90", text: "#FFFFFF", badgeBg: "rgba(255,255,255,0.2)", badgeText: "#A7F3D0", accent: "#6EE7B7" },
+    coiffure: { bg1: "#3D1E16", bg2: "#8A4A36", text: "#FFFFFF", badgeBg: "rgba(255,255,255,0.2)", badgeText: "#FDE68A", accent: "#FCD34D" },
+    ongles: { bg1: "#4C1D95", bg2: "#C026D3", text: "#FFFFFF", badgeBg: "rgba(255,255,255,0.2)", badgeText: "#F472B6", accent: "#F472B6" },
+    bridal: { bg1: "#831843", bg2: "#DB2777", text: "#FFFFFF", badgeBg: "rgba(255,255,255,0.2)", badgeText: "#FBCFE8", accent: "#FDE68A" },
+  };
+  const t = themesMap[theme] || themesMap.glamour;
+  const safeTitle = escapeXml(title || "MON BUNDLE BEAUTÉ");
+  const safeBadge = escapeXml(badge || "OFFRE SPÉCIALE ✨");
+  const safeSub = escapeXml(subtitle || "Une expérience soin exclusive");
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+    <defs>
+      <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${t.bg1}" />
+        <stop offset="100%" stop-color="${t.bg2}" />
+      </linearGradient>
+    </defs>
+    <rect width="800" height="400" fill="url(#bgGrad)" />
+    <circle cx="720" cy="60" r="160" fill="white" opacity="0.08" />
+    <circle cx="80" cy="360" r="200" fill="white" opacity="0.06" />
+    <rect x="48" y="44" width="240" height="40" rx="20" fill="${t.badgeBg}" />
+    <text x="168" y="69" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="${t.badgeText}" text-anchor="middle" letter-spacing="2">${safeBadge}</text>
+    <text x="48" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="900" fill="${t.text}">${safeTitle}</text>
+    <text x="48" y="225" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="600" fill="${t.text}" opacity="0.85">${safeSub}</text>
+    <line x1="48" y1="280" x2="752" y2="280" stroke="white" stroke-opacity="0.15" stroke-width="2" />
+    <text x="48" y="335" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="${t.accent}" letter-spacing="1">BEAUTYBOOK EXCLUSIVE BUNDLE</text>
+  </svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+
 function getDraft() {
   try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch { return null; }
 }
@@ -40,6 +92,12 @@ export default function CreerBundle() {
   const [deleteModal, setDeleteModal] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [validationError, setValidationError] = useState("");
+
+  const [showBannerStudio, setShowBannerStudio] = useState(false);
+  const [studioTheme, setStudioTheme] = useState("glamour");
+  const [studioTitle, setStudioTitle] = useState("");
+  const [studioBadge, setStudioBadge] = useState("PACK ÉCLAT ✨");
+  const [studioSubtitle, setStudioSubtitle] = useState("");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -330,6 +388,13 @@ export default function CreerBundle() {
                   </div>
                 )}
               </div>
+
+              {/* Bouton Générer avec les modèles Beauty Studio */}
+              <button type="button" onClick={() => setShowBannerStudio(true)}
+                className="mt-2.5 w-full bg-gradient-to-r from-purple-600 via-pink-500 to-orange-500 text-white rounded-2xl p-3 flex items-center justify-center gap-2 text-[12px] font-black shadow-md shadow-pink-500/20 active:scale-95 transition-all">
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                Générer avec un Modèle Beauty Studio ✨
+              </button>
             </div>
 
             <div>
@@ -570,6 +635,79 @@ export default function CreerBundle() {
               <button onClick={() => handleDelete(deleteModal.id)}
                 className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-[13px] font-black active:scale-95 transition-all">
                 Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      {showBannerStudio && (
+        <div className="fixed inset-0 z-[600] flex items-end justify-center" onClick={() => setShowBannerStudio(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-md" />
+          <div className="relative bg-white rounded-t-3xl w-full max-w-lg p-6 pb-8 space-y-4 max-h-[90vh] overflow-y-auto" style={{ paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-pink-50 rounded-xl flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-pink-500" />
+                </div>
+                <div>
+                  <p className="text-[15px] font-black text-gray-900">Studio Bannières BeautyBook</p>
+                  <p className="text-[11px] text-gray-400 font-medium">Modèles graphiques pour salon de beauté</p>
+                </div>
+              </div>
+              <button onClick={() => setShowBannerStudio(false)} className="p-2"><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+
+            {/* Prévisualisation en direct */}
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Aperçu de la bannière</p>
+              <div className="relative h-44 w-full rounded-2xl overflow-hidden shadow-lg border border-gray-200">
+                <img src={generateBannerSvg({ title: studioTitle || name || "PACK BEAUTÉ SUBLIME", badge: studioBadge, subtitle: studioSubtitle || description || "Profitez de nos rituels exclusifs", theme: studioTheme })} alt="Aperçu Studio" className="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            {/* Choix des modèles / thèmes */}
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">1. Choisissez un style graphique</p>
+              <div className="grid grid-cols-2 gap-2">
+                {BANNER_THEMES.map(th => (
+                  <button key={th.id} onClick={() => { setStudioTheme(th.id); setStudioBadge(th.badgeDefault); }}
+                    className={`p-2.5 rounded-2xl text-left border-2 transition-all flex items-center gap-2.5 ${studioTheme === th.id ? "border-[#ff6b35] bg-orange-50/50 shadow-sm" : "border-gray-100 bg-white"}`}>
+                    <div className={`w-6 h-6 rounded-full shrink-0 ${th.previewBg}`} />
+                    <span className="text-[11px] font-bold text-gray-800 truncate">{th.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Champs de personnalisation */}
+            <div className="space-y-3 pt-1">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">2. Personnalisez le texte</p>
+              <div>
+                <label className="text-[11px] font-bold text-gray-700 mb-1 block">Titre principal de la bannière</label>
+                <input type="text" value={studioTitle} onChange={e => setStudioTitle(e.target.value)} placeholder={name || "ex: PACK GLAMOUR ROOTS"}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-[12px] font-bold outline-none focus:border-[#ff6b35]" />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-gray-700 mb-1 block">Badge d'accroche (ex: PROMO, VIP, EXCLUSIF)</label>
+                <input type="text" value={studioBadge} onChange={e => setStudioBadge(e.target.value)} placeholder="ex: PACK ÉCLAT ✨"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-[12px] font-bold outline-none focus:border-[#ff6b35]" />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-gray-700 mb-1 block">Sous-titre explicatif</label>
+                <input type="text" value={studioSubtitle} onChange={e => setStudioSubtitle(e.target.value)} placeholder={description || "ex: Soin + Coiffure + Produit Offert"}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-[12px] font-bold outline-none focus:border-[#ff6b35]" />
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-2">
+              <button onClick={() => {
+                const generatedSvg = generateBannerSvg({ title: studioTitle || name || "PACK BEAUTÉ SUBLIME", badge: studioBadge, subtitle: studioSubtitle || description || "Profitez de nos rituels exclusifs", theme: studioTheme });
+                setCoverUrl(generatedSvg);
+                setShowBannerStudio(false);
+              }} className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white py-3.5 rounded-2xl font-black text-[13px] uppercase tracking-wider shadow-lg shadow-orange-500/25 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <Check className="w-4 h-4" /> Appliquer cette bannière au bundle
               </button>
             </div>
           </div>
