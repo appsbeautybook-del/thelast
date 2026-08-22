@@ -259,6 +259,7 @@ export default function CreerBundle() {
       return;
     }
     setSaving(true);
+    setValidationError("");
     const payload = {
       pro_email: user.email,
       name: name.trim(),
@@ -267,27 +268,36 @@ export default function CreerBundle() {
       bundle_price: parseFloat(bundlePrice),
       discount_percent: discount > 0 ? discount : 0,
       image_url: imageUrl || "",
-      cover_url: coverUrl || imageUrl || "",
-      banner_url: coverUrl || imageUrl || "",
       category: category !== "Tous" ? category : "",
       is_group: isGroup,
       min_persons: isGroup ? minPersons : 1,
       max_persons: isGroup ? maxPersons : 1,
       bundle_price_per_person: parseFloat(bundlePrice),
       bonus: bonus.trim(),
-      is_active: true,
     };
-    if (editingBundle) {
-      payload.updated_at = new Date().toISOString();
-      await supabase.from("ServiceBundle").update(payload).eq("id", editingBundle.id);
-    } else {
-      await supabase.from("ServiceBundle").insert(payload);
+    // Ajout cover_url/banner_url uniquement si présents (colonnes optionnelles)
+    if (coverUrl) { payload.cover_url = coverUrl; payload.banner_url = coverUrl; }
+    try {
+      if (editingBundle) {
+        payload.updated_at = new Date().toISOString();
+        const { error } = await supabase.from("ServiceBundle").update(payload).eq("id", editingBundle.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("ServiceBundle").insert(payload);
+        if (error) throw error;
+      }
+      // Rafraîchir la liste après sauvegarde réussie
+      const { data, error: fetchErr } = await supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false });
+      if (!fetchErr) setBundles(data || []);
+      clearDraft();
+      resetForm();
+      setShowForm(false);
+    } catch (err) {
+      console.error("[CreerBundle] Save error:", err);
+      setValidationError("Erreur : " + (err.message || "impossible de sauvegarder le bundle"));
+    } finally {
+      setSaving(false);
     }
-    const { data } = await supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false });
-    setBundles(data || []);
-    setSaving(false);
-    resetForm();
-    setShowForm(false);
   };
 
   const handleSaveDraft = () => {
