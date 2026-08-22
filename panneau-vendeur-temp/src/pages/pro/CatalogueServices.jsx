@@ -104,7 +104,7 @@ function BundlesTab({ userEmail }) {
           </div>
           <p className="text-[18px] font-black text-gray-800 mb-1">Aucun bundle</p>
           <p className="text-[13px] text-gray-400 mb-6">Créez votre premier bundle de services.</p>
-          <button onClick={() => navigate("/pro/creer-bundle")}
+          <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
             className="bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-pink-500/30 active:scale-95 transition-all flex items-center gap-2">
             <Plus className="w-5 h-5" /> CRÉER UN BUNDLE
           </button>
@@ -132,7 +132,7 @@ function BundlesTab({ userEmail }) {
               </div>
             </div>
           ))}
-          <button onClick={() => navigate("/pro/creer-bundle")}
+          <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
             className="w-full bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-pink-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
           </button>

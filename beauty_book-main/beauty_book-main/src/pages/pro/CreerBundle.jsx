@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { ArrowLeft, Camera, Plus, Trash2, Zap, Check, Users, Gift, Tag, FileText, Search, X, Pencil, Sparkles } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Trash2, Zap, Check, Users, Gift, Tag, FileText, Search, X, Pencil, Sparkles, Save } from "lucide-react";
 import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -8,6 +8,17 @@ import { uploadFile } from "@/api/entities";
 import { useThemeBg } from "@/hooks/useTheme";
 
 const BUNDLE_CATEGORIES = ["Tous", "Coiffure", "Soin", "Ongles", "Maquillage"];
+const DRAFT_KEY = "bb_bundle_draft";
+
+function getDraft() {
+  try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch { return null; }
+}
+function saveDraft(d) {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(d)); } catch {}
+}
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch {}
+}
 
 export default function CreerBundle() {
   const navigate = useNavigate();
@@ -25,6 +36,7 @@ export default function CreerBundle() {
   const [uploadingImg, setUploadingImg] = useState(false);
   const [bundleServiceSearch, setBundleServiceSearch] = useState("");
   const [deleteModal, setDeleteModal] = useState(null);
+  const [draftSaved, setDraftSaved] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -53,6 +65,7 @@ export default function CreerBundle() {
     return () => { cancelled = true; };
   }, [user?.email]);
 
+  // Auto-open form if navigated with state or draft exists
   useEffect(() => {
     const edit = location.state?.editBundle;
     if (edit) {
@@ -68,14 +81,59 @@ export default function CreerBundle() {
       setMaxPersons(edit.max_persons || 6);
       setBonus(edit.bonus || "");
       setShowForm(true);
+    } else if (location.state?.openForm) {
+      // Load draft if available
+      const draft = getDraft();
+      if (draft) {
+        setName(draft.name || "");
+        setDescription(draft.description || "");
+        setBundlePrice(draft.bundlePrice || "");
+        setImageUrl(draft.imageUrl || "");
+        setSelectedIds(draft.selectedIds || []);
+        setCategory(draft.category || "Tous");
+        setIsGroup(draft.isGroup || false);
+        setMinPersons(draft.minPersons || 2);
+        setMaxPersons(draft.maxPersons || 6);
+        setBonus(draft.bonus || "");
+      }
+      setShowForm(true);
+    } else {
+      // Check for draft on mount
+      const draft = getDraft();
+      if (draft) {
+        setShowForm(true);
+        setName(draft.name || "");
+        setDescription(draft.description || "");
+        setBundlePrice(draft.bundlePrice || "");
+        setImageUrl(draft.imageUrl || "");
+        setSelectedIds(draft.selectedIds || []);
+        setCategory(draft.category || "Tous");
+        setIsGroup(draft.isGroup || false);
+        setMinPersons(draft.minPersons || 2);
+        setMaxPersons(draft.maxPersons || 6);
+        setBonus(draft.bonus || "");
+      }
     }
   }, [location.state]);
+
+  // Auto-save draft on field changes
+  useEffect(() => {
+    if (!showForm || editingBundle) return;
+    if (!name && !description && !bundlePrice && selectedIds.length === 0) return;
+    const timer = setTimeout(() => {
+      saveDraft({ name, description, bundlePrice, imageUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus });
+      setDraftSaved(true);
+      setTimeout(() => setDraftSaved(false), 2000);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [name, description, bundlePrice, imageUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus, showForm, editingBundle]);
 
   const resetForm = () => {
     setName(""); setDescription(""); setBundlePrice(""); setImageUrl("");
     setSelectedIds([]); setCategory("Tous"); setIsGroup(false);
     setMinPersons(2); setMaxPersons(6); setBonus("");
     setEditingBundle(null); setBundleServiceSearch("");
+    clearDraft();
   };
 
   const toggleService = (id) => {
@@ -128,6 +186,12 @@ export default function CreerBundle() {
     setSaving(false);
     resetForm();
     setShowForm(false);
+  };
+
+  const handleSaveDraft = () => {
+    saveDraft({ name, description, bundlePrice, imageUrl, selectedIds, category, isGroup, minPersons, maxPersons, bonus });
+    setDraftSaved(true);
+    setTimeout(() => setDraftSaved(false), 2000);
   };
 
   const handleDelete = async (id) => {
@@ -420,10 +484,21 @@ export default function CreerBundle() {
 
       {showForm && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
-          <button onClick={handleSave} disabled={!name.trim() || !bundlePrice || selectedIds.length === 0 || saving}
-            className="w-full bg-[#E8732A] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-[#E8732A]/40 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
-            {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : editingBundle ? "ENREGISTRER" : "CRÉER LE BUNDLE"}
-          </button>
+          {draftSaved && (
+            <p className="text-center text-[11px] text-green-500 font-bold mb-1 flex items-center justify-center gap-1"><Save className="w-3 h-3" /> Brouillon sauvegardé</p>
+          )}
+          <div className="flex gap-2">
+            {!editingBundle && (name || bundlePrice || selectedIds.length > 0) && (
+              <button onClick={handleSaveDraft}
+                className="bg-gray-100 text-gray-600 font-bold text-[12px] px-4 py-4 rounded-2xl flex items-center gap-1.5 active:scale-95 transition-all">
+                <Save className="w-4 h-4" /> Brouillon
+              </button>
+            )}
+            <button onClick={handleSave} disabled={!name.trim() || !bundlePrice || selectedIds.length === 0 || saving}
+              className="flex-1 bg-[#E8732A] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-[#E8732A]/40 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
+              {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : editingBundle ? "ENREGISTRER" : "CRÉER LE BUNDLE"}
+            </button>
+          </div>
         </div>
       )}
 
