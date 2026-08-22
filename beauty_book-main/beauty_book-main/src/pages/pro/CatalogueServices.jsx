@@ -172,15 +172,9 @@ export default function CatalogueServices() {
                 <Zap className="w-9 h-9 text-[#ff6b35]" strokeWidth={2.2} />
               </div>
               <p className="text-[20px] font-black text-gray-900 mb-2 tracking-tight">Aucun bundle</p>
-              <p className="text-[13px] text-gray-400 mb-7 max-w-xs leading-relaxed font-medium">
+              <p className="text-[13px] text-gray-400 max-w-xs leading-relaxed font-medium">
                 Créez des packs de services pour fidéliser vos clients et augmenter vos revenus.
               </p>
-              <button
-                onClick={() => setBundleModal({ open: true, editBundle: null })}
-                className="bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[13px] font-black uppercase tracking-wider px-8 py-4 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                <Plus className="w-4 h-4 stroke-[3]" /> CRÉER UN BUNDLE
-              </button>
             </div>
           ) : (
             <div className="space-y-4">

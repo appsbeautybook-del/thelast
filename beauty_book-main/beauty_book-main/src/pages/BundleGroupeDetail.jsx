@@ -1,7 +1,25 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Clock, Star, Heart, Shield, Gift, ChevronRight, Users, TrendingDown, Calendar, User } from "lucide-react";
+import { ArrowLeft, Clock, Star, Heart, Shield, Gift, ChevronRight, Users, TrendingDown, Calendar, User, Package, Scissors, Sparkles } from "lucide-react";
 import { entities } from "@/api/entities";
+
+function ServiceImageSlider({ images }) {
+  const validImages = (images || []).filter(Boolean);
+  if (validImages.length === 0) return null;
+
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1.5 hide-scrollbar">
+      {validImages.map((imgUrl, i) => (
+        <img
+          key={i}
+          src={imgUrl}
+          alt=""
+          className="w-20 h-20 rounded-xl object-cover shrink-0 border border-gray-100 shadow-sm"
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function BundleGroupeDetail() {
   const navigate = useNavigate();
@@ -10,6 +28,9 @@ export default function BundleGroupeDetail() {
   const [bundle, setBundle] = useState(state?.bundle || null);
   const [services, setServices] = useState([]);
   const [proProfile, setProProfile] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [similarBundles, setSimilarBundles] = useState([]);
+  const [servicesMap, setServicesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [expandedSvc, setExpandedSvc] = useState(null);
   const [nbPers, setNbPers] = useState(2);
@@ -28,12 +49,26 @@ export default function BundleGroupeDetail() {
   const loadDetails = async (b) => {
     setLoading(true);
     try {
-      const [svcs, profils] = await Promise.all([
-        b.service_ids?.length ? entities.Service.filter({}, "-created_at", 500).catch(() => []) : Promise.resolve([]),
+      const [allSvcs, profils, avisData, allBundles] = await Promise.all([
+        entities.Service.filter({}, "-created_at", 500).catch(() => []),
         entities.ProfilPro.filter({ user_email: b.pro_email }, "-created_at", 1).catch(() => []),
+        entities.Avis.filter({ pro_email: b.pro_email }, "-created_at", 20).catch(() => []),
+        entities.ServiceBundle.filter({ is_active: true, pro_email: b.pro_email }, "-created_at", 10).catch(() => []),
       ]);
-      setServices((svcs || []).filter(s => b.service_ids?.includes(s.id)));
+
+      const map = {};
+      (allSvcs || []).forEach(s => {
+        if (s.id) map[s.id] = s;
+        if (s.title) map[s.title] = s;
+        if (s.name) map[s.name] = s;
+      });
+      setServicesMap(map);
+
+      const matched = (allSvcs || []).filter(s => b.service_ids?.includes(s.id));
+      setServices(matched);
       setProProfile(profils[0] || null);
+      setReviews((avisData || []).slice(0, 5));
+      setSimilarBundles((allBundles || []).filter(x => x.id !== b.id).slice(0, 4));
     } catch {}
     setLoading(false);
   };
@@ -53,15 +88,22 @@ export default function BundleGroupeDetail() {
   const savings = regularTotal - displayPrice;
   const savingsPercent = regularTotal > 0 ? Math.round((savings / regularTotal) * 100) : 0;
 
-  const totalDuration = services.reduce((sum, s) => sum + (parseInt(s.duration_min) || 60), 0);
+  const totalDuration = services.reduce((sum, s) => sum + (parseInt(s.duration || s.duration_min) || 60), 0);
   const durH = Math.floor(totalDuration / 60);
   const durM = totalDuration % 60;
   const durStr = durH > 0 ? `${durH}h${durM > 0 ? String(durM).padStart(2, '0') : ''}` : `${durM}min`;
 
+  const proDisplayName = proProfile?.salon_name || (proProfile?.prenom ? `${proProfile.prenom} ${proProfile.nom || ''}`.trim() : proProfile?.nom) || proProfile?.name || "Salon Professionnel";
+
+  const goBundle = (b) => {
+    if (b.is_group) navigate("/bundle-groupe/" + b.id, { state: { bundle: b } });
+    else navigate("/bundle/" + b.id, { state: { bundle: b } });
+  };
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] font-display">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl px-4 pt-12 pb-3 flex items-center gap-3">
+      <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl px-4 pt-12 pb-3 flex items-center gap-3 border-b border-gray-100">
         <button onClick={() => navigate(-1)} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
           <ArrowLeft className="w-4 h-4 text-gray-700" />
         </button>
@@ -82,19 +124,19 @@ export default function BundleGroupeDetail() {
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-amber-50 via-orange-50 to-pink-50" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
           {/* Badge */}
           <div className="absolute top-4 left-4 z-10">
-            <span className="bg-white/95 backdrop-blur text-[10px] font-black text-[#E8732A] px-3 py-1.5 rounded-full uppercase tracking-wider">
+            <span className="bg-white/95 backdrop-blur text-[10px] font-black text-[#E8732A] px-3 py-1.5 rounded-full uppercase tracking-wider shadow-sm">
               🎉 PARFAIT POUR SORTIE & ÉVÉNEMENTS
             </span>
           </div>
 
-          {/* Name & description */}
+          {/* Name & description (Clean hero title, no 'beauty book' overlay text) */}
           <div className="absolute bottom-6 left-5 right-5 z-10">
-            <h2 className="text-[28px] font-black text-white leading-tight">{bundle.name} ✨</h2>
-            {bundle.description && <p className="text-[13px] text-white/85 mt-1 leading-relaxed">{bundle.description}</p>}
+            <h2 className="text-[28px] font-black text-white leading-tight drop-shadow-md">{bundle.name}</h2>
+            {bundle.description && <p className="text-[13px] text-white/90 mt-1 leading-relaxed drop-shadow">{bundle.description}</p>}
           </div>
         </div>
 
@@ -133,16 +175,39 @@ export default function BundleGroupeDetail() {
           </div>
         </div>
 
+        {/* Section PROFESSIONNEL (Displays Commercial Name, NOT email) */}
+        <div className="mx-4 mt-5">
+          <div className="bg-white rounded-2xl border border-gray-100 p-3.5 flex items-center gap-3 shadow-sm">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#E8732A] to-[#E84466] shrink-0 flex items-center justify-center text-white font-black">
+              {proProfile?.avatar_url || proProfile?.photo_url ? (
+                <img src={proProfile.avatar_url || proProfile.photo_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span>{proDisplayName[0]?.toUpperCase()}</span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-black text-gray-900 truncate">{proDisplayName}</p>
+              <p className="text-[11px] text-gray-400 font-medium">Professionnel Partenaire</p>
+            </div>
+            <button
+              onClick={() => navigate("/pro/vue-client", { state: { email: bundle.pro_email } })}
+              className="text-[11px] font-black text-[#E8732A] bg-orange-50 px-3 py-1.5 rounded-xl"
+            >
+              Voir Profil
+            </button>
+          </div>
+        </div>
+
         {/* Price card floating */}
-        <div className="mx-4 mt-3 bg-gradient-to-r from-[#E8732A] to-[#E84466] rounded-2xl p-4 text-white flex items-center justify-between">
+        <div className="mx-4 mt-3 bg-gradient-to-r from-[#E8732A] to-[#E84466] rounded-2xl p-4 text-white flex items-center justify-between shadow-md">
           <div>
             <p className="text-[12px] font-bold opacity-90">À partir de</p>
-            <p className="text-[32px] font-black leading-tight">{displayPrice}€</p>
+            <p className="text-[32px] font-black leading-tight">{displayPrice} €</p>
             <p className="text-[12px] opacity-80">pour {nbPers} pers.</p>
           </div>
           <div className="text-right">
             <p className="text-[11px] opacity-70">au lieu de</p>
-            <p className="text-[16px] font-bold line-through opacity-60">{regularTotal}€</p>
+            <p className="text-[16px] font-bold line-through opacity-60">{regularTotal} €</p>
           </div>
         </div>
 
@@ -155,7 +220,7 @@ export default function BundleGroupeDetail() {
               const isSelected = nbPers === pers;
               return (
                 <button key={pers} onClick={() => setNbPers(pers)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl border-2 transition-all active:scale-95 ${isSelected ? "border-[#E8732A] bg-orange-50" : "border-gray-100 bg-white"}`}>
+                  className={`flex-1 flex flex-col items-center gap-1 py-3 rounded-2xl border-2 transition-all active:scale-95 ${isSelected ? "border-[#E8732A] bg-orange-50 shadow-sm" : "border-gray-100 bg-white"}`}>
                   <div className="flex">
                     {Array.from({ length: Math.min(pers, 3) }).map((_, j) => (
                       <User key={j} className={`w-4 h-4 ${isSelected ? "text-[#E8732A]" : "text-gray-400"}`} />
@@ -178,19 +243,19 @@ export default function BundleGroupeDetail() {
         {/* Services included (per person) */}
         <div className="px-4 mt-5">
           <h3 className="text-[16px] font-black text-gray-900 mb-3">Ce que comprend le bundle <span className="text-[13px] font-medium text-gray-400">(par personne)</span></h3>
-          <div className="space-y-0">
+          <div className="space-y-0 bg-white rounded-2xl border border-gray-100 px-3">
             {services.map((s, i) => {
               const isExpanded = expandedSvc === s.id;
-              const durMin = parseInt(s.duration_min) || 60;
+              const durMin = parseInt(s.duration || s.duration_min) || 60;
               const durH2 = Math.floor(durMin / 60);
               const durM2 = durMin % 60;
               const durDisplay = durH2 > 0 ? `${durH2}h${durM2 > 0 ? String(durM2).padStart(2, '0') : ''}` : `${durM2} min`;
               return (
-                <div key={s.id} className="border-b border-gray-50 last:border-0">
+                <div key={s.id} className="border-b border-gray-100 last:border-0">
                   <button onClick={() => setExpandedSvc(isExpanded ? null : s.id)} className="w-full flex items-center gap-3 py-3 text-left">
                     <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                      {s.image_url ? (
-                        <img src={s.image_url} alt="" className="w-full h-full object-cover" />
+                      {s.image_url || (s.images && s.images[0]) ? (
+                        <img src={s.image_url || s.images[0]} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl bg-gradient-to-br from-pink-50 to-orange-50">💆</div>
                       )}
@@ -229,16 +294,16 @@ export default function BundleGroupeDetail() {
         )}
 
         {/* Bottom pricing summary */}
-        <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 p-4">
+        <div className="mx-4 mt-4 bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div>
               <p className="text-[11px] text-gray-400 font-medium">Prix total pour {nbPers} personnes</p>
-              <p className="text-[18px] font-black text-gray-900">{regularTotal}€ <span className="text-[12px] font-medium text-gray-400 line-through">au lieu de {regularTotal}€</span></p>
-              <p className="text-[11px] text-gray-400">Soit {Math.round(displayPrice / nbPers)}€ par personne</p>
+              <p className="text-[18px] font-black text-gray-900">{displayPrice} € <span className="text-[12px] font-medium text-gray-400 line-through">au lieu de {regularTotal} €</span></p>
+              <p className="text-[11px] text-gray-400">Soit {Math.round(displayPrice / nbPers)} € par personne</p>
             </div>
             <div className="text-right">
               <p className="text-[10px] text-gray-400 font-bold uppercase">Économie</p>
-              <p className="text-[18px] font-black text-[#E8732A]">{savings}€</p>
+              <p className="text-[18px] font-black text-[#E8732A]">{savings} €</p>
               <p className="text-[11px] text-[#E8732A] font-bold">({savingsPercent}%)</p>
             </div>
           </div>
@@ -248,6 +313,98 @@ export default function BundleGroupeDetail() {
             <span className="text-[10px] text-gray-400 ml-auto">Pour tout le groupe</span>
           </div>
         </div>
+
+        {/* Avis clients section with service & image slider */}
+        {reviews.length > 0 && (
+          <div className="mx-4 mt-7">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[18px] font-black text-gray-900">Avis des clientes</h3>
+              <span className="text-[13px] text-gray-400 font-medium">{reviews.length} avis</span>
+            </div>
+            <div className="space-y-3.5">
+              {reviews.map((r, i) => {
+                const assocService = servicesMap[r.service_id] || servicesMap[r.service_name] || services[0] || null;
+                const serviceTitle = r.service_name || assocService?.title || assocService?.name || "Prestation";
+                const serviceImgs = assocService?.images?.length > 0 ? assocService.images : (assocService?.image_url ? [assocService.image_url] : []);
+
+                return (
+                  <div key={r.id || i} className="bg-white rounded-[22px] border border-gray-100 p-4 shadow-sm space-y-2.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 border border-orange-200">
+                        {r.user_avatar || r.auteur_avatar ? (
+                          <img src={r.user_avatar || r.auteur_avatar} alt="" className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                          <span className="text-xs font-black text-[#E8732A]">
+                            {(r.user_name || r.auteur_name || r.auteur_email || "C")[0].toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-black text-gray-900 truncate">{r.user_name || r.auteur_name || "Cliente"}</p>
+                        <div className="flex items-center gap-0.5">
+                          {[...Array(5)].map((_, si) => (
+                            <Star key={si} className={"w-3 h-3 " + (si < (r.rating || r.note || 5) ? "text-amber-400 fill-amber-400" : "text-gray-200")} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    {(r.comment || r.commentaire) && (
+                      <p className="text-[13px] text-gray-600 leading-relaxed">{r.comment || r.commentaire}</p>
+                    )}
+                    <div className="mt-2 pt-2.5 border-t border-gray-100 bg-orange-50/40 rounded-xl p-2.5 space-y-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-800">
+                        <Scissors className="w-3.5 h-3.5 text-[#E8732A]" />
+                        <span>Prestation : {serviceTitle}</span>
+                      </div>
+                      {serviceImgs.length > 0 && <ServiceImageSlider images={serviceImgs} />}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Bundles similaires */}
+        {similarBundles.length > 0 && (
+          <div className="mx-4 mt-8">
+            <h3 className="text-[18px] font-black text-gray-900 mb-4">Bundles similaires</h3>
+            <div className="flex gap-3.5 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory hide-scrollbar">
+              {similarBundles.map((sb) => (
+                <button
+                  key={sb.id}
+                  onClick={() => goBundle(sb)}
+                  className="snap-start shrink-0 w-[200px] bg-white rounded-[22px] border border-gray-100 overflow-hidden active:scale-[0.97] transition-all text-left shadow-sm"
+                >
+                  <div className="h-[105px] overflow-hidden bg-gray-100 relative">
+                    {sb.image_url ? (
+                      <img src={sb.image_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center">
+                        <Package className="w-8 h-8 text-[#E8732A]/40" />
+                      </div>
+                    )}
+                    {sb.discount_percent > 0 && (
+                      <span className="absolute top-2 right-2 bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                        -{sb.discount_percent}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[13px] font-black text-gray-900 truncate">{sb.name}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{sb.service_ids?.length || 1} services inclus</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-[16px] font-black text-[#E8732A]">{sb.bundle_price} €</p>
+                      {sb.is_group && (
+                        <span className="text-[9px] font-bold bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full uppercase">Groupe</span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Fixed bottom CTA */}
@@ -255,10 +412,10 @@ export default function BundleGroupeDetail() {
         <button onClick={() => navigate(`/reservation?pro=${bundle.pro_email}&bundle=${bundle.id}`, { state: { services: services.map(s => ({ ...s, persons: nbPers })), bundle, nbPers } })}
           className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
           style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 30px rgba(232,115,42,0.35)" }}>
-          Choisir la date & réserver le bundle <ChevronRight className="w-5 h-5" />
+          RÉSERVER CE BUNDLE POUR {nbPers} PERS. <ChevronRight className="w-5 h-5" />
         </button>
-        <p className="text-center text-[10px] text-gray-400 mt-1.5 flex items-center justify-center gap-1">
-          <Shield className="w-3 h-3" /> Paiement 100% sécurisé
+        <p className="text-center text-[10px] text-gray-400 mt-1.5 flex items-center justify-center gap-1 font-medium">
+          <Shield className="w-3.5 h-3.5 text-gray-400" /> Paiement 100% sécurisé
         </p>
       </div>
     </div>

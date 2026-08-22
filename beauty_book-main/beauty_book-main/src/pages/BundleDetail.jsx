@@ -1,11 +1,31 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import {
-  ArrowLeft, Heart, Timer, Percent, Star, MapPin,
-  BadgeCheck, ChevronRight, Calendar, Shield,
-  Sparkles, Package
+  ArrowLeft, Heart, Share2, Timer, Percent, Star, MapPin,
+  BadgeCheck, ChevronRight, Calendar, Shield, Sparkles, Package, Scissors, Gift, Clock
 } from "lucide-react";
 import { entities } from "@/api/entities";
+import { supabase } from "@/api/supabaseClient";
+
+function ServiceImageSlider({ images }) {
+  const [current, setCurrent] = useState(0);
+  const validImages = (images || []).filter(Boolean);
+
+  if (validImages.length === 0) return null;
+
+  return (
+    <div className="flex gap-2 overflow-x-auto pb-1.5 hide-scrollbar">
+      {validImages.map((imgUrl, i) => (
+        <img
+          key={i}
+          src={imgUrl}
+          alt=""
+          className="w-20 h-20 rounded-xl object-cover shrink-0 border border-gray-100 shadow-sm"
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function BundleDetail() {
   const navigate = useNavigate();
@@ -16,6 +36,7 @@ export default function BundleDetail() {
   const [proProfile, setProProfile] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [similarBundles, setSimilarBundles] = useState([]);
+  const [servicesMap, setServicesMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,48 +53,55 @@ export default function BundleDetail() {
   const loadDetails = async (b) => {
     setLoading(true);
     try {
-      const [svcs, profils] = await Promise.all([
-        b.service_ids?.length
-          ? entities.Service.filter({}, "-created_at", 500).catch(() => [])
-          : Promise.resolve([]),
+      const [allSvcs, profils, avisData, allBundles] = await Promise.all([
+        entities.Service.filter({}, "-created_at", 500).catch(() => []),
         entities.ProfilPro.filter({ user_email: b.pro_email }, "-created_at", 1).catch(() => []),
+        entities.Avis.filter({ pro_email: b.pro_email }, "-created_at", 20).catch(() => []),
+        entities.ServiceBundle.filter({ is_active: true, pro_email: b.pro_email }, "-created_at", 10).catch(() => []),
       ]);
-      const matched = (svcs || []).filter(s => b.service_ids?.includes(s.id));
+
+      const map = {};
+      (allSvcs || []).forEach(s => {
+        if (s.id) map[s.id] = s;
+        if (s.title) map[s.title] = s;
+        if (s.name) map[s.name] = s;
+      });
+      setServicesMap(map);
+
+      const matched = (allSvcs || []).filter(s => b.service_ids?.includes(s.id));
       setServices(matched);
       setProProfile(profils[0] || null);
-
-      if (profils[0]?.user_email) {
-        entities.Avis.filter({ cible_email: profils[0].user_email, type: "client_to_pro" }, "-created_at", 20)
-          .then(setReviews).catch(() => {});
-      }
-
-      entities.ServiceBundle.filter({ pro_email: b.pro_email }, "-created_at", 10)
-        .then(rows => setSimilarBundles((rows || []).filter(rb => rb.id !== b.id).slice(0, 4)))
-        .catch(() => {});
-    } catch {}
+      setReviews((avisData || []).slice(0, 5));
+      setSimilarBundles((allBundles || []).filter(x => x.id !== b.id).slice(0, 4));
+    } catch (err) {
+      console.error("BundleDetail load error:", err);
+    }
     setLoading(false);
   };
 
   if (loading || !bundle) return (
     <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="w-7 h-7 border-2 border-[#E8732A] border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-3 border-[#E8732A] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
-  const totalDuration = services.reduce((sum, s) => sum + (parseInt(s.duration_min) || 60), 0);
+  const totalDuration = services.reduce((sum, s) => sum + (parseInt(s.duration || s.duration_min) || 60), 0);
   const durH = Math.floor(totalDuration / 60);
   const durM = totalDuration % 60;
-  const durStr = durH > 0 ? durH + "h" + (durM > 0 ? String(durM).padStart(2, "0") : "") : durM + "min";
+  const durStr = durH > 0 ? `${durH}h${durM > 0 ? String(durM).padStart(2, '0') : ''}` : `${durM}min`;
+
   const regularTotal = services.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
   const savings = regularTotal - (bundle.bundle_price || 0);
   const savingsPercent = bundle.discount_percent || (regularTotal > 0 ? Math.round((savings / regularTotal) * 100) : 0);
-  const avgRating = proProfile?.rating || (reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.note || 5), 0) / reviews.length).toFixed(1) : "4.9");
+  const avgRating = proProfile?.rating || (reviews.length > 0 ? (reviews.reduce((s, r) => s + (r.note || r.rating || 5), 0) / reviews.length).toFixed(1) : "4.9");
+
+  const proDisplayName = proProfile?.salon_name || (proProfile?.prenom ? `${proProfile.prenom} ${proProfile.nom || ''}`.trim() : proProfile?.nom) || proProfile?.name || "Salon Professionnel";
 
   const fmtDur = (s) => {
-    const m = parseInt(s.duration_min) || 60;
+    const m = parseInt(s.duration || s.duration_min) || 60;
     const h = Math.floor(m / 60);
     const rm = m % 60;
-    return h > 0 ? h + "h" + (rm > 0 ? String(rm).padStart(2, "0") : "") : rm + " min";
+    return h > 0 ? `${h}h${rm > 0 ? String(rm).padStart(2, "0") : ""}` : `${rm} min`;
   };
 
   const goBundle = (b) => {
@@ -83,105 +111,126 @@ export default function BundleDetail() {
 
   return (
     <div className="min-h-screen bg-[#FFF5F0] font-display">
+      {/* Hero Header */}
       <div className="relative h-[320px] overflow-hidden rounded-b-[32px]">
         {bundle.image_url ? (
-          <img src={bundle.image_url} alt="" className="w-full h-full object-cover" />
+          <img src={bundle.image_url} alt={bundle.name} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400" />
+          <div className="w-full h-full bg-gradient-to-br from-amber-100 via-orange-100 to-pink-100 flex items-center justify-center">
+            <Package className="w-16 h-16 text-[#E8732A]/40" />
+          </div>
         )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+        {/* Top Navbar overlay */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 pb-3 z-10">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center active:scale-95">
+          <button onClick={() => navigate(-1)} className="w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center active:scale-95 shadow-md">
             <ArrowLeft className="w-4 h-4 text-gray-700" />
           </button>
-          <button className="w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center active:scale-95">
-            <Heart className="w-4 h-4 text-gray-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button className="w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center active:scale-95 shadow-md">
+              <Heart className="w-4 h-4 text-gray-500" />
+            </button>
+            <button className="w-9 h-9 bg-white/90 backdrop-blur rounded-full flex items-center justify-center active:scale-95 shadow-md">
+              <Share2 className="w-4 h-4 text-gray-500" />
+            </button>
+          </div>
         </div>
-        <div className="absolute bottom-5 left-5 right-5 z-10">
-          <h1 className="text-[28px] font-black text-white leading-tight">
-            beauty book <span className="text-[#E8732A]">{"\u2728"}</span>
+
+        {/* Hero Title (Clean, NO 'beauty book' overlay text) */}
+        <div className="absolute bottom-6 left-5 right-5 z-10">
+          <span className="inline-block bg-[#E8732A] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2 shadow-sm">
+            {bundle.bonus || (bundle.is_group ? "Bundle Groupe" : "Offre Spéciale ✨")}
+          </span>
+          <h1 className="text-[26px] font-black text-white leading-tight drop-shadow-md">
+            {bundle.name}
           </h1>
-          <p className="text-[13px] text-white/80 mt-1">bundle</p>
+          {bundle.description && (
+            <p className="text-[13px] text-white/90 mt-1 line-clamp-2 leading-relaxed drop-shadow">
+              {bundle.description}
+            </p>
+          )}
         </div>
       </div>
 
-      <div className="pb-32">
-        <div className="mx-4 -mt-8 bg-white rounded-[24px] shadow-lg border border-gray-50 p-5 flex items-center justify-around relative z-10">
+      <div className="pb-36">
+        {/* Floating Stats Row */}
+        <div className="mx-4 -mt-6 bg-white rounded-[24px] shadow-lg border border-gray-100 p-4 flex items-center justify-around relative z-10">
           <div className="text-center">
-            <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-2">
+            <div className="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-1.5">
               <Timer className="w-5 h-5 text-purple-500" />
             </div>
-            <p className="text-[11px] text-gray-400 font-medium">Dur\u00e9e totale</p>
-            <p className="text-[17px] font-black text-gray-900 mt-0.5">{durStr}</p>
+            <p className="text-[11px] text-gray-400 font-medium">Durée totale</p>
+            <p className="text-[16px] font-black text-gray-900 mt-0.5">{durStr}</p>
           </div>
-          <div className="w-px h-14 bg-gray-100" />
+          <div className="w-px h-12 bg-gray-100" />
           <div className="text-center">
-            <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-2">
+            <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-1.5">
               <Percent className="w-5 h-5 text-red-400" />
             </div>
-            <p className="text-[11px] text-gray-400 font-medium">\u00c9conomisez</p>
-            <p className="text-[17px] font-black text-[#E8732A] mt-0.5">{savingsPercent}%</p>
+            <p className="text-[11px] text-gray-400 font-medium">Économisez</p>
+            <p className="text-[16px] font-black text-[#E8732A] mt-0.5">{savingsPercent}%</p>
           </div>
-          <div className="w-px h-14 bg-gray-100" />
+          <div className="w-px h-12 bg-gray-100" />
           <div className="text-center">
-            <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-2">
+            <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-1.5">
               <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
             </div>
             <p className="text-[11px] text-gray-400 font-medium">Note</p>
-            <p className="text-[17px] font-black text-gray-900 mt-0.5">{avgRating}/5</p>
+            <p className="text-[16px] font-black text-gray-900 mt-0.5">{avgRating}/5</p>
           </div>
         </div>
 
-        {proProfile && (
-          <div className="mx-4 mt-6">
-            <h3 className="text-[13px] text-gray-400 font-bold uppercase tracking-wider mb-3">Professionnel</h3>
-            <button
-              onClick={() => navigate("/pro/vue-client", { state: { email: proProfile.user_email } })}
-              className="w-full bg-white rounded-[20px] border border-gray-100 p-4 flex items-center gap-3 active:scale-[0.98] transition-all"
-            >
-              <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-[#E8732A] to-[#E84466] shrink-0 flex items-center justify-center">
-                {proProfile.photo_url ? (
-                  <img src={proProfile.photo_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-white text-xl font-black">{(proProfile.name || "P")[0]}</span>
-                )}
+        {/* Section PROFESSIONNEL (Displays Commercial Name, NOT email) */}
+        <div className="mx-4 mt-6">
+          <h3 className="text-[13px] text-gray-400 font-bold uppercase tracking-wider mb-3">Professionnel</h3>
+          <button
+            onClick={() => navigate("/pro/vue-client", { state: { email: bundle.pro_email } })}
+            className="w-full bg-white rounded-[20px] border border-gray-100 p-4 flex items-center gap-3.5 active:scale-[0.98] transition-all shadow-sm"
+          >
+            <div className="w-13 h-13 rounded-full overflow-hidden bg-gradient-to-br from-[#E8732A] to-[#E84466] shrink-0 flex items-center justify-center border-2 border-orange-100">
+              {proProfile?.avatar_url || proProfile?.photo_url ? (
+                <img src={proProfile.avatar_url || proProfile.photo_url} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-white text-lg font-black">{proDisplayName[0]?.toUpperCase()}</span>
+              )}
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <div className="flex items-center gap-1.5">
+                <p className="text-[16px] font-black text-gray-900 truncate">{proDisplayName}</p>
+                <BadgeCheck className="w-4 h-4 text-[#E8732A] shrink-0" />
               </div>
-              <div className="flex-1 text-left min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <p className="text-[15px] font-black text-gray-900 truncate">{proProfile.name || proProfile.user_email}</p>
-                  <BadgeCheck className="w-4 h-4 text-[#E8732A] shrink-0" />
+              {proProfile?.address && (
+                <p className="text-[12px] text-gray-400 flex items-center gap-1 mt-0.5 truncate">
+                  <MapPin className="w-3.5 h-3.5 shrink-0 text-gray-400" /> {proProfile.address}
+                </p>
+              )}
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-0.5">
+                  <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                  <span className="text-[12px] font-bold text-gray-700">{avgRating}</span>
                 </div>
-                {proProfile.adresse && (
-                  <p className="text-[12px] text-gray-400 flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3 shrink-0" /> {proProfile.adresse}
-                  </p>
-                )}
-                <div className="flex items-center gap-2 mt-1">
-                  <div className="flex items-center gap-0.5">
-                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                    <span className="text-[12px] font-bold text-gray-700">{avgRating}</span>
-                  </div>
-                  <span className="text-[11px] text-gray-300">|</span>
-                  <span className="text-[12px] text-gray-400">{reviews.length} avis</span>
-                </div>
+                <span className="text-[11px] text-gray-300">|</span>
+                <span className="text-[12px] text-gray-400">{reviews.length} avis</span>
               </div>
-              <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" />
-            </button>
-          </div>
-        )}
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-300 shrink-0" />
+          </button>
+        </div>
 
+        {/* Ce que comprend ce bundle */}
         <div className="px-4 mt-7">
-          <h3 className="text-[20px] font-black text-gray-900 mb-4">Ce que comprend ce bundle</h3>
+          <h3 className="text-[18px] font-black text-gray-900 mb-4">Ce que comprend ce bundle</h3>
           <div className="space-y-0">
             {services.map((s, i) => (
               <div key={s.id}>
                 <button
                   onClick={() => navigate("/service/" + s.id, { state: { service: s } })}
-                  className="w-full flex items-center gap-4 py-4 active:scale-[0.98] transition-all text-left"
+                  className="w-full flex items-center gap-4 py-3.5 active:scale-[0.98] transition-all text-left"
                 >
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 shrink-0">
-                    {s.image_url ? (
-                      <img src={s.image_url} alt="" className="w-full h-full object-cover" />
+                  <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
+                    {s.image_url || (s.images && s.images[0]) ? (
+                      <img src={s.image_url || s.images[0]} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pink-50 to-orange-50">
                         <Sparkles className="w-6 h-6 text-[#E8732A]" />
@@ -196,9 +245,9 @@ export default function BundleDetail() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-[12px] text-gray-400 font-medium flex items-center gap-1 justify-end">
-                      <Timer className="w-3 h-3" /> {fmtDur(s)}
+                      <Timer className="w-3.5 h-3.5" /> {fmtDur(s)}
                     </span>
-                    <p className="text-[18px] font-black text-gray-900 mt-1">{s.price} {"\u20AC"}</p>
+                    <p className="text-[17px] font-black text-gray-900 mt-1">{s.price} €</p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
                 </button>
@@ -214,24 +263,25 @@ export default function BundleDetail() {
           </div>
         </div>
 
-        <div className="mx-4 mt-6 bg-white rounded-[24px] border border-gray-100 p-5">
+        {/* Pricing Summary Card */}
+        <div className="mx-4 mt-6 bg-white rounded-[24px] border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[13px] text-gray-400 font-medium">Prix total</p>
-              <p className="text-[16px] text-gray-500 line-through">{regularTotal} {"\u20AC"}</p>
+              <p className="text-[12px] text-gray-400 font-medium">Prix total</p>
+              <p className="text-[16px] text-gray-400 line-through">{regularTotal} €</p>
             </div>
             <div className="text-center">
-              <p className="text-[13px] text-[#E8732A] font-bold">Prix bundle</p>
-              <p className="text-[32px] font-black text-[#E8732A] leading-tight">{bundle.bundle_price} {"\u20AC"}</p>
+              <p className="text-[12px] text-[#E8732A] font-black uppercase">Prix bundle</p>
+              <p className="text-[32px] font-black text-[#E8732A] leading-tight">{bundle.bundle_price} €</p>
             </div>
             <div className="bg-rose-50 border border-rose-100 rounded-2xl px-4 py-2 text-center">
-              <p className="text-[11px] font-black text-rose-500 uppercase">\u00c9conomisez</p>
-              <p className="text-[14px] font-black text-rose-500">{savings > 0 ? savings : Math.abs(savings)}{"\u20AC"} ({savingsPercent}%)</p>
+              <p className="text-[10px] font-black text-rose-500 uppercase">ÉCONOMISEZ</p>
+              <p className="text-[14px] font-black text-rose-500">{savings > 0 ? savings : Math.abs(savings)} € ({savingsPercent}%)</p>
             </div>
           </div>
           {bundle.bonus && (
             <div className="flex items-center gap-2 pt-3 mt-3 border-t border-gray-50">
-              <div className="w-8 h-8 bg-orange-50 rounded-full flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 bg-orange-50 rounded-full flex items-center justify-center shrink-0">
                 <Sparkles className="w-4 h-4 text-[#E8732A]" />
               </div>
               <p className="text-[13px] text-gray-600 font-medium">
@@ -241,63 +291,97 @@ export default function BundleDetail() {
           )}
         </div>
 
+        {/* Avis clients with associated service & service image slider */}
         {reviews.length > 0 && (
           <div className="mx-4 mt-7">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[20px] font-black text-gray-900">Avis des clientes</h3>
+              <h3 className="text-[18px] font-black text-gray-900">Avis des clientes</h3>
               <span className="text-[13px] text-gray-400 font-medium">{reviews.length} avis</span>
             </div>
-            <div className="space-y-3">
-              {reviews.slice(0, 5).map((r, i) => (
-                <div key={r.id || i} className="bg-white rounded-[20px] border border-gray-100 p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-100 to-orange-100 flex items-center justify-center shrink-0">
-                      <span className="text-sm font-bold text-[#E8732A]">
-                        {(r.auteur_name || r.auteur_email || "U")[0].toUpperCase()}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-bold text-gray-900 truncate">{r.auteur_name || "Cliente"}</p>
-                      <div className="flex items-center gap-0.5">
-                        {[...Array(5)].map((_, si) => (
-                          <Star key={si} className={"w-3 h-3 " + (si < (r.note || 5) ? "text-amber-400 fill-amber-400" : "text-gray-200")} />
-                        ))}
+            <div className="space-y-3.5">
+              {reviews.map((r, i) => {
+                const assocService = servicesMap[r.service_id] || servicesMap[r.service_name] || services[0] || null;
+                const serviceTitle = r.service_name || assocService?.title || assocService?.name || "Prestation";
+                const serviceImgs = assocService?.images?.length > 0 ? assocService.images : (assocService?.image_url ? [assocService.image_url] : []);
+
+                return (
+                  <div key={r.id || i} className="bg-white rounded-[22px] border border-gray-100 p-4 shadow-sm space-y-2.5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 border border-orange-200">
+                        {r.user_avatar || r.auteur_avatar ? (
+                          <img src={r.user_avatar || r.auteur_avatar} alt="" className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                          <span className="text-xs font-black text-[#E8732A]">
+                            {(r.user_name || r.auteur_name || r.auteur_email || "C")[0].toUpperCase()}
+                          </span>
+                        )}
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-black text-gray-900 truncate">{r.user_name || r.auteur_name || "Cliente"}</p>
+                        <div className="flex items-center gap-0.5">
+                          {[...Array(5)].map((_, si) => (
+                            <Star key={si} className={"w-3 h-3 " + (si < (r.rating || r.note || 5) ? "text-amber-400 fill-amber-400" : "text-gray-200")} />
+                          ))}
+                        </div>
+                      </div>
+                      {r.created_at && (
+                        <span className="text-[10px] text-gray-400 font-bold">
+                          {new Date(r.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </span>
+                      )}
+                    </div>
+
+                    {(r.comment || r.commentaire) && (
+                      <p className="text-[13px] text-gray-600 leading-relaxed">{r.comment || r.commentaire}</p>
+                    )}
+
+                    {/* Associated service line & image slider */}
+                    <div className="mt-2 pt-2.5 border-t border-gray-100 bg-orange-50/40 rounded-xl p-2.5 space-y-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-800">
+                        <Scissors className="w-3.5 h-3.5 text-[#E8732A]" />
+                        <span>Prestation : {serviceTitle}</span>
+                      </div>
+                      {serviceImgs.length > 0 && (
+                        <ServiceImageSlider images={serviceImgs} />
+                      )}
                     </div>
                   </div>
-                  {r.commentaire && (
-                    <p className="text-[13px] text-gray-600 leading-relaxed">{r.commentaire}</p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
+        {/* Bundles similaires */}
         {similarBundles.length > 0 && (
-          <div className="mx-4 mt-7">
-            <h3 className="text-[20px] font-black text-gray-900 mb-4">Bundles similaires</h3>
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory">
+          <div className="mx-4 mt-8">
+            <h3 className="text-[18px] font-black text-gray-900 mb-4">Bundles similaires</h3>
+            <div className="flex gap-3.5 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory hide-scrollbar">
               {similarBundles.map((sb) => (
                 <button
                   key={sb.id}
                   onClick={() => goBundle(sb)}
-                  className="snap-start shrink-0 w-[200px] bg-white rounded-[20px] border border-gray-100 overflow-hidden active:scale-[0.97] transition-all text-left"
+                  className="snap-start shrink-0 w-[200px] bg-white rounded-[22px] border border-gray-100 overflow-hidden active:scale-[0.97] transition-all text-left shadow-sm"
                 >
-                  <div className="h-[100px] overflow-hidden bg-gray-100">
+                  <div className="h-[105px] overflow-hidden bg-gray-100 relative">
                     {sb.image_url ? (
                       <img src={sb.image_url} alt="" className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-pink-100 to-orange-100 flex items-center justify-center">
+                      <div className="w-full h-full bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center">
                         <Package className="w-8 h-8 text-[#E8732A]/40" />
                       </div>
+                    )}
+                    {sb.discount_percent > 0 && (
+                      <span className="absolute top-2 right-2 bg-rose-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                        -{sb.discount_percent}%
+                      </span>
                     )}
                   </div>
                   <div className="p-3">
                     <p className="text-[13px] font-black text-gray-900 truncate">{sb.name}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{sb.service_ids?.length || 0} services</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{sb.service_ids?.length || 1} services inclus</p>
                     <div className="flex items-center justify-between mt-2">
-                      <p className="text-[16px] font-black text-[#E8732A]">{sb.bundle_price} {"\u20AC"}</p>
+                      <p className="text-[16px] font-black text-[#E8732A]">{sb.bundle_price} €</p>
                       {sb.is_group && (
                         <span className="text-[9px] font-bold bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full uppercase">Groupe</span>
                       )}
@@ -310,14 +394,17 @@ export default function BundleDetail() {
         )}
       </div>
 
-      <div className="fixed bottom-[76px] left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[100]" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
-        <button onClick={() => navigate("/reservation?pro=" + bundle.pro_email + "&bundle=" + bundle.id, { state: { services: services.map(s => ({ ...s, persons: 1 })), bundle } })}
-          className="w-full py-4 rounded-2xl font-black text-[16px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 30px rgba(232,115,42,0.35)" }}>
-          <Calendar className="w-5 h-5" /> R\u00c9SERVER CE BUNDLE
+      {/* Fixed bottom CTA (Clean French, correct accents) */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[100]" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
+        <button
+          onClick={() => navigate("/reservation?pro=" + bundle.pro_email + "&bundle=" + bundle.id, { state: { services: services.map(s => ({ ...s, persons: 1 })), bundle } })}
+          className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+          style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 30px rgba(232,115,42,0.35)" }}
+        >
+          <Calendar className="w-5 h-5" /> RÉSERVER CE BUNDLE
         </button>
-        <p className="text-center text-[10px] text-gray-400 mt-1.5 flex items-center justify-center gap-1">
-          <Shield className="w-3 h-3" /> Paiement 100% s\u00e9curis\u00e9
+        <p className="text-center text-[10px] text-gray-400 mt-1.5 flex items-center justify-center gap-1 font-medium">
+          <Shield className="w-3.5 h-3.5 text-gray-400" /> Paiement 100% sécurisé
         </p>
       </div>
     </div>
