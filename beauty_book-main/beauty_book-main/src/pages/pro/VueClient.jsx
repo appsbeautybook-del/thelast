@@ -94,6 +94,127 @@ const SPECIALITE_ICONS = {
   "default": { icon: Star, color: "text-primary", bg: "bg-orange-50" },
 };
 
+function getFormattedOpeningHours(ouverture) {
+  const daysKeys = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
+  const daysShort = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+  const daysFull = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+  if (!ouverture || Object.keys(ouverture).length === 0) {
+    return [
+      { label: "Lun – Ven", hours: "09:00 – 20:00", open: true, isGroup: true },
+      { label: "Samedi", hours: "10:00 – 18:00", open: true, isGroup: false },
+      { label: "Dimanche", hours: "Fermé", open: false, isGroup: false }
+    ];
+  }
+
+  const parsed = daysKeys.map((key, index) => {
+    const d = ouverture[key] || { open: true, start: "09:00", end: "19:00" };
+    return {
+      key,
+      short: daysShort[index],
+      full: daysFull[index],
+      open: !!d.open,
+      start: d.start || "09:00",
+      end: d.end || "19:00",
+      pause_start: d.pause_start || "",
+      pause_end: d.pause_end || "",
+    };
+  });
+
+  const groups = [];
+  let currentGroup = null;
+
+  parsed.forEach((dayObj) => {
+    const hoursStr = dayObj.open ? `${dayObj.start} – ${dayObj.end}` : "Fermé";
+    const pauseStr = (dayObj.open && dayObj.pause_start && dayObj.pause_end) ? `${dayObj.pause_start} – ${dayObj.pause_end}` : "";
+    const keyStr = `${hoursStr}|${pauseStr}`;
+
+    if (!currentGroup) {
+      currentGroup = { days: [dayObj], keyStr, open: dayObj.open, hoursStr, pauseStr };
+    } else if (currentGroup.keyStr === keyStr) {
+      currentGroup.days.push(dayObj);
+    } else {
+      groups.push(currentGroup);
+      currentGroup = { days: [dayObj], keyStr, open: dayObj.open, hoursStr, pauseStr };
+    }
+  });
+  if (currentGroup) groups.push(currentGroup);
+
+  const todayKeyIndex = (new Date().getDay() + 6) % 7;
+  const todayKey = daysKeys[todayKeyIndex];
+
+  return groups.map(g => {
+    let label = "";
+    if (g.days.length === 1) {
+      label = g.days[0].full;
+    } else if (g.days.length === 5 && g.days[0].key === "lundi" && g.days[4].key === "vendredi") {
+      label = "Lun – Ven";
+    } else if (g.days.length === 7) {
+      label = "Tous les jours";
+    } else {
+      label = `${g.days[0].short} – ${g.days[g.days.length - 1].short}`;
+    }
+
+    return {
+      label,
+      hours: g.hoursStr,
+      pause: g.pauseStr,
+      open: g.open,
+      isToday: g.days.some(d => d.key === todayKey)
+    };
+  });
+}
+
+function getOpeningStatus(ouverture) {
+  const daysKeys = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+  const now = new Date();
+
+  const conges = ouverture?.conges || [];
+  const todayTs = now.getTime();
+  const activeConges = conges.find(c => {
+    if (!c.start || !c.end) return false;
+    const s = new Date(c.start + "T00:00:00").getTime();
+    const e = new Date(c.end + "T23:59:59").getTime();
+    return todayTs >= s && todayTs <= e;
+  });
+
+  if (activeConges) {
+    return { status: "conges", label: `En congés (${activeConges.label || "Fermé"})`, color: "bg-amber-50 text-amber-600 border-amber-200" };
+  }
+
+  const todayKey = daysKeys[now.getDay()];
+  const dayData = ouverture?.[todayKey] || { open: true, start: "09:00", end: "19:00" };
+
+  if (!dayData.open) {
+    return { status: "closed", label: "Fermé aujourd'hui", color: "bg-red-50 text-red-500 border-red-200" };
+  }
+
+  const [sh, sm] = (dayData.start || "09:00").split(":").map(Number);
+  const [eh, em] = (dayData.end || "19:00").split(":").map(Number);
+  const curMin = now.getHours() * 60 + now.getMinutes();
+  const startMin = sh * 60 + sm;
+  const endMin = eh * 60 + em;
+
+  if (curMin >= startMin && curMin <= endMin) {
+    if (dayData.pause_start && dayData.pause_end) {
+      const [psh, psm] = dayData.pause_start.split(":").map(Number);
+      const [peh, pem] = dayData.pause_end.split(":").map(Number);
+      const pStart = psh * 60 + psm;
+      const pEnd = peh * 60 + pem;
+      if (curMin >= pStart && curMin <= pEnd) {
+        return { status: "pause", label: `En pause (${dayData.pause_end})`, color: "bg-orange-50 text-orange-500 border-orange-200" };
+      }
+    }
+    return { status: "open", label: `Ouvert · Ferme à ${dayData.end}`, color: "bg-emerald-50 text-emerald-600 border-emerald-200" };
+  }
+
+  if (curMin < startMin) {
+    return { status: "closed", label: `Fermé · Ouvre à ${dayData.start}`, color: "bg-gray-100 text-gray-600 border-gray-200" };
+  }
+
+  return { status: "closed", label: "Fermé actuellement", color: "bg-red-50 text-red-500 border-red-200" };
+}
+
 // ── Appel réel via numéro de téléphone ───────────────────────────────────────
 function RealCallScreen({ targetName, targetAvatar, phoneNumber, onClose }) {
   useEffect(() => {
@@ -950,44 +1071,83 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
           {/* ── Galerie Photos — EN HAUT des infos pratiques ── */}
           <GalerieSection gallery={proInfo?.galerie_urls} />
 
-          <div className="px-4 pt-4">
-            <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-3">Infos Pratiques</p>
-            <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-4 pt-4 space-y-4">
+            <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest">Infos Pratiques</p>
+
+            {/* Carte Adresse */}
+            <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
               <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(proAddress)}`, "_blank")}
-                className="flex items-start gap-3 p-4 border-b border-gray-100 w-full text-left active:bg-orange-50 transition-colors">
-                <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center shrink-0"><MapPin className="w-5 h-5 text-primary" /></div>
+                className="flex items-start gap-3 p-4 w-full text-left active:bg-orange-50 transition-colors">
+                <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center shrink-0"><MapPin className="w-5 h-5 text-primary" /></div>
                 <div className="flex-1">
-                  <p className="text-[13px] font-black text-gray-800">Adresse</p>
+                  <p className="text-[13px] font-black text-gray-800">Adresse du Salon</p>
                   <p className="text-[12px] text-gray-500 font-medium mt-0.5">
-                    {[proInfo?.address, proInfo?.city, proInfo?.postal_code].filter(Boolean).join(", ")}
+                    {[proInfo?.address, proInfo?.city, proInfo?.postal_code].filter(Boolean).join(", ") || "Adresse non renseignée"}
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-primary mt-1 shrink-0" />
               </button>
+            </div>
 
-              <div className="flex items-start gap-3 p-4">
-                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center shrink-0"><Calendar className="w-5 h-5 text-blue-500" /></div>
-                <div className="flex-1">
-                  <p className="text-[13px] font-black text-gray-800 mb-2">Horaires d'ouverture</p>
-                  {proInfo?.ouverture ? (
-                    Object.entries(proInfo.ouverture)
-                      .filter(([day]) => ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"].includes(day))
-                      .map(([day, d]) => (
-                      <div key={day} className="flex items-center justify-between py-0.5">
-                        <span className={`text-[12px] font-medium capitalize ${!d.open ? "text-red-400" : "text-gray-600"}`}>{day}</span>
-                        <span className={`text-[12px] font-bold ${!d.open ? "text-red-400" : "text-gray-800"}`}>
-                          {d.open ? `${d.start || "09:00"} – ${d.end || "18:00"}` : "Fermé"}
-                        </span>
-                      </div>
-                    ))
-                  ) : HOURS.map(({ day, hours, closed }) => (
-                    <div key={day} className="flex items-center justify-between">
-                      <span className={`text-[12px] font-medium ${closed ? "text-red-400" : "text-gray-600"}`}>{day}</span>
-                      <span className={`text-[12px] font-bold ${closed ? "text-red-400" : "text-gray-800"}`}>{hours}</span>
-                    </div>
-                  ))}
+            {/* Carte Horaires d'ouverture redesignée */}
+            <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
+              <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
+                    <Calendar className="w-5 h-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-black text-gray-900 leading-tight">Horaires d'ouverture</p>
+                    <p className="text-[10px] font-bold text-gray-400">Planning hebdomadaire</p>
+                  </div>
                 </div>
+                {(() => {
+                  const st = getOpeningStatus(proInfo?.ouverture);
+                  return (
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${st.color}`}>
+                      ● {st.label}
+                    </span>
+                  );
+                })()}
               </div>
+
+              <div className="space-y-2.5">
+                {getFormattedOpeningHours(proInfo?.ouverture).map((item, idx) => (
+                  <div key={idx} className={`flex items-center justify-between p-2.5 rounded-2xl transition-all ${item.isToday ? "bg-orange-50/70 border border-orange-100" : "bg-gray-50/60"}`}>
+                    <div className="flex items-center gap-2">
+                      {item.isToday && <span className="w-2 h-2 rounded-full bg-primary" />}
+                      <span className={`text-[13px] font-black ${item.isToday ? "text-primary" : !item.open ? "text-red-400" : "text-gray-800"}`}>
+                        {item.label}
+                      </span>
+                      {item.isToday && <span className="text-[9px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-full uppercase">Aujourd'hui</span>}
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-[13px] font-bold ${!item.open ? "text-red-400" : "text-gray-900"}`}>
+                        {item.hours}
+                      </span>
+                      {item.pause && (
+                        <p className="text-[10px] text-gray-400 font-medium">Pause {item.pause}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {proInfo?.ouverture?.conges?.length > 0 && (
+                <div className="pt-1">
+                  <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 flex items-center gap-2.5">
+                    <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-black text-amber-800 uppercase tracking-wider">Congés programmés</p>
+                      {proInfo.ouverture.conges.slice(0, 2).map((c, i) => (
+                        <p key={i} className="text-[11px] text-amber-700 font-medium truncate">
+                          {c.label || "Fermeture"} : {c.start} au {c.end}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1011,25 +1171,26 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
           )}
 
           {/* ── Commodités avec icônes Lucide ── */}
-          {(proInfo?.commodites?.length > 0 || demandeInfo?.commodites?.length > 0) && (
-            <div className="px-4 mt-5">
-              <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-3">Commodités</p>
-              <div className="flex flex-wrap gap-2">
-                {(proInfo?.commodites || demandeInfo?.commodites || []).map(c => {
+          <div className="px-4 mt-5">
+            <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-3">Commodités & Équipements</p>
+            <div className="flex flex-wrap gap-2">
+              {(() => {
+                const list = (proInfo?.commodites?.length > 0 ? proInfo.commodites : demandeInfo?.commodites?.length > 0 ? demandeInfo.commodites : ["Wifi", "Paiement CB", "Climatisation", "Café offert", "Salle d'attente"]);
+                return list.map(c => {
                   const cfg = COMMODITE_ICONS[c];
                   const IconComp = cfg?.icon || CheckCircle2;
-                  const color = cfg?.color || "text-gray-500";
-                  const bg = cfg?.bg || "bg-gray-50";
+                  const color = cfg?.color || "text-primary";
+                  const bg = cfg?.bg || "bg-orange-50";
                   return (
-                    <div key={c} className={`${bg} border border-gray-100 rounded-2xl px-3 py-2.5 flex items-center gap-2 shadow-sm`}>
+                    <div key={c} className={`${bg} border border-gray-100 rounded-2xl px-3.5 py-2.5 flex items-center gap-2 shadow-sm active:scale-95 transition-transform`}>
                       <IconComp className={`w-4 h-4 ${color} shrink-0`} />
                       <span className="text-[12px] font-bold text-gray-800">{c}</span>
                     </div>
                   );
-                })}
-              </div>
+                });
+              })()}
             </div>
-          )}
+          </div>
 
           {/* Travail à domicile / nuit */}
           {(proInfo?.se_deplace || proInfo?.travail_nuit || demandeInfo?.se_deplace || demandeInfo?.travail_nuit) && (
