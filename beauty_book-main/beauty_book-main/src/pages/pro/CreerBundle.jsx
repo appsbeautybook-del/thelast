@@ -278,6 +278,7 @@ export default function CreerBundle() {
     }
     setSaving(true);
     setValidationError("");
+    const finalImg = imageUrl || coverUrl || "";
     const payload = {
       pro_email: user.email,
       name: name.trim(),
@@ -285,7 +286,7 @@ export default function CreerBundle() {
       service_ids: selectedIds,
       bundle_price: parseFloat(bundlePrice),
       discount_percent: discount > 0 ? discount : 0,
-      image_url: imageUrl || "",
+      image_url: finalImg,
       category: category !== "Tous" ? category : "",
       is_group: isGroup,
       min_persons: isGroup ? minPersons : 1,
@@ -293,8 +294,6 @@ export default function CreerBundle() {
       bundle_price_per_person: parseFloat(bundlePrice),
       bonus: bonus.trim(),
     };
-    // Ajout cover_url/banner_url uniquement si présents (colonnes optionnelles)
-    if (coverUrl) { payload.cover_url = coverUrl; payload.banner_url = coverUrl; }
     try {
       if (editingBundle) {
         payload.updated_at = new Date().toISOString();

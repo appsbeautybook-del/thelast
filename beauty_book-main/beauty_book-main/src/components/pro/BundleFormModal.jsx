@@ -166,6 +166,7 @@ export default function BundleFormModal({ open, editBundle, services = [], onClo
     if (selectedIds.length === 0) { setValidationError("Veuillez sélectionner au moins 1 service inclus"); setTimeout(() => setValidationError(""), 3500); return; }
     if (!bundlePrice) { setValidationError("Veuillez indiquer le prix du bundle"); setTimeout(() => setValidationError(""), 3500); return; }
     setSaving(true); setValidationError("");
+    const finalImg = (typeof imageUrl === "string" && imageUrl) ? imageUrl : ((typeof coverUrl === "string" && coverUrl) ? coverUrl : "");
     const payload = {
       pro_email: user?.email || "",
       name: name.trim(),
@@ -173,7 +174,7 @@ export default function BundleFormModal({ open, editBundle, services = [], onClo
       service_ids: selectedIds,
       bundle_price: parseFloat(bundlePrice),
       discount_percent: discount > 0 ? discount : 0,
-      image_url: typeof imageUrl === "string" ? imageUrl : "",
+      image_url: finalImg,
       category: category !== "Tous" ? category : "",
       is_group: isGroup,
       min_persons: isGroup ? minPersons : 1,
@@ -182,7 +183,6 @@ export default function BundleFormModal({ open, editBundle, services = [], onClo
       bonus: bonus.trim() || badgeTag,
       is_active: true
     };
-    if (coverUrl && typeof coverUrl === "string") { payload.cover_url = coverUrl; payload.banner_url = coverUrl; }
     try {
       if (editBundle) {
         payload.updated_at = new Date().toISOString();
