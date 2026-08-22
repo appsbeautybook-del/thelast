@@ -703,7 +703,6 @@ export default function AjouterService() {
         duration: dur,
         duration_min: dur,
         images: (data.images || []),
-        image_url: (data.images && data.images[0]) || "",
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),
         status: data._editId ? (data.status || "brouillon") : "brouillon",
       };
@@ -750,7 +749,6 @@ export default function AjouterService() {
         duration: dur,
         duration_min: dur,
         images: (data.images || []),
-        image_url: (data.images && data.images[0]) || "",
         addons: (data.addons || []).map(a => ({ name: a.name, price: parseFloat(a.price) || 0 })),
         status: asDraft ? "brouillon" : "actif",
       };
