@@ -1127,18 +1127,9 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
             </div>
           )}
 
-          {/* VTC & Taxis */}
-          <div className="px-4 mt-4">
-            <VTCSection
-              destinationLat={proInfo?.latitude}
-              destinationLng={proInfo?.longitude}
-              destinationAddress={proInfo?.address || proAddress}
-            />
-          </div>
-
           {/* Services Supplémentaires — synchronisé avec Catalogue d'options */}
           {catalogueOptions.length > 0 && (
-            <div className="px-4 mt-4 pb-4">
+            <div className="px-4 mt-4">
               <p className="text-[11px] font-black text-gray-900 uppercase tracking-widest mb-3">Services Supplémentaires</p>
               <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
                 {catalogueOptions.map((opt, i) => (
@@ -1153,6 +1144,15 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               </div>
             </div>
           )}
+
+          {/* VTC & Taxis — dernière section */}
+          <div className="px-4 mt-4 pb-4">
+            <VTCSection
+              destinationLat={proInfo?.latitude}
+              destinationLng={proInfo?.longitude}
+              destinationAddress={proInfo?.address || proAddress}
+            />
+          </div>
         </div>
       )}
 
