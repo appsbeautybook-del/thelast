@@ -44,6 +44,7 @@ export default function CreerBundle() {
   const [imageUrl, setImageUrl] = useState("");
   const [selectedIds, setSelectedIds] = useState([]);
   const [category, setCategory] = useState("Tous");
+  const [svcCategoryFilter, setSvcCategoryFilter] = useState("Tous");
   const [isGroup, setIsGroup] = useState(false);
   const [minPersons, setMinPersons] = useState(2);
   const [maxPersons, setMaxPersons] = useState(6);
@@ -52,20 +53,27 @@ export default function CreerBundle() {
   useEffect(() => {
     if (!user?.email) return;
     let cancelled = false;
-    Promise.all([
-      supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false }),
-      supabase.from("Service").select("*").eq("pro_email", user.email).order("created_at", { ascending: false }),
-    ]).then(([bundleRes, svcRes]) => {
-      if (!cancelled) {
-        if (bundleRes.error) console.error("[CreerBundle] Bundle load error:", bundleRes.error.message);
-        if (svcRes.error) console.error("[CreerBundle] Service load error:", svcRes.error.message);
-        setBundles(bundleRes.data || []);
-        setServices(svcRes.data || []);
-        setLoading(false);
+    const loadData = async () => {
+      try {
+        const [bundleRes, svcRes] = await Promise.all([
+          supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false }),
+          supabase.from("Service").select("*").eq("pro_email", user.email).order("created_at", { ascending: false }),
+        ]);
+        let fetchedSvcs = svcRes.data || [];
+        if (fetchedSvcs.length === 0) {
+          const { data: altData } = await supabase.from("Service").select("*").ilike("pro_email", user.email).order("created_at", { ascending: false });
+          if (altData && altData.length > 0) fetchedSvcs = altData;
+        }
+        if (!cancelled) {
+          setBundles(bundleRes.data || []);
+          setServices(fetchedSvcs);
+          setLoading(false);
+        }
+      } catch (e) {
+        if (!cancelled) { console.error("[CreerBundle] Load error:", e); setLoading(false); }
       }
-    }).catch(e => {
-      if (!cancelled) { console.error("[CreerBundle] Load error:", e); setLoading(false); }
-    });
+    };
+    loadData();
     return () => { cancelled = true; };
   }, [user?.email]);
 
@@ -151,7 +159,9 @@ export default function CreerBundle() {
     setUploadingImg(false);
   };
 
-  const filteredServices = category === "Tous" ? services : services.filter(s => s.category === category);
+  const filteredServices = svcCategoryFilter === "Tous"
+    ? services
+    : services.filter(s => (s.category || "").toLowerCase() === svcCategoryFilter.toLowerCase());
   const searchedServices = bundleServiceSearch
     ? filteredServices.filter(s => (s.title || s.name || "").toLowerCase().includes(bundleServiceSearch.toLowerCase()))
     : filteredServices;
@@ -233,40 +243,39 @@ export default function CreerBundle() {
       />
 
       <div className="px-5 pt-5 pb-32 space-y-5">
-        {!showForm && (
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#E8732A] via-[#F59E0B] to-[#FB923C] p-6 shadow-xl shadow-orange-500/20">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-6 -translate-x-6" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[10px] font-black text-white/70 uppercase tracking-widest">BeautyBook Bundles</span>
+        {/* Bannière de présentation des bundles - toujours affichée */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#ff6b35] via-[#f7931e] to-[#ff8c42] p-6 shadow-xl shadow-orange-500/20">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-6 -translate-x-6" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
-              <h2 className="text-[20px] font-black text-white mb-1.5 leading-tight">
-                Créez des bundles irrésistibles
-              </h2>
-              <p className="text-[13px] text-white/80 font-medium leading-relaxed mb-4">
-                Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.
-              </p>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-                    <Sparkles className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <span className="text-[11px] font-bold text-white/90">{bundles.length} bundle{bundles.length !== 1 ? "s" : ""}</span>
+              <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">BEAUTYBOOK BUNDLES</span>
+            </div>
+            <h2 className="text-[20px] font-black text-white mb-1.5 leading-tight">
+              Créez des bundles irrésistibles
+            </h2>
+            <p className="text-[13px] text-white/80 font-medium leading-relaxed mb-4">
+              Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.
+            </p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-white" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5 text-white" />
-                  </div>
-                  <span className="text-[11px] font-bold text-white/90">{services.length} service{services.length !== 1 ? "s" : ""}</span>
+                <span className="text-[11px] font-bold text-white/90">{bundles.length} bundle{bundles.length !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Check className="w-3.5 h-3.5 text-white" />
                 </div>
+                <span className="text-[11px] font-bold text-white/90">{services.length} service{services.length !== 1 ? "s" : ""}</span>
               </div>
             </div>
           </div>
-        )}
+        </div>
 
         {showForm ? (
           <>
@@ -282,7 +291,7 @@ export default function CreerBundle() {
                 {imageUrl ? (
                   <img src={imageUrl} alt="" className="w-full h-full object-cover" />
                 ) : uploadingImg ? (
-                  <div className="w-5 h-5 border-2 border-pink-400 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <Camera className="w-5 h-5 text-gray-300" />
                 )}
@@ -345,11 +354,11 @@ export default function CreerBundle() {
             </div>
 
             <div>
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Services inclus</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Services inclus ({searchedServices.length})</p>
               <div className="flex gap-1.5 mb-3 overflow-x-auto hide-scrollbar">
                 {BUNDLE_CATEGORIES.map(c => (
-                  <button key={c} onClick={() => setCategory(c)}
-                    className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${category === c ? "bg-primary/10 border-primary text-primary" : "bg-white border-gray-200 text-gray-500"}`}>
+                  <button key={c} onClick={() => setSvcCategoryFilter(c)}
+                    className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${svcCategoryFilter === c ? "bg-[#ff6b35] border-[#ff6b35] text-white" : "bg-white border-gray-200 text-gray-500"}`}>
                     {c}
                   </button>
                 ))}
@@ -375,7 +384,7 @@ export default function CreerBundle() {
                     const selected = selectedIds.includes(s.id);
                     return (
                       <div key={s.id} onClick={() => toggleService(s.id)}
-                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${selected ? "bg-pink-50 border border-pink-200" : "bg-white border border-gray-200"}`}>
+                        className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${selected ? "bg-orange-50 border border-orange-200" : "bg-white border border-gray-200"}`}>
                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${selected ? "bg-[#E8732A] border-[#E8732A]" : "border-gray-300"}`}>
                           {selected && <Check className="w-3.5 h-3.5 text-white" />}
                         </div>
@@ -415,32 +424,20 @@ export default function CreerBundle() {
               <div className="flex justify-center py-12"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
             ) : bundles.length === 0 ? (
               <div className="flex flex-col items-center py-12 gap-3">
-                <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mb-2">
-                  <Zap className="w-9 h-9 text-pink-400" strokeWidth={2.5} />
+                <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-2">
+                  <Zap className="w-9 h-9 text-orange-400" strokeWidth={2.5} />
                 </div>
                 <p className="text-[18px] font-black text-gray-800">Aucun bundle</p>
                 <p className="text-[13px] text-gray-400 text-center max-w-[260px]">Créez des packs de services pour fidéliser vos clients et augmenter vos revenus.</p>
                 <button onClick={startCreate}
                   className="mt-3 bg-gradient-to-r from-[#E8732A] to-[#F59E0B] text-white rounded-2xl px-8 py-3.5 flex items-center gap-2 text-[13px] font-black uppercase tracking-widest shadow-lg shadow-orange-500/25 active:scale-95 transition-all">
-                  <Plus className="w-5 h-5" /> Ajouter un bundle
+                  <Plus className="w-5 h-5" /> AJOUTER UN BUNDLE
                 </button>
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#E8732A] to-[#F59E0B] p-4 text-white">
-                  <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-                  <div className="relative z-10 flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-black leading-tight">Augmentez vos revenus avec les bundles</p>
-                      <p className="text-[11px] opacity-80 mt-0.5">Les bundles génèrent en moyenne +30% de chiffre d'affaires</p>
-                    </div>
-                  </div>
-                </div>
                 <button onClick={startCreate}
-                  className="w-full bg-[#E8732A] text-white text-[12px] font-black py-3 rounded-2xl shadow-lg shadow-[#E8732A]/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                  className="w-full bg-[#E8732A] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-[#E8732A]/20 active:scale-95 transition-all flex items-center justify-center gap-2">
                   <Plus className="w-4 h-4" /> AJOUTER UN BUNDLE
                 </button>
                 {bundles.map(b => {
@@ -452,8 +449,8 @@ export default function CreerBundle() {
                         {b.image_url ? (
                           <img src={b.image_url} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
                         ) : (
-                          <div className="w-16 h-16 rounded-xl bg-pink-50 flex items-center justify-center shrink-0">
-                            <Zap className="w-6 h-6 text-pink-300" />
+                          <div className="w-16 h-16 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                            <Zap className="w-6 h-6 text-orange-300" />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
@@ -497,7 +494,7 @@ export default function CreerBundle() {
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-5" style={{ paddingTop: "12px", paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
           <button onClick={startCreate}
             className="w-full bg-[#E8732A] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-[#E8732A]/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
-            <Plus className="w-5 h-5" /> CRÉER UN BUNDLE
+            <Plus className="w-5 h-5" /> AJOUTER UN BUNDLE
           </button>
         </div>
       )}
@@ -515,8 +512,8 @@ export default function CreerBundle() {
               </button>
             )}
             <button onClick={handleSave} disabled={!name.trim() || !bundlePrice || selectedIds.length === 0 || saving}
-              className="flex-1 bg-[#E8732A] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-[#E8732A]/40 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
-              {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : editingBundle ? "ENREGISTRER" : "CRÉER LE BUNDLE"}
+              className="flex-1 bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
+              {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : editingBundle ? "ENREGISTRER LE BUNDLE" : "+ AJOUTER UN BUNDLE"}
             </button>
           </div>
         </div>
