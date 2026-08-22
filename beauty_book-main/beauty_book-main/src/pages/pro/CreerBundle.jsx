@@ -54,13 +54,17 @@ export default function CreerBundle() {
     let cancelled = false;
     Promise.all([
       supabase.from("ServiceBundle").select("*").eq("pro_email", user.email).order("created_at", { ascending: false }),
-      supabase.from("Service").select("id,title,price,images,image_url,category,duration_min").eq("pro_email", user.email).order("created_at", { ascending: false }),
+      supabase.from("Service").select("*").eq("pro_email", user.email).order("created_at", { ascending: false }),
     ]).then(([bundleRes, svcRes]) => {
       if (!cancelled) {
+        if (bundleRes.error) console.error("[CreerBundle] Bundle load error:", bundleRes.error.message);
+        if (svcRes.error) console.error("[CreerBundle] Service load error:", svcRes.error.message);
         setBundles(bundleRes.data || []);
         setServices(svcRes.data || []);
         setLoading(false);
       }
+    }).catch(e => {
+      if (!cancelled) { console.error("[CreerBundle] Load error:", e); setLoading(false); }
     });
     return () => { cancelled = true; };
   }, [user?.email]);
@@ -154,7 +158,7 @@ export default function CreerBundle() {
   const selectedServices = services.filter(s => selectedIds.includes(s.id));
   const regularTotal = selectedServices.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
   const discount = regularTotal > 0 && bundlePrice ? Math.round(((regularTotal - parseFloat(bundlePrice)) / regularTotal) * 100) : 0;
-  const totalDuration = selectedServices.reduce((sum, s) => sum + (parseInt(s.duration_min) || 60), 0);
+  const totalDuration = selectedServices.reduce((sum, s) => sum + (parseInt(s.duration || s.duration_min) || 60), 0);
 
   const handleSave = async () => {
     if (!name.trim() || !bundlePrice || selectedIds.length === 0) return;
@@ -377,7 +381,7 @@ export default function CreerBundle() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-[14px] font-black text-gray-900">{s.title || s.name}</p>
-                          <p className="text-[11px] text-gray-400">{s.category} · {s.duration_min || 60} min</p>
+                          <p className="text-[11px] text-gray-400">{s.category} · {s.duration || s.duration_min || 60} min</p>
                         </div>
                         <span className="text-[14px] font-black text-primary shrink-0">{s.price}€</span>
                       </div>

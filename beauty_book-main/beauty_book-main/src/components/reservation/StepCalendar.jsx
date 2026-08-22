@@ -13,6 +13,19 @@ function timeToMin(t) {
   const [h, m] = (t || "00:00").split(":").map(Number);
   return h * 60 + m;
 }
+function isInConges(date, ouverture) {
+  let raw = ouverture;
+  if (typeof raw === "string") { try { raw = JSON.parse(raw); } catch {} }
+  const conges = raw?.conges || [];
+  if (!conges.length) return false;
+  const ts = date.getTime();
+  return conges.some(c => {
+    if (!c?.start || !c?.end) return false;
+    const startTs = new Date(c.start + "T00:00:00").getTime();
+    const endTs = new Date(c.end + "T23:59:59").getTime();
+    return ts >= startTs && ts <= endTs;
+  });
+}
 function addMinutes(t, mins) {
   const total = timeToMin(t) + mins;
   const h = Math.floor(total / 60) % 24;
@@ -68,6 +81,10 @@ function generateSlotsForDay(date, ouverture, pauses = [], duration = 60, travai
   const dayConfig = ov[dayKey];
 
   if (!dayConfig || dayConfig.open === false || dayConfig.open === "false") {
+    return { open: false };
+  }
+
+  if (isInConges(date, rawOuverture)) {
     return { open: false };
   }
 
@@ -323,6 +340,7 @@ export default function StepCalendar({ selectedDate, selectedTime, selectedSeat,
 
   const handleSelectDate = (day) => {
     if (day.getTime() < today.getTime()) return;
+    if (isInConges(day, proOuverture)) return;
     onSelectDate(day);
     onSelectTime(null);
     if (onSelectSeat) onSelectSeat(null);
@@ -341,6 +359,7 @@ export default function StepCalendar({ selectedDate, selectedTime, selectedSeat,
 
   // Déterminer si un jour du calendrier a des créneaux disponibles (pour l'indicateur visuel)
   const isDayAvailable = (day) => {
+    if (isInConges(day, proOuverture)) return false;
     const s = generateSlotsForDay(day, proOuverture, proPauses, dur, travailNuit, null);
     return s.open !== false && (s.morning?.length > 0 || s.afternoon?.length > 0 || s.evening?.length > 0 || s.night?.length > 0);
   };
@@ -431,22 +450,23 @@ export default function StepCalendar({ selectedDate, selectedTime, selectedSeat,
             {Array.from({ length: firstDayOfWeek }).map((_, i) => <div key={`e-${i}`} />)}
             {days.map(day => {
               const isPast = day.getTime() < today.getTime();
+              const isClosed = !isPast && isInConges(day, proOuverture);
               const isSel = selectedDate && isSameDay(day, selectedDate);
               const isT = isToday(day);
-              const hasSlots = !isPast && !loadingPro && isDayAvailable(day);
-              const dayColor = isSel ? "#ffffff" : isPast ? "#d1d5db" : isT ? "#E8732A" : "#111827";
+              const hasSlots = !isPast && !isClosed && !loadingPro && isDayAvailable(day);
+              const dayColor = isSel ? "#ffffff" : (isPast || isClosed) ? "#d1d5db" : isT ? "#E8732A" : "#111827";
               return (
                 <button
                   key={day.toISOString()}
                   type="button"
                   onClick={() => handleSelectDate(day)}
-                  className={`flex flex-col items-center justify-center aspect-square rounded-full text-[13px] font-black transition-all active:scale-90 relative ${isPast ? "cursor-not-allowed" : "cursor-pointer"}`}
+                  className={`flex flex-col items-center justify-center aspect-square rounded-full text-[13px] font-black transition-all active:scale-90 relative ${isPast || isClosed ? "cursor-not-allowed" : "cursor-pointer"}`}
                   style={{
                     color: dayColor,
                     background: isSel ? "#E8732A" : "transparent",
                     border: isT && !isSel ? "2px solid #E8732A" : "2px solid transparent",
-                    pointerEvents: isPast ? "none" : "auto",
-                    opacity: isPast ? 0.35 : 1,
+                    pointerEvents: isPast || isClosed ? "none" : "auto",
+                    opacity: isPast || isClosed ? 0.35 : 1,
                   }}
                 >
                   {format(day, "d")}
@@ -467,7 +487,7 @@ export default function StepCalendar({ selectedDate, selectedTime, selectedSeat,
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-gray-200" />
-            <span className="text-[10px] font-bold text-gray-400">Complet / Fermé</span>
+            <span className="text-[10px] font-bold text-gray-400">Fermé</span>
           </div>
         </div>
 

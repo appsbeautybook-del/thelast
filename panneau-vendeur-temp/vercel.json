@@ -1,9 +1,0 @@
-{
-  "name": "beautybook-vendeur",
-  "installCommand": "npm install",
-  "buildCommand": "npx vite build --outDir dist",
-  "outputDirectory": "dist",
-  "rewrites": [
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
-  ]
-}
