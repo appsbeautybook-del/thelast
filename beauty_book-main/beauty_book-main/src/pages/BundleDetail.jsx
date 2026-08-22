@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Clock, Star, Heart, Shield, Gift, Calendar } from "lucide-react";
+import { ArrowLeft, Clock, Star, Heart, Shield, Calendar } from "lucide-react";
 import { entities } from "@/api/entities";
 
 export default function BundleDetail() {
@@ -52,14 +52,13 @@ export default function BundleDetail() {
 
   return (
     <div className="min-h-screen bg-[#FFF5F0] font-display">
-      {/* Hero section with image */}
-      <div className="relative h-[400px] overflow-hidden">
+      {/* Hero image */}
+      <div className="relative h-[320px] overflow-hidden rounded-b-[32px]">
         {bundle.image_url ? (
           <img src={bundle.image_url} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-gray-200 via-gray-300 to-gray-400" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
         {/* Top bar */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-12 pb-3 z-10">
@@ -71,25 +70,18 @@ export default function BundleDetail() {
           </button>
         </div>
 
-        {/* Badge */}
-        <div className="absolute top-20 left-4 z-10">
-          <span className="bg-white/95 backdrop-blur text-[10px] font-black text-[#E8732A] px-3 py-1.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-            LE PLUS RÉSERVÉ 🔥
-          </span>
-        </div>
-
         {/* Name & subtitle at bottom */}
-        <div className="absolute bottom-6 left-5 right-5 z-10">
-          <h2 className="text-[30px] font-black text-white leading-tight">
-            {bundle.name} ✨
-          </h2>
+        <div className="absolute bottom-5 left-5 right-5 z-10">
+          <h1 className="text-[28px] font-black text-white leading-tight">
+            beauty book <span className="text-[#E8732A]">&#10024;</span>
+          </h1>
           <p className="text-[13px] text-white/80 mt-1">bundle</p>
         </div>
       </div>
 
       <div className="pb-32">
-        {/* Stats row - overlapping hero */}
-        <div className="mx-4 -mt-8 bg-white rounded-3xl shadow-lg border border-gray-50 p-5 flex items-center justify-around relative z-10">
+        {/* Stats card - overlapping hero */}
+        <div className="mx-4 -mt-8 bg-white rounded-[24px] shadow-lg border border-gray-50 p-5 flex items-center justify-around relative z-10">
           <div className="text-center">
             <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-2">
               <Clock className="w-6 h-6 text-purple-400" />
@@ -104,7 +96,7 @@ export default function BundleDetail() {
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
             </div>
-            <p className="text-[12px] text-gray-400 font-medium">Économisez</p>
+            <p className="text-[12px] text-gray-400 font-medium">Economisez</p>
             <p className="text-[18px] font-black text-[#E8732A] mt-0.5">{savingsPercent}%</p>
           </div>
           <div className="w-px h-14 bg-gray-100" />
@@ -119,7 +111,7 @@ export default function BundleDetail() {
 
         {/* Services included */}
         <div className="px-4 mt-7">
-          <h3 className="text-[20px] font-black text-gray-900 mb-5">Ce que comprend ce bundle</h3>
+          <h3 className="text-[20px] font-black text-gray-900 mb-4">Ce que comprend ce bundle</h3>
           <div className="space-y-0">
             {services.map((s, i) => {
               const durMin = parseInt(s.duration_min) || 60;
@@ -133,7 +125,7 @@ export default function BundleDetail() {
                       {s.image_url ? (
                         <img src={s.image_url} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-pink-50 to-orange-50">💆</div>
+                        <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-pink-50 to-orange-50">&#128137;</div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -144,7 +136,7 @@ export default function BundleDetail() {
                       <span className="text-[12px] text-gray-400 font-medium flex items-center gap-1 justify-end">
                         <Clock className="w-3 h-3" /> {durDisplay}
                       </span>
-                      <p className="text-[18px] font-black text-gray-900 mt-1">{s.price} €</p>
+                      <p className="text-[18px] font-black text-gray-900 mt-1">{s.price} &#8364;</p>
                     </div>
                   </div>
                   {i < services.length - 1 && (
@@ -161,41 +153,41 @@ export default function BundleDetail() {
         </div>
 
         {/* Pricing summary */}
-        <div className="mx-4 mt-6 bg-white rounded-3xl border border-gray-100 p-5">
-          <div className="flex items-center justify-between mb-3">
+        <div className="mx-4 mt-6 bg-white rounded-[24px] border border-gray-100 p-5">
+          <div className="flex items-center justify-between">
             <div>
               <p className="text-[13px] text-gray-400 font-medium">Prix total</p>
-              <p className="text-[16px] text-gray-500 line-through">{regularTotal} €</p>
+              <p className="text-[16px] text-gray-500 line-through">{regularTotal} &#8364;</p>
             </div>
             <div className="text-center">
               <p className="text-[13px] text-[#E8732A] font-bold">Prix bundle</p>
-              <p className="text-[32px] font-black text-[#E8732A] leading-tight">{bundle.bundle_price} €</p>
+              <p className="text-[32px] font-black text-[#E8732A] leading-tight">{bundle.bundle_price} &#8364;</p>
             </div>
             <div className="bg-rose-50 border border-rose-100 rounded-2xl px-4 py-2 text-center">
-              <p className="text-[11px] font-black text-rose-500 uppercase">Économisez</p>
-              <p className="text-[14px] font-black text-rose-500">{savings > 0 ? savings : Math.abs(savings)}€ ({savingsPercent}%)</p>
+              <p className="text-[11px] font-black text-rose-500 uppercase">Economisez</p>
+              <p className="text-[14px] font-black text-rose-500">{savings > 0 ? savings : Math.abs(savings)}&#8364; ({savingsPercent}%)</p>
             </div>
           </div>
           {bundle.bonus && (
-            <div className="flex items-center gap-2 pt-3 border-t border-gray-50">
-              <span className="text-lg">🎁</span>
+            <div className="flex items-center gap-2 pt-3 mt-3 border-t border-gray-50">
+              <span className="text-lg">&#127873;</span>
               <p className="text-[13px] text-gray-600 font-medium">
-                <span className="font-black text-gray-800">Bonus inclus :</span> {bundle.bonus} 🎁
+                <span className="font-black text-gray-800">Bonus inclus :</span> {bundle.bonus}
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Fixed bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[120]" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
+      {/* Fixed bottom CTA - with space for BottomNav */}
+      <div className="fixed bottom-[76px] left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[100]" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
         <button onClick={() => navigate(`/reservation?pro=${bundle.pro_email}&bundle=${bundle.id}`, { state: { services: services.map(s => ({ ...s, persons: 1 })), bundle } })}
           className="w-full py-4 rounded-2xl font-black text-[16px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
           style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 30px rgba(232,115,42,0.35)" }}>
-          <Calendar className="w-5 h-5" /> Réserver ce bundle
+          <Calendar className="w-5 h-5" /> Reserve ce bundle
         </button>
         <p className="text-center text-[10px] text-gray-400 mt-1.5 flex items-center justify-center gap-1">
-          <Shield className="w-3 h-3" /> Paiement 100% sécurisé
+          <Shield className="w-3 h-3" /> Paiement 100% securise
         </p>
       </div>
     </div>
