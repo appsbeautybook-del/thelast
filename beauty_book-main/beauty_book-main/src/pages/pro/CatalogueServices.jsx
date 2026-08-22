@@ -55,7 +55,7 @@ export default function CatalogueServices() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const themeBg = useThemeBg();
-  const [activeFilter, setActiveFilter] = useState("Tous");
+  const [activeFilter, setActiveFilter] = useState("BUNDLES");
   const [services, setServices] = useState([]);
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -157,8 +157,8 @@ export default function CatalogueServices() {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex justify-center py-12">
-          <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex justify-center py-16">
+          <div className="w-8 h-8 border-3 border-[#ff6b35] border-t-transparent rounded-full animate-spin" />
         </div>
       );
     }
@@ -167,15 +167,19 @@ export default function CatalogueServices() {
       return (
         <div className="space-y-4">
           {bundles.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
-              <div className="w-20 h-20 bg-orange-50 border border-orange-100 rounded-3xl flex items-center justify-center mb-4 shadow-sm">
+            <div className="flex flex-col items-center justify-center py-16 px-6 text-center bg-white rounded-[32px] border border-gray-100/80 shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+              <div className="w-20 h-20 bg-gradient-to-br from-orange-50 to-amber-50 rounded-3xl flex items-center justify-center mb-5 border border-orange-100/50 shadow-inner">
                 <Zap className="w-9 h-9 text-[#ff6b35]" strokeWidth={2.2} />
               </div>
-              <p className="text-[18px] font-black text-gray-800 mb-1">Aucun bundle</p>
-              <p className="text-[13px] text-gray-400 mb-6 max-w-xs leading-relaxed">Créez des packs de services pour fidéliser vos clients et augmenter vos revenus.</p>
-              <button onClick={() => setBundleModal({ open: true, editBundle: null })}
-                className="bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center gap-2">
-                <Plus className="w-5 h-5" /> CRÉER UN BUNDLE
+              <p className="text-[20px] font-black text-gray-900 mb-2 tracking-tight">Aucun bundle</p>
+              <p className="text-[13px] text-gray-400 mb-7 max-w-xs leading-relaxed font-medium">
+                Créez des packs de services pour fidéliser vos clients et augmenter vos revenus.
+              </p>
+              <button
+                onClick={() => setBundleModal({ open: true, editBundle: null })}
+                className="bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[13px] font-black uppercase tracking-wider px-8 py-4 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" /> CRÉER UN BUNDLE
               </button>
             </div>
           ) : (
@@ -199,7 +203,7 @@ export default function CatalogueServices() {
                         {b.image_url ? (
                           <img src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center">
+                          <div className="w-full h-full flex items-center justify-center bg-orange-50">
                             <Zap className="w-10 h-10 text-orange-400" />
                           </div>
                         )}
@@ -425,13 +429,13 @@ export default function CatalogueServices() {
 
       <div className="px-5 pt-5 space-y-5 pb-32">
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2 bg-white rounded-2xl p-1.5 border border-gray-100">
+        <div className="flex items-center gap-1.5 bg-white rounded-3xl p-1.5 border border-gray-100 shadow-sm">
           {filterTabs.map(tab => (
             <button
               key={tab}
               onClick={() => setActiveFilter(tab)}
-              className={`flex-1 py-2.5 rounded-xl text-[12px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
-                activeFilter === tab ? "bg-gray-900 text-white" : "text-gray-400"
+              className={`flex-1 py-3 rounded-2xl text-[12px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
+                activeFilter === tab ? "bg-[#121826] text-white shadow-md" : "text-gray-400 hover:text-gray-600"
               }`}
             >
               {tab}
@@ -459,7 +463,7 @@ export default function CatalogueServices() {
             onClick={() => setBundleModal({ open: true, editBundle: null })}
             className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all"
           >
-            <Plus className="w-5 h-5" />
+            <Plus className="w-5 h-5 stroke-[3]" />
             Ajouter un Bundle
           </button>
         ) : (
