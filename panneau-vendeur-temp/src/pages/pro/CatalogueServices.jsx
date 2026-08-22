@@ -49,6 +49,7 @@ function BundlesTab({ userEmail }) {
   const navigate = useNavigate();
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteId, setDeleteId] = useState(null);
 
   useEffect(() => {
     if (!userEmail) return;
@@ -60,6 +61,13 @@ function BundlesTab({ userEmail }) {
 
   const totalServices = bundles.reduce((sum, b) => sum + (b.service_ids?.length || 0), 0);
 
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    await supabase.from("ServiceBundle").delete().eq("id", deleteId);
+    setBundles(b => b.filter(x => x.id !== deleteId));
+    setDeleteId(null);
+  };
+
   if (loading) return (
     <div className="flex justify-center py-12">
       <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -68,7 +76,6 @@ function BundlesTab({ userEmail }) {
 
   return (
     <div className="space-y-4">
-      {/* Orange header */}
       <div className="rounded-3xl overflow-hidden shadow-lg" style={{ background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff8c42 100%)" }}>
         <div className="px-5 py-6 text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
@@ -80,23 +87,22 @@ function BundlesTab({ userEmail }) {
               </div>
               <span className="text-[11px] font-black tracking-widest opacity-80">BEAUTYBOOK BUNDLES</span>
             </div>
-            <h2 className="text-[24px] font-black leading-tight mb-2">Créez des bundles irrésistibles</h2>
-            <p className="text-[13px] opacity-85 leading-relaxed">Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.</p>
-            <div className="flex items-center gap-4 mt-4">
+            <h2 className="text-[22px] font-black leading-tight mb-1.5">Créez des bundles irrésistibles</h2>
+            <p className="text-[12px] opacity-80 leading-relaxed">Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.</p>
+            <div className="flex items-center gap-3 mt-4">
               <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
-                <span className="text-[14px]">✨</span>
-                <span className="text-[12px] font-bold">{bundles.length} bundles</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-bold">{bundles.length} bundle{bundles.length !== 1 ? "s" : ""}</span>
               </div>
               <div className="flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5">
-                <span className="text-[14px]">✓</span>
-                <span className="text-[12px] font-bold">{totalServices} services</span>
+                <Check className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-bold">{totalServices} service{totalServices !== 1 ? "s" : ""}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Empty state or bundle list */}
       {bundles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mb-4">
@@ -111,38 +117,102 @@ function BundlesTab({ userEmail }) {
         </div>
       ) : (
         <div className="space-y-3">
-          {bundles.map(b => (
-            <div key={b.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 min-w-0">
-                  <p className="text-[15px] font-black text-gray-900 truncate">{b.name}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5">{b.service_ids?.length || 0} services inclus</p>
+          {bundles.map(b => {
+            const savPct = b.discount_percent || 0;
+            return (
+              <div key={b.id} className="bg-white rounded-[20px] border border-gray-100 shadow-sm overflow-hidden">
+                <div className="flex items-stretch">
+                  <div className="w-28 shrink-0 bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center relative">
+                    {b.image_url ? (
+                      <img src={b.image_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Zap className="w-8 h-8 text-pink-300" />
+                    )}
+                    {savPct > 0 && (
+                      <div className="absolute top-2 left-2 bg-[#E8732A] text-white text-[9px] font-black px-2 py-0.5 rounded-full">
+                        -{savPct}%
+                      </div>
+                    )}
+                    {b.is_group && (
+                      <div className="absolute bottom-2 left-2 bg-blue-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                        <Users className="w-2.5 h-2.5" /> Groupe
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 p-4 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-[15px] font-black text-gray-900 leading-tight">{b.name}</p>
+                        <p className="text-[17px] font-black text-[#E8732A] shrink-0">{b.bundle_price}€</p>
+                      </div>
+                      {b.description && (
+                        <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{b.description}</p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Tag className="w-2.5 h-2.5" /> {b.service_ids?.length || 0} services
+                        </span>
+                        {b.category && b.category !== "Tous" && (
+                          <span className="bg-purple-50 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{b.category}</span>
+                        )}
+                        {b.bonus && (
+                          <span className="bg-amber-50 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                            <Gift className="w-2.5 h-2.5" /> Bonus
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button onClick={() => navigate("/pro/creer-bundle", { state: { editBundle: b } })}
+                        className="flex-1 bg-gray-100 text-gray-600 text-[11px] font-bold py-2 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
+                        <Pencil className="w-3 h-3" /> Modifier
+                      </button>
+                      <button onClick={() => navigate(b.is_group ? "/bundle-groupe/" + b.id : "/bundle/" + b.id, { state: { bundle: b } })}
+                        className="flex-1 bg-[#E8732A]/10 text-[#E8732A] text-[11px] font-bold py-2 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-1">
+                        Voir
+                      </button>
+                      <button onClick={() => setDeleteId(b.id)}
+                        className="w-8 h-8 bg-red-50 text-red-400 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-[18px] font-black text-primary">{b.bundle_price}€</span>
               </div>
-              <div className="flex gap-2 mt-3">
-                <button onClick={() => navigate("/pro/creer-bundle", { state: { editBundle: b } })}
-                  className="flex-1 bg-gray-100 text-gray-600 text-[11px] font-bold py-2.5 rounded-xl active:scale-95 transition-all">
-                  Modifier
-                </button>
-                <button onClick={() => navigate(b.is_group ? `/bundle-groupe/${b.id}` : `/bundle/${b.id}`, { state: { bundle: b } })}
-                  className="flex-1 bg-primary/10 text-primary text-[11px] font-bold py-2.5 rounded-xl active:scale-95 transition-all">
-                  Voir
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
           <button onClick={() => navigate("/pro/creer-bundle", { state: { openForm: true } })}
             className="w-full bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-pink-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
           </button>
         </div>
       )}
+
+      {deleteId && (
+        <div className="fixed inset-0 z-[600] flex items-end justify-center" onClick={() => setDeleteId(null)}>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-t-3xl w-full max-w-lg p-6 pb-8 space-y-4" style={{ paddingBottom: "calc(24px + env(safe-area-inset-bottom, 0px))" }} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <p className="text-[16px] font-black text-gray-900">Supprimer le bundle</p>
+              <button onClick={() => setDeleteId(null)} className="p-2"><X className="w-5 h-5 text-gray-400" /></button>
+            </div>
+            <p className="text-[13px] text-gray-500">Voulez-vous vraiment supprimer ce bundle ? Cette action est irréversible.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setDeleteId(null)}
+                className="flex-1 py-3 rounded-2xl border border-gray-200 text-[13px] font-black text-gray-600 active:scale-95 transition-all">
+                Annuler
+              </button>
+              <button onClick={handleDelete}
+                className="flex-1 py-3 rounded-2xl bg-red-500 text-white text-[13px] font-black active:scale-95 transition-all">
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
-
-export default function CatalogueServices() {
+}export default function CatalogueServices() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const themeBg = useThemeBg();
