@@ -94,30 +94,37 @@ const SPECIALITE_ICONS = {
   "default": { icon: Star, color: "text-primary", bg: "bg-orange-50" },
 };
 
-function getFormattedOpeningHours(ouverture) {
+function getFormattedOpeningHours(rawOuverture) {
   const daysKeys = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
   const daysShort = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
   const daysFull = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
-  if (!ouverture || Object.keys(ouverture).length === 0) {
-    return [
-      { label: "Lun – Ven", hours: "09:00 – 20:00", open: true, isGroup: true },
-      { label: "Samedi", hours: "10:00 – 18:00", open: true, isGroup: false },
-      { label: "Dimanche", hours: "Fermé", open: false, isGroup: false }
-    ];
-  }
+  const defaultHoraires = {
+    lundi: { open: true, start: "09:00", end: "19:00" },
+    mardi: { open: true, start: "09:00", end: "19:00" },
+    mercredi: { open: true, start: "09:00", end: "19:00" },
+    jeudi: { open: true, start: "09:00", end: "19:00" },
+    vendredi: { open: true, start: "09:00", end: "19:00" },
+    samedi: { open: true, start: "09:00", end: "19:00" },
+    dimanche: { open: false, start: "09:00", end: "19:00" },
+  };
+
+  const ouv = (rawOuverture && typeof rawOuverture === "object" && Object.keys(rawOuverture).length > 0)
+    ? rawOuverture
+    : defaultHoraires;
 
   const parsed = daysKeys.map((key, index) => {
-    const d = ouverture[key] || { open: true, start: "09:00", end: "19:00" };
+    const d = ouv[key] !== undefined ? ouv[key] : defaultHoraires[key];
+    const isOpen = d && d.open !== false;
     return {
       key,
       short: daysShort[index],
       full: daysFull[index],
-      open: !!d.open,
-      start: d.start || "09:00",
-      end: d.end || "19:00",
-      pause_start: d.pause_start || "",
-      pause_end: d.pause_end || "",
+      open: isOpen,
+      start: d?.start || "09:00",
+      end: d?.end || "19:00",
+      pause_start: d?.pause_start || "",
+      pause_end: d?.pause_end || "",
     };
   });
 
@@ -149,6 +156,8 @@ function getFormattedOpeningHours(ouverture) {
       label = g.days[0].full;
     } else if (g.days.length === 5 && g.days[0].key === "lundi" && g.days[4].key === "vendredi") {
       label = "Lun – Ven";
+    } else if (g.days.length === 6 && g.days[0].key === "lundi" && g.days[5].key === "samedi") {
+      label = "Lun – Sam";
     } else if (g.days.length === 7) {
       label = "Tous les jours";
     } else {
@@ -165,9 +174,23 @@ function getFormattedOpeningHours(ouverture) {
   });
 }
 
-function getOpeningStatus(ouverture) {
+function getOpeningStatus(rawOuverture) {
   const daysKeys = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
   const now = new Date();
+
+  const defaultHoraires = {
+    lundi: { open: true, start: "09:00", end: "19:00" },
+    mardi: { open: true, start: "09:00", end: "19:00" },
+    mercredi: { open: true, start: "09:00", end: "19:00" },
+    jeudi: { open: true, start: "09:00", end: "19:00" },
+    vendredi: { open: true, start: "09:00", end: "19:00" },
+    samedi: { open: true, start: "09:00", end: "19:00" },
+    dimanche: { open: false, start: "09:00", end: "19:00" },
+  };
+
+  const ouverture = (rawOuverture && typeof rawOuverture === "object" && Object.keys(rawOuverture).length > 0)
+    ? rawOuverture
+    : defaultHoraires;
 
   const conges = ouverture?.conges || [];
   const todayTs = now.getTime();
@@ -183,9 +206,9 @@ function getOpeningStatus(ouverture) {
   }
 
   const todayKey = daysKeys[now.getDay()];
-  const dayData = ouverture?.[todayKey] || { open: true, start: "09:00", end: "19:00" };
+  const dayData = ouverture?.[todayKey] !== undefined ? ouverture[todayKey] : defaultHoraires[todayKey];
 
-  if (!dayData.open) {
+  if (!dayData || !dayData.open) {
     return { status: "closed", label: "Fermé aujourd'hui", color: "bg-red-50 text-red-500 border-red-200" };
   }
 
@@ -1102,7 +1125,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                   </div>
                 </div>
                 {(() => {
-                  const st = getOpeningStatus(proInfo?.ouverture);
+                  const st = getOpeningStatus(proInfo?.ouverture || proInfo?.horaires);
                   return (
                     <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${st.color}`}>
                       ● {st.label}
@@ -1112,7 +1135,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               </div>
 
               <div className="space-y-2.5">
-                {getFormattedOpeningHours(proInfo?.ouverture).map((item, idx) => (
+                {getFormattedOpeningHours(proInfo?.ouverture || proInfo?.horaires).map((item, idx) => (
                   <div key={idx} className={`flex items-center justify-between p-2.5 rounded-2xl transition-all ${item.isToday ? "bg-orange-50/70 border border-orange-100" : "bg-gray-50/60"}`}>
                     <div className="flex items-center gap-2">
                       {item.isToday && <span className="w-2 h-2 rounded-full bg-primary" />}
