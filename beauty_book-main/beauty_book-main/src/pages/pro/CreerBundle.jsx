@@ -422,7 +422,8 @@ export default function CreerBundle() {
                 </button>
               </div>
             ) : (
-              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#E8732A] to-[#F59E0B] p-4 text-white">
+              <div className="space-y-3">
+                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-[#E8732A] to-[#F59E0B] p-4 text-white">
                   <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                   <div className="relative z-10 flex items-center gap-3">
                     <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
@@ -438,7 +439,6 @@ export default function CreerBundle() {
                   className="w-full bg-[#E8732A] text-white text-[12px] font-black py-3 rounded-2xl shadow-lg shadow-[#E8732A]/20 active:scale-95 transition-all flex items-center justify-center gap-2">
                   <Plus className="w-4 h-4" /> AJOUTER UN BUNDLE
                 </button>
-                <div className="space-y-3">
                 {bundles.map(b => {
                   const includedSvcs = services.filter(s => b.service_ids?.includes(s.id));
                   const regTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
