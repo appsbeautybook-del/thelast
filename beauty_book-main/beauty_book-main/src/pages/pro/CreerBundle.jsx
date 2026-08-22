@@ -39,6 +39,7 @@ export default function CreerBundle() {
   const [bundleServiceSearch, setBundleServiceSearch] = useState("");
   const [deleteModal, setDeleteModal] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
+  const [validationError, setValidationError] = useState("");
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -150,7 +151,7 @@ export default function CreerBundle() {
     setName(""); setDescription(""); setBundlePrice(""); setImageUrl(""); setCoverUrl("");
     setSelectedIds([]); setCategory("Tous"); setIsGroup(false);
     setMinPersons(2); setMaxPersons(6); setBonus("");
-    setEditingBundle(null); setBundleServiceSearch("");
+    setEditingBundle(null); setBundleServiceSearch(""); setValidationError("");
     clearDraft();
   };
 
@@ -184,7 +185,21 @@ export default function CreerBundle() {
   const totalDuration = selectedServices.reduce((sum, s) => sum + (parseInt(s.duration || s.duration_min) || 60), 0);
 
   const handleSave = async () => {
-    if (!name.trim() || !bundlePrice || selectedIds.length === 0) return;
+    if (!name.trim()) {
+      setValidationError("Veuillez saisir un nom pour le bundle");
+      setTimeout(() => setValidationError(""), 3500);
+      return;
+    }
+    if (selectedIds.length === 0) {
+      setValidationError("Veuillez sélectionner au moins 1 service inclus");
+      setTimeout(() => setValidationError(""), 3500);
+      return;
+    }
+    if (!bundlePrice) {
+      setValidationError("Veuillez indiquer le prix du bundle");
+      setTimeout(() => setValidationError(""), 3500);
+      return;
+    }
     setSaving(true);
     const payload = {
       pro_email: user.email,
@@ -244,7 +259,6 @@ export default function CreerBundle() {
     setBonus(b.bonus || "");
     setShowForm(true);
   };
-  };
 
   const startCreate = () => {
     resetForm();
@@ -260,44 +274,12 @@ export default function CreerBundle() {
       />
 
       <div className="px-5 pt-5 pb-32 space-y-5">
-        {/* Bannière de présentation des bundles - toujours affichée */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#ff6b35] via-[#f7931e] to-[#ff8c42] p-6 shadow-xl shadow-orange-500/20">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-8 translate-x-8" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-6 -translate-x-6" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-white/30">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-[10px] font-black text-white/90 uppercase tracking-widest">BEAUTYBOOK BUNDLES</span>
-            </div>
-            <h2 className="text-[20px] font-black text-white mb-1.5 leading-tight">
-              Créez des bundles irrésistibles
-            </h2>
-            <p className="text-[13px] text-white/80 font-medium leading-relaxed mb-4">
-              Regroupez vos services, proposez des offres exclusives et fidélisez vos clients.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Sparkles className="w-3.5 h-3.5 text-white" />
-                </div>
-                <span className="text-[11px] font-bold text-white/90">{bundles.length} bundle{bundles.length !== 1 ? "s" : ""}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-6 h-6 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Check className="w-3.5 h-3.5 text-white" />
-                </div>
-                <span className="text-[11px] font-bold text-white/90">{services.length} service{services.length !== 1 ? "s" : ""}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {showForm ? (
           <>
             <button onClick={() => { resetForm(); setShowForm(false); }}
               className="flex items-center gap-2 text-[13px] font-bold text-gray-500 active:scale-95 transition-transform">
+              <ArrowLeft className="w-4 h-4" /> Retour à la liste
+            </button>
               <ArrowLeft className="w-4 h-4" /> Retour à la liste
             </button>
 
@@ -550,6 +532,11 @@ export default function CreerBundle() {
 
       {showForm && (
         <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-100 px-5 z-[200] shadow-[0_-8px_24px_rgba(0,0,0,0.08)]" style={{ paddingTop: "12px", paddingBottom: "calc(16px + env(safe-area-inset-bottom, 0px))" }}>
+          {validationError && (
+            <div className="mb-2 bg-red-50 border border-red-200 text-red-600 text-[11px] font-black py-1.5 px-3 rounded-xl text-center flex items-center justify-center gap-1.5 animate-in fade-in slide-in-from-bottom-1">
+              <span>⚠️</span> {validationError}
+            </div>
+          )}
           {draftSaved && (
             <p className="text-center text-[11px] text-green-500 font-bold mb-1 flex items-center justify-center gap-1"><Save className="w-3 h-3" /> Brouillon sauvegardé</p>
           )}
@@ -560,8 +547,8 @@ export default function CreerBundle() {
                 <Save className="w-4 h-4" /> Brouillon
               </button>
             )}
-            <button onClick={handleSave} disabled={!name.trim() || !bundlePrice || selectedIds.length === 0 || saving}
-              className="flex-1 bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-40">
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white font-black text-[14px] uppercase tracking-widest py-4 rounded-3xl shadow-xl shadow-orange-500/40 flex items-center justify-center gap-2 active:scale-95 transition-all">
               {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : editingBundle ? "ENREGISTRER LE BUNDLE" : "+ AJOUTER UN BUNDLE"}
             </button>
           </div>

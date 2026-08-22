@@ -99,7 +99,7 @@ export default function BottomNav() {
     }
   }, [path, isPro]);
 
-  const shouldHide = HIDDEN_PATHS.some(p => path.startsWith(p));
+  const shouldHide = HIDDEN_PATHS.some(p => path.startsWith(p)) || path.includes("creer-bundle");
   if (shouldHide) return null;
 
   const iconClass = (active) =>
