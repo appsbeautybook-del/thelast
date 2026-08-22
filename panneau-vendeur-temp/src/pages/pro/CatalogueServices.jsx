@@ -99,13 +99,13 @@ function BundlesTab({ userEmail }) {
       {/* Empty state or bundle list */}
       {bundles.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="w-16 h-16 bg-pink-50 rounded-3xl flex items-center justify-center mb-4">
-            <Zap className="w-8 h-8 text-pink-300" />
+          <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mb-4">
+            <Zap className="w-9 h-9 text-pink-400" strokeWidth={2.5} />
           </div>
           <p className="text-[18px] font-black text-gray-800 mb-1">Aucun bundle</p>
-          <p className="text-[13px] text-gray-400 mb-5">Créez votre premier bundle de services.</p>
+          <p className="text-[13px] text-gray-400 mb-6">Créez votre premier bundle de services.</p>
           <button onClick={() => navigate("/pro/creer-bundle")}
-            className="bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-orange-500/30 active:scale-95 transition-all flex items-center gap-2">
+            className="bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[13px] font-black px-8 py-3.5 rounded-2xl shadow-lg shadow-pink-500/30 active:scale-95 transition-all flex items-center gap-2">
             <Plus className="w-5 h-5" /> CRÉER UN BUNDLE
           </button>
         </div>
@@ -133,7 +133,7 @@ function BundlesTab({ userEmail }) {
             </div>
           ))}
           <button onClick={() => navigate("/pro/creer-bundle")}
-            className="w-full bg-gradient-to-r from-[#ff6b35] to-[#f7931e] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-orange-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+            className="w-full bg-gradient-to-r from-[#ec4899] to-[#f472b6] text-white text-[12px] font-black py-3.5 rounded-2xl shadow-lg shadow-pink-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
             <Plus className="w-4 h-4" /> CRÉER UN BUNDLE
           </button>
         </div>
