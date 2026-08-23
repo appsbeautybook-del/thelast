@@ -4,8 +4,9 @@ import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import {
   Settings, Share2, Star, Calendar, Users, LogOut,
-  TrendingUp, Scissors, BarChart2, Camera, Moon,
-  CreditCard, ArrowLeft, Radio, UserCircle, Network, Scan, Menu
+  TrendingUp, Scissors, BarChart3, Camera, Moon,
+  Wallet, ArrowLeft, Radio, UserCircle, Network, Scan, Menu,
+  ChevronRight, Sparkles, Zap, Eye, FileText, Clapperboard, Building2
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
@@ -33,14 +34,14 @@ import VueClient from "@/pages/pro/VueClient";
 import ShareSheet from "@/components/ui/ShareSheet";
 
 const quickActions = [
-  { id: "beauty_pay", label: "BEAUTY PAY", Icon: CreditCard, bg: "bg-orange-100", color: "text-orange-400", route: "/pro/beauty-pay", comingSoon: true },
-  { id: "services", label: "SERVICES", Icon: Scissors, bg: "bg-blue-100", color: "text-blue-400", route: "/pro/catalogue-services" },
-  { id: "avis", label: "AVIS CLIENTS", Icon: Star, bg: "bg-green-100", color: "text-green-500", route: "/pro/avis-clients" },
-  { id: "equipe", label: "ÉQUIPE", Icon: Users, bg: "bg-purple-100", color: "text-purple-500", route: "/pro/equipe" },
-  { id: "analytics", label: "ANALYTICS", Icon: BarChart2, bg: "bg-indigo-100", color: "text-indigo-500", route: "/pro/analytics" },
-  { id: "publication", label: "PUBLICATION", Icon: Camera, bg: "bg-rose-100", color: "text-rose-500", route: "/pro/publication" },
-  { id: "visite3d", label: "VISITE VIRTUELLE", Icon: Scan, bg: "bg-cyan-100", color: "text-cyan-500", route: "/pro/visite-3d" },
-  { id: "franchise", label: "FRANCHISE", Icon: Network, bg: "bg-violet-100", color: "text-violet-500", route: "/pro/franchise" },
+  { id: "beauty_pay", label: "BEAUTY PAY", Icon: Wallet, bg: "bg-gradient-to-br from-amber-50 to-orange-100", color: "text-amber-500", route: "/pro/beauty-pay", comingSoon: true },
+  { id: "services", label: "SERVICES", Icon: Scissors, bg: "bg-gradient-to-br from-sky-50 to-blue-100", color: "text-sky-500", route: "/pro/catalogue-services" },
+  { id: "avis", label: "AVIS CLIENTS", Icon: Star, bg: "bg-gradient-to-br from-emerald-50 to-green-100", color: "text-emerald-500", route: "/pro/avis-clients" },
+  { id: "equipe", label: "ÉQUIPE", Icon: Users, bg: "bg-gradient-to-br from-violet-50 to-purple-100", color: "text-violet-500", route: "/pro/equipe" },
+  { id: "analytics", label: "ANALYTICS", Icon: BarChart3, bg: "bg-gradient-to-br from-indigo-50 to-blue-100", color: "text-indigo-500", route: "/pro/analytics" },
+  { id: "publication", label: "PUBLICATION", Icon: Camera, bg: "bg-gradient-to-br from-rose-50 to-pink-100", color: "text-rose-500", route: "/pro/publication" },
+  { id: "visite3d", label: "VISITE VIRTUELLE", Icon: Eye, bg: "bg-gradient-to-br from-cyan-50 to-teal-100", color: "text-cyan-500", route: "/pro/visite-3d" },
+  { id: "franchise", label: "FRANCHISE", Icon: Building2, bg: "bg-gradient-to-br from-purple-50 to-fuchsia-100", color: "text-purple-500", route: "/pro/franchise" },
 ];
 
 export default function ProfilPro() {
@@ -193,10 +194,10 @@ export default function ProfilPro() {
 
   const allMenuItems = [
     ...quickActions,
-    { id: "lancer_direct", label: "LANCER UN DIRECT", Icon: Radio, bg: "bg-primary/10", color: "text-primary", route: "/pro/lancer-direct" },
-    { id: "modifier_profil", label: "MODIFIER PROFIL", Icon: UserCircle, bg: "bg-gray-100", color: "text-gray-700", route: "/pro/parametres" },
-    { id: "agenda", label: "AGENDA", Icon: Calendar, bg: "bg-teal-100", color: "text-teal-600", route: "/pro/gestion-agenda" },
-    { id: "parametres_pro", label: "PARAMÈTRES", Icon: Settings, bg: "bg-gray-100", color: "text-gray-600", route: "/pro/parametres" },
+    { id: "lancer_direct", label: "LANCER UN DIRECT", Icon: Clapperboard, bg: "bg-gradient-to-br from-pink-50 to-rose-100", color: "text-pink-500", route: "/pro/lancer-direct" },
+    { id: "modifier_profil", label: "MODIFIER PROFIL", Icon: UserCircle, bg: "bg-gradient-to-br from-gray-50 to-slate-100", color: "text-gray-600", route: "/pro/parametres" },
+    { id: "agenda", label: "AGENDA", Icon: Calendar, bg: "bg-gradient-to-br from-teal-50 to-emerald-100", color: "text-teal-600", route: "/pro/gestion-agenda" },
+    { id: "parametres_pro", label: "PARAMÈTRES", Icon: Settings, bg: "bg-gradient-to-br from-gray-50 to-slate-100", color: "text-slate-500", route: "/pro/parametres" },
   ];
 
   return (
@@ -205,47 +206,86 @@ export default function ProfilPro() {
       {/* ── Menu Drawer ── */}
       {menuOpen && (
         <div className="fixed inset-0 z-[400] flex" onClick={() => setMenuOpen(false)}>
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          {/* Backdrop with blur */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-md transition-opacity" />
           {/* Drawer */}
-          <div className="relative w-[80vw] max-w-xs bg-white h-full shadow-2xl flex flex-col overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div
+            className="relative w-[82vw] max-w-[320px] h-full shadow-2xl flex flex-col overflow-hidden"
+            style={{
+              background: "linear-gradient(180deg, #0f172a 0%, #1e293b 40%, #f8fafc 40.5%, #f8fafc 100%)",
+              animation: "slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+            }}
+            onClick={e => e.stopPropagation()}
+          >
             {/* Header */}
-            <div className="bg-[#1a2035] px-5 pt-12 pb-6">
-              <div className="flex items-center gap-3 mb-1">
-                <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-600 border-2 border-white/30">
-                  {proInfoCurrent?.avatar_url || clientProfile?.avatar_url ? (
-                    <img src={proInfoCurrent?.avatar_url || clientProfile?.avatar_url} alt="profil" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white font-black text-lg">{nomCommerce?.[0]?.toUpperCase() || "P"}</div>
-                  )}
+            <div className="relative px-6 pt-14 pb-8">
+              {/* Decorative dots */}
+              <div className="absolute top-4 right-6 flex gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+                <div className="w-1.5 h-1.5 rounded-full bg-white/30" />
+                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="w-[60px] h-[60px] rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-pink-600 shadow-lg shadow-primary/30">
+                    {proInfoCurrent?.avatar_url || clientProfile?.avatar_url ? (
+                      <img src={proInfoCurrent?.avatar_url || clientProfile?.avatar_url} alt="profil" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white font-black text-xl">{nomCommerce?.[0]?.toUpperCase() || "P"}</div>
+                    )}
+                  </div>
+                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-[#0f172a] flex items-center justify-center ${proInfoCurrent?.status === 'actif' ? "bg-emerald-400" : "bg-amber-400"}`}>
+                    <Sparkles className="w-2.5 h-2.5 text-white" />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white text-[16px] font-black leading-tight">{nomCommerce}</p>
-                  <p className="text-white/50 text-[11px] font-medium">Compte Pro</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white text-[17px] font-black leading-tight truncate">{nomCommerce}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="px-2 py-0.5 bg-primary/20 rounded-full">
+                      <span className="text-primary text-[10px] font-bold uppercase tracking-wider">Pro</span>
+                    </div>
+                    {proInfoCurrent?.city && (
+                      <span className="text-white/40 text-[11px] font-medium truncate">{proInfoCurrent.city}</span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
+
             {/* Menu Items */}
-            <div className="flex-1 py-4 px-3 space-y-1">
-              {allMenuItems.map(({ id, label, Icon, bg, color, route }) => (
-                <button key={id} onClick={() => { setMenuOpen(false); navigate(route); }}
-                  className="w-full flex items-center gap-3 px-3 py-3.5 rounded-2xl active:bg-gray-50 transition-colors text-left">
-                  <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center shrink-0`}>
-                    <Icon className={`w-5 h-5 ${color}`} />
-                  </div>
-                  <span className="text-[13px] font-black text-gray-800 uppercase tracking-widest">{label}</span>
-                  <span className="ml-auto text-gray-300 text-lg">›</span>
-                </button>
-              ))}
+            <div className="flex-1 overflow-y-auto px-4 py-2" style={{ scrollbarWidth: 'none' }}>
+              <div className="space-y-1">
+                {allMenuItems.map(({ id, label, Icon, bg, color, route }, index) => (
+                  <button
+                    key={id}
+                    onClick={() => { setMenuOpen(false); navigate(route); }}
+                    className="w-full flex items-center gap-3.5 px-3 py-3 rounded-2xl hover:bg-gray-100/80 active:scale-[0.98] transition-all duration-200 text-left group"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
+                    <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center shrink-0 shadow-sm group-hover:shadow-md transition-shadow`}>
+                      <Icon className={`w-5 h-5 ${color}`} strokeWidth={2} />
+                    </div>
+                    <span className="flex-1 text-[13px] font-bold text-gray-700 uppercase tracking-wider">{label}</span>
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all" />
+                  </button>
+                ))}
+              </div>
             </div>
-            {/* Logout at bottom */}
-            <div className="px-3 pb-8 border-t border-gray-100 pt-3">
-              <button onClick={() => { setMenuOpen(false); localStorage.removeItem("bb_is_pro"); supabase.auth.signOut().then(() => window.location.href = "/connexion"); }}
-                className="w-full flex items-center gap-3 px-3 py-3.5 rounded-2xl active:bg-red-50 transition-colors">
-                <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center shrink-0">
-                  <LogOut className="w-5 h-5 text-red-400" />
+
+            {/* Logout */}
+            <div className="px-4 pb-6 pt-2 border-t border-gray-100">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  localStorage.removeItem("bb_is_pro");
+                  supabase.auth.signOut().then(() => window.location.href = "/connexion");
+                }}
+                className="w-full flex items-center gap-3.5 px-3 py-3.5 rounded-2xl hover:bg-red-50 active:scale-[0.98] transition-all duration-200 group"
+              >
+                <div className="w-11 h-11 bg-red-50 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-red-100 transition-colors">
+                  <LogOut className="w-5 h-5 text-red-400 group-hover:text-red-500 transition-colors" strokeWidth={2} />
                 </div>
-                <span className="text-[13px] font-black text-red-400 uppercase tracking-widest">SE DÉCONNECTER</span>
+                <span className="text-[13px] font-bold text-red-400 uppercase tracking-wider group-hover:text-red-500 transition-colors">Se déconnecter</span>
               </button>
             </div>
           </div>
@@ -279,9 +319,9 @@ export default function ProfilPro() {
             <div className="absolute top-4 left-0 right-0 px-5 flex items-center justify-between z-10">
               <button
                 onClick={() => setMenuOpen(true)}
-                className={`w-10 h-10 ${btnBg} rounded-full flex items-center justify-center shadow-md active:scale-95 transition-all`}
+                className={`w-11 h-11 ${btnBg} rounded-2xl flex items-center justify-center shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200`}
               >
-                <Menu className={`w-5 h-5 ${btnIcon}`} />
+                <Menu className={`w-5 h-5 ${btnIcon}`} strokeWidth={2.5} />
               </button>
 
               <button onClick={() => navigate("/pro/abonnements")} className={`px-5 py-2.5 rounded-full flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isDark ? "bg-primary/90 shadow-primary/20" : "bg-primary shadow-primary/30"}`}>
@@ -413,7 +453,7 @@ export default function ProfilPro() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-primary/20 rounded-lg flex items-center justify-center">
-                <CreditCard className="w-4 h-4 text-primary" />
+                <Wallet className="w-4 h-4 text-primary" />
               </div>
               <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Chiffre d'affaires</span>
             </div>

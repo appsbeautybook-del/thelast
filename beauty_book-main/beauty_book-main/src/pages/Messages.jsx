@@ -308,7 +308,12 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
         .order("created_at", { ascending: true });
       const allById = {};
       for (const m of [...(sent || []), ...(received || [])]) {
-        if (m.type !== "typing") allById[m.id] = m;
+        if (m.type !== "typing") {
+          // Normaliser attachment_url et file_url
+          if (!m.attachment_url && m.file_url) m.attachment_url = m.file_url;
+          if (!m.file_url && m.attachment_url) m.file_url = m.attachment_url;
+          allById[m.id] = m;
+        }
       }
       const filtered = Object.values(allById).sort((a, b) => new Date(a.created_at || a.created_date) - new Date(b.created_at || b.created_date));
       msgIdsRef.current = new Set(filtered.map(m => m.id));
@@ -331,10 +336,13 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
     if (!conversation.service || serviceCardSent) return;
     setServiceCardSent(true);
     supabase.from("MessageChat").insert({
+      conversation_id: conversation.conversation_id,
       sender_email: currentUser.email,
       receiver_email: conversation.other_email,
       content: JSON.stringify({ type: "service_card", ...conversation.service }),
+      type: "service_card",
       read: false,
+      is_read: false,
     }).catch(e => console.error("Service card error:", e));
   }, []);
 
@@ -359,7 +367,15 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
         }
         if (msgIdsRef.current.has(m.id)) return;
         msgIdsRef.current.add(m.id);
-        setMessages(prev => [...prev, m]);
+        // Normaliser attachment_url et file_url
+        if (!m.attachment_url && m.file_url) m.attachment_url = m.file_url;
+        if (!m.file_url && m.attachment_url) m.file_url = m.attachment_url;
+        setMessages(prev => {
+          // Vérifier si le message existe déjà (optimistic insert)
+          const exists = prev.some(msg => msg.id === m.id || (msg.sender_email === m.sender_email && msg.receiver_email === m.receiver_email && msg.content === m.content && msg.created_at === m.created_at));
+          if (exists) return prev;
+          return [...prev, m];
+        });
         // Mark incoming messages as read immediately
         if (m.receiver_email === currentUser.email) {
           supabase.from("MessageChat").update({ read: true, is_read: true }).eq("id", m.id).catch(() => {});
@@ -437,23 +453,25 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
       receiver_email: conversation.other_email,
       content: content || (fileUrl ? "📷 Image" : ""),
       attachment_url: fileUrl || "",
-      type: imageFile ? "image" : "",
+      file_url: fileUrl || "",
+      type: imageFile ? "image" : "text",
       is_read: false, read: false,
       created_at: now, updated_at: now,
     };
 
     // Optimistic insert
     const tempId = `tmp_${Date.now()}`;
+    msgIdsRef.current.add(tempId);
     setMessages(prev => [...prev, { ...payload, id: tempId }]);
 
     const { data, error } = await supabase.from("MessageChat").insert(payload).select().single();
     if (error) {
       console.error("Send error:", error);
+      msgIdsRef.current.delete(tempId);
       setMessages(prev => prev.filter(m => m.id !== tempId));
     } else if (data) {
-      // Remplacer le message optimiste par le vrai
-      setMessages(prev => prev.map(m => m.id === tempId ? data : m));
       msgIdsRef.current.add(data.id);
+      setMessages(prev => prev.map(m => m.id === tempId ? data : m));
     }
     setSending(false);
 
@@ -573,9 +591,9 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
                 <div className={`max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                   {serviceData ? (
                     <div className="w-56"><ServiceCard service={serviceData} navigate={navigate} /></div>
-                  ) : m.type === "image" && m.attachment_url ? (
+                  ) : m.type === "image" && (m.attachment_url || m.file_url) ? (
                     <div>
-                      <img src={m.attachment_url} alt="image" className="rounded-2xl max-w-full shadow-sm max-h-64 object-cover" loading="lazy" />
+                      <img src={m.attachment_url || m.file_url} alt="image" className="rounded-2xl max-w-full shadow-sm max-h-64 object-cover" loading="lazy" />
                       {m.content && m.content !== "📷 Image" && (
                         <div className={`mt-1 px-3 py-2 rounded-2xl text-[13px] font-medium ${isMe ? "bg-primary text-white rounded-br-sm" : "bg-white text-gray-900 rounded-bl-sm shadow-sm"}`}>{m.content}</div>
                       )}
@@ -587,7 +605,11 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
                   )}
                   <div className={`flex items-center gap-1 mt-0.5 px-1 ${isMe ? "flex-row-reverse" : ""}`}>
                     <span className="text-[9px] text-gray-400">{timeAgo(m.created_at || m.created_date)}</span>
-                    {isMe && <span className={`text-[10px] ${m.read ? "text-primary" : "text-gray-300"}`}>{m.read ? "✓✓" : "✓"}</span>}
+                    {isMe && (
+                      <span className={`text-[11px] font-bold ${m.read ? "text-blue-500" : "text-gray-400"}`}>
+                        {m.read ? "✓✓" : "✓✓"}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
