@@ -1,8 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { X, LogIn, UserPlus, Shield, Zap, Gift } from "lucide-react";
 
-const LOGO_IMG = "https://media.base44.com/images/public/6a0ba7bd3d55dddeb85a8366/47f6dcd4b_generated_image.png";
-
 export default function AuthModal({ open, onClose, message }) {
   const navigate = useNavigate();
   if (!open) return null;
@@ -39,11 +37,11 @@ export default function AuthModal({ open, onClose, message }) {
               className="w-[84px] h-[84px] rounded-full flex items-center justify-center"
               style={{ background: "#F5EDE4", border: "3px solid #E8DDD0" }}
             >
-              <img
-                src={LOGO_IMG}
-                alt="BeautyBook"
-                className="w-[52px] h-[52px] object-contain"
-              />
+              <svg width="46" height="50" viewBox="0 0 42 46" fill="none">
+                <rect x="2" y="2" width="22" height="21" rx="10" fill="#F5B87A"/>
+                <rect x="2" y="19" width="28" height="25" rx="12" fill="#E8732A"/>
+                <circle cx="32" cy="8" r="5" fill="#E8732A"/>
+              </svg>
             </div>
           </div>
 

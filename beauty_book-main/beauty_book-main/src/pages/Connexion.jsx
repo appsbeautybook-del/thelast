@@ -438,8 +438,15 @@ export default function Connexion() {
         <img src={SPLASH_IMG} alt="" className="w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(10,10,10,0.5) 0%, rgba(255,255,255,1) 100%)" }} />
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pb-4">
-          <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)", border: "2.5px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)" }}>
-            <img src={LOGO_IMG} alt="BeautyBook" className="w-[44px] h-[44px] object-contain" />
+          <div className="w-[80px] h-[80px] rounded-full flex items-center justify-center" style={{ background: "#F5EDE4", border: "3px solid #E8DDD0" }}>
+            <svg width="42" height="46" viewBox="0 0 42 46" fill="none">
+              {/* Top half of B — light orange */}
+              <rect x="2" y="2" width="22" height="21" rx="10" fill="#F5B87A"/>
+              {/* Bottom half of B — dark orange */}
+              <rect x="2" y="19" width="28" height="25" rx="12" fill="#E8732A"/>
+              {/* Dot */}
+              <circle cx="32" cy="8" r="5" fill="#E8732A"/>
+            </svg>
           </div>
           <span className="text-white text-[16px] font-black uppercase tracking-[0.25em]" style={{ textShadow: "0 2px 16px rgba(232,115,42,0.9)" }}>BeautyBook</span>
         </div>
