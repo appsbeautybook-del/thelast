@@ -69,17 +69,11 @@ function StepSplash({ onNext, onDiscover }) {
           Rejoignez la première communauté dédiée à l'excellence esthétique.
         </p>
         <button
-          onClick={onNext}
+          onClick={onDiscover}
           className="w-full py-4 rounded-full font-black text-[14px] uppercase tracking-widest text-white active:scale-95 transition-all shadow-lg"
           style={{ background: "#E8732A", boxShadow: "0 0 40px rgba(232,115,42,0.5)" }}
         >
           Commencer l'aventure
-        </button>
-        <button
-          onClick={onDiscover}
-          className="w-full py-3.5 mt-3 rounded-full font-black text-[12px] uppercase tracking-widest text-white/60 active:scale-95 transition-all border border-white/15"
-        >
-          Continuer l'aventure
         </button>
       </div>
     </div>

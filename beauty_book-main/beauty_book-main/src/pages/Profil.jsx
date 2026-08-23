@@ -8,6 +8,8 @@ import ShareSheet from "@/components/ui/ShareSheet";
 import ScoreFiabilite from "@/components/avis/ScoreFiabilite";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
+import { useAuthGate } from "@/hooks/useAuthGate";
+import AuthModal from "@/components/ui/AuthModal";
 
 const PROFILE_IMAGE = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=200";
 
@@ -116,6 +118,7 @@ export default function Profil() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { showAuthModal, authMessage, requireAuth, closeAuthModal } = useAuthGate();
   const [activeTab, setActiveTab] = useState("publications");
   const [publications, setPublications] = useState([]);
   const [repubsList, setRepubsList] = useState([]);
@@ -128,6 +131,14 @@ export default function Profil() {
   const [followersCount, setFollowersCount] = useState(0);
   const [toast, setToast] = useState(null);
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) {
+        requireAuth("Connectez-vous pour accéder à votre profil.");
+      }
+    }).catch(() => requireAuth("Connectez-vous pour accéder à votre profil."));
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -291,6 +302,7 @@ export default function Profil() {
 
   return (
     <div className="font-display pb-4 min-h-full" style={{ background: getPageBg(theme) }}>
+      <AuthModal open={showAuthModal} onClose={closeAuthModal} message={authMessage} />
 
       {/* Banner — cliquable pour modifier */}
       <div className="relative h-48 cursor-pointer" onClick={() => navigate("/modifier-profil-client")}>

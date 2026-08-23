@@ -8,6 +8,8 @@ import { fr } from "date-fns/locale";
 import PostServiceReview from "@/components/reservation/PostServiceReview";
 import RoutineModal from "@/components/routine/RoutineModal";
 import RoutineDashboard from "@/components/routine/RoutineDashboard";
+import { useAuthGate } from "@/hooks/useAuthGate";
+import AuthModal from "@/components/ui/AuthModal";
 
 const DAYS_FR = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 const MONTHS_FR = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
@@ -335,8 +337,17 @@ export default function RendezVous() {
   const [calendarSuggestion, setCalendarSuggestion] = useState(null);
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(null);
+  const { showAuthModal, authMessage, requireAuth, closeAuthModal } = useAuthGate();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) {
+        requireAuth("Connectez-vous pour accéder à vos rendez-vous.");
+      }
+    }).catch(() => requireAuth("Connectez-vous pour accéder à vos rendez-vous."));
+  }, []);
 
   const handleCancelReservation = async (rdv) => {
     setCancelling(true);
@@ -509,6 +520,7 @@ export default function RendezVous() {
 
   return (
     <div className="font-display pb-4">
+      <AuthModal open={showAuthModal} onClose={closeAuthModal} message={authMessage} />
 
       {/* Bannière de succès paiement */}
       {paymentSuccess && (
