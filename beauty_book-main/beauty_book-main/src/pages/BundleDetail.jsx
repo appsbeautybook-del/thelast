@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import {
   ArrowLeft, Heart, Share2, Timer, Percent, Star, MapPin,
-  BadgeCheck, ChevronRight, Calendar, Shield, Sparkles, Package, Scissors, Gift, Clock
+  BadgeCheck, ChevronRight, ChevronDown, Calendar, Shield, Sparkles, Package, Scissors, Gift, Clock
 } from "lucide-react";
 import { entities } from "@/api/entities";
 import { supabase } from "@/api/supabaseClient";
@@ -36,6 +36,7 @@ export default function BundleDetail() {
   const [similarBundles, setSimilarBundles] = useState([]);
   const [servicesMap, setServicesMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   useEffect(() => {
     if (bundle) {
@@ -313,57 +314,77 @@ export default function BundleDetail() {
               </p>
             </div>
           ) : (
-            <div className="space-y-3.5">
-              {reviews.map((r, i) => {
-                const assocService = servicesMap[r.service_id] || servicesMap[r.service_name] || services[0] || null;
-                const serviceTitle = r.service_name || assocService?.title || assocService?.name || "Prestation générale";
-                const serviceImgs = assocService?.images?.length > 0 ? assocService.images : (assocService?.image_url ? [assocService.image_url] : []);
+            <>
+              <div className="space-y-3.5">
+                {(showAllReviews ? reviews : reviews.slice(0, 5)).map((r, i) => {
+                  const assocService = servicesMap[r.service_id] || servicesMap[r.service_name] || services[0] || null;
+                  const serviceTitle = r.service_name || assocService?.title || assocService?.name || "Prestation générale";
+                  const serviceImgs = assocService?.images?.length > 0 ? assocService.images : (assocService?.image_url ? [assocService.image_url] : []);
 
-                return (
-                  <div key={r.id || i} className="bg-white rounded-[22px] border border-gray-100 p-4 shadow-sm space-y-2.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 border border-orange-200">
-                        {r.user_avatar || r.auteur_avatar ? (
-                          <img src={r.user_avatar || r.auteur_avatar} alt="" className="w-full h-full object-cover rounded-full" />
-                        ) : (
-                          <span className="text-xs font-black text-[#E8732A]">
-                            {(r.user_name || r.auteur_name || r.auteur_email || "C")[0].toUpperCase()}
+                  return (
+                    <div key={r.id || i} className="bg-white rounded-[22px] border border-gray-100 p-4 shadow-sm space-y-2.5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 border border-orange-200">
+                          {r.user_avatar || r.auteur_avatar ? (
+                            <img src={r.user_avatar || r.auteur_avatar} alt="" className="w-full h-full object-cover rounded-full" />
+                          ) : (
+                            <span className="text-xs font-black text-[#E8732A]">
+                              {(r.user_name || r.auteur_name || r.auteur_email || "C")[0].toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-black text-gray-900 truncate">{r.user_name || r.auteur_name || "Cliente"}</p>
+                          <div className="flex items-center gap-0.5">
+                            {[...Array(5)].map((_, si) => (
+                              <Star key={si} className={"w-3 h-3 " + (si < (r.rating || r.note || 5) ? "text-amber-400 fill-amber-400" : "text-gray-200")} />
+                            ))}
+                          </div>
+                        </div>
+                        {r.created_at && (
+                          <span className="text-[10px] text-gray-400 font-bold">
+                            {new Date(r.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                           </span>
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-black text-gray-900 truncate">{r.user_name || r.auteur_name || "Cliente"}</p>
-                        <div className="flex items-center gap-0.5">
-                          {[...Array(5)].map((_, si) => (
-                            <Star key={si} className={"w-3 h-3 " + (si < (r.rating || r.note || 5) ? "text-amber-400 fill-amber-400" : "text-gray-200")} />
-                          ))}
+
+                      {(r.comment || r.commentaire) && (
+                        <p className="text-[13px] text-gray-600 leading-relaxed font-medium">{r.comment || r.commentaire}</p>
+                      )}
+
+                      {/* Associated service line & image slider */}
+                      <div className="mt-2 pt-2.5 border-t border-gray-100 bg-orange-50/40 rounded-xl p-2.5 space-y-2">
+                        <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-800">
+                          <Scissors className="w-3.5 h-3.5 text-[#E8732A]" />
+                          <span>Prestation : {serviceTitle}</span>
                         </div>
+                        {serviceImgs.length > 0 && (
+                          <ServiceImageSlider images={serviceImgs} />
+                        )}
                       </div>
-                      {r.created_at && (
-                        <span className="text-[10px] text-gray-400 font-bold">
-                          {new Date(r.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                        </span>
-                      )}
                     </div>
-
-                    {(r.comment || r.commentaire) && (
-                      <p className="text-[13px] text-gray-600 leading-relaxed font-medium">{r.comment || r.commentaire}</p>
-                    )}
-
-                    {/* Associated service line & image slider */}
-                    <div className="mt-2 pt-2.5 border-t border-gray-100 bg-orange-50/40 rounded-xl p-2.5 space-y-2">
-                      <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-800">
-                        <Scissors className="w-3.5 h-3.5 text-[#E8732A]" />
-                        <span>Prestation : {serviceTitle}</span>
-                      </div>
-                      {serviceImgs.length > 0 && (
-                        <ServiceImageSlider images={serviceImgs} />
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+              {!showAllReviews && reviews.length > 5 && (
+                <button
+                  onClick={() => setShowAllReviews(true)}
+                  className="w-full mt-4 py-3 rounded-2xl border-2 border-[#E8732A] bg-white text-[#E8732A] text-[13px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                  Voir les {reviews.length} avis
+                </button>
+              )}
+              {showAllReviews && reviews.length > 5 && (
+                <button
+                  onClick={() => { setShowAllReviews(false); document.querySelector('.mx-4.mt-7')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                  className="w-full mt-4 py-3 rounded-2xl border-2 border-gray-200 bg-white text-gray-500 text-[13px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                >
+                  <ChevronDown className="w-4 h-4 rotate-180" />
+                  Voir moins
+                </button>
+              )}
+            </>
           )}
         </div>
 

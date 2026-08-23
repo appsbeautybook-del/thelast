@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { ArrowLeft, Share2, Heart, MapPin, Clock, Star, CheckCircle, ShoppingCart, Play, Calendar, ChevronRight, Scissors, Sparkles, Wand2, X, ChevronLeft, ArrowUp, Wifi, Car, Thermometer, CreditCard, Accessibility, PawPrint, Baby, Coffee, Package } from "lucide-react";
+import { ArrowLeft, Share2, Heart, MapPin, Clock, Star, CheckCircle, ShoppingCart, Play, Calendar, ChevronRight, ChevronDown, Scissors, Sparkles, Wand2, X, ChevronLeft, ArrowUp, Wifi, Car, Thermometer, CreditCard, Accessibility, PawPrint, Baby, Coffee, Package } from "lucide-react";
 import VTCSection from "@/components/service/VTCSection";
 import CommandeModal from "@/components/restaurant/CommandeModal";
 import PostServiceReview from "@/components/reservation/PostServiceReview";
@@ -215,6 +215,7 @@ export default function ServiceDetail() {
   const [showFiltreAI, setShowFiltreAI] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(null);
   const [bundles, setBundles] = useState([]);
+  const [showAllAvis, setShowAllAvis] = useState(false);
   const scrollRef = useRef(null);
   const { formatPrice } = useLocale();
 
@@ -860,42 +861,62 @@ export default function ServiceDetail() {
               <p className="text-[11px] text-gray-300 font-medium text-center">Soyez le premier à laisser un avis après votre réservation</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {avis.slice(0, 5).map((a) => (
-                <div key={a.id} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
-                  <div className="flex items-center gap-3 mb-2">
-                    {a.auteur_avatar ? (
-                      <img src={a.auteur_avatar} alt={a.auteur_nom} className="w-9 h-9 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
-                        <span className="text-[13px] font-black text-primary">{(a.auteur_nom || "?")[0]}</span>
+            <>
+              <div className="space-y-3">
+                {(showAllAvis ? avis : avis.slice(0, 5)).map((a) => (
+                  <div key={a.id} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <div className="flex items-center gap-3 mb-2">
+                      {a.auteur_avatar ? (
+                        <img src={a.auteur_avatar} alt={a.auteur_nom} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                          <span className="text-[13px] font-black text-primary">{(a.auteur_nom || "?")[0]}</span>
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-black text-gray-900 truncate">{a.auteur_nom || "Client"}</p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          {[1,2,3,4,5].map(i => (
+                            <Star key={i} className={`w-3 h-3 ${a.note >= i ? "text-yellow-400 fill-yellow-400" : "text-gray-200 fill-gray-200"}`} />
+                          ))}
+                        </div>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-black text-gray-900 truncate">{a.auteur_nom || "Client"}</p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        {[1,2,3,4,5].map(i => (
-                          <Star key={i} className={`w-3 h-3 ${a.note >= i ? "text-yellow-400 fill-yellow-400" : "text-gray-200 fill-gray-200"}`} />
-                        ))}
-                      </div>
+                      {a.created_date && (
+                        <span className="text-[10px] text-gray-400 font-medium shrink-0">
+                          {new Date(a.created_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                        </span>
+                      )}
                     </div>
-                    {a.created_date && (
-                      <span className="text-[10px] text-gray-400 font-medium shrink-0">
-                        {new Date(a.created_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
+                    {a.commentaire && (
+                      <p className="text-[12px] text-gray-600 font-medium leading-relaxed">{a.commentaire}</p>
+                    )}
+                    {a.service_nom && (
+                      <span className="inline-block mt-2 bg-orange-50 text-primary text-[10px] font-black px-2.5 py-1 rounded-full border border-orange-100">
+                        ✂️ {a.service_nom}
                       </span>
                     )}
                   </div>
-                  {a.commentaire && (
-                    <p className="text-[12px] text-gray-600 font-medium leading-relaxed">{a.commentaire}</p>
-                  )}
-                  {a.service_nom && (
-                    <span className="inline-block mt-2 bg-orange-50 text-primary text-[10px] font-black px-2.5 py-1 rounded-full border border-orange-100">
-                      ✂️ {a.service_nom}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+              {!showAllAvis && avis.length > 5 && (
+                <button
+                  onClick={() => setShowAllAvis(true)}
+                  className="w-full mt-4 py-3 rounded-2xl border-2 border-primary bg-white text-primary text-[13px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                  Voir les {avis.length} avis
+                </button>
+              )}
+              {showAllAvis && avis.length > 5 && (
+                <button
+                  onClick={() => { setShowAllAvis(false); document.querySelector('[class*="Avis clients"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}
+                  className="w-full mt-4 py-3 rounded-2xl border-2 border-gray-200 bg-white text-gray-500 text-[13px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                >
+                  <ChevronDown className="w-4 h-4 rotate-180" />
+                  Voir moins
+                </button>
+              )}
+            </>
           )}
         </div>
 
