@@ -190,8 +190,11 @@ export default function CatalogueServices() {
 
                 return (
                   <div key={b.id} className={`bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden p-3.5 transition-all ${!isActive ? "opacity-60 grayscale" : ""}`}>
-                    {/* Top Row: Thumbnail + Details + Price */}
-                    <div className="flex items-start gap-3.5">
+                    {/* Top Row: Thumbnail + Details + Price (Click opens detail view) */}
+                    <div
+                      onClick={() => navigate(b.is_group ? `/bundle-groupe/${b.id}` : `/bundle/${b.id}`, { state: { bundle: b } })}
+                      className="flex items-start gap-3.5 cursor-pointer active:scale-[0.99] transition-all"
+                    >
                       {/* Thumbnail with Badge */}
                       <div className="relative w-28 h-36 shrink-0 rounded-2xl overflow-hidden shadow-sm bg-gradient-to-br from-pink-100 to-orange-100">
                         {b.image_url ? (
@@ -342,7 +345,7 @@ export default function CatalogueServices() {
                   const imgs = [];
                   if (service.image_url) imgs.push(service.image_url);
                   if (service.images?.length > 0) service.images.forEach(u => { if (u && u !== service.image_url) imgs.push(u); });
-                  return <ImageSlider images={imgs} onClick={() => navigate("/pro/ajouter-service", { state: { editService: service } })} />;
+                  return <ImageSlider images={imgs} onClick={() => navigate(`/service/${service.id}`, { state: { service } })} />;
                 })()}
                 {isDraft && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -356,7 +359,7 @@ export default function CatalogueServices() {
               </div>
               <div className="p-4">
                 <div className="flex items-start justify-between gap-3 mb-2">
-                  <h3 onClick={() => navigate("/pro/ajouter-service", { state: { editService: service } })}
+                  <h3 onClick={() => navigate(`/service/${service.id}`, { state: { service } })}
                     className={`text-[22px] font-black leading-tight flex-1 cursor-pointer active:opacity-70 ${isActive ? "text-gray-900" : "text-gray-400"}`}>{service.title}</h3>
                   <div className="flex items-center gap-2 mt-1 shrink-0">
                     <button onClick={() => toggleActive(service.id)}
@@ -371,7 +374,7 @@ export default function CatalogueServices() {
                 {service.description && (
                   <p className={`text-[12px] font-medium leading-snug mb-4 ${isActive ? "text-gray-400" : "text-gray-300"}`}>{service.description}</p>
                 )}
-                <div className="flex items-end gap-6 mb-3">
+                <div onClick={() => navigate(`/service/${service.id}`, { state: { service } })} className="flex items-end gap-6 mb-3 cursor-pointer active:opacity-80">
                   <div>
                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Durée</p>
                     <p className={`text-[18px] font-black leading-none ${isActive ? "text-gray-900" : "text-gray-400"}`}>{service.duration || service.duration_min || 60}</p>
