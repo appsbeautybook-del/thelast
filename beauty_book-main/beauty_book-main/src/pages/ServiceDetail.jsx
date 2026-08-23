@@ -1058,8 +1058,8 @@ export default function ServiceDetail() {
         <ImageLightbox images={media} initialIndex={lightboxIdx} onClose={() => setLightboxIdx(null)} />
       )}
 
-      {/* ── Sticky CTA ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+      {/* ── Sticky CTA (positioned at bottom-[70px] above bottom navigation bar) ── */}
+      <div className="fixed bottom-[70px] left-0 right-0 z-[90] bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <button
           onClick={() => navigate("/reservation", { state: { service: { ...s, price: total, addons: selectedAddons, pro_name: proData?.salon_name, pro_avatar: proData?.avatar_url, pro_city: proData?.city } } })}
           className="w-full relative overflow-hidden rounded-3xl active:scale-[0.98] transition-all shadow-2xl shadow-primary/40"

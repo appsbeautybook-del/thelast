@@ -999,7 +999,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               icon: MessageCircle, label: "MESSAGE", color: "text-blue-500", bg: "bg-blue-50",
               action: () => navigate(`/messages?to=${targetEmail}&name=${encodeURIComponent(proInfo?.salon_name || targetEmail)}`)
             },
-            { icon: Calendar, label: "RÉSERVER", color: "text-green-500", bg: "bg-green-50", action: () => navigate("/reservation") },
+            { icon: Calendar, label: "RÉSERVER", color: "text-green-500", bg: "bg-green-50", action: () => navigate("/reservation", { state: { proEmail: targetEmail, services: services.length > 0 ? [services[0]] : [] } }) },
             { icon: MapPin, label: "CARTE", color: "text-violet-500", bg: "bg-violet-50", action: () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(proAddress)}`, "_blank") },
           ].map(({ icon: Icon, label, color, bg, action }) => (
             <button key={label} onClick={action} className="flex flex-col items-center gap-1.5 active:scale-95 transition-all">
@@ -1357,7 +1357,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                 <div key={s.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100">
                   <ServiceSlider
                     service={s}
-                    onCardClick={() => navigate(`/service/${s.id}`, { state: { id: s.id } })}
+                    onCardClick={() => navigate(`/service/${s.id}`, { state: { service: s, id: s.id } })}
                   />
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-1">
