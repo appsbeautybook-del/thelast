@@ -1205,7 +1205,7 @@ export default function Onboarding() {
       {step !== 0 && step !== 8 && (
         <button
           onClick={() => {
-            if (step === 1) setStep(0);
+            if (step === 1) navigate(-1);
             else if (step === 2) setStep(1);
             else if (step === 3) setStep(2);
           }}

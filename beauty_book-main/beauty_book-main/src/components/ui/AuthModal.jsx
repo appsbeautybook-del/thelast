@@ -75,7 +75,12 @@ export default function AuthModal({ open, onClose, message }) {
 
           {/* Créer un compte */}
           <button
-            onClick={() => { onClose(); navigate("/onboarding"); }}
+            onClick={() => {
+              onClose?.();
+              sessionStorage.removeItem("bb_signup_data");
+              sessionStorage.setItem("bb_from_login", "1");
+              navigate("/onboarding");
+            }}
             className="w-full py-3.5 mt-3 rounded-2xl font-black text-[12px] uppercase tracking-widest text-gray-500 active:scale-[0.98] transition-all border border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2"
           >
             <UserPlus className="w-4 h-4" />
