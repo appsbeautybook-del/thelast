@@ -67,7 +67,7 @@ export default function BundleGroupeDetail() {
       const matched = (allSvcs || []).filter(s => b.service_ids?.includes(s.id));
       setServices(matched);
       setProProfile(profils[0] || null);
-      setReviews((avisData || []).slice(0, 5));
+      setReviews(avisData || []);
       setSimilarBundles((allBundles || []).filter(x => x.id !== b.id).slice(0, 4));
     } catch {}
     setLoading(false);
@@ -95,13 +95,20 @@ export default function BundleGroupeDetail() {
 
   const proDisplayName = proProfile?.salon_name || (proProfile?.prenom ? `${proProfile.prenom} ${proProfile.nom || ''}`.trim() : proProfile?.nom) || proProfile?.name || "Salon Professionnel";
 
-  const goBundle = (b) => {
-    if (b.is_group) navigate("/bundle-groupe/" + b.id, { state: { bundle: b } });
-    else navigate("/bundle/" + b.id, { state: { bundle: b } });
+  const handleStartBooking = () => {
+    navigate("/reservation", {
+      state: {
+        services: services.length > 0 ? services.map(s => ({ ...s, persons: nbPers })) : [{ id: bundle.id, name: bundle.name, title: bundle.name, price: displayPrice, duration_min: totalDuration || 60, pro_email: bundle.pro_email, category: bundle.category || "Coiffure" }],
+        bundle,
+        nbPers,
+        proEmail: bundle.pro_email,
+        skipToStep1: true
+      }
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-display">
+    <div className="min-h-screen bg-[#FAFAFA] font-display pb-44">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl px-4 pt-12 pb-3 flex items-center gap-3 border-b border-gray-100">
         <button onClick={() => navigate(-1)} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
@@ -116,7 +123,7 @@ export default function BundleGroupeDetail() {
         </button>
       </div>
 
-      <div className="pb-40">
+      <div>
         {/* Hero section */}
         <div className="relative h-[320px] overflow-hidden">
           {bundle.image_url ? (
@@ -133,7 +140,7 @@ export default function BundleGroupeDetail() {
             </span>
           </div>
 
-          {/* Name & description (Clean hero title, no 'beauty book' overlay text) */}
+          {/* Name & description */}
           <div className="absolute bottom-6 left-5 right-5 z-10">
             <h2 className="text-[28px] font-black text-white leading-tight drop-shadow-md">{bundle.name}</h2>
             {bundle.description && <p className="text-[13px] text-white/90 mt-1 leading-relaxed drop-shadow">{bundle.description}</p>}
@@ -175,7 +182,7 @@ export default function BundleGroupeDetail() {
           </div>
         </div>
 
-        {/* Section PROFESSIONNEL (Displays Commercial Name, NOT email) */}
+        {/* Section PROFESSIONNEL */}
         <div className="mx-4 mt-5">
           <div className="bg-white rounded-2xl border border-gray-100 p-3.5 flex items-center gap-3 shadow-sm">
             <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-[#E8732A] to-[#E84466] shrink-0 flex items-center justify-center text-white font-black">
@@ -244,7 +251,7 @@ export default function BundleGroupeDetail() {
         <div className="px-4 mt-5">
           <h3 className="text-[16px] font-black text-gray-900 mb-3">Ce que comprend le bundle <span className="text-[13px] font-medium text-gray-400">(par personne)</span></h3>
           <div className="space-y-0 bg-white rounded-2xl border border-gray-100 px-3">
-            {services.map((s, i) => {
+            {services.map((s) => {
               const isExpanded = expandedSvc === s.id;
               const durMin = parseInt(s.duration || s.duration_min) || 60;
               const durH2 = Math.floor(durMin / 60);
@@ -314,17 +321,28 @@ export default function BundleGroupeDetail() {
           </div>
         </div>
 
-        {/* Avis clients section with service & image slider */}
-        {reviews.length > 0 && (
-          <div className="mx-4 mt-7">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[18px] font-black text-gray-900">Avis des clientes</h3>
-              <span className="text-[13px] text-gray-400 font-medium">{reviews.length} avis</span>
+        {/* Avis clients section — ALWAYS VISIBLE */}
+        <div className="mx-4 mt-7">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[18px] font-black text-gray-900">Avis des clientes</h3>
+            <span className="text-[13px] text-gray-400 font-medium">{reviews.length} avis</span>
+          </div>
+
+          {reviews.length === 0 ? (
+            <div className="bg-white rounded-[22px] border border-gray-100 p-6 text-center shadow-sm">
+              <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Star className="w-6 h-6 text-[#E8732A]" />
+              </div>
+              <p className="text-[14px] font-black text-gray-900 mb-1">Aucun avis pour le moment</p>
+              <p className="text-[12px] text-gray-400 font-medium max-w-xs mx-auto">
+                Soyez les premières à réserver ce bundle groupe et laisser votre avis !
+              </p>
             </div>
+          ) : (
             <div className="space-y-3.5">
               {reviews.map((r, i) => {
                 const assocService = servicesMap[r.service_id] || servicesMap[r.service_name] || services[0] || null;
-                const serviceTitle = r.service_name || assocService?.title || assocService?.name || "Prestation";
+                const serviceTitle = r.service_name || assocService?.title || assocService?.name || "Prestation générale";
                 const serviceImgs = assocService?.images?.length > 0 ? assocService.images : (assocService?.image_url ? [assocService.image_url] : []);
 
                 return (
@@ -349,7 +367,7 @@ export default function BundleGroupeDetail() {
                       </div>
                     </div>
                     {(r.comment || r.commentaire) && (
-                      <p className="text-[13px] text-gray-600 leading-relaxed">{r.comment || r.commentaire}</p>
+                      <p className="text-[13px] text-gray-600 leading-relaxed font-medium">{r.comment || r.commentaire}</p>
                     )}
                     <div className="mt-2 pt-2.5 border-t border-gray-100 bg-orange-50/40 rounded-xl p-2.5 space-y-2">
                       <div className="flex items-center gap-1.5 text-[11px] font-black text-gray-800">
@@ -362,8 +380,8 @@ export default function BundleGroupeDetail() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Bundles similaires */}
         {similarBundles.length > 0 && (
@@ -373,7 +391,7 @@ export default function BundleGroupeDetail() {
               {similarBundles.map((sb) => (
                 <button
                   key={sb.id}
-                  onClick={() => goBundle(sb)}
+                  onClick={() => navigate(`/bundle-groupe/${sb.id}`, { state: { bundle: sb } })}
                   className="snap-start shrink-0 w-[200px] bg-white rounded-[22px] border border-gray-100 overflow-hidden active:scale-[0.97] transition-all text-left shadow-sm"
                 >
                   <div className="h-[105px] overflow-hidden bg-gray-100 relative">
@@ -407,11 +425,13 @@ export default function BundleGroupeDetail() {
         )}
       </div>
 
-      {/* Fixed bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[120]" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
-        <button onClick={() => navigate(`/reservation?pro=${bundle.pro_email}&bundle=${bundle.id}`, { state: { services: services.map(s => ({ ...s, persons: nbPers })), bundle, nbPers } })}
+      {/* Fixed bottom CTA (positioned at bottom-[70px] above bottom navbar) */}
+      <div className="fixed bottom-[70px] left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[90] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <button
+          onClick={handleStartBooking}
           className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 30px rgba(232,115,42,0.35)" }}>
+          style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 25px rgba(232,115,42,0.35)" }}
+        >
           RÉSERVER CE BUNDLE POUR {nbPers} PERS. <ChevronRight className="w-5 h-5" />
         </button>
         <p className="text-center text-[10px] text-gray-400 mt-1.5 flex items-center justify-center gap-1 font-medium">

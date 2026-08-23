@@ -8,9 +8,7 @@ import { entities } from "@/api/entities";
 import { supabase } from "@/api/supabaseClient";
 
 function ServiceImageSlider({ images }) {
-  const [current, setCurrent] = useState(0);
   const validImages = (images || []).filter(Boolean);
-
   if (validImages.length === 0) return null;
 
   return (
@@ -71,7 +69,7 @@ export default function BundleDetail() {
       const matched = (allSvcs || []).filter(s => b.service_ids?.includes(s.id));
       setServices(matched);
       setProProfile(profils[0] || null);
-      setReviews((avisData || []).slice(0, 5));
+      setReviews(avisData || []);
       setSimilarBundles((allBundles || []).filter(x => x.id !== b.id).slice(0, 4));
     } catch (err) {
       console.error("BundleDetail load error:", err);
@@ -104,13 +102,19 @@ export default function BundleDetail() {
     return h > 0 ? `${h}h${rm > 0 ? String(rm).padStart(2, "0") : ""}` : `${rm} min`;
   };
 
-  const goBundle = (b) => {
-    if (b.is_group) navigate("/bundle-groupe/" + b.id, { state: { bundle: b } });
-    else navigate("/bundle/" + b.id, { state: { bundle: b } });
+  const handleStartBooking = () => {
+    navigate("/reservation", {
+      state: {
+        services: services.length > 0 ? services.map(s => ({ ...s, persons: 1 })) : [{ id: bundle.id, name: bundle.name, title: bundle.name, price: bundle.bundle_price, duration_min: totalDuration || 60, pro_email: bundle.pro_email, category: bundle.category || "Coiffure" }],
+        bundle,
+        proEmail: bundle.pro_email,
+        skipToStep1: true
+      }
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#FFF5F0] font-display">
+    <div className="min-h-screen bg-[#FFF5F0] font-display pb-44">
       {/* Hero Header */}
       <div className="relative h-[320px] overflow-hidden rounded-b-[32px]">
         {bundle.image_url ? (
@@ -137,7 +141,7 @@ export default function BundleDetail() {
           </div>
         </div>
 
-        {/* Hero Title (Clean, NO 'beauty book' overlay text) */}
+        {/* Hero Title (Clean, NO 'beauty book' text) */}
         <div className="absolute bottom-6 left-5 right-5 z-10">
           <span className="inline-block bg-[#E8732A] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider mb-2 shadow-sm">
             {bundle.bonus || (bundle.is_group ? "Bundle Groupe" : "Offre Spéciale ✨")}
@@ -153,7 +157,7 @@ export default function BundleDetail() {
         </div>
       </div>
 
-      <div className="pb-36">
+      <div>
         {/* Floating Stats Row */}
         <div className="mx-4 -mt-6 bg-white rounded-[24px] shadow-lg border border-gray-100 p-4 flex items-center justify-around relative z-10">
           <div className="text-center">
@@ -181,7 +185,7 @@ export default function BundleDetail() {
           </div>
         </div>
 
-        {/* Section PROFESSIONNEL (Displays Commercial Name, NOT email) */}
+        {/* Section PROFESSIONNEL (Commercial Name) */}
         <div className="mx-4 mt-6">
           <h3 className="text-[13px] text-gray-400 font-bold uppercase tracking-wider mb-3">Professionnel</h3>
           <button
@@ -291,17 +295,28 @@ export default function BundleDetail() {
           )}
         </div>
 
-        {/* Avis clients with associated service & service image slider */}
-        {reviews.length > 0 && (
-          <div className="mx-4 mt-7">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[18px] font-black text-gray-900">Avis des clientes</h3>
-              <span className="text-[13px] text-gray-400 font-medium">{reviews.length} avis</span>
+        {/* Avis clients section — ALWAYS VISIBLE */}
+        <div className="mx-4 mt-7">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[18px] font-black text-gray-900">Avis des clientes</h3>
+            <span className="text-[13px] text-gray-400 font-medium">{reviews.length} avis</span>
+          </div>
+
+          {reviews.length === 0 ? (
+            <div className="bg-white rounded-[22px] border border-gray-100 p-6 text-center shadow-sm">
+              <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Star className="w-6 h-6 text-[#E8732A]" />
+              </div>
+              <p className="text-[14px] font-black text-gray-900 mb-1">Aucun avis pour le moment</p>
+              <p className="text-[12px] text-gray-400 font-medium max-w-xs mx-auto">
+                Soyez la première personne à réserver ce bundle et partager votre expérience !
+              </p>
             </div>
+          ) : (
             <div className="space-y-3.5">
               {reviews.map((r, i) => {
                 const assocService = servicesMap[r.service_id] || servicesMap[r.service_name] || services[0] || null;
-                const serviceTitle = r.service_name || assocService?.title || assocService?.name || "Prestation";
+                const serviceTitle = r.service_name || assocService?.title || assocService?.name || "Prestation générale";
                 const serviceImgs = assocService?.images?.length > 0 ? assocService.images : (assocService?.image_url ? [assocService.image_url] : []);
 
                 return (
@@ -332,7 +347,7 @@ export default function BundleDetail() {
                     </div>
 
                     {(r.comment || r.commentaire) && (
-                      <p className="text-[13px] text-gray-600 leading-relaxed">{r.comment || r.commentaire}</p>
+                      <p className="text-[13px] text-gray-600 leading-relaxed font-medium">{r.comment || r.commentaire}</p>
                     )}
 
                     {/* Associated service line & image slider */}
@@ -349,8 +364,8 @@ export default function BundleDetail() {
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Bundles similaires */}
         {similarBundles.length > 0 && (
@@ -360,7 +375,7 @@ export default function BundleDetail() {
               {similarBundles.map((sb) => (
                 <button
                   key={sb.id}
-                  onClick={() => goBundle(sb)}
+                  onClick={() => navigate(`/bundle/${sb.id}`, { state: { bundle: sb } })}
                   className="snap-start shrink-0 w-[200px] bg-white rounded-[22px] border border-gray-100 overflow-hidden active:scale-[0.97] transition-all text-left shadow-sm"
                 >
                   <div className="h-[105px] overflow-hidden bg-gray-100 relative">
@@ -394,12 +409,12 @@ export default function BundleDetail() {
         )}
       </div>
 
-      {/* Fixed bottom CTA (Clean French, correct accents) */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[100]" style={{ paddingBottom: "calc(12px + env(safe-area-inset-bottom, 0px))" }}>
+      {/* Fixed bottom CTA (positioned at bottom-[70px] to sit right above bottom navigation bar) */}
+      <div className="fixed bottom-[70px] left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[90] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <button
-          onClick={() => navigate("/reservation?pro=" + bundle.pro_email + "&bundle=" + bundle.id, { state: { services: services.map(s => ({ ...s, persons: 1 })), bundle } })}
+          onClick={handleStartBooking}
           className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 30px rgba(232,115,42,0.35)" }}
+          style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 25px rgba(232,115,42,0.35)" }}
         >
           <Calendar className="w-5 h-5" /> RÉSERVER CE BUNDLE
         </button>

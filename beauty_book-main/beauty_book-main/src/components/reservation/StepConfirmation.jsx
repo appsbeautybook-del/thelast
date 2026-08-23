@@ -812,7 +812,24 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
               </p>
             </div>
           </div>
-        </div>
+        {/* 📋 Caractéristiques & Réponses aux questions */}
+        {booking.customAnswers && Object.keys(booking.customAnswers).length > 0 && (
+          <div className="bg-orange-50/80 border border-orange-200/70 rounded-3xl p-4.5 space-y-2.5">
+            <div className="flex items-center gap-2 text-[#E8732A] font-black text-[12px] uppercase tracking-wider">
+              <span>📋</span> Caractéristiques & Réponses aux questions
+            </div>
+            <div className="grid grid-cols-1 gap-2 pt-1">
+              {Object.entries(booking.customAnswers).map(([questionText, answerVal]) => (
+                answerVal ? (
+                  <div key={questionText} className="bg-white rounded-2xl p-3 border border-orange-100/80 shadow-2xs">
+                    <p className="text-[11px] font-bold text-gray-500">{questionText}</p>
+                    <p className="text-[13px] font-black text-gray-900 mt-0.5">{Array.isArray(answerVal) ? answerVal.join(", ") : answerVal}</p>
+                  </div>
+                ) : null
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Commentaire client */}
         <div className="bg-white border border-gray-100 rounded-3xl p-5">
