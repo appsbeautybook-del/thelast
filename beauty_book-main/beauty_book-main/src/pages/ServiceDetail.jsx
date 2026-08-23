@@ -86,7 +86,7 @@ function ScrollToTopButton({ containerRef }) {
   if (!visible) return null;
   return (
     <button onClick={() => { const el = containerRef?.current || window; el === window ? window.scrollTo({ top: 0, behavior: "smooth" }) : el.scrollTo({ top: 0, behavior: "smooth" }); }}
-      className="fixed bottom-24 right-4 z-40 w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-xl shadow-primary/40 active:scale-90 transition-all">
+      className="fixed bottom-36 right-4 z-40 w-12 h-12 bg-primary rounded-full flex items-center justify-center shadow-xl shadow-primary/40 active:scale-90 transition-all">
       <ArrowUp className="w-5 h-5 text-white" />
     </button>
   );
@@ -371,7 +371,7 @@ export default function ServiceDetail() {
   }
 
   return (
-    <div ref={scrollRef} className="font-display bg-white min-h-full pb-28">
+    <div ref={scrollRef} className="font-display bg-white min-h-full pb-32">
 
       {/* ── Sticky top bar ── */}
       <div className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm">
@@ -1058,8 +1058,8 @@ export default function ServiceDetail() {
         <ImageLightbox images={media} initialIndex={lightboxIdx} onClose={() => setLightboxIdx(null)} />
       )}
 
-      {/* ── Sticky CTA (positioned above bottom navigation bar) ── */}
-      <div className="fixed bottom-20 left-0 right-0 z-[90] bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      {/* ── Sticky CTA (positioned above bottom navigation bar — nav is 68px + safe-area) ── */}
+      <div className="fixed bottom-28 left-0 right-0 z-[90] bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <button
           onClick={() => navigate("/reservation", { state: { service: { ...s, price: total, addons: selectedAddons, pro_name: proData?.salon_name, pro_avatar: proData?.avatar_url, pro_city: proData?.city } } })}
           className="w-full relative overflow-hidden rounded-3xl active:scale-[0.98] transition-all shadow-2xl shadow-primary/40"

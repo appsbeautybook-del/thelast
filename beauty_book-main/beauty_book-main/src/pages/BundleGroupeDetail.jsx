@@ -52,7 +52,7 @@ export default function BundleGroupeDetail() {
       const [allSvcs, profils, avisData, allBundles] = await Promise.all([
         entities.Service.filter({}, "-created_at", 500).catch(() => []),
         entities.ProfilPro.filter({ user_email: b.pro_email }, "-created_at", 1).catch(() => []),
-        entities.Avis.filter({ pro_email: b.pro_email }, "-created_at", 20).catch(() => []),
+        entities.Avis.filter({ cible_email: b.pro_email, type: "client_to_pro" }, "-created_at", 20).catch(() => []),
         entities.ServiceBundle.filter({ is_active: true, pro_email: b.pro_email }, "-created_at", 10).catch(() => []),
       ]);
 
@@ -108,7 +108,7 @@ export default function BundleGroupeDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-display pb-44">
+    <div className="min-h-screen bg-[#FAFAFA] font-display pb-48">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl px-4 pt-12 pb-3 flex items-center gap-3 border-b border-gray-100">
         <button onClick={() => navigate(-1)} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
@@ -425,8 +425,8 @@ export default function BundleGroupeDetail() {
         )}
       </div>
 
-      {/* Fixed bottom CTA (positioned at bottom-[70px] above bottom navbar) */}
-      <div className="fixed bottom-[70px] left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[90] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      {/* Fixed bottom CTA (positioned above bottom navigation bar — nav is 68px + safe-area) */}
+      <div className="fixed bottom-28 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[90] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <button
           onClick={handleStartBooking}
           className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
