@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Eye, EyeOff, Camera, RotateCcw, Check } from "lucide-react";
+import { Eye, EyeOff, Camera, RotateCcw, Check, ArrowLeft } from "lucide-react";
 import { entities, uploadFile } from '@/api/entities';
 import { useAuth } from "@/lib/AuthContext";
 import { apiClient } from "@/lib/apiClient";
@@ -1198,12 +1198,22 @@ export default function Onboarding() {
       {step === 0 && <StepSplash onNext={() => setStep(1)} onDiscover={done} />}
       {step === 1 && <StepSignup onNext={handleSignupNext} onBack={() => setStep(0)} />}
       {step === 2 && <StepVerification onNext={() => setStep(3)} onBack={() => setStep(1)} />}
-      {step === 3 && <StepBeautyProfile onNext={() => setStep(4)} onBack={() => setStep(2)} />}
-      {step === 4 && <StepPhoto onNext={() => setStep(5)} onBack={() => setStep(3)} />}
-      {step === 5 && <StepNotifications onNext={() => setStep(6)} onBack={() => setStep(4)} />}
-      {step === 6 && <StepLocation onNext={() => setStep(7)} onBack={() => setStep(5)} />}
-      {step === 7 && <StepCameraMic onNext={() => setStep(8)} onBack={() => setStep(6)} />}
+      {step === 3 && <StepBeautyProfile onNext={done} onBack={() => setStep(2)} />}
       {step === 8 && <StepSuccess onDone={done} />}
+
+      {/* Floating back button — hidden on splash (step 0) and success (step 8) */}
+      {step !== 0 && step !== 8 && (
+        <button
+          onClick={() => {
+            if (step === 1) setStep(0);
+            else if (step === 2) setStep(1);
+            else if (step === 3) setStep(2);
+          }}
+          className="fixed bottom-6 left-6 w-11 h-11 bg-gray-900 rounded-full flex items-center justify-center shadow-lg shadow-black/20 active:scale-90 transition-all z-50"
+        >
+          <ArrowLeft className="w-5 h-5 text-white" />
+        </button>
+      )}
     </div>
   );
 }

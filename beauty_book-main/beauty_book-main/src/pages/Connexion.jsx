@@ -510,25 +510,6 @@ export default function Connexion() {
           {error && (
             <div>
               <p className="text-[12px] text-red-500 font-medium">{error}</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-                {emailNotConfirmed && (
-                  <button
-                    onClick={handleResendConfirmation}
-                    disabled={resending}
-                    className="text-[12px] font-black underline active:scale-95 transition-all"
-                    style={{ color: "#E8732A" }}
-                  >
-                    {resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowForgot(true)}
-                  className="text-[12px] font-black underline active:scale-95 transition-all"
-                  style={{ color: "#E8732A" }}
-                >
-                  Réinitialiser le mot de passe
-                </button>
-              </div>
             </div>
           )}
         </div>
@@ -556,6 +537,14 @@ export default function Connexion() {
           </p>
         </div>
       </div>
+
+      {/* Floating back button */}
+      <button
+        onClick={() => navigate(-1)}
+        className="fixed bottom-6 left-6 w-11 h-11 bg-gray-900 rounded-full flex items-center justify-center shadow-lg shadow-black/20 active:scale-90 transition-all z-50"
+      >
+        <ArrowLeft className="w-5 h-5 text-white" />
+      </button>
     </div>
   );
 }
