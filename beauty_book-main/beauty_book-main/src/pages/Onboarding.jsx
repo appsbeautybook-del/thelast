@@ -1198,7 +1198,8 @@ export default function Onboarding() {
       {step === 0 && <StepSplash onNext={() => setStep(1)} onDiscover={done} />}
       {step === 1 && <StepSignup onNext={handleSignupNext} onBack={() => setStep(0)} />}
       {step === 2 && <StepVerification onNext={() => setStep(3)} onBack={() => setStep(1)} />}
-      {step === 3 && <StepBeautyProfile onNext={done} onBack={() => setStep(2)} />}
+      {step === 3 && <StepBeautyProfile onNext={() => setStep(4)} onBack={() => setStep(2)} />}
+      {step === 4 && <StepPhoto onNext={done} onBack={() => setStep(3)} />}
       {step === 8 && <StepSuccess onDone={done} />}
 
       {/* Floating back button — hidden on splash (step 0) and success (step 8) */}
@@ -1208,6 +1209,7 @@ export default function Onboarding() {
             if (step === 1) navigate(-1);
             else if (step === 2) setStep(1);
             else if (step === 3) setStep(2);
+            else if (step === 4) setStep(3);
           }}
           className="fixed bottom-6 left-6 w-11 h-11 bg-gray-900 rounded-full flex items-center justify-center shadow-lg shadow-black/20 active:scale-90 transition-all z-50"
         >
