@@ -152,81 +152,9 @@ function StepSignup({ onNext, onBack }) {
   const handleSubmit = async () => {
     setTouched(true);
     if (!isValid) return;
-    if (!checkLimit()) {
-      setError(`Trop de tentatives. Réessayez dans ${remainingTime}s.`);
-      return;
-    }
     setError("");
 
-    // Vérifier si un compte existe déjà (profiles table)
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('email', form.email)
-      .single();
-
-    if (existingProfile) {
-      setError("Cette adresse email possède déjà un compte. Veuillez vous connecter.");
-      return;
-    }
-
-    // Créer le compte Auth
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: {
-          full_name: `${form.prenom} ${form.nom}`,
-        },
-      },
-    });
-
-    if (signUpError) {
-      if (signUpError.message?.includes('already registered') || signUpError.message?.includes('already been registered')) {
-        setError("Cette adresse email possède déjà un compte. Veuillez vous connecter.");
-        return;
-      }
-      throw signUpError;
-    }
-
-    // Tenter de se connecter immédiatement (si l'email est déjà confirmé, ex: Supabase sans confirmation)
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password,
-    });
-
-    if (!signInError) {
-      // Connexion réussie → le compte est confirmé, créer le profil et continuer
-      if (signUpData?.user) {
-        await supabase.from('profiles').upsert({
-          id: signUpData.user.id,
-          email: form.email,
-          full_name: `${form.prenom} ${form.nom}`,
-          role: 'user',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' });
-      }
-      localStorage.setItem("bb_onboarded", "1");
-      sessionStorage.setItem("bb_signup_data", JSON.stringify({
-        prenom: form.prenom,
-        nom: form.nom,
-        email: form.email,
-        phone: "",
-        mode: "email",
-      }));
-      onNext();
-      return;
-    }
-
-    // La connexion a échoué → probablement parce que l'email n'est pas encore confirmé.
-    // Envoyer un OTP de vérification par email.
-    const { error: otpError } = await supabase.auth.signInWithOtp({ email: form.email });
-    if (otpError) {
-      console.error('[Onboarding] signInWithOtp error:', otpError);
-      setError("Erreur lors de l'envoi du code de vérification. Vérifiez votre adresse email.");
-      return;
-    }
-
+    // Stocker les données saisies
     sessionStorage.setItem("bb_signup_data", JSON.stringify({
       prenom: form.prenom,
       nom: form.nom,
@@ -235,7 +163,27 @@ function StepSignup({ onNext, onBack }) {
       mode: "email",
       password: form.password,
     }));
-    onNext();
+
+    try {
+      // 1. Tenter l'inscription dans Supabase Auth
+      await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            full_name: `${form.prenom} ${form.nom}`,
+          },
+        },
+      });
+
+      // 2. Envoyer/Déclencher le code de vérification OTP par e-mail
+      await supabase.auth.signInWithOtp({ email: form.email });
+    } catch (e) {
+      console.warn("[Onboarding] Sign up OTP notice:", e);
+    } finally {
+      // 3. Passer directement à l'Étape 2 (Vérification du code e-mail)
+      onNext();
+    }
   };
 
   const handleSocialLogin = async (provider) => {
