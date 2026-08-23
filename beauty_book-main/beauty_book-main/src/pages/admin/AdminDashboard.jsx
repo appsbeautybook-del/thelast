@@ -28,61 +28,62 @@ import {
   LayoutDashboard, Video, Users, Scissors, ShoppingBag,
   CalendarCheck, Megaphone, LogOut, Menu, X, PlusSquare,
   Radio, Palette, UserCheck, Bell, Star, Home, ChevronRight,
-  BookOpen, Truck, Building2, Compass, Store, ShoppingBasket, CreditCard, Type, MessageSquare, Gift
+  BookOpen, Truck, Building2, Compass, Store, ShoppingBasket, CreditCard, Type, MessageSquare, Gift,
+  Search, ShieldAlert, Sparkles
 } from "lucide-react";
 
 const NAV_GROUPS = [
   {
     label: "Vue d'ensemble",
     items: [
-      { id: "stats", label: "Tableau de bord", icon: LayoutDashboard },
+      { id: "stats", label: "Tableau de bord & KPIs", icon: LayoutDashboard },
     ]
   },
   {
-    label: "Contenu",
+    label: "Membres & Acteurs",
     items: [
-      { id: "home", label: "Page d'accueil", icon: Home },
-      { id: "styles", label: "Styles", icon: Palette },
-      { id: "publications", label: "Publications", icon: PlusSquare },
+      { id: "users", label: "Clients & Comptes", icon: Users },
+      { id: "pros", label: "Professionnels (Salons & Indép.)", icon: UserCheck, badge: true },
+      { id: "avis", label: "Avis & Commentaires", icon: Star },
+      { id: "messages", label: "Messages & Support", icon: MessageSquare, badge: true },
+      { id: "notifications", label: "Push & Notifications", icon: Bell },
+    ]
+  },
+  {
+    label: "Contenu & Modération",
+    items: [
+      { id: "home", label: "Page d'accueil App", icon: Home },
+      { id: "styles", label: "Styles & Tendances", icon: Palette },
+      { id: "publications", label: "Publications & Posts", icon: PlusSquare },
       { id: "reels", label: "Modération Réels", icon: Video },
       { id: "lives", label: "Lives / Directs", icon: Radio },
-      { id: "annonces", label: "Annonces pub", icon: Megaphone },
-      { id: "explorer", label: "Explorer (Styles)", icon: Compass },
+      { id: "annonces", label: "Bannières & Pubs", icon: Megaphone },
+      { id: "explorer", label: "Explorer (Section)", icon: Compass },
     ]
   },
   {
-    label: "Utilisateurs",
+    label: "Services & Business",
     items: [
-      { id: "users", label: "Utilisateurs", icon: Users },
-      { id: "pros", label: "Demandes Pros", icon: UserCheck, badge: true },
-      { id: "avis", label: "Avis & Commentaires", icon: Star },
-      { id: "messages", label: "Messages", icon: MessageSquare, badge: true },
-      { id: "notifications", label: "Notifications", icon: Bell },
-    ]
-  },
-  {
-    label: "Business",
-    items: [
-      { id: "services", label: "Services", icon: Scissors },
-      { id: "commandes", label: "Commandes", icon: ShoppingBag },
-      { id: "reservations", label: "Réservations", icon: CalendarCheck },
-      { id: "boutique", label: "Boutique Produits", icon: ShoppingBasket },
+      { id: "services", label: "Catalogue Services", icon: Scissors },
+      { id: "commandes", label: "Commandes Produits", icon: ShoppingBag },
+      { id: "reservations", label: "Réservations RDV", icon: CalendarCheck },
+      { id: "boutique", label: "Boutique Officielle", icon: ShoppingBasket },
       { id: "livraison_express", label: "Livraison Express", icon: Truck },
-      { id: "immobilier", label: "Immobilier", icon: Building2 },
-      { id: "vendeurs", label: "Panneau Vendeurs", icon: Store },
+      { id: "immobilier", label: "Espaces & Immobilier", icon: Building2 },
+      { id: "vendeurs", label: "Espace Vendeurs", icon: Store },
     ]
   },
   {
-    label: "Fidélité",
+    label: "Fidélité & Récompenses",
     items: [
       { id: "fidelite", label: "Programme Fidélité", icon: Gift },
     ]
   },
   {
-    label: "Paramètres",
+    label: "Configuration",
     items: [
-      { id: "paiement", label: "Paiement & Abonnements", icon: CreditCard },
-      { id: "appearance", label: "Police & Icônes", icon: Type },
+      { id: "paiement", label: "Paiements & Abonnements", icon: CreditCard },
+      { id: "appearance", label: "Thème & Apparence", icon: Type },
     ]
   },
 ];
@@ -116,18 +117,20 @@ const COMPONENTS = {
 };
 
 const TAB_DESCRIPTIONS = {
-  stats: "Vue d'ensemble de la plateforme BeautyBook",
-  home: "Personnalisez le contenu de votre page d'accueil",
-  styles: "Gérez les styles publiés sur Services & Salons",
-  pros: "Approuvez ou rejetez les demandes de profils professionnels",
-  notifications: "Envoyez des notifications push à vos utilisateurs",
-  avis: "Modérez les avis et commentaires de la plateforme",
+  stats: "Performances en temps réel, indicateurs clés et gestion des utilisateurs",
+  home: "Personnalisez et agencez la page d'accueil mobile",
+  styles: "Gérez les styles et les catalogues de tendances",
+  pros: "Validation des profils professionnels (salons & particuliers)",
+  users: "Consultez et gérez la base d'utilisateurs et clients",
+  notifications: "Diffusion de notifications push ciblées",
+  avis: "Modération et contrôle qualité des commentaires clients",
 };
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("stats");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [filterSearch, setFilterSearch] = useState("");
 
   const handleLogout = () => {
     sessionStorage.removeItem("bb_admin_auth");
@@ -136,7 +139,15 @@ export default function AdminDashboard() {
   };
 
   const ActiveComponent = COMPONENTS[activeTab] || AdminStats;
-  const activeLabel = ALL_TABS.find(t => t.id === activeTab)?.label || "";
+  const activeLabel = ALL_TABS.find(t => t.id === activeTab)?.label || "Tableau de bord";
+
+  // Filter navigation items if search is entered
+  const filteredGroups = NAV_GROUPS.map(group => ({
+    ...group,
+    items: group.items.filter(item =>
+      !filterSearch || item.label.toLowerCase().includes(filterSearch.toLowerCase())
+    )
+  })).filter(group => group.items.length > 0);
 
   return (
     <AdminGuard>
@@ -144,129 +155,146 @@ export default function AdminDashboard() {
 
         {/* Sidebar overlay (mobile) */}
         {sidebarOpen && (
-          <div className="fixed inset-0 bg-black/40 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
         )}
 
         {/* ── Sidebar ── */}
-        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 flex flex-col transition-transform duration-300 shadow-xl lg:shadow-none
+        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white border-r border-slate-800 flex flex-col transition-transform duration-300 shadow-2xl lg:shadow-none
           lg:translate-x-0 lg:static lg:z-auto
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}>
 
           {/* Logo */}
-          <div className="px-5 py-5 border-b border-gray-200 flex items-center justify-between">
+          <div className="px-5 py-5 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center shadow-md shadow-primary/30">
-                <span className="text-white text-[15px] font-black">B</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-gray-900 text-[15px] font-black leading-tight">BeautyBook</h1>
-                <p className="text-gray-400 text-[10px] font-medium">Admin Panel</p>
+                <h1 className="text-white text-[16px] font-black leading-tight tracking-tight">BeautyBook</h1>
+                <p className="text-orange-400 text-[10px] font-bold uppercase tracking-widest">Admin Control</p>
               </div>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-gray-600">
+            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Search bar */}
-          <div className="px-4 py-3 border-b border-gray-100">
-            <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
-              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span className="text-gray-400 text-[12px]">Rechercher...</span>
+          <div className="px-4 py-3 border-b border-slate-800/80">
+            <div className="flex items-center gap-2 bg-slate-800/80 rounded-xl px-3 py-2 border border-slate-700/50 focus-within:border-orange-500 transition-colors">
+              <Search className="w-3.5 h-3.5 text-slate-400" />
+              <input
+                value={filterSearch}
+                onChange={e => setFilterSearch(e.target.value)}
+                placeholder="Filtrer les modules..."
+                className="w-full bg-transparent text-white text-[12px] outline-none placeholder:text-slate-500 font-medium"
+              />
             </div>
           </div>
 
           {/* Nav groupée */}
-          <nav className="flex-1 overflow-y-auto py-3">
-            {NAV_GROUPS.map(group => (
-              <div key={group.label} className="mb-1">
-                <p className="px-5 py-1.5 text-[10px] font-black text-gray-400 uppercase tracking-widest">{group.label}</p>
-                {group.items.map(({ id, label, icon: Icon, badge }) => (
-                  <button
-                    key={id}
-                    onClick={() => { setActiveTab(id); setSidebarOpen(false); }}
-                    className={`w-[calc(100%-8px)] mx-1 flex items-center gap-3 px-4 py-2.5 rounded-xl text-[13px] font-semibold transition-all group ${
-                      activeTab === id
-                        ? "bg-primary/10 text-primary font-black"
-                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 shrink-0 ${activeTab === id ? "text-primary" : "text-gray-400 group-hover:text-gray-600"}`} />
-                    <span className="flex-1 text-left">{label}</span>
-                    {badge && activeTab !== id && (
-                      <span className="w-2 h-2 bg-amber-400 rounded-full shrink-0" />
-                    )}
-                    {activeTab === id && <ChevronRight className="w-3.5 h-3.5 text-primary" />}
-                  </button>
-                ))}
+          <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-4 hide-scrollbar">
+            {filteredGroups.map(group => (
+              <div key={group.label}>
+                <p className="px-3 py-1 text-[9px] font-black text-slate-400 uppercase tracking-widest">{group.label}</p>
+                <div className="space-y-0.5 mt-1">
+                  {group.items.map(({ id, label, icon: Icon, badge }) => {
+                    const isActive = activeTab === id;
+                    return (
+                      <button
+                        key={id}
+                        onClick={() => { setActiveTab(id); setSidebarOpen(false); }}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12.5px] font-bold transition-all ${
+                          isActive
+                            ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20"
+                            : "text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-white" : "text-slate-400"}`} />
+                        <span className="flex-1 text-left truncate">{label}</span>
+                        {badge && !isActive && (
+                          <span className="w-2 h-2 bg-amber-400 rounded-full shrink-0 animate-pulse" />
+                        )}
+                        {isActive && <ChevronRight className="w-3.5 h-3.5 text-white shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ))}
           </nav>
 
-          {/* User + Logout */}
-          <div className="px-4 py-4 border-t border-gray-200">
-            <div className="flex items-center gap-3 mb-3 px-2">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-[12px] font-black shrink-0">B</div>
+          {/* Footer User + Logout */}
+          <div className="p-4 border-t border-slate-800 bg-slate-950/40">
+            <div className="flex items-center gap-3 mb-3 px-1">
+              <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full flex items-center justify-center text-white text-[13px] font-black shrink-0 shadow-sm">
+                BB
+              </div>
               <div className="flex-1 min-w-0">
-                <p className="text-gray-900 text-[12px] font-black truncate">Admin BeautyBook</p>
-                <p className="text-gray-400 text-[10px]">Super Admin</p>
+                <p className="text-white text-[12px] font-black truncate">BeautyBook Admin</p>
+                <p className="text-slate-400 text-[10px] truncate">superadmin@beautybook.fr</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] font-bold text-red-500 hover:bg-red-50 transition-all"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[12px] font-bold text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all border border-red-500/20"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
               Déconnexion
             </button>
           </div>
         </aside>
 
-        {/* ── Main ── */}
+        {/* ── Main Content ── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
           {/* Topbar */}
-          <header className="bg-white border-b border-gray-200 px-4 py-3.5 flex items-center justify-between lg:px-6 shrink-0">
+          <header className="bg-white border-b border-gray-200 px-4 py-3.5 flex items-center justify-between lg:px-6 shrink-0 shadow-xs">
             <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-gray-700 p-1">
+              <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100">
                 <Menu className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-2 text-[13px]">
-                <span className="text-gray-400 font-medium hidden sm:block">Tableau de bord</span>
+                <span className="text-gray-400 font-semibold hidden sm:block">Panneau d'administration</span>
                 <span className="text-gray-300 hidden sm:block">/</span>
                 <span className="text-gray-900 font-black">{activeLabel}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => window.open("/", "_blank")}
-                className="hidden sm:flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-2 text-[12px] font-semibold text-gray-600 hover:bg-gray-50 transition-all shadow-sm"
+                className="hidden sm:flex items-center gap-1.5 bg-gray-900 text-white rounded-xl px-3.5 py-2 text-[12px] font-bold hover:bg-gray-800 transition-all shadow-sm active:scale-95"
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                Ouvrir l'app
+                Ouvrir l'application
               </button>
               <button
                 onClick={() => setActiveTab("notifications")}
-                className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-all"
+                className="w-9 h-9 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-all relative"
               >
                 <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-orange-500 rounded-full" />
               </button>
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-[12px] font-black">B</div>
+              <div className="w-9 h-9 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl flex items-center justify-center text-white text-[13px] font-black shadow-sm">
+                BB
+              </div>
             </div>
           </header>
 
-          {/* Page title bar */}
+          {/* Header title bar */}
           <div className="bg-white border-b border-gray-100 px-4 py-4 lg:px-6 shrink-0">
-            <h1 className="text-gray-900 text-[20px] font-black">{activeLabel}</h1>
-            {TAB_DESCRIPTIONS[activeTab] && (
-              <p className="text-gray-400 text-[12px] mt-0.5">{TAB_DESCRIPTIONS[activeTab]}</p>
-            )}
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-gray-900 text-[22px] font-black tracking-tight">{activeLabel}</h1>
+                {TAB_DESCRIPTIONS[activeTab] && (
+                  <p className="text-gray-400 text-[12px] font-medium mt-0.5">{TAB_DESCRIPTIONS[activeTab]}</p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Content */}
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-gray-50">
+          {/* Main workspace */}
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-[#f8f9fa]">
             <ActiveComponent />
           </main>
         </div>
