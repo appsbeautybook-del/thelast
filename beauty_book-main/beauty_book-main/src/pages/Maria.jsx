@@ -367,6 +367,15 @@ export default function Maria() {
   const bottomRef = useRef(null);
   const typingIntervalRef = useRef(null);
 
+  // ── Vérifier l'auth au montage ──
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) {
+        requireAuth("Connectez-vous pour parler avec Maria AI.");
+      }
+    }).catch(() => requireAuth("Connectez-vous pour parler avec Maria AI."));
+  }, []);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
