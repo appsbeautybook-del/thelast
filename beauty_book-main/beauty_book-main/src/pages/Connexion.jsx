@@ -5,6 +5,7 @@ import { supabase } from "@/api/supabaseClient";
 import { useRateLimit } from "@/hooks/useRateLimit";
 
 const SPLASH_IMG = "https://media.base44.com/images/public/6a0ba7bd3d55dddeb85a8366/39cb4873a_generated_image.png";
+const LOGO_IMG = "https://media.base44.com/images/public/6a0ba7bd3d55dddeb85a8366/47f6dcd4b_generated_image.png";
 
 // ── Reset Password View ───────────────────────────────────────────────────────
 function ResetPassword({ onBack }) {
@@ -436,13 +437,10 @@ export default function Connexion() {
       <div className="relative h-52 shrink-0">
         <img src={SPLASH_IMG} alt="" className="w-full h-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(10,10,10,0.5) 0%, rgba(255,255,255,1) 100%)" }} />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pb-4">
-          <svg width="52" height="52" viewBox="0 0 72 72" fill="none">
-            <circle cx="36" cy="36" r="34" stroke="#E8732A" strokeWidth="2.5" fill="none" opacity="0.3"/>
-            <path d="M22 20h16c5.523 0 10 4.477 10 10s-4.477 10-10 10H22V20z" fill="#E8732A" opacity="0.85"/>
-            <path d="M22 40h18c5.523 0 10 4.477 10 10s-4.477 10-10 10H22V40z" fill="#E8732A"/>
-            <circle cx="52" cy="24" r="4" fill="white" opacity="0.9"/>
-          </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pb-4">
+          <div className="w-[72px] h-[72px] rounded-full flex items-center justify-center" style={{ background: "rgba(255,255,255,0.15)", border: "2.5px solid rgba(255,255,255,0.3)", backdropFilter: "blur(8px)" }}>
+            <img src={LOGO_IMG} alt="BeautyBook" className="w-[44px] h-[44px] object-contain" />
+          </div>
           <span className="text-white text-[16px] font-black uppercase tracking-[0.25em]" style={{ textShadow: "0 2px 16px rgba(232,115,42,0.9)" }}>BeautyBook</span>
         </div>
       </div>
