@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Star, X, Search, SlidersHorizontal, Bell, Navigation, Sparkles, XCircle, ChevronRight, Scissors, Waves, Diamond, PenTool, Droplets, Compass } from "lucide-react";
+import { MapPin, Star, X, Search, SlidersHorizontal, Bell, Sparkles, XCircle, Scissors, Waves, Diamond, PenTool, Droplets, Filter, ChevronRight, Flame, Zap } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -8,50 +8,15 @@ import { entities } from '@/api/entities';
 import { useLocation } from '@/contexts/LocationContext';
 
 const CATEGORIES = [
-  { id: "Tous", label: "TOUS", icon: "sun" },
-  { id: "Coiffure", label: "COIFFURE", icon: "scissors" },
-  { id: "Tresses", label: "TRESSES", icon: "waves" },
-  { id: "Ongles", label: "MANUCURE", icon: "diamond" },
-  { id: "Pedicure", label: "PÉDICURE", icon: "star" },
-  { id: "Maquillage", label: "MAQUILLAGE", icon: "pen" },
-  { id: "Soin", label: "SOIN VISAGE", icon: "droplet" },
-  { id: "Barbe", label: "BARBE", icon: "scissors" },
-  { id: "Massage", label: "MASSAGE", icon: "hand" },
+  { id: "Tous", label: "Tout", icon: "all", emoji: "✨" },
+  { id: "Coiffure", label: "Coiffure", icon: "scissors", emoji: "✂️" },
+  { id: "Tresses", label: "Tresses", icon: "waves", emoji: "🌊" },
+  { id: "Ongles", label: "Manucure", icon: "diamond", emoji: "💎" },
+  { id: "Pedicure", label: "Pédicure", icon: "star", emoji: "⭐" },
+  { id: "Maquillage", label: "Maquillage", icon: "pen", emoji: "💄" },
+  { id: "Soin", label: "Soin", icon: "droplet", emoji: "💧" },
+  { id: "Massage", label: "Massage", icon: "hand", emoji: "🤲" },
 ];
-
-function CategoryIcon({ icon, size = 20 }) {
-  const s = { width: size, height: size };
-  switch (icon) {
-    case "sun":
-      return (
-        <svg {...s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-        </svg>
-      );
-    case "scissors":
-      return <Scissors style={s} />;
-    case "waves":
-      return <Waves style={s} />;
-    case "diamond":
-      return <Diamond style={s} />;
-    case "star":
-      return <svg {...s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>;
-    case "pen":
-      return <PenTool style={s} />;
-    case "droplet":
-      return <Droplets style={s} />;
-    case "hand":
-      return (
-        <svg {...s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v6M10 10V6a2 2 0 0 0-4 0v8" />
-          <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" />
-        </svg>
-      );
-    default:
-      return <Sparkles style={s} />;
-  }
-}
 
 const FALLBACK_STYLES = [
   { id: "f1", title: "Havana Twists", category: "Coiffure", image_url: "https://images.unsplash.com/photo-1595959183082-7b570b7e1e2b?q=80&w=400" },
@@ -66,7 +31,7 @@ const userIcon = typeof L !== "undefined" ? L.divIcon({
   className: "",
   iconSize: [28, 36],
   iconAnchor: [14, 32],
-  html: `<div style="position:relative;width:28px;height:36px"><div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:#4285F4;border:3px solid white;box-shadow:0 0 0 3px rgba(66,133,244,0.3),0 2px 8px rgba(0,0,0,0.3)"></div><div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #4285F4"></div></div>`,
+  html: `<div style="position:relative;width:28px;height:36px"><div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:#E8732A;border:3px solid white;box-shadow:0 0 0 3px rgba(232,115,42,0.4),0 2px 8px rgba(0,0,0,0.3)"></div><div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #E8732A"></div></div>`,
 }) : null;
 
 function FlyToLocation({ center }) {
@@ -83,11 +48,9 @@ export default function Explorer() {
   const [profils, setProfils] = useState([]);
   const [minPricesMap, setMinPricesMap] = useState({});
   const [styles, setStyles] = useState([]);
-  const [selected, setSelected] = useState(null);
   const [activeCategory, setActiveCategory] = useState("Tous");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
@@ -161,171 +124,257 @@ export default function Explorer() {
 
   if (loading) {
     return (
-      <div className="font-display h-full bg-[#faf9f7] flex flex-col items-center justify-center">
+      <div className="font-display h-full flex flex-col items-center justify-center" style={{ background: "linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%)" }}>
         <div className="relative mb-5">
-          <div className="w-16 h-16 border-[3px] border-primary/15 rounded-full animate-spin" style={{ borderTopColor: "#E8732A" }} />
-          <Sparkles className="w-7 h-7 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          <div className="w-16 h-16 border-[3px] border-[#E8732A]/20 rounded-full animate-spin" style={{ borderTopColor: "#E8732A" }} />
+          <Sparkles className="w-7 h-7 text-[#E8732A] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
-        <p className="text-[13px] font-bold text-gray-400">Recherche en cours...</p>
+        <p className="text-[13px] font-bold text-white/40">Chargement...</p>
       </div>
     );
   }
 
   return (
-    <div className="font-display h-full bg-white flex flex-col overflow-hidden">
+    <div className="font-display h-full bg-[#f8f7f5] flex flex-col overflow-hidden">
 
-      {/* ── HEADER ── */}
-      <div className="bg-white px-5 pt-[env(safe-area-inset-top,12px)] flex-shrink-0">
-        <div className="flex items-center justify-between pt-4 pb-1">
+      {/* ── HERO HEADER ── */}
+      <div
+        className="flex-shrink-0 px-5 pt-[env(safe-area-inset-top,16px)]"
+        style={{ background: "linear-gradient(160deg, #111111 0%, #1e1e1e 60%, #2a1a0e 100%)" }}
+      >
+        {/* Top row */}
+        <div className="flex items-center justify-between pt-5 pb-4">
           <div>
-            <h1 className="text-[28px] font-black text-gray-900 tracking-tight leading-none uppercase">Explorer</h1>
-            <p className="text-[12px] font-bold text-primary mt-1 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 bg-primary rounded-full inline-block" />
+            <h1
+              className="text-[32px] font-black leading-none tracking-tight text-white"
+              style={{ letterSpacing: "-0.02em" }}
+            >
+              Explorer
+            </h1>
+            <p className="text-[11px] font-bold mt-1 flex items-center gap-1.5" style={{ color: "#E8732A" }}>
+              <span
+                className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
+                style={{ background: "#E8732A" }}
+              />
               VIVEZ L'EXPÉRIENCE BEAUTYBOOK
             </p>
           </div>
           <button
             onClick={() => navigate("/notifications")}
-            className="w-11 h-11 bg-gray-100 rounded-full flex items-center justify-center active:scale-95 transition-all"
+            className="w-11 h-11 rounded-2xl flex items-center justify-center active:scale-95 transition-all relative"
+            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}
           >
-            <Bell className="w-5 h-5 text-gray-600" />
+            <Bell className="w-5 h-5 text-white" />
           </button>
         </div>
 
-        {/* Search */}
-        <div className="flex items-center gap-3 mt-3 pb-3">
-          <div className="flex-1 flex items-center gap-2.5 bg-gray-100 rounded-xl px-4 py-3">
-            <Search className="w-[16px] h-[16px] text-gray-400 shrink-0" />
+        {/* Search Bar */}
+        <div className="flex items-center gap-2.5 mb-4">
+          <div
+            className="flex-1 flex items-center gap-2.5 px-4 py-3.5 rounded-2xl"
+            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+          >
+            <Search className="w-4 h-4 shrink-0" style={{ color: "rgba(255,255,255,0.4)" }} />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Salons, Styles, Services..."
-              className="flex-1 bg-transparent text-[14px] text-gray-700 outline-none placeholder:text-gray-400 font-medium"
+              className="flex-1 bg-transparent text-[14px] font-medium outline-none"
+              style={{ color: "white" }}
             />
             {search && (
               <button onClick={() => setSearch("")} className="shrink-0">
-                <XCircle className="w-[16px] h-[16px] text-gray-400" />
+                <XCircle className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
               </button>
             )}
           </div>
           <button
-            onClick={() => setShowMap(v => !v)}
-            className={`h-11 px-3 rounded-xl flex items-center gap-2 active:scale-95 transition-all shrink-0 font-black text-[12px] uppercase tracking-wide ${
-              showMap
-                ? "bg-primary text-white"
-                : "bg-gray-100 text-gray-600"
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            Carte
-          </button>
-          <button
             onClick={() => setShowFilters(true)}
-            className="w-11 h-11 bg-gray-900 rounded-xl flex items-center justify-center active:scale-95 transition-all shrink-0"
+            className="w-12 h-12 rounded-2xl flex items-center justify-center active:scale-95 transition-all shrink-0"
+            style={{ background: "#E8732A" }}
           >
             <SlidersHorizontal className="w-5 h-5 text-white" />
           </button>
         </div>
 
-        {/* Category Pills with Icons */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-3 -mx-5 px-5">
+        {/* Category Pills */}
+        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-4 -mx-5 px-5">
           {CATEGORIES.map(cat => {
             const isActive = activeCategory === cat.id;
             return (
               <button
                 key={cat.id}
-                onClick={() => { setActiveCategory(cat.id); setSelected(null); setExpanded(false); }}
-                className={`shrink-0 flex flex-col items-center gap-1.5 px-3 py-2 rounded-xl transition-all active:scale-95 min-w-[64px] ${
-                  isActive
-                    ? "bg-primary/10"
-                    : ""
-                }`}
+                onClick={() => setActiveCategory(cat.id)}
+                className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full transition-all active:scale-95"
+                style={{
+                  background: isActive ? "#E8732A" : "rgba(255,255,255,0.08)",
+                  border: isActive ? "none" : "1px solid rgba(255,255,255,0.1)",
+                }}
               >
-                <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-                  isActive
-                    ? "bg-primary text-white"
-                    : "bg-gray-100 text-gray-500"
-                }`}>
-                  <CategoryIcon icon={cat.icon} size={20} />
-                </div>
-                <span className={`text-[10px] font-black uppercase tracking-wide whitespace-nowrap ${
-                  isActive ? "text-primary" : "text-gray-400"
-                }`}>{cat.label}</span>
+                <span className="text-[15px]">{cat.emoji}</span>
+                <span
+                  className="text-[12px] font-bold whitespace-nowrap"
+                  style={{ color: isActive ? "white" : "rgba(255,255,255,0.6)" }}
+                >
+                  {cat.label}
+                </span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* ── MAP ── */}
-      {showMap && (
-        <div className="mx-5 mb-4 rounded-2xl overflow-hidden shadow-sm flex-shrink-0 relative" style={{ height: "200px", isolation: "isolate" }}>
-          <MapContainer center={mapCenter} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={false} attributionControl={false}>
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" maxZoom={19} />
-            <FlyToLocation center={mapCenter} />
-            {userLocation && <Marker position={userLocation} icon={userIcon} />}
-            {allMapItems.slice(0, 20).map(p => (
-              <Marker
-                key={p.id}
-                position={[p.mapLat, p.mapLng]}
-                icon={L.divIcon({
-                  className: "",
-                  iconSize: [0, 0],
-                  iconAnchor: [12, 12],
-                  html: `<div style="width:12px;height:12px;background:#E8732A;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.25);cursor:pointer"></div>`,
-                })}
-                eventHandlers={{ click: () => handleSelectMarker(p.id) }}
-              />
-            ))}
-          </MapContainer>
-        </div>
-      )}
-
       {/* ── SCROLLABLE CONTENT ── */}
-      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: expanded ? "55vh" : "16px" }}>
+      <div className="flex-1 overflow-y-auto">
 
-        {/* Styles Section */}
-        {styles.length > 0 && (
-        <div className="px-5 mb-4">
-          <div className="flex items-center justify-between mb-3">
+        {/* Map Toggle + Map */}
+        <div className="px-4 pt-4 pb-2">
+          <button
+            onClick={() => setShowMap(v => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all active:scale-[0.99]"
+            style={{
+              background: showMap ? "linear-gradient(135deg, #111 0%, #1e1e1e 100%)" : "#f0eeeb",
+              border: showMap ? "none" : "1px solid #e8e4df",
+            }}
+          >
             <div className="flex items-center gap-2">
-              <div className="w-1 h-5 bg-primary rounded-full" />
-              <p className="text-[16px] font-black text-gray-900 uppercase tracking-tight">Styles</p>
-            </div>
-            <button
-              onClick={() => navigate("/services-salons?tab=STYLES")}
-              className="text-[12px] font-black text-primary uppercase tracking-wide"
-            >
-              Découvrir
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-5 px-5">
-            {styles.map(style => (
-              <button
-                key={style.id}
-                onClick={() => navigate(`/style/${style.id}`, { state: { ...style, cover: style.image_url, images: style.images || (style.image_url ? [style.image_url] : []), category: style.category } })}
-                className="shrink-0 w-[140px] text-left active:scale-[0.97] transition-all"
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: showMap ? "#E8732A" : "#e8e4df" }}
               >
-                <div className="w-[140px] h-[160px] rounded-2xl overflow-hidden mb-2 relative">
-                  <img src={style.image_url || (style.images?.[0]) || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400"} alt={style.title} className="w-full h-full object-cover" loading="lazy" />
-                </div>
-                <p className="text-[13px] font-bold text-gray-900 truncate">{style.title}</p>
-                <p className="text-[11px] text-gray-400 font-medium">{style.category}</p>
-              </button>
-            ))}
-          </div>
+                <MapPin className="w-4 h-4" style={{ color: showMap ? "white" : "#999" }} />
+              </div>
+              <div className="text-left">
+                <p className="text-[13px] font-bold" style={{ color: showMap ? "white" : "#222" }}>
+                  Carte interactive
+                </p>
+                <p className="text-[11px]" style={{ color: showMap ? "rgba(255,255,255,0.5)" : "#aaa" }}>
+                  {allMapItems.length} salon{allMapItems.length !== 1 ? "s" : ""} près de vous
+                </p>
+              </div>
+            </div>
+            <span
+              className="text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full"
+              style={{
+                background: showMap ? "rgba(232,115,42,0.2)" : "#e8e4df",
+                color: showMap ? "#E8732A" : "#888",
+              }}
+            >
+              {showMap ? "Masquer" : "Afficher"}
+            </span>
+          </button>
         </div>
+
+        {showMap && (
+          <div className="mx-4 mb-4 rounded-3xl overflow-hidden shadow-lg relative" style={{ height: "200px", isolation: "isolate" }}>
+            <MapContainer center={mapCenter} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={false} attributionControl={false}>
+              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
+              <FlyToLocation center={mapCenter} />
+              {userLocation && <Marker position={userLocation} icon={userIcon} />}
+              {allMapItems.slice(0, 20).map(p => (
+                <Marker
+                  key={p.id}
+                  position={[p.mapLat, p.mapLng]}
+                  icon={L.divIcon({
+                    className: "",
+                    iconSize: [0, 0],
+                    iconAnchor: [14, 14],
+                    html: `<div style="width:14px;height:14px;background:#E8732A;border-radius:50%;border:2.5px solid white;box-shadow:0 0 0 3px rgba(232,115,42,0.35),0 2px 8px rgba(0,0,0,0.4);cursor:pointer"></div>`,
+                  })}
+                  eventHandlers={{ click: () => handleSelectMarker(p.id) }}
+                />
+              ))}
+            </MapContainer>
+            {/* Overlay gradient bottom */}
+            <div
+              className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
+              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%)" }}
+            />
+          </div>
         )}
 
-        {/* Salon Cards */}
-        <div className="px-5">
+        {/* ── STYLES SECTION ── */}
+        {styles.length > 0 && (
+          <div className="mb-5">
+            <div className="flex items-center justify-between px-4 mb-3">
+              <div className="flex items-center gap-2">
+                <Flame className="w-4 h-4" style={{ color: "#E8732A" }} />
+                <p className="text-[16px] font-black text-gray-900">Styles Tendance</p>
+              </div>
+              <button
+                onClick={() => navigate("/services-salons?tab=STYLES")}
+                className="flex items-center gap-1 text-[12px] font-black uppercase tracking-wide"
+                style={{ color: "#E8732A" }}
+              >
+                Tout voir
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-0 px-4">
+              {styles.map((style, idx) => (
+                <button
+                  key={style.id}
+                  onClick={() => navigate(`/style/${style.id}`, { state: { ...style, cover: style.image_url, images: style.images || (style.image_url ? [style.image_url] : []), category: style.category } })}
+                  className="shrink-0 w-[130px] text-left active:scale-[0.97] transition-all"
+                >
+                  <div className="w-[130px] h-[170px] rounded-2xl overflow-hidden mb-2 relative">
+                    <img
+                      src={style.image_url || (style.images?.[0]) || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400"}
+                      alt={style.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    {/* Gradient overlay */}
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: "linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.6) 100%)" }}
+                    />
+                    {/* Hot badge for first 3 */}
+                    {idx < 3 && (
+                      <div
+                        className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-black text-white"
+                        style={{ background: "#E8732A" }}
+                      >
+                        🔥 HOT
+                      </div>
+                    )}
+                    <div className="absolute bottom-2 left-2 right-2">
+                      <p className="text-[12px] font-black text-white truncate leading-tight">{style.title}</p>
+                    </div>
+                  </div>
+                  <p className="text-[11px] font-medium text-gray-400 mt-0.5">{style.category}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── SALONS SECTION ── */}
+        <div className="px-4 pb-6">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4" style={{ color: "#E8732A" }} />
+              <p className="text-[16px] font-black text-gray-900">
+                Salons{activeCategory !== "Tous" ? ` · ${activeCategory}` : ""}
+              </p>
+            </div>
+            {filtered.length > 0 && (
+              <span className="text-[11px] font-bold text-gray-400">{filtered.length} résultat{filtered.length > 1 ? "s" : ""}</span>
+            )}
+          </div>
+
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
-                <Search className="w-7 h-7 text-gray-300" />
+              <div
+                className="w-20 h-20 rounded-3xl flex items-center justify-center mb-4"
+                style={{ background: "#f0eeeb" }}
+              >
+                <Search className="w-8 h-8 text-gray-300" />
               </div>
-              <p className="text-[15px] font-bold text-gray-800 mb-1">Aucun salon trouvé</p>
-              <p className="text-[12px] text-gray-400 font-medium text-center px-10">Essayez une autre catégorie</p>
+              <p className="text-[16px] font-black text-gray-800 mb-1">Aucun salon trouvé</p>
+              <p className="text-[13px] text-gray-400 font-medium text-center px-10">
+                Essayez une autre catégorie ou un autre mot-clé.
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -338,31 +387,37 @@ export default function Explorer() {
                   <button
                     key={pro.id}
                     onClick={() => navigate("/pro/vue-client", { state: { proEmail: pro.user_email } })}
-                    className="w-full bg-white rounded-2xl overflow-hidden shadow-[0_1px_8px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-all text-left flex"
+                    className="w-full rounded-2xl overflow-hidden active:scale-[0.98] transition-all text-left flex bg-white"
+                    style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
                   >
-                    <div className="w-[110px] h-[120px] shrink-0 relative overflow-hidden">
+                    {/* Image */}
+                    <div className="w-[100px] h-[110px] shrink-0 relative overflow-hidden">
                       <img src={img} alt={pro.salon_name} className="w-full h-full object-cover" loading="lazy" />
+                      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(0,0,0,0.1) 0%, transparent 50%)" }} />
                       {isOpen === true && (
                         <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                          <span className="text-[9px] font-bold text-green-700">Ouvert</span>
+                          <span className="text-[8px] font-black text-green-700 uppercase">Ouvert</span>
                         </div>
                       )}
                       {isOpen === false && (
                         <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5">
-                          <span className="text-[9px] font-bold text-red-500">Fermé</span>
+                          <div className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                          <span className="text-[8px] font-black text-red-500 uppercase">Fermé</span>
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0 p-3.5 flex flex-col justify-between">
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0 px-3.5 py-3 flex flex-col justify-between">
                       <div>
                         <p className="text-[15px] font-extrabold text-gray-900 truncate leading-tight">{pro.salon_name}</p>
                         {pro.specialites?.length > 0 && (
-                          <p className="text-[12px] text-primary font-bold mt-0.5 truncate">
+                          <p className="text-[11px] font-bold mt-0.5 truncate" style={{ color: "#E8732A" }}>
                             {pro.specialites.slice(0, 2).join(" · ")}
                           </p>
                         )}
-                        <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                           {city && (
                             <span className="flex items-center gap-0.5 text-[11px] text-gray-400 font-medium">
                               <MapPin className="w-3 h-3" />{city}
@@ -375,10 +430,18 @@ export default function Explorer() {
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center justify-between mt-1">
+                      <div className="flex items-center justify-between mt-2">
                         {price > 0 && (
-                          <span className="text-[12px] font-extrabold text-gray-900">dès <span className="text-primary">{price}€</span></span>
+                          <span className="text-[12px] font-extrabold text-gray-800">
+                            dès <span style={{ color: "#E8732A" }}>{price}€</span>
+                          </span>
                         )}
+                        <div
+                          className="ml-auto w-7 h-7 rounded-full flex items-center justify-center"
+                          style={{ background: "rgba(232,115,42,0.1)" }}
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" style={{ color: "#E8732A" }} />
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -392,29 +455,38 @@ export default function Explorer() {
       {/* ── FILTER MODAL ── */}
       {showFilters && (
         <div className="fixed inset-0 z-[999] flex items-end" onClick={() => setShowFilters(false)}>
-          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div
-            className="relative bg-white w-full rounded-t-3xl max-h-[80vh] overflow-hidden flex flex-col"
+            className="relative bg-white w-full rounded-t-[32px] max-h-[80vh] overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
               <div className="w-10 h-1.5 bg-gray-200 rounded-full" />
             </div>
-            <div className="flex items-center justify-between px-5 pb-3 border-b border-gray-100 flex-shrink-0">
-              <h2 className="text-[15px] font-extrabold text-gray-900">Filtres</h2>
-              <button onClick={() => setShowFilters(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center active:scale-95">
+            <div className="flex items-center justify-between px-5 pb-4 border-b border-gray-100 flex-shrink-0">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4" style={{ color: "#E8732A" }} />
+                <h2 className="text-[16px] font-black text-gray-900">Filtres</h2>
+              </div>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95"
+              >
                 <X className="w-4 h-4 text-gray-500" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-5">
-              <p className="text-[12px] text-gray-400 font-medium text-center py-8">Filtres avancés disponibles prochainement</p>
+            <div className="flex-1 overflow-y-auto px-5 py-6">
+              <p className="text-[13px] text-gray-400 font-medium text-center py-8">
+                Filtres avancés disponibles prochainement ✨
+              </p>
             </div>
             <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0">
               <button
                 onClick={() => setShowFilters(false)}
-                className="w-full py-3.5 bg-gray-900 text-white text-[13px] font-extrabold uppercase tracking-wider rounded-xl active:scale-[0.98] transition-all"
+                className="w-full py-4 text-white text-[13px] font-black uppercase tracking-wider rounded-2xl active:scale-[0.98] transition-all"
+                style={{ background: "linear-gradient(135deg, #E8732A 0%, #d4601a 100%)" }}
               >
-                Appliquer
+                Appliquer les filtres
               </button>
             </div>
           </div>
