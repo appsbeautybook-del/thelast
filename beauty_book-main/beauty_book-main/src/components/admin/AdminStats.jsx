@@ -1,3 +1,4 @@
+import { deleteAccountCompletely, banUserPermanently } from "@/lib/adminUserManagement";
 import { useState, useEffect } from "react";
 import { adminApi } from "@/lib/adminApiClient";
 import { supabase } from "@/api/supabaseClient";
@@ -5,7 +6,7 @@ import {
   Users, Video, Scissors, ShoppingBag, CalendarCheck, Radio,
   Palette, TrendingUp, Heart, Star, Package, Crown, Flame,
   ArrowUpRight, ArrowDownRight, Activity, DollarSign, Eye,
-  UserCheck, Store, UserCircle, BarChart2, PieChart, RefreshCw
+  UserCheck, Store, UserCircle, Trash2, Ban, AlertTriangle, BarChart2, PieChart, RefreshCw
 } from "lucide-react";
 
 // ── Micro bar chart (pure CSS/SVG) ──────────────────────────────────────────

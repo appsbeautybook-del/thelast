@@ -1,6 +1,7 @@
+import { deleteAccountCompletely } from "@/lib/adminUserManagement";
 import { useState, useEffect } from "react";
 import { supabase } from '@/api/supabaseClient';
-import { Search, CheckCircle, XCircle, FileText, ChevronRight, X, ExternalLink, AlertTriangle } from "lucide-react";
+import { Search, CheckCircle, XCircle, Trash2, FileText, ChevronRight, X, ExternalLink, AlertTriangle } from "lucide-react";
 
 const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpbXVzcmN6cmp2ZWZzYmxqdG1mIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTk4ODUwOSwiZXhwIjoyMDk3NTY0NTA5fQ.tZZQe1H7ZkWkv53ytqzQGDs7AJIzpQO3JArntrwMKqU';
 const SUPABASE_URL = 'https://vimusrczrjvefsbljtmf.supabase.co';
