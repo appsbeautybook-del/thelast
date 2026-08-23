@@ -362,42 +362,51 @@ export default function Connexion() {
 
       // 2. Connecter au compte inscrit avec l'email et le mot de passe
       if (email && password) {
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        let userToProfile = null;
 
-        if (signInError) {
-          console.warn("[Connexion] signInWithPassword error:", signInError.message);
+        try {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (!signInError && signInData?.user) {
+            userToProfile = signInData.user;
+          } else {
+            console.warn("[Connexion] signInWithPassword notice:", signInError?.message);
 
-          // Si le compte n'est pas encore créé dans Supabase Auth, le créer automatiquement
-          const { data: signUpData } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: { full_name: email.split('@')[0] }
+            try {
+              const { data: signUpData } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                  data: { full_name: email.split('@')[0] }
+                }
+              });
+              if (signUpData?.user) {
+                userToProfile = signUpData.user;
+              }
+            } catch (errSignUp) {
+              console.warn("[Connexion] signUp fallback notice:", errSignUp);
             }
-          }).catch(() => ({ data: null }));
+          }
+        } catch (errAuth) {
+          console.warn("[Connexion] Auth notice:", errAuth);
+        }
 
-          if (signUpData?.user) {
+        // S'assurer que le profil existe dans la table profiles
+        if (userToProfile) {
+          try {
             await supabase.from('profiles').upsert({
-              id: signUpData.user.id,
+              id: userToProfile.id,
               email: email,
-              full_name: email.split('@')[0],
+              full_name: userToProfile.user_metadata?.full_name || email.split('@')[0],
               role: 'client',
               updated_at: new Date().toISOString()
-            }, { onConflict: 'id' }).catch(() => {});
+            }, { onConflict: 'id' });
+          } catch (errProfile) {
+            console.warn("[Connexion] Profile upsert notice:", errProfile);
           }
-        } else if (signInData?.user) {
-          // S'assurer que le profil correspond à l'utilisateur connecté
-          await supabase.from('profiles').upsert({
-            id: signInData.user.id,
-            email: email,
-            full_name: signInData.user.user_metadata?.full_name || email.split('@')[0],
-            role: 'client',
-            updated_at: new Date().toISOString()
-          }, { onConflict: 'id' }).catch(() => {});
         }
       }
     } catch (e) {
-      console.warn("[Connexion] Login process warning:", e);
+      console.warn("[Connexion] Login process error:", e);
     } finally {
       setLoading(false);
       // Rediriger immédiatement vers la page d'accueil
