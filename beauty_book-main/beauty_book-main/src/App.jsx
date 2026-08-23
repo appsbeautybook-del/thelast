@@ -1,8 +1,8 @@
 import { Toaster } from "@/components/ui/toaster"
-import React, { useEffect, useState, Component } from 'react';
+import React, { useEffect, useState, useRef, Component } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from "framer-motion";
 
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -124,12 +124,33 @@ import Explorer from '@/pages/Explorer';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import AuthCallback from '@/pages/AuthCallback';
+import AuthModal from '@/components/ui/AuthModal';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated, profile } = useAuth();
   const [onboarded, setOnboarded] = useState(() => !!localStorage.getItem("bb_onboarded"));
+  const [showGlobalAuthModal, setShowGlobalAuthModal] = useState(false);
+  const location = useLocation();
+  const wasAuthenticatedRef = useRef(isAuthenticated);
+  const hasCheckedInitialAuth = useRef(false);
 
-  const isSpecialRoute = window.location.pathname.startsWith('/admin') || window.location.pathname.startsWith('/vendeur');
+  const isSpecialRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/vendeur');
+  const isAuthPage = location.pathname === '/connexion' || location.pathname === '/onboarding' || location.pathname.startsWith('/auth/callback');
+
+  // Detect logout: transition from authenticated → not authenticated (skip first render)
+  useEffect(() => {
+    if (isLoadingAuth) return;
+
+    if (wasAuthenticatedRef.current && !isAuthenticated) {
+      setShowGlobalAuthModal(true);
+    }
+
+    if (isAuthenticated) {
+      wasAuthenticatedRef.current = true;
+      hasCheckedInitialAuth.current = true;
+      setShowGlobalAuthModal(false);
+    }
+  }, [isAuthenticated, isLoadingAuth]);
 
   // Sync avec localStorage — AuthCallback peut setter bb_onboarded après le montage
   useEffect(() => {
@@ -229,10 +250,15 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
-    <Routes>
-      <Route path="/onboarding" element={<Onboarding />} />
-      <Route path="/connexion" element={<Connexion />} />
-      <Route element={<AppShell />}>
+    <>
+      <AuthModal
+        open={showGlobalAuthModal && !isAuthPage && !isSpecialRoute}
+        onClose={() => setShowGlobalAuthModal(false)}
+      />
+      <Routes>
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/connexion" element={<Connexion />} />
+        <Route element={<AppShell />}>
         <Route path="/" element={<Home />} />
         <Route path="/services" element={<Services />} />
         <Route path="/services-salons" element={<ServicesSalons />} />
@@ -319,8 +345,9 @@ const AuthenticatedApp = () => {
       <Route path="/vendeur/dashboard" element={<VendeurDashboard />} />
       <Route path="/vendeur/login" element={<VendeurLogin />} />
       <Route path="/vendeur/signup" element={<VendeurSignup />} />
-      <Route path="*" element={<ModifierProfilPro />} />
-    </Routes>
+        <Route path="*" element={<ModifierProfilPro />} />
+      </Routes>
+    </>
   );
 };
 

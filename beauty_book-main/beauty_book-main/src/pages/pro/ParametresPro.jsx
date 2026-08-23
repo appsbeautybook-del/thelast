@@ -224,7 +224,7 @@ export default function ParametresPro() {
             onClick={() => {
               localStorage.removeItem("bb_onboarded");
               localStorage.removeItem("bb_is_pro");
-              supabase.auth.signOut().then(() => window.location.href = "/onboarding");
+              supabase.auth.signOut().then(() => window.location.href = "/");
             }}
             className="w-full bg-red-50 border border-red-100 rounded-2xl py-4 flex items-center justify-center gap-2 active:scale-95 transition-all"
           >

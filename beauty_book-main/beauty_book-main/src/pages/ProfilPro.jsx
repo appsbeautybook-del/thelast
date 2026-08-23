@@ -289,7 +289,7 @@ export default function ProfilPro() {
                 onClick={() => {
                   setMenuOpen(false);
                   localStorage.removeItem("bb_is_pro");
-                  supabase.auth.signOut().then(() => window.location.href = "/connexion");
+                  supabase.auth.signOut().then(() => window.location.href = "/");
                 }}
                 className="w-full flex items-center gap-3.5 px-3 py-3.5 rounded-2xl hover:bg-red-50 active:scale-[0.98] transition-all duration-200 group"
               >
@@ -565,7 +565,7 @@ export default function ProfilPro() {
 
         {/* Logout */}
         <button
-          onClick={() => { localStorage.removeItem("bb_is_pro"); supabase.auth.signOut().then(() => window.location.href = "/connexion"); }}
+          onClick={() => { localStorage.removeItem("bb_is_pro"); supabase.auth.signOut().then(() => window.location.href = "/"); }}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl border border-red-100 text-red-400 hover:bg-red-50 transition-colors active:scale-95 text-[12px] font-black uppercase tracking-widest"
         >
           <LogOut className="w-4 h-4" />

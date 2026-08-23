@@ -53,7 +53,7 @@ export default function Parametres() {
   const handleSwitchAccount = (account) => {
     // Sauvegarder l'email cible et déconnecter pour relogin
     localStorage.setItem("bb_switch_to", account.email);
-    supabase.auth.signOut().then(() => window.location.href = "/connexion");
+    supabase.auth.signOut().then(() => window.location.href = "/");
   };
 
   const memberSince = user?.created_date
@@ -192,10 +192,10 @@ export default function Parametres() {
             sublabel={otherAccounts.length > 0 ? `${otherAccounts.length} autre${otherAccounts.length > 1 ? "s" : ""} compte${otherAccounts.length > 1 ? "s" : ""} détecté${otherAccounts.length > 1 ? "s" : ""}` : "Aucun autre compte sur cet appareil"}
             onClick={() => {
               if (otherAccounts.length > 0) setShowAccountSwitch(true);
-              else { localStorage.removeItem("bb_onboarded"); supabase.auth.signOut().then(() => window.location.href = "/connexion"); }
+              else { localStorage.removeItem("bb_onboarded"); supabase.auth.signOut().then(() => window.location.href = "/"); }
             }}
           />
-          <SettingRow icon={UserPlus} iconBg="bg-green-50" iconColor="text-green-500" label="Ajouter un compte" sublabel="Se connecter avec un autre email" onClick={() => { localStorage.removeItem("bb_onboarded"); supabase.auth.signOut().then(() => window.location.href = "/connexion"); }} />
+          <SettingRow icon={UserPlus} iconBg="bg-green-50" iconColor="text-green-500" label="Ajouter un compte" sublabel="Se connecter avec un autre email" onClick={() => { localStorage.removeItem("bb_onboarded"); supabase.auth.signOut().then(() => window.location.href = "/"); }} />
         </div>
 
         {/* Modal switch de compte */}
@@ -219,7 +219,7 @@ export default function Parametres() {
                     <ChevronRight className="w-4 h-4 text-gray-300" />
                   </button>
                 ))}
-                <button onClick={() => { setShowAccountSwitch(false); localStorage.removeItem("bb_onboarded"); supabase.auth.signOut().then(() => window.location.href = "/connexion"); }}
+                <button onClick={() => { setShowAccountSwitch(false); localStorage.removeItem("bb_onboarded"); supabase.auth.signOut().then(() => window.location.href = "/"); }}
                   className="w-full flex items-center gap-4 bg-blue-50 rounded-2xl p-4 active:scale-[0.99] transition-all">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                     <UserPlus className="w-5 h-5 text-blue-500" />

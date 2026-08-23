@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("pro_profile_cache");
     sessionStorage.clear();
     if (shouldRedirect) {
-      window.location.href = '/connexion';
+      window.location.href = '/';
     }
   };
 

@@ -81,7 +81,7 @@ export default function SupprimerCompte() {
     setDeleted(true);
     setDeleting(false);
     setTimeout(() => {
-      supabase.auth.signOut().then(() => window.location.href = "/onboarding");
+      supabase.auth.signOut().then(() => window.location.href = "/");
     }, 2500);
   };
 

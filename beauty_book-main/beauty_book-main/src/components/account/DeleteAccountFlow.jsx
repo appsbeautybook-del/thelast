@@ -36,7 +36,7 @@ export default function DeleteAccountFlow({ onClose }) {
       console.error('[DeleteAccountFlow] Deletion error:', e);
     }
     localStorage.clear();
-    supabase.auth.signOut().then(() => window.location.href = "/onboarding");
+    supabase.auth.signOut().then(() => window.location.href = "/");
   };
 
   return (
