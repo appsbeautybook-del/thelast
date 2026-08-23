@@ -17,7 +17,7 @@ const HIDDEN_PATHS = [
   "/pro/gestion-styles", "/pro/promo-service",
   "/devenir-pro", "/modifier-profil",
   "/modifier-profil-client", "/programme-fidelite", "/messages", "/notifications",
-  "/produit", "/service/", "/style/", "/immobilier/",
+  "/produit", "/style/", "/immobilier/",
   "/live-detail/",
 ];
 
@@ -33,7 +33,7 @@ const TAB_ROOTS = {
 // Which tab does a given path belong to?
 function getTabForPath(p) {
   if (p === "/") return "home";
-  if (p.startsWith("/services-salons") || p.startsWith("/service/") || p.startsWith("/style/") || p.startsWith("/bundle/")) return "services";
+  if (p.startsWith("/services-salons") || p.startsWith("/service/") || p.startsWith("/style/") || p.startsWith("/bundle/") || p.startsWith("/bundle-groupe/")) return "services";
   if (p.startsWith("/maria")) return "maria";
   if (p.startsWith("/rendez-vous") || p.startsWith("/pro/gestion-agenda")) return "rendezvous";
   if (p.startsWith("/profil-pro")) return "profil";

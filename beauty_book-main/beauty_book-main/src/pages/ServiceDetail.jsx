@@ -479,25 +479,30 @@ export default function ServiceDetail() {
           {styleRecord ? (
             <button
               onClick={() => navigate(`/style/${styleRecord.id}`, { state: { id: styleRecord.id, title: styleRecord.title, cover: styleRecord.image_url || (styleRecord.images && styleRecord.images[0]), images: styleRecord.images || [], category: styleRecord.category, description: styleRecord.description, likes: styleRecord.likes } })}
-              className="relative overflow-hidden rounded-2xl active:scale-95 transition-all shadow-sm"
-              style={{ minHeight: 80 }}
+              className="relative overflow-hidden rounded-2xl active:scale-95 transition-all shadow-md group"
+              style={{ minHeight: 100 }}
             >
               {styleRecord.image_url ? (
-                <img src={styleRecord.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                <img src={styleRecord.image_url} alt="" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
               ) : (
-                <div className="absolute inset-0 bg-orange-50" />
+                <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-pink-500" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-              <div className="relative z-10 flex flex-col justify-end h-full p-3">
-                <p className="text-[8px] font-black text-white/70 uppercase tracking-widest leading-none">Style associé</p>
-                <p className="text-[11px] font-black text-white leading-tight mt-0.5 line-clamp-2">{styleRecord.title}</p>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+              <div className="absolute top-2 left-2 z-10">
+                <div className="w-7 h-7 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/20">
+                  <Scissors className="w-3.5 h-3.5 text-white" />
+                </div>
               </div>
-              <div className="absolute top-2 right-2 z-10 bg-white/20 backdrop-blur-sm rounded-full p-1">
+              <div className="relative z-10 flex flex-col justify-end h-full p-3">
+                <p className="text-[8px] font-black text-white/60 uppercase tracking-widest leading-none">Style associé</p>
+                <p className="text-[12px] font-black text-white leading-tight mt-0.5 line-clamp-2">{styleRecord.title}</p>
+              </div>
+              <div className="absolute top-2 right-2 z-10 w-6 h-6 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/20">
                 <ChevronRight className="w-3 h-3 text-white" />
               </div>
             </button>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-2 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl py-4 px-3" style={{ minHeight: 80 }}>
+            <div className="flex flex-col items-center justify-center gap-2 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl py-4 px-3" style={{ minHeight: 100 }}>
               <Sparkles className="w-5 h-5 text-gray-300" />
               <div className="text-center">
                 <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Style associé</p>
@@ -507,15 +512,22 @@ export default function ServiceDetail() {
           )}
           <button
             onClick={() => setShowFiltreAI(true)}
-            className="flex flex-col items-center justify-center gap-2 rounded-2xl py-4 px-3 active:scale-95 transition-all shadow-sm"
-            style={{ background: "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)", minHeight: 80 }}
+            className="relative overflow-hidden rounded-2xl active:scale-95 transition-all shadow-md group"
+            style={{ minHeight: 100 }}
           >
-            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center">
-              <Wand2 className="w-5 h-5 text-white" />
+            <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80" alt="" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-800/50 to-transparent" />
+            <div className="absolute top-2 left-2 z-10">
+              <div className="w-7 h-7 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/20">
+                <Wand2 className="w-3.5 h-3.5 text-white" />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-[8px] font-black text-white/70 uppercase tracking-widest leading-none">Essayer</p>
-              <p className="text-[12px] font-black text-white mt-0.5">Filtre AI ✨</p>
+            <div className="relative z-10 flex flex-col justify-end h-full p-3">
+              <p className="text-[8px] font-black text-white/60 uppercase tracking-widest leading-none">Essayer</p>
+              <p className="text-[12px] font-black text-white leading-tight mt-0.5">Filtre AI</p>
+            </div>
+            <div className="absolute top-2 right-2 z-10">
+              <span className="text-[10px] font-black text-white bg-white/20 backdrop-blur-sm rounded-full px-2 py-0.5 border border-white/20">IA</span>
             </div>
           </button>
         </div>
