@@ -255,18 +255,29 @@ export default function ProfilPro() {
             {/* Menu Items */}
             <div className="flex-1 overflow-y-auto px-4 py-2" style={{ scrollbarWidth: 'none' }}>
               <div className="space-y-1">
-                {allMenuItems.map(({ id, label, Icon, bg, color, route }, index) => (
+                {allMenuItems.map(({ id, label, Icon, bg, color, route, comingSoon }, index) => (
                   <button
                     key={id}
-                    onClick={() => { setMenuOpen(false); navigate(route); }}
-                    className="w-full flex items-center gap-3.5 px-3 py-3 rounded-2xl hover:bg-gray-100/80 active:scale-[0.98] transition-all duration-200 text-left group"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (comingSoon) {
+                        setTimeout(() => alert("Bientôt disponible !"), 200);
+                        return;
+                      }
+                      navigate(route);
+                    }}
+                    className={`w-full flex items-center gap-3.5 px-3 py-3 rounded-2xl hover:bg-gray-100/80 active:scale-[0.98] transition-all duration-200 text-left group ${comingSoon ? "opacity-50" : ""}`}
                     style={{ animationDelay: `${index * 30}ms` }}
                   >
                     <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center shrink-0 shadow-sm group-hover:shadow-md transition-shadow`}>
                       <Icon className={`w-5 h-5 ${color}`} strokeWidth={2} />
                     </div>
                     <span className="flex-1 text-[13px] font-bold text-gray-700 uppercase tracking-wider">{label}</span>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all" />
+                    {comingSoon ? (
+                      <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Soon</span>
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -512,13 +523,22 @@ export default function ProfilPro() {
               return (
                 <button
                   key={action.id}
-                  onClick={() => action.route && navigate(action.route)}
-                  className="bg-white border border-gray-100 rounded-3xl py-7 px-4 flex flex-col items-center gap-3 shadow-sm active:scale-95 transition-all"
+                  onClick={() => {
+                    if (action.comingSoon) {
+                      alert("Bientôt disponible !");
+                      return;
+                    }
+                    action.route && navigate(action.route);
+                  }}
+                  className={`bg-white border border-gray-100 rounded-3xl py-7 px-4 flex flex-col items-center gap-3 shadow-sm active:scale-95 transition-all ${action.comingSoon ? "opacity-60" : ""}`}
                 >
                   <div className={`w-14 h-14 ${action.bg} rounded-2xl flex items-center justify-center`}>
                     <Icon className={`w-7 h-7 ${action.color}`} />
                   </div>
                   <span className="text-[10px] font-black text-gray-700 uppercase tracking-widest text-center">{action.label}</span>
+                  {action.comingSoon && (
+                    <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Bientôt</span>
+                  )}
                 </button>
               );
             })}
