@@ -636,28 +636,28 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Offres Immobilières — fond nude ── */}
-      <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
-        <SectionTitle title="Offres Immobilières" action="Voir tout" onAction={() => navigate("/immobilier")} />
-        <button
-          onClick={() => {
-            const immoId = offresImmo?.id || offresImmo?.listing_id;
-            navigate(immoId ? `/immobilier/${immoId}` : "/immobilier");
-          }}
-          className="w-full bg-white rounded-[24px] p-4 shadow-sm flex gap-4 items-start active:scale-[0.99] transition-all text-left border border-orange-100">
-          <div className="w-[100px] h-[100px] rounded-[18px] overflow-hidden shrink-0">
-            <img src={offresImmo?.images?.[0] || SPACE_IMAGE} alt="Espace" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-start gap-2">
-              <h3 className="text-[15px] font-black text-gray-900 leading-tight flex-1">{offresImmo?.title || "Fauteuil Luxe – Paris 8e"}</h3>
-              <span className="bg-green-100 text-green-600 text-[9px] font-black uppercase px-2.5 py-1 rounded-full shrink-0">DISPO</span>
+      {/* ── Opportunité Business ── */}
+      {offresImmoLive && (
+        <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
+          <SectionTitle title="Opportunité Business" action="Voir tout" onAction={() => navigate("/immobilier")} />
+          <button
+            onClick={() => navigate(`/immobilier/${offresImmoLive.id || offresImmoLive.listing_id}`)}
+            className="w-full bg-white rounded-[24px] p-4 shadow-sm flex gap-4 items-start active:scale-[0.99] transition-all text-left border border-orange-100"
+          >
+            <div className="w-[100px] h-[100px] rounded-[18px] overflow-hidden shrink-0">
+              <img src={offresImmoLive.images?.[0] || SPACE_IMAGE} alt="" className="w-full h-full object-cover" />
             </div>
-            <p className="text-[12px] text-gray-400 font-medium mt-1.5 leading-snug">{offresImmo?.location || "Accès complet services, parking inclus"}</p>
-            <p className="text-[20px] font-black text-gray-900 mt-2">{formatPrice(offresImmo?.price || 800)}<span className="text-[12px] font-bold text-gray-500">/{offresImmo?.unit || "mois"}</span></p>
-          </div>
-        </button>
-      </div>
+            <div className="flex-1">
+              <div className="flex items-start gap-2">
+                <h3 className="text-[15px] font-black text-gray-900 leading-tight flex-1">{offresImmoLive.title}</h3>
+                <span className="bg-green-100 text-green-600 text-[9px] font-black uppercase px-2.5 py-1 rounded-full shrink-0">DISPO</span>
+              </div>
+              <p className="text-[12px] text-gray-400 font-medium mt-1.5 leading-snug">{offresImmoLive.location}</p>
+              <p className="text-[20px] font-black text-gray-900 mt-2">{formatPrice(offresImmoLive.price)}<span className="text-[12px] font-bold text-gray-500">/{offresImmoLive.unit || "mois"}</span></p>
+            </div>
+          </button>
+        </div>
+      )}
 
     </div>
   );
