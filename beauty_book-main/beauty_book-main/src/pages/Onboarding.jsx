@@ -75,6 +75,12 @@ function StepSplash({ onNext, onDiscover }) {
         >
           Commencer l'aventure
         </button>
+        <button
+          onClick={onDiscover}
+          className="w-full py-3.5 mt-3 rounded-full font-black text-[12px] uppercase tracking-widest text-white/60 active:scale-95 transition-all border border-white/15"
+        >
+          Continuer l'aventure
+        </button>
       </div>
     </div>
   );

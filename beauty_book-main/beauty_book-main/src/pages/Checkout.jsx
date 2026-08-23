@@ -4,6 +4,8 @@ import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from "@/lib/AuthContext";
 import { apiClient } from '@/lib/apiClient';
+import { useAuthGate } from "@/hooks/useAuthGate";
+import AuthModal from "@/components/ui/AuthModal";
 import {
   ArrowLeft, Shield, Truck, Lock, Check, Loader2, CreditCard,
   MapPin, User, ChevronRight, Package, Phone, Mail, Globe,
@@ -43,6 +45,7 @@ function InputField({ label, icon: Icon, type = "text", value, onChange, placeho
 export default function Checkout() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showAuthModal, authMessage, requireAuth, closeAuthModal } = useAuthGate();
   const urlParams = new URLSearchParams(window.location.search);
   const variantId = decodeURIComponent(urlParams.get("variantId") || "");
   const productTitle = decodeURIComponent(urlParams.get("title") || "Produit");
@@ -77,6 +80,14 @@ export default function Checkout() {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const totalPrice = parseFloat(productPrice).toFixed(2);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) {
+        requireAuth("Connectez-vous pour finaliser votre achat.");
+      }
+    }).catch(() => requireAuth("Connectez-vous pour finaliser votre achat."));
+  }, []);
 
   // Load wallet balance
   useEffect(() => {
@@ -281,6 +292,7 @@ export default function Checkout() {
 
   return (
     <div className="font-display bg-[#f5f5f5] min-h-screen pb-48">
+      <AuthModal open={showAuthModal} onClose={closeAuthModal} message={authMessage} />
 
       {/* ── Header ── */}
       <div className="bg-white px-4 py-4 flex items-center gap-3 sticky top-0 z-30 border-b border-gray-100 shadow-sm">

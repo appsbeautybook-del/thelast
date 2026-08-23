@@ -17,6 +17,8 @@ import RoutineSummaryCard from "@/components/maria/RoutineSummaryCard";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useVoiceAgent } from "@/lib/VoiceAgentContext";
+import { useAuthGate } from "@/hooks/useAuthGate";
+import AuthModal from "@/components/ui/AuthModal";
 
 const SCAN_IMG = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400";
 const STYLE_IMG = "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400";
@@ -313,6 +315,7 @@ export default function Maria() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const voiceAgent = useVoiceAgent();
+  const { showAuthModal, authMessage, requireAuth, closeAuthModal } = useAuthGate();
 
   // Couleurs adaptées au thème
   const isDark = theme === "dark" || theme === "night";
@@ -597,6 +600,12 @@ export default function Maria() {
     const content = text || input.trim();
     if (!content && !attachedFiles.length) return;
     if (loading) return;
+
+    const { data } = await supabase.auth.getUser();
+    if (!data?.user) {
+      requireAuth("Connectez-vous pour parler avec Maria AI.");
+      return;
+    }
     setInput("");
     setView("chat");
 
@@ -1216,6 +1225,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
   // ── HOME VIEW ──────────────────────────────────────────────────────────────
   return (
     <div className={`font-display flex flex-col h-full relative overflow-hidden ${homeBodyBg}`}>
+      <AuthModal open={showAuthModal} onClose={closeAuthModal} message={authMessage} />
       <SideDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} onNewChat={handleNewChat} recentChats={recentChats} savedSimulations={savedSimulations} onOpenSimulator={() => setShowSimulator(true)} onScanCapillaire={() => navigate("/scan-capillaire")} onStylisteIA={() => navigate("/sh-ai")} isPro={isPro} />
       {showSimulator && <FiltreAIModal styleTitle="" onClose={() => setShowSimulator(false)} onResultSaved={handleSimulationSaved} />}
 

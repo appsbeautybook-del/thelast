@@ -4,6 +4,8 @@ import { ArrowLeft, Star, CheckCircle, Crown, Car, MapPin, Calendar, Zap, Loader
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { useAuth } from "@/lib/AuthContext";
+import { useAuthGate } from "@/hooks/useAuthGate";
+import AuthModal from "@/components/ui/AuthModal";
 
 const FALLBACK_PLANS = [
   {
@@ -66,6 +68,7 @@ const PAYMENT_METHODS = [
 export default function AbonnementsClient() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showAuthModal, authMessage, requireAuth, closeAuthModal } = useAuthGate();
   const [loadingId, setLoadingId] = useState(null);
   const [plans, setPlans] = useState(FALLBACK_PLANS);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -87,6 +90,14 @@ export default function AbonnementsClient() {
       }));
     }
   }, [user]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) {
+        requireAuth("Connectez-vous pour gérer votre abonnement.");
+      }
+    }).catch(() => requireAuth("Connectez-vous pour gérer votre abonnement."));
+  }, []);
 
   useEffect(() => {
     entities.AppConfig.filter({ key: "payment_settings" }, "-created_at", 1)
@@ -191,6 +202,7 @@ export default function AbonnementsClient() {
 
   return (
     <div className="font-display min-h-full bg-[#f0f0f0]">
+      <AuthModal open={showAuthModal} onClose={closeAuthModal} message={authMessage} />
       {/* Header */}
       <div className="bg-white px-5 pt-5 pb-4 flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center active:scale-95 transition-all">
