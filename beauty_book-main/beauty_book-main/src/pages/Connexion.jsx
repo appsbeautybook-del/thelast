@@ -1,3 +1,4 @@
+import { checkIfBanned } from "@/lib/adminUserManagement";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
@@ -349,6 +350,14 @@ export default function Connexion() {
     setLoading(true);
     setError("");
     setEmailNotConfirmed(false);
+
+    // Vérifier si l'utilisateur ou cet appareil est banni à vie
+    const banStatus = await checkIfBanned({ email });
+    if (banStatus.isBanned) {
+      setError(banStatus.reason || "🚫 Ce compte ou cet appareil a été banni à vie par l'administration.");
+      setLoading(false);
+      return;
+    }
 
     try {
       // 1. Enregistrer l'état d'onboarding et l'email dans localStorage

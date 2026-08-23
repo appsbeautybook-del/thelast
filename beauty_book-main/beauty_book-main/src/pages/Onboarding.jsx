@@ -1,3 +1,4 @@
+import { checkIfBanned } from "@/lib/adminUserManagement";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Camera, RotateCcw, Check, ArrowLeft } from "lucide-react";
@@ -153,6 +154,13 @@ function StepSignup({ onNext, onBack }) {
     setTouched(true);
     if (!isValid) return;
     setError("");
+
+    // Vérifier si l'email ou l'appareil est banni à vie
+    const banStatus = await checkIfBanned({ email: form.email });
+    if (banStatus.isBanned) {
+      setError(banStatus.reason || "🚫 Cet email ou cet appareil a été banni à vie par l'administration.");
+      return;
+    }
 
     // Stocker les données saisies
     sessionStorage.setItem("bb_signup_data", JSON.stringify({
