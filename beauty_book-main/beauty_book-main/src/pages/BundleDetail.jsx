@@ -409,8 +409,8 @@ export default function BundleDetail() {
         )}
       </div>
 
-      {/* Fixed bottom CTA (positioned at bottom-[70px] to sit right above bottom navigation bar) */}
-      <div className="fixed bottom-[70px] left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[90] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      {/* Fixed bottom CTA (positioned above bottom navigation bar) */}
+      <div className="fixed bottom-20 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[90] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <button
           onClick={handleStartBooking}
           className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
