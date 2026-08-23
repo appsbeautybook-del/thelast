@@ -353,6 +353,76 @@ export default function Home() {
         </div>
       </div>
 
+      {/* ── Bundles ── */}
+      {bundles.length > 0 && (
+        <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
+          <SectionTitle title="Bundles" action="Voir tout" onAction={() => navigate("/services-salons")} />
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-1 px-1">
+            {bundles.map(b => (
+              <button
+                key={b.id}
+                onClick={() => navigate(`/bundle/${b.id}`)}
+                className="shrink-0 w-[160px] bg-white rounded-2xl overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50"
+              >
+                <div className="h-[100px] relative overflow-hidden">
+                  <img src={b.image_url || b.banner_url || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80"} alt="" className="w-full h-full object-cover" />
+                  {b.discount_percent > 0 && (
+                    <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
+                  )}
+                </div>
+                <div className="p-3">
+                  <p className="text-[12px] font-black text-gray-900 line-clamp-1">{b.name}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    {b.discount_percent > 0 && (
+                      <span className="text-[11px] font-bold text-gray-400 line-through">{formatPrice(b.bundle_price)}</span>
+                    )}
+                    <span className="text-[14px] font-black text-[#E8732A]">{formatPrice(b.discount_percent > 0 ? Math.round(b.bundle_price * (1 - b.discount_percent / 100)) : b.bundle_price)}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Bundles Tendance ── */}
+      {bundlesTendance.length > 0 && (
+        <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
+          <SectionTitle title="Bundles Tendance" action="Voir tout" onAction={() => navigate("/services-salons")} />
+          <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-1 px-1">
+            {bundlesTendance.map(b => (
+              <button
+                key={b.id}
+                onClick={() => navigate(`/bundle/${b.id}`)}
+                className="shrink-0 w-[160px] bg-white rounded-2xl overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50 relative"
+              >
+                <div className="absolute top-2 right-2 z-10">
+                  <span className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Flame className="w-3 h-3" /> POPULAIRE
+                  </span>
+                </div>
+                <div className="h-[100px] relative overflow-hidden">
+                  <img src={b.image_url || b.banner_url || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80"} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  {b.discount_percent > 0 && (
+                    <span className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-[#E8732A] text-[9px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
+                  )}
+                </div>
+                <div className="p-3">
+                  <p className="text-[12px] font-black text-gray-900 line-clamp-1">{b.name}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    {b.discount_percent > 0 && (
+                      <span className="text-[11px] font-bold text-gray-400 line-through">{formatPrice(b.bundle_price)}</span>
+                    )}
+                    <span className="text-[14px] font-black text-[#E8732A]">{formatPrice(b.discount_percent > 0 ? Math.round(b.bundle_price * (1 - b.discount_percent / 100)) : b.bundle_price)}</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Salon du Mois — fond nude ── */}
       <div data-tour="salon-mois" className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
         <div className="flex items-center justify-between mb-4">
@@ -565,76 +635,6 @@ export default function Home() {
           ))}
         </div>
       </div>
-
-      {/* ── Bundles ── */}
-      {bundles.length > 0 && (
-        <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
-          <SectionTitle title="Bundles" action="Voir tout" onAction={() => navigate("/services-salons")} />
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-1 px-1">
-            {bundles.map(b => (
-              <button
-                key={b.id}
-                onClick={() => navigate(`/bundle/${b.id}`)}
-                className="shrink-0 w-[160px] bg-white rounded-2xl overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50"
-              >
-                <div className="h-[100px] relative overflow-hidden">
-                  <img src={b.image_url || b.banner_url || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80"} alt="" className="w-full h-full object-cover" />
-                  {b.discount_percent > 0 && (
-                    <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
-                  )}
-                </div>
-                <div className="p-3">
-                  <p className="text-[12px] font-black text-gray-900 line-clamp-1">{b.name}</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    {b.discount_percent > 0 && (
-                      <span className="text-[11px] font-bold text-gray-400 line-through">{formatPrice(b.bundle_price)}</span>
-                    )}
-                    <span className="text-[14px] font-black text-[#E8732A]">{formatPrice(b.discount_percent > 0 ? Math.round(b.bundle_price * (1 - b.discount_percent / 100)) : b.bundle_price)}</span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Bundles Tendance ── */}
-      {bundlesTendance.length > 0 && (
-        <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
-          <SectionTitle title="Bundles Tendance" action="Voir tout" onAction={() => navigate("/services-salons")} />
-          <div className="flex gap-3 overflow-x-auto hide-scrollbar -mx-1 px-1">
-            {bundlesTendance.map(b => (
-              <button
-                key={b.id}
-                onClick={() => navigate(`/bundle/${b.id}`)}
-                className="shrink-0 w-[160px] bg-white rounded-2xl overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50 relative"
-              >
-                <div className="absolute top-2 right-2 z-10">
-                  <span className="bg-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Flame className="w-3 h-3" /> POPULAIRE
-                  </span>
-                </div>
-                <div className="h-[100px] relative overflow-hidden">
-                  <img src={b.image_url || b.banner_url || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80"} alt="" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                  {b.discount_percent > 0 && (
-                    <span className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-[#E8732A] text-[9px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
-                  )}
-                </div>
-                <div className="p-3">
-                  <p className="text-[12px] font-black text-gray-900 line-clamp-1">{b.name}</p>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    {b.discount_percent > 0 && (
-                      <span className="text-[11px] font-bold text-gray-400 line-through">{formatPrice(b.bundle_price)}</span>
-                    )}
-                    <span className="text-[14px] font-black text-[#E8732A]">{formatPrice(b.discount_percent > 0 ? Math.round(b.bundle_price * (1 - b.discount_percent / 100)) : b.bundle_price)}</span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── Offres Immobilières — fond nude ── */}
       <div className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
