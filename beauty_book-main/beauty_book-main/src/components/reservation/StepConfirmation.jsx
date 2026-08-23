@@ -1081,6 +1081,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
             <p className="text-[13px] font-black text-red-500">⚠️ {error}</p>
           </div>
         )}
+        </div>
       </div>
     </div>
   );
