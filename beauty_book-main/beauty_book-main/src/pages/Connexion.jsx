@@ -349,24 +349,58 @@ export default function Connexion() {
     setLoading(true);
     setError("");
     setEmailNotConfirmed(false);
+
     try {
-      if (remember) {
-        localStorage.setItem("bb_remember", "1");
+      // 1. Enregistrer l'état d'onboarding et l'email dans localStorage
+      localStorage.setItem("bb_onboarded", "1");
+      if (email) {
         localStorage.setItem("bb_remember_email", email);
-      } else {
-        localStorage.removeItem("bb_remember");
-        localStorage.removeItem("bb_remember_email");
+        if (remember) {
+          localStorage.setItem("bb_remember", "1");
+        }
       }
+
+      // 2. Connecter au compte inscrit avec l'email et le mot de passe
       if (email && password) {
-        await supabase.auth.signInWithPassword({ email, password }).catch(err => {
-          console.warn("[Connexion] Supabase sign in error ignored:", err);
-        });
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (signInError) {
+          console.warn("[Connexion] signInWithPassword error:", signInError.message);
+
+          // Si le compte n'est pas encore créé dans Supabase Auth, le créer automatiquement
+          const { data: signUpData } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { full_name: email.split('@')[0] }
+            }
+          }).catch(() => ({ data: null }));
+
+          if (signUpData?.user) {
+            await supabase.from('profiles').upsert({
+              id: signUpData.user.id,
+              email: email,
+              full_name: email.split('@')[0],
+              role: 'client',
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'id' }).catch(() => {});
+          }
+        } else if (signInData?.user) {
+          // S'assurer que le profil correspond à l'utilisateur connecté
+          await supabase.from('profiles').upsert({
+            id: signInData.user.id,
+            email: email,
+            full_name: signInData.user.user_metadata?.full_name || email.split('@')[0],
+            role: 'client',
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'id' }).catch(() => {});
+        }
       }
     } catch (e) {
-      console.warn("[Connexion] Login error:", e);
+      console.warn("[Connexion] Login process warning:", e);
     } finally {
-      localStorage.setItem("bb_onboarded", "1");
       setLoading(false);
+      // Rediriger immédiatement vers la page d'accueil
       navigate("/", { replace: true });
     }
   };
