@@ -4,11 +4,11 @@ import { supabase } from '@/api/supabaseClient';
  * Couche d'abstraction compatible Base44.
  * Remplace entities.NomTable.filter/create/update/delete/get/list
  *
- * - Reads (filter/list/get) → direct Supabase (anon key)
- * - Writes (create/update/delete) → backend /api/crud (service_role, bypasses RLS)
+ * - Reads and writes → Supabase using the authenticated session
  */
 
-const CRUD_API = import.meta.env.VITE_BACKEND_URL || '';
+// The deployed app has no /crud/* API. Keep all entity operations on Supabase.
+const CRUD_API = '';
 
 const parseOrder = (orderBy) => {
   if (!orderBy) return { column: 'created_at', ascending: false };
@@ -267,8 +267,9 @@ const createEntity = (tableName) => ({
 
   delete: async (id) => {
     if (!CRUD_API) {
-      const { error } = await supabase.from(tableName).delete().eq('id', id);
+      const { data, error } = await supabase.from(tableName).delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Suppression refusée ou élément introuvable.');
       return true;
     }
     try {
@@ -283,8 +284,9 @@ const createEntity = (tableName) => ({
       }
       return true;
     } catch (e) {
-      const { error } = await supabase.from(tableName).delete().eq('id', id);
+      const { data, error } = await supabase.from(tableName).delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Suppression refusée ou élément introuvable.');
       return true;
     }
   },
