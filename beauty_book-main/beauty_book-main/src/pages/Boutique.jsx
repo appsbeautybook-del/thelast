@@ -4,7 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { entities, uploadFile } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { Search, Camera, ShoppingCart, Shield, Truck, Flame, ChevronRight, Sparkles, X, Heart, Check } from "lucide-react";
-import { DEFAULT_BOUTIQUE_CATS, CONFIG_KEY } from "@/components/admin/AdminBoutiqueCategories";
+const DEFAULT_BOUTIQUE_CATS = [
+  { id: "homme",     label: "Homme",     subs: ["Vêtements", "Chaussures", "Accessoires", "Sacs", "Sport"] },
+  { id: "femme",     label: "Femme",     subs: ["Vêtements", "Chaussures", "Sacs", "Bijoux", "Lingerie"] },
+  { id: "enfant",    label: "Enfant",    subs: ["Fille", "Garçon", "Chaussures", "Jouets"] },
+  { id: "beaute",    label: "Beauté",    subs: ["Maquillage", "Soins Visage", "Cheveux", "Parfums", "Outils"] },
+  { id: "bebe",      label: "Bébé",      subs: ["Vêtements", "Éveil", "Sommeil", "Repas", "Hygiène"] },
+  { id: "grossiste", label: "Grossiste", subs: ["Beauté", "Vêtements", "Accessoires", "Hygiène", "Alimentaire", "Divers"] },
+];
 import { adminApi } from "@/lib/adminApiClient";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import { useLikedProducts } from "@/hooks/useLikedProducts";
@@ -14,15 +21,45 @@ import { useCartSync } from "@/hooks/useCartSync";
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const CAT_IMAGES = {
-  tout:      "",
-  homme:     "",
-  femme:     "",
-  enfant:    "",
-  beaute:    "",
-  beauté:    "",
-  bebe:      "",
-  bébé:      "",
-  grossiste: "",
+  homme:     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200",
+  femme:     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200",
+  enfant:    "https://images.unsplash.com/photo-1519689680058-324335c77eba?q=80&w=200",
+  beaute:    "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?q=80&w=200",
+  beauté:    "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?q=80&w=200",
+  bebe:      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=200",
+  bébé:      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=200",
+  grossiste: "https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=200",
+};
+
+const SUB_IMAGES = {
+  // Homme
+  "Vêtements": "https://images.unsplash.com/photo-1516257984-b1b4d707412e?q=80&w=200",
+  "Chaussures": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=200",
+  "Accessoires": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?q=80&w=200",
+  "Sacs": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=200",
+  "Sport": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=200",
+  // Femme
+  "Bijoux": "https://images.unsplash.com/photo-1515562141589-67f0d569b986?q=80&w=200",
+  "Lingerie": "https://images.unsplash.com/photo-1571513722275-4b41970f5fa4?q=80&w=200",
+  // Enfant
+  "Fille": "https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?q=80&w=200",
+  "Garçon": "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?q=80&w=200",
+  "Jouets": "https://images.unsplash.com/photo-1558060370-d644479cb6f7?q=80&w=200",
+  // Beauté
+  "Maquillage": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=200",
+  "Soins Visage": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=200",
+  "Cheveux": "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=200",
+  "Parfums": "https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=200",
+  "Outils": "https://images.unsplash.com/photo-1522338242992-e1a54571a7d8?q=80&w=200",
+  // Bébé
+  "Éveil": "https://images.unsplash.com/photo-1504439468489-c8920d796a29?q=80&w=200",
+  "Sommeil": "https://images.unsplash.com/photo-1519689680058-324335c77eba?q=80&w=200",
+  "Repas": "https://images.unsplash.com/photo-1504439468489-c8920d796a29?q=80&w=200",
+  "Hygiène": "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=200",
+  // Grossiste
+  "Alimentaire": "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200",
+  "Divers": "https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=200",
+  "Tout": "",
 };
 
 
@@ -52,11 +89,11 @@ const trustBadges = [
 export default function Boutique() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("tout");
+  const [activeCategory, setActiveCategory] = useState("homme");
   const [boutiqueBanners, setBoutiqueBanners] = useState([]);
   const [activeSub, setActiveSub] = useState("Tout");
   const [mainCategories, setMainCategories] = useState(DEFAULT_BOUTIQUE_CATS.map(c => ({
-    ...c, img: CAT_IMAGES[c.id] || CAT_IMAGES["tout"], subs: ["Tout", ...c.subs, "Grossiste", "Livraison Express"],
+    ...c, img: CAT_IMAGES[c.id] || "", subs: ["Tout", ...c.subs],
   })));
   const { liked, toggle: toggleLike, isLiked } = useLikedProducts();
   const { addToCart, adding, cartCount } = useCartSync();
@@ -90,13 +127,13 @@ export default function Boutique() {
       }).catch(() => {});
 
     // Charger les catégories dynamiques depuis admin
-    entities.AppConfig.filter({ key: CONFIG_KEY }, "-created_at", 50)
+    entities.AppConfig.filter({ key: "boutique_categories" }, "-created_at", 50)
       .then(rows => {
         if (rows[0]?.value?.categories?.length > 0) {
           const cats = rows[0].value.categories.map(c => ({
             ...c,
-            img: CAT_IMAGES[c.id] || CAT_IMAGES["tout"],
-            subs: ["Tout", ...c.subs, "Grossiste", "Livraison Express"],
+            img: CAT_IMAGES[c.id] || "",
+            subs: ["Tout", ...c.subs],
           }));
           setMainCategories(cats);
         }
@@ -220,12 +257,26 @@ export default function Boutique() {
 
   // Filtrage selon catégorie/sous-catégorie
   const filterProducts = (products) => {
-    if (activeCategory === "grossiste" || activeSub === "Grossiste") {
-      return products.filter(p => p.tags?.includes("grossiste"));
+    let filtered = products;
+
+    // Filter by main category first
+    if (activeCategory === "grossiste") {
+      filtered = filtered.filter(p => p.tags?.includes("grossiste"));
+    } else if (activeCategory === "homme") {
+      filtered = filtered.filter(p => p.category?.toLowerCase().includes("homme") || p.target?.toLowerCase().includes("homme") || p.gender?.toLowerCase().includes("homme") || p.gender?.toLowerCase().includes("male"));
+    } else if (activeCategory === "femme") {
+      filtered = filtered.filter(p => p.category?.toLowerCase().includes("femme") || p.target?.toLowerCase().includes("femme") || p.gender?.toLowerCase().includes("femme") || p.gender?.toLowerCase().includes("female"));
+    } else if (activeCategory === "enfant") {
+      filtered = filtered.filter(p => p.category?.toLowerCase().includes("enfant") || p.target?.toLowerCase().includes("enfant"));
+    } else if (activeCategory === "beaute") {
+      filtered = filtered.filter(p => p.category?.toLowerCase().includes("beaut") || p.category?.toLowerCase().includes("maquillag") || p.category?.toLowerCase().includes("soin") || p.category?.toLowerCase().includes("parfum"));
+    } else if (activeCategory === "bebe") {
+      filtered = filtered.filter(p => p.category?.toLowerCase().includes("béb") || p.category?.toLowerCase().includes("bebe") || p.target?.toLowerCase().includes("béb"));
     }
-    if (activeSub === "Tout" || !activeSub) return products;
-    if (activeSub === "Livraison Express") return products.filter(p => p.tags?.includes("livraison_express"));
-    return products.filter(p =>
+
+    // Then filter by sub-category
+    if (activeSub === "Tout" || !activeSub) return filtered;
+    return filtered.filter(p =>
       p.category?.toLowerCase().includes(activeSub.toLowerCase()) ||
       p.sub_category?.toLowerCase().includes(activeSub.toLowerCase()) ||
       p.brand?.toLowerCase().includes(activeSub.toLowerCase())
@@ -337,19 +388,21 @@ export default function Boutique() {
 
       {/* ── Sub-category Pills ── */}
       <div className="overflow-x-auto hide-scrollbar border-y border-gray-100">
-        <div className="flex items-center gap-2 px-4 py-2.5 min-w-max">
+        <div className="flex items-center gap-3 px-4 py-2.5 min-w-max">
           {currentCategory?.subs.map((sub) => {
             const isActive = activeSub === sub;
+            const subImg = SUB_IMAGES[sub] || "";
             return (
               <button
                 key={sub}
                 onClick={() => setActiveSub(sub)}
-                className={`px-4 py-1.5 rounded-full text-[12px] font-bold transition-all active:scale-95 whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-bold transition-all active:scale-95 whitespace-nowrap ${
                   isActive
                     ? "bg-primary text-white shadow-sm shadow-primary/30"
-                    : "text-gray-600 hover:text-gray-900"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
+                {subImg && <img src={subImg} alt={sub} className="w-5 h-5 rounded-full object-cover" />}
                 {sub}
               </button>
             );
