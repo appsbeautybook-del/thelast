@@ -69,9 +69,10 @@ function StepSplash({ onNext }) {
     <div className="min-h-screen flex flex-col overflow-hidden relative">
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200&q=80"
+          src="/splash_bg.jpg"
+          onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200&q=80"; }}
           alt="Beauty communities"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
       </div>

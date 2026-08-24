@@ -443,37 +443,34 @@ export default function HorairesConges() {
 
       let saveErr = null;
       if (profileId) {
-        const { data: updated, error } = await supabase
+        const { data: updatedRows, error } = await supabase
           .from('ProfilPro')
           .update(updateData)
           .eq('id', profileId)
-          .select()
-          .single();
+          .select();
         saveErr = error;
         // If RLS blocks update (created_by_id mismatch), try with user_email match
         if (error) {
-          const { data: updated2, error: error2 } = await supabase
+          const { data: updatedRows2, error: error2 } = await supabase
             .from('ProfilPro')
             .update(updateData)
             .eq('user_email', user.email)
-            .select()
-            .single();
-          if (!error2 && updated2) { saveErr = null; setProfil(updated2); }
+            .select();
+          if (!error2 && updatedRows2?.[0]) { saveErr = null; setProfil(updatedRows2[0]); }
         }
-        if (!saveErr && updated) setProfil(updated);
+        if (!saveErr && updatedRows?.[0]) setProfil(updatedRows[0]);
       } else {
         const { user: authUser } = await supabase.auth.getUser();
-        const { data: created, error } = await supabase
+        const { data: createdRows, error } = await supabase
           .from('ProfilPro')
           .insert({
             user_email: user.email,
             created_by_id: authUser?.id || null,
             ...updateData
           })
-          .select()
-          .single();
+          .select();
         saveErr = error;
-        if (created) setProfil(created);
+        if (createdRows?.[0]) setProfil(createdRows[0]);
       }
 
       if (saveErr) {

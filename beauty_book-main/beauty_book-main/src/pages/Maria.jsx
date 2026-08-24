@@ -14,14 +14,14 @@ import MariaMessage from "@/components/maria/MariaMessage";
 import ServiceFormCard from "@/components/maria/ServiceFormCard";
 import { NavigateCard, SearchProductsCard, OpenProFormCard } from "@/components/maria/ActionCards";
 import RoutineSummaryCard from "@/components/maria/RoutineSummaryCard";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { useVoiceAgent } from "@/lib/VoiceAgentContext";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import AuthModal from "@/components/ui/AuthModal";
 
-const SCAN_IMG = "";
-const STYLE_IMG = "";
+const SCAN_IMG = "https://images.unsplash.com/photo-1620331311520-246422fd82f9?q=80&w=400";
+const STYLE_IMG = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400";
 
 // ─── Side Drawer ──────────────────────────────────────────────────────────────
 function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, onOpenSimulator, onScanCapillaire, onStylisteIA, isPro }) {
@@ -313,6 +313,7 @@ function DictateButton({ onDictate, isDark }) {
 
 export default function Maria() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useTheme();
   const voiceAgent = useVoiceAgent();
   const { showAuthModal, authMessage, requireAuth, closeAuthModal } = useAuthGate();
@@ -379,6 +380,17 @@ export default function Maria() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // ── Auto-message depuis Recherche IA (location.state.autoMessage) ──
+  const autoMessageSentRef = useRef(false);
+  useEffect(() => {
+    if (!historyLoaded) return;
+    const autoMsg = location?.state?.autoMessage;
+    if (autoMsg && !autoMessageSentRef.current) {
+      autoMessageSentRef.current = true;
+      setTimeout(() => sendMessage(autoMsg), 500);
+    }
+  }, [historyLoaded, location?.state?.autoMessage]);
 
   // ── Vérifier Voicebox au démarrage ──
   useEffect(() => {

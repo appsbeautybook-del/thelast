@@ -231,36 +231,36 @@ export default function Recherche() {
   }
 
   return (
-    <div className="font-display h-full bg-[#f8f7f5] flex flex-col overflow-hidden">
+    <div className="font-display h-full bg-white flex flex-col overflow-hidden">
 
-      {/* ── HERO HEADER ── */}
+      {/* ── HERO HEADER (blanc/orange) ── */}
       <div
         className="flex-shrink-0 px-5 pt-[env(safe-area-inset-top,16px)]"
-        style={{ background: "linear-gradient(160deg, #111111 0%, #1e1e1e 60%, #2a1a0e 100%)" }}
+        style={{ background: "linear-gradient(160deg, #FFFFFF 0%, #FFF8F3 60%, #FFF0E6 100%)", borderBottom: "1px solid rgba(232,115,42,0.12)" }}
       >
         {/* Top row with Title + AI Advanced Search Button */}
         <div className="flex items-center justify-between pt-5 pb-3">
           <div>
-            <h1 className="text-[30px] font-black leading-none tracking-tight text-white uppercase">Recherche</h1>
+            <h1 className="text-[30px] font-black leading-none tracking-tight text-gray-900 uppercase">Recherche</h1>
             <p className="text-[11px] font-bold mt-1 flex items-center gap-1.5" style={{ color: "#E8732A" }}>
               <span className="inline-block w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: "#E8732A" }} />
-              TROUVEZ VOTRE SALON & STYLE IDÉAL
+              TROUVEZ VOTRE SALON &amp; STYLE IDÉAL
             </p>
           </div>
 
-          {/* Bouton Recherche Avancée IA */}
+          {/* Bouton Recherche Avancée IA → ouvre Maria */}
           <button
-            onClick={handleOpenAISearch}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl active:scale-95 transition-all shadow-lg"
+            onClick={() => navigate("/maria", { state: { autoMessage: "Bonjour Maria ! Je cherche les meilleurs créneaux disponibles dans les salons de beauté près de chez moi. Peux-tu m'aider ?" } })}
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl active:scale-95 transition-all shadow-lg shadow-orange-200"
             style={{
-              background: "linear-gradient(135deg, #E8732A 0%, #a855f7 100%)",
-              border: "1px solid rgba(255,255,255,0.2)"
+              background: "linear-gradient(135deg, #E8732A 0%, #f59e0b 100%)",
+              border: "none",
             }}
           >
             <Sparkles className="w-4 h-4 text-white animate-pulse" />
             <div className="text-left leading-tight">
-              <p className="text-[11px] font-black text-white uppercase tracking-wider">Recherche IA</p>
-              <p className="text-[9px] text-white/80 font-semibold">Assistant interactif</p>
+              <p className="text-[11px] font-black text-white uppercase tracking-wider">Maria IA</p>
+              <p className="text-[9px] text-white/80 font-semibold">Recherche intelligente</p>
             </div>
           </button>
         </div>
@@ -269,19 +269,18 @@ export default function Recherche() {
         <div className="flex items-center gap-2.5 mb-4">
           <div
             className="flex-1 flex items-center gap-2.5 px-4 py-3.5 rounded-2xl"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+            style={{ background: "#f5f5f5", border: "1.5px solid #e8e4df" }}
           >
-            <Search className="w-4 h-4 shrink-0" style={{ color: "rgba(255,255,255,0.4)" }} />
+            <Search className="w-4 h-4 shrink-0 text-gray-400" />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Salons, Styles, Services..."
-              className="flex-1 bg-transparent text-[14px] font-medium outline-none"
-              style={{ color: "white" }}
+              className="flex-1 bg-transparent text-[14px] font-medium outline-none text-gray-800 placeholder-gray-400"
             />
             {search && (
               <button onClick={() => setSearch("")} className="shrink-0">
-                <XCircle className="w-4 h-4" style={{ color: "rgba(255,255,255,0.4)" }} />
+                <XCircle className="w-4 h-4 text-gray-400" />
               </button>
             )}
           </div>
@@ -304,14 +303,15 @@ export default function Recherche() {
                 onClick={() => setActiveCategory(cat.id)}
                 className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full transition-all active:scale-95"
                 style={{
-                  background: isActive ? "#E8732A" : "rgba(255,255,255,0.08)",
-                  border: isActive ? "none" : "1px solid rgba(255,255,255,0.1)",
+                  background: isActive ? "#E8732A" : "white",
+                  border: isActive ? "none" : "1.5px solid #e8e4df",
+                  boxShadow: isActive ? "0 2px 8px rgba(232,115,42,0.25)" : "none",
                 }}
               >
                 <span className="text-[15px]">{cat.emoji}</span>
                 <span
                   className="text-[12px] font-bold whitespace-nowrap"
-                  style={{ color: isActive ? "white" : "rgba(255,255,255,0.6)" }}
+                  style={{ color: isActive ? "white" : "#555" }}
                 >
                   {cat.label}
                 </span>
