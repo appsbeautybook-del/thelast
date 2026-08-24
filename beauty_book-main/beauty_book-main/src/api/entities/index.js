@@ -176,9 +176,9 @@ const createEntity = (tableName) => ({
   get: async (id) => {
     if (!CRUD_API) {
       try {
-        const { data, error } = await supabase.from(tableName).select(getSelectColumns(tableName)).eq('id', id).single();
-        if (error) return null;
-        return data;
+        const { data, error } = await supabase.from(tableName).select(getSelectColumns(tableName)).eq('id', id);
+        if (error || !data || data.length === 0) return null;
+        return data[0];
       } catch { return null; }
     }
     try {
@@ -192,9 +192,9 @@ const createEntity = (tableName) => ({
       return (result || []).find(r => r.id === id) || null;
     } catch (e) {
       try {
-        const { data, error } = await supabase.from(tableName).select(getSelectColumns(tableName)).eq('id', id).single();
-        if (error) return null;
-        return data;
+        const { data, error } = await supabase.from(tableName).select(getSelectColumns(tableName)).eq('id', id);
+        if (error || !data || data.length === 0) return null;
+        return data[0];
       } catch { return null; }
     }
   },
@@ -209,9 +209,9 @@ const createEntity = (tableName) => ({
       if (!session?.user) {
         throw new Error('Vous devez être connecté pour effectuer cette action.');
       }
-      const { data: result, error } = await supabase.from(tableName).insert(cleanPayload).select().single();
+      const { data: result, error } = await supabase.from(tableName).insert(cleanPayload).select();
       if (error) throw error;
-      return result;
+      return (result && result[0]) ? result[0] : cleanPayload;
     }
     try {
       const res = await fetch(`${CRUD_API}/crud/create`, {
@@ -226,7 +226,10 @@ const createEntity = (tableName) => ({
       const { result } = await res.json();
       return result;
     } catch (e) {
-      throw e;
+      const cleanPayload = await stripUnknownColumns(tableName, payload);
+      const { data: result, error } = await supabase.from(tableName).insert(cleanPayload).select();
+      if (error) throw error;
+      return (result && result[0]) ? result[0] : cleanPayload;
     }
   },
 
@@ -236,9 +239,10 @@ const createEntity = (tableName) => ({
 
     if (!CRUD_API) {
       const cleanPayload = await stripUnknownColumns(tableName, payload);
-      const { data: result, error } = await supabase.from(tableName).update(cleanPayload).eq('id', id).select().single();
+      const { data: result, error } = await supabase.from(tableName).update(cleanPayload).eq('id', id).select();
       if (error) throw error;
-      return result;
+      const row = (result && result[0]) ? result[0] : { ...cleanPayload, id };
+      return row;
     }
     try {
       const res = await fetch(`${CRUD_API}/crud/update`, {
@@ -254,9 +258,10 @@ const createEntity = (tableName) => ({
       return result;
     } catch (e) {
       const cleanPayload = await stripUnknownColumns(tableName, payload);
-      const { data: result, error } = await supabase.from(tableName).update(cleanPayload).eq('id', id).select().single();
+      const { data: result, error } = await supabase.from(tableName).update(cleanPayload).eq('id', id).select();
       if (error) throw error;
-      return { data: { [tableName.toLowerCase()]: result }, result };
+      const row = (result && result[0]) ? result[0] : { ...cleanPayload, id };
+      return { data: { [tableName.toLowerCase()]: row }, result: row };
     }
   },
 

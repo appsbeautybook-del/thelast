@@ -564,19 +564,17 @@ export default function AdminBoutique() {
                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Catégorie</label>
                 <select value={categCategory} onChange={e => { setCategCategory(e.target.value); setCategSubCategory(""); }}
                   className={inputCls}>
-                  <option value="">-- Choisir --</option>
+                  <option value="">-- Choisir une catégorie --</option>
                   {allCategories.map(c => (
-                    <optgroup key={c.id} label={c.label}>
-                      {c.subs.map(s => <option key={s} value={s}>{s}</option>)}
-                    </optgroup>
+                    <option key={c.id || c.label} value={c.label || c.id}>{c.label || c.id}</option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1.5">Sous-catégorie</label>
                 <select value={categSubCategory} onChange={e => setCategSubCategory(e.target.value)} className={inputCls}>
-                  <option value="">-- Aucune --</option>
-                  {allCategories.find(c => c.subs.includes(categCategory))?.subs.map(s => (
+                  <option value="">-- Aucune sous-catégorie --</option>
+                  {allCategories.find(c => (c.label === categCategory || c.id === categCategory))?.subs?.map(s => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>

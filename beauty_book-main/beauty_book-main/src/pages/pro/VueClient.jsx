@@ -695,7 +695,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
   const { theme } = useTheme();
   const { startCall } = useCall() || {};
   // Priorité : prop → state de navigation → email user courant
-  const proEmailFromState = location?.state?.proEmail;
+  const proEmailFromState = location?.state?.proEmail || location?.state?.email;
   const [activeTab, setActiveTab] = useState("profil");
   const [subscribed, setSubscribed] = useState(() => {
     try {

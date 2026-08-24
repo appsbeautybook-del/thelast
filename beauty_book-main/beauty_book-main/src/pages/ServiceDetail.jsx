@@ -357,7 +357,7 @@ export default function ServiceDetail() {
   const total = price + addonsTotal;
 
   const handleOpenPro = () => {
-    const email = s.pro_email || proData?.user_email;
+    const email = service?.pro_email || service?.user_email || service?.author_email || proData?.user_email || state?.proEmail || state?.email;
     if (email) {
       navigate("/pro/vue-client", { state: { proEmail: email } });
     }
