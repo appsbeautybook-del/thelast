@@ -13,8 +13,8 @@ const DEFAULT_DAY = { open: false, start: "", end: "", pause_start: "", pause_en
 
 // ── Horaires Form ──────────────────────────────────────────────────────────────
 function HorairesForm({ horaires, onChange }) {
-  const [bulkOpen, setBulkOpen] = useState("09:00");
-  const [bulkEnd, setBulkEnd] = useState("19:00");
+  const [bulkOpen, setBulkOpen] = useState("");
+  const [bulkEnd, setBulkEnd] = useState("");
   const [bulkPauseStart, setBulkPauseStart] = useState("");
   const [bulkPauseEnd, setBulkPauseEnd] = useState("");
   const [applied, setApplied] = useState(false);

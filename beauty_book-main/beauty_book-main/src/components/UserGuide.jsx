@@ -105,6 +105,8 @@ export default function UserGuide() {
   const [step, setStep] = useState(0);
   const [targetRect, setTargetRect] = useState(null);
   const [navigating, setNavigating] = useState(false);
+  const [tooltipHeight, setTooltipHeight] = useState(200);
+  const tooltipRef = useRef(null);
   const measureRef = useRef(null);
 
   useEffect(() => {
@@ -183,6 +185,13 @@ export default function UserGuide() {
     };
   }, [active, measure]);
 
+  // Measure tooltip height after render
+  useEffect(() => {
+    if (!active || !tooltipRef.current) return;
+    const h = tooltipRef.current.offsetHeight;
+    if (h > 0) setTooltipHeight(h);
+  }, [active, step, targetRect]);
+
   const close = () => {
     localStorage.setItem(GUIDE_KEY, "1");
     setActive(false);
@@ -206,22 +215,33 @@ export default function UserGuide() {
 
   const isLast = step === STEPS.length - 1;
   const isFirst = step === 0;
+
+  // Position tooltip — auto-adjust if not enough space
   const PAD = 12;
   const tooltipWidth = Math.min(300, window.innerWidth - 48);
+  const viewportH = window.innerHeight;
+  const spaceBelow = viewportH - targetRect.bottom - PAD - 8;
+  const spaceAbove = targetRect.top - PAD - 8;
 
-  // Position tooltip
-  let tooltipTop, tooltipLeft;
-  if (s.placement === "bottom") {
+  let tooltipTop, tooltipLeft, actualPlacement;
+  if (s.placement === "bottom" && spaceBelow >= tooltipHeight + 8) {
+    actualPlacement = "bottom";
     tooltipTop = targetRect.bottom + PAD + 8;
-    tooltipLeft = Math.max(24, Math.min(targetRect.centerX - tooltipWidth / 2, window.innerWidth - tooltipWidth - 24));
-  } else if (s.placement === "top") {
-    tooltipTop = Math.max(16, targetRect.top - PAD - 160);
-    tooltipLeft = Math.max(24, Math.min(targetRect.centerX - tooltipWidth / 2, window.innerWidth - tooltipWidth - 24));
+  } else if (s.placement === "top" && spaceAbove >= tooltipHeight + 8) {
+    actualPlacement = "top";
+    tooltipTop = Math.max(16, targetRect.top - PAD - tooltipHeight - 8);
+  } else if (spaceBelow >= tooltipHeight + 8) {
+    actualPlacement = "bottom";
+    tooltipTop = targetRect.bottom + PAD + 8;
+  } else if (spaceAbove >= tooltipHeight + 8) {
+    actualPlacement = "top";
+    tooltipTop = Math.max(16, targetRect.top - PAD - tooltipHeight - 8);
   } else {
-    // left
-    tooltipTop = Math.max(16, targetRect.top - 20);
-    tooltipLeft = Math.max(16, targetRect.left - tooltipWidth - 20);
+    // Fallback: place in center of viewport
+    actualPlacement = "bottom";
+    tooltipTop = Math.max(16, (viewportH - tooltipHeight) / 2);
   }
+  tooltipLeft = Math.max(24, Math.min(targetRect.centerX - tooltipWidth / 2, window.innerWidth - tooltipWidth - 24));
 
   return (
     <>
@@ -259,6 +279,7 @@ export default function UserGuide() {
 
       {/* Tooltip */}
       <div
+        ref={tooltipRef}
         className="fixed z-[9999] bg-white rounded-2xl shadow-2xl px-5 py-4"
         style={{ top: tooltipTop, left: tooltipLeft, width: tooltipWidth }}
         onClick={e => e.stopPropagation()}
@@ -312,16 +333,16 @@ export default function UserGuide() {
         )}
 
         {/* Arrow */}
-        {s.placement !== "left" && (
+        {actualPlacement !== "left" && (
           <div
             className="absolute w-3 h-3 bg-white rotate-45 -z-10"
-            style={s.placement === "bottom"
+            style={actualPlacement === "bottom"
               ? { top: -6, left: targetRect.centerX - tooltipLeft - 6 }
               : { bottom: -6, left: targetRect.centerX - tooltipLeft - 6 }
             }
           />
         )}
-        {s.placement === "left" && (
+        {actualPlacement === "left" && (
           <div
             className="absolute w-3 h-3 bg-white rotate-45 -z-10"
             style={{ top: 20, right: -6 }}
