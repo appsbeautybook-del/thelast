@@ -239,15 +239,51 @@ const AuthenticatedApp = () => {
 
   // Redirect to onboarding if first time and not on a special route
   if (!hasOnboarded && !isSpecialRoute) {
-    // Splash already seen → go directly to home page
+    // Splash already seen → show full app (all pages work)
     if (splashDone) {
       return (
         <>
+          <AuthModal
+            open={showGlobalAuthModal && !isAuthPage && !isSpecialRoute}
+            onClose={() => setShowGlobalAuthModal(false)}
+          />
           <Routes>
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/connexion" element={<Connexion />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route element={<AppShell />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/services-salons" element={<ServicesSalons />} />
+              <Route path="/boutique" element={<Boutique />} />
+              <Route path="/rendez-vous" element={<RendezVous />} />
+              <Route path="/profil" element={<Profil />} />
+              <Route path="/maria" element={<Maria />} />
+              <Route path="/devenir-pro" element={<DevenirPro />} />
+              <Route path="/bundle/:id" element={<BundleDetail />} />
+              <Route path="/bundle-groupe/:id" element={<BundleGroupeDetail />} />
+              <Route path="/service/:id" element={<ServiceDetail />} />
+              <Route path="/modifier-profil-client" element={<ModifierProfilClient />} />
+              <Route path="/parametres" element={<Parametres />} />
+              <Route path="/parametres/securite" element={<Securite />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/panier" element={<Panier />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/reservation" element={<Reservation />} />
+              <Route path="/explorer" element={<Explorer />} />
+              <Route path="/reels" element={<Reels />} />
+              <Route path="/live" element={<LiveFeed />} />
+              <Route path="/live-detail/:id" element={<LiveDetail />} />
+              <Route path="/abonnements" element={<AbonnementsClient />} />
+              <Route path="/mon-solde" element={<MonSolde />} />
+              <Route path="/programme-fidelite" element={<ProgrammeFidelite />} />
+              <Route path="/mes-commandes" element={<MesCommandes />} />
+              <Route path="/commande/:id" element={<CommandeDetail />} />
+              <Route path="/a-propos" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/scan-capillaire" element={<ScanCapillaire />} />
+              <Route path="/sh-ai" element={<ShAI />} />
               <Route path="*" element={<Home />} />
             </Route>
           </Routes>
