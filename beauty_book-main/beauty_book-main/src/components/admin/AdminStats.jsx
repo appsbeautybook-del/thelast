@@ -61,6 +61,40 @@ function DonutChart({ segments, size = 80 }) {
   );
 }
 
+function MetricBars({ items, valueFormatter = value => value }) {
+  const max = Math.max(...items.map(item => item.value), 1);
+  return (
+    <div className="space-y-3">
+      {items.map(item => (
+        <div key={item.label}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-semibold text-gray-600">{item.label}</span>
+            <span className="text-[11px] font-black text-gray-900">{valueFormatter(item.value)}</span>
+          </div>
+          <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+            <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(3, (item.value / max) * 100)}%`, background: item.color || "#E8732A" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AnalyticsCard({ icon: Icon, title, subtitle, children }) {
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+      <div className="flex items-start gap-2 mb-5">
+        <Icon className="w-4 h-4 text-orange-500 mt-0.5" />
+        <div>
+          <h3 className="text-[13px] font-black text-gray-900">{title}</h3>
+          {subtitle && <p className="text-[11px] text-gray-400 mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 // ── KPI Card ─────────────────────────────────────────────────────────────────
 function KPICard({ icon: Icon, label, value, sub, trend, color, sparkData }) {
   const colorMap = {
@@ -364,6 +398,11 @@ export default function AdminStats() {
   const [users, setUsers] = useState([]);
   const [activeSection, setActiveSection] = useState("overview");
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const [analytics, setAnalytics] = useState({
+    retentionRate: 0, activeClients30: 0, returningClients30: 0,
+    videoViews: 0, videoLikes: 0, videoComments: 0, videoEngagement: 0,
+    dailyReels: [], reservationHealth: [],
+  });
 
   const load = async () => {
     setLoading(true);
@@ -405,6 +444,37 @@ export default function AdminStats() {
       setCommandesStats({ total: commandes.length, pending: pendingCmds.length, ca: Math.round(ca) });
       const pendingRdv = reservations.filter(r => r.status === "en_attente");
       setReservationsStats({ total: reservations.length, pending: pendingRdv.length });
+
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+      const recentReservations = reservations.filter(r => r.date && now - new Date(r.date).getTime() <= 30 * dayMs && r.status !== "annule");
+      const previousReservations = reservations.filter(r => r.date && now - new Date(r.date).getTime() > 30 * dayMs && now - new Date(r.date).getTime() <= 90 * dayMs && r.status !== "annule");
+      const recentClients = new Set(recentReservations.map(r => r.client_email).filter(Boolean));
+      const previousClients = new Set(previousReservations.map(r => r.client_email).filter(Boolean));
+      const returningClients = [...recentClients].filter(email => previousClients.has(email)).length;
+      const videoViews = reels.reduce((sum, reel) => sum + Number(reel.views || 0), 0);
+      const videoLikes = reels.reduce((sum, reel) => sum + Number(reel.likes || 0), 0);
+      const videoComments = reels.reduce((sum, reel) => sum + Number(reel.comments_count || 0), 0);
+      const videoEngagement = videoViews > 0 ? Math.round(((videoLikes + videoComments) / videoViews) * 1000) / 10 : 0;
+      const dailyReels = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(now - (6 - index) * dayMs);
+        const key = date.toISOString().slice(0, 10);
+        return {
+          label: date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", ""),
+          value: reels.filter(reel => reel.created_at?.slice(0, 10) === key).length,
+        };
+      });
+      const statusCounts = ["en_attente", "confirme", "termine", "annule"].map(status => ({
+        label: status === "en_attente" ? "En attente" : status === "confirme" ? "Confirmées" : status === "termine" ? "Terminées" : "Annulées",
+        value: reservations.filter(r => r.status === status).length,
+        color: status === "annule" ? "#F43F5E" : status === "termine" ? "#10B981" : status === "confirme" ? "#3B82F6" : "#F59E0B",
+      }));
+      setAnalytics({
+        retentionRate: recentClients.size > 0 ? Math.round((returningClients / recentClients.size) * 100) : 0,
+        activeClients30: recentClients.size, returningClients30: returningClients,
+        videoViews, videoLikes, videoComments, videoEngagement, dailyReels,
+        reservationHealth: statusCounts,
+      });
       setLastRefresh(new Date());
     } catch {}
     setLoading(false);
@@ -570,6 +640,68 @@ export default function AdminStats() {
               )}
             </div>
           </div>
+
+          {/* Analytics détaillées */}
+          <div>
+            <div className="flex items-end justify-between mb-3">
+              <div>
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Pilotage détaillé</p>
+                <p className="text-[12px] text-gray-500 mt-1">Les indicateurs sont calculés à partir des données disponibles.</p>
+              </div>
+              <span className="text-[10px] font-bold text-gray-400">Fenêtre : 30 jours</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <AnalyticsCard icon={UserCheck} title="Rétention clients" subtitle="Clients revenus après une première réservation">
+                <div className="flex items-center gap-5">
+                  <DonutChart
+                    segments={[{ value: analytics.retentionRate, color: "#10B981" }, { value: 100 - analytics.retentionRate, color: "#E5E7EB" }]}
+                    size={92}
+                  />
+                  <div>
+                    <p className="text-[28px] font-black text-gray-900">{analytics.retentionRate}%</p>
+                    <p className="text-[11px] text-gray-500">{analytics.returningClients30} sur {analytics.activeClients30} clients actifs</p>
+                  </div>
+                </div>
+              </AnalyticsCard>
+
+              <AnalyticsCard icon={Video} title="Performance vidéo" subtitle="Vues et interactions cumulées des réels">
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div><p className="text-[24px] font-black text-gray-900">{analytics.videoViews.toLocaleString("fr-FR")}</p><p className="text-[10px] text-gray-400">Vues totales</p></div>
+                  <div><p className="text-[24px] font-black text-gray-900">{analytics.videoEngagement}%</p><p className="text-[10px] text-gray-400">Taux engagement</p></div>
+                </div>
+                <MetricBars items={[
+                  { label: "J'aime", value: analytics.videoLikes, color: "#E8732A" },
+                  { label: "Commentaires", value: analytics.videoComments, color: "#6366F1" },
+                ]} valueFormatter={value => value.toLocaleString("fr-FR")} />
+                <p className="text-[10px] text-gray-400 mt-4">Temps de visionnage : non mesuré dans les données actuelles.</p>
+              </AnalyticsCard>
+
+              <AnalyticsCard icon={CalendarCheck} title="Santé des réservations" subtitle="Répartition de tous les rendez-vous">
+                <MetricBars
+                  items={analytics.reservationHealth}
+                  valueFormatter={value => value.toLocaleString("fr-FR")}
+                />
+                <p className="text-[10px] text-gray-400 mt-4">Taux d'annulation : {reservationsStats.total > 0 ? Math.round(((analytics.reservationHealth.find(item => item.label === "Annulées")?.value || 0) / reservationsStats.total) * 100) : 0}%</p>
+              </AnalyticsCard>
+            </div>
+          </div>
+
+          <AnalyticsCard icon={Activity} title="Activité de publication" subtitle="Nombre de réels créés au cours des 7 derniers jours">
+            <div className="flex items-end gap-2 h-32">
+              {analytics.dailyReels.map(day => {
+                const max = Math.max(...analytics.dailyReels.map(item => item.value), 1);
+                return (
+                  <div key={day.label} className="flex-1 h-full flex flex-col items-center justify-end gap-2">
+                    <span className="text-[10px] font-black text-gray-600">{day.value}</span>
+                    <div className="w-full max-w-12 rounded-t-lg bg-orange-100 overflow-hidden" style={{ height: `${Math.max(8, (day.value / max) * 78)}%` }}>
+                      <div className="w-full h-full bg-orange-500 rounded-t-lg" />
+                    </div>
+                    <span className="text-[10px] text-gray-400 capitalize">{day.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </AnalyticsCard>
 
           {/* Rankings */}
           <div>

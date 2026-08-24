@@ -294,7 +294,6 @@ export default function ModifierProfilPro() {
         phone: data.phone || "",
         address: data.address || "",
         city: data.city || "",
-        postal_code: data.postal_code || "",
         bio: data.bio || "",
         avatar_url: data.avatar_url || "",
         cover_url: data.cover_url || "",
@@ -338,7 +337,8 @@ export default function ModifierProfilPro() {
         updated_at: new Date().toISOString(),
       };
       if (existing?.id) {
-        await supabase.from('ProfilPro').update(extra).eq('id', existing.id);
+        const { error: extraError } = await supabase.from('ProfilPro').update(extra).eq('id', existing.id);
+        if (extraError) throw extraError;
       }
 
       try { localStorage.setItem('pro_profile_cache', JSON.stringify(core)); } catch {}

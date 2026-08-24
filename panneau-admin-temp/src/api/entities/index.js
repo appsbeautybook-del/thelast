@@ -4,11 +4,12 @@ import { supabase } from '@/api/supabaseClient';
  * Couche d'abstraction compatible Base44.
  * Remplace entities.NomTable.filter/create/update/delete/get/list
  *
- * - Reads (filter/list/get) → direct Supabase (anon key)
- * - Writes (create/update/delete) → backend /api/crud (service_role, bypasses RLS)
+ * - Reads and writes → Supabase using the authenticated admin session
  */
 
-const CRUD_API = import.meta.env.VITE_BACKEND_URL || '';
+// The deployed application does not expose the /crud/* routes. Using the
+// authenticated Supabase client keeps writes and subsequent reads on the same database.
+const CRUD_API = '';
 
 // Auto-migrate: add missing columns to Style table
 const STYLE_MIGRATION_KEY = 'bb_style_migration_v2';
@@ -319,8 +320,9 @@ const createEntity = (tableName) => ({
 
   delete: async (id) => {
     if (!CRUD_API) {
-      const { error } = await supabase.from(tableName).delete().eq('id', id);
+      const { data, error } = await supabase.from(tableName).delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Suppression refusée ou élément introuvable.');
       return true;
     }
     try {
@@ -335,8 +337,9 @@ const createEntity = (tableName) => ({
       }
       return true;
     } catch (e) {
-      const { error } = await supabase.from(tableName).delete().eq('id', id);
+      const { data, error } = await supabase.from(tableName).delete().eq('id', id).select('id');
       if (error) throw error;
+      if (!data?.length) throw new Error('Suppression refusée ou élément introuvable.');
       return true;
     }
   },
