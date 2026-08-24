@@ -66,11 +66,13 @@ export default function ParametresPro() {
         {/* Pro card */}
         <div className="bg-[#1a2035] rounded-3xl p-5 mt-4 flex items-center gap-4 shadow-sm">
           <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-700 shrink-0 border-2 border-primary/30">
-            <img
-              src=""
-              alt="profil"
-              className="w-full h-full object-cover"
-            />
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt={user.full_name || "profil"} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-black text-xl">
+                {(user?.full_name || "P")[0].toUpperCase()}
+              </div>
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[16px] font-black text-white truncate">{user?.full_name || "Professionnel"}</p>

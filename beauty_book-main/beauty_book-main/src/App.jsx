@@ -122,6 +122,7 @@ import MesDonnees from '@/pages/parametres/MesDonnees';
 import CookieConsent from '@/components/CookieConsent';
 import ShAI from '@/pages/ShAI';
 import Explorer from '@/pages/Explorer';
+import Recherche from '@/pages/Recherche';
 import About from '@/pages/About';
 import Contact from '@/pages/Contact';
 import AuthCallback from '@/pages/AuthCallback';
@@ -272,7 +273,8 @@ const AuthenticatedApp = () => {
               <Route path="/panier" element={<Panier />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/reservation" element={<Reservation />} />
-              <Route path="/explorer" element={<Explorer />} />
+              <Route path="/recherche" element={<Recherche />} />
+              <Route path="/explorer" element={<Navigate to="/recherche" replace />} />
               <Route path="/reels" element={<Reels />} />
               <Route path="/live" element={<LiveFeed />} />
               <Route path="/live-detail/:id" element={<LiveDetail />} />
@@ -386,8 +388,9 @@ const AuthenticatedApp = () => {
         <Route path="/sh-ai" element={<ShAI />} />
         <Route path="/receptionniste-ia" element={<ReceptionnistIA />} />
         <Route path="/ai-scaling-business" element={<AIScalingBusiness />} />
-        <Route path="/explorer" element={<Explorer />} />
-        <Route path="/recherche-approfondie" element={<Services />} />
+        <Route path="/recherche" element={<Recherche />} />
+        <Route path="/explorer" element={<Navigate to="/recherche" replace />} />
+        <Route path="/recherche-approfondie" element={<Recherche />} />
         <Route path="/a-propos" element={<About />} />
         <Route path="/contact" element={<Contact />} />
       </Route>

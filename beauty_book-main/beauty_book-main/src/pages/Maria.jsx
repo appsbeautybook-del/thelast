@@ -1264,7 +1264,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/ai-scaling-business")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="" alt="ai scaling business" className="w-full h-full object-cover" />
+                  <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=400" alt="AI Scaling Business" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/80 to-blue-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1281,7 +1281,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/receptionniste-ia")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="" alt="receptionniste ia" className="w-full h-full object-cover" />
+                  <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400" alt="Receptionniste IA" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/80 to-teal-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1298,7 +1298,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/social-media")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="" alt="social media" className="w-full h-full object-cover" />
+                  <img src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400" alt="AI Social Media" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-pink-500/80 to-purple-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1335,7 +1335,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => { setShowSimulator(true); }}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="" alt="ai hairstyle" className="w-full h-full object-cover" />
+                  <img src="https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=400" alt="AI Hairstyle" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-rose-500/80 to-pink-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1352,7 +1352,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/sh-ai")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="" alt="styliste ia" className="w-full h-full object-cover" />
+                  <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400" alt="Styliste IA" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">

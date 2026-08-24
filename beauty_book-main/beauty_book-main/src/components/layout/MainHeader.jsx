@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { MapPin, Radio, Compass, Users, ShoppingBag, Building2, Star } from "lucide-react";
+import { MapPin, Radio, Search, Users, ShoppingBag, Building2, Star } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -8,7 +8,7 @@ import CityPickerModal from "@/components/layout/CityPickerModal";
 
 const topTabs = [
   { id: "live",       label: "Direct",    path: "/live",                Icon: Radio,      color: "#ef4444", badge: true },
-  { id: "explorer",   label: "Explorer",  path: "/recherche-approfondie", Icon: Compass,    color: "#f97316" },
+  { id: "recherche",  label: "Recherche", path: "/recherche",           Icon: Search,     color: "#E8732A" },
   { id: "reels",      label: "Social",    path: "/reseau-social",       Icon: Users,      color: "#a855f7" },
   { id: "boutique",   label: "Boutique",  path: "/boutique",            Icon: ShoppingBag,color: "#06b6d4" },
   { id: "immobilier", label: "Immo",      path: "/immobilier",          Icon: Building2,  color: "#10b981" },

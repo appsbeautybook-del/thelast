@@ -515,7 +515,7 @@ export default function ServiceDetail() {
             className="relative overflow-hidden rounded-2xl active:scale-95 transition-all shadow-md group"
             style={{ minHeight: 100 }}
           >
-            <img src="" alt="" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
+            <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400" alt="Filtre IA" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
             <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-800/50 to-transparent" />
             <div className="absolute top-2 left-2 z-10">
               <div className="w-7 h-7 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/20">

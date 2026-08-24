@@ -58,8 +58,8 @@ const SUB_IMAGES = {
   "Hygiène": "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=200",
   // Grossiste
   "Alimentaire": "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=200",
-  "Divers": "https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=200",
-  "Tout": "",
+  "Tout": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=200",
+  "tout": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=200",
 };
 
 
