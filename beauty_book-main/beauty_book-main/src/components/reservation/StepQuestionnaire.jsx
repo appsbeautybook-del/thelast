@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Scissors, Gem, Paintbrush, Flower2, Sparkles, Droplets, Zap, ChevronRight, Check } from "lucide-react";
+import { ArrowLeft, Save, Scissors, Gem, Paintbrush, Flower2, Sparkles, Droplets, Zap, MessageSquare, ChevronRight, Check } from "lucide-react";
 
 const QUESTIONNAIRES = {
   coiffure: [
@@ -158,8 +158,10 @@ export default function StepQuestionnaire({
     } catch {}
   };
 
+  const [clientNotes, setClientNotes] = useState(booking.notes || "");
+
   const handleValidateStep = () => {
-    onUpdateBooking({ customAnswers: answers });
+    onUpdateBooking({ customAnswers: answers, notes: clientNotes });
     onNext();
   };
 
@@ -245,6 +247,26 @@ export default function StepQuestionnaire({
               );
             })}
           </div>
+        </div>
+
+        {/* Commentaire client */}
+        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
+              <MessageSquare className="w-4 h-4 text-blue-500" />
+            </div>
+            <div>
+              <p className="text-[13px] font-black text-gray-900">Commentaire</p>
+              <p className="text-[10px] text-gray-400 font-medium">Informations pour le professionnel</p>
+            </div>
+          </div>
+          <textarea
+            value={clientNotes}
+            onChange={e => setClientNotes(e.target.value)}
+            placeholder="Ex: allergies, demandes spéciales, étage, code d'accès…"
+            rows={3}
+            className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-[13px] text-gray-700 font-medium outline-none border border-gray-200 focus:border-primary resize-none placeholder:text-gray-300"
+          />
         </div>
 
       </div>

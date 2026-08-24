@@ -831,26 +831,6 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
           </div>
         )}
 
-        {/* Commentaire client */}
-        <div className="bg-white border border-gray-100 rounded-3xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center">
-              <MessageSquare className="w-4 h-4 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-[13px] font-black text-gray-900">Commentaire</p>
-              <p className="text-[10px] text-gray-400 font-medium">Informations pour le professionnel</p>
-            </div>
-          </div>
-          <textarea
-            value={clientNotes}
-            onChange={e => setClientNotes(e.target.value)}
-            placeholder="Ex: allergies, demandes spéciales, étage, code d'accès…"
-            rows={3}
-            className="w-full bg-gray-50 rounded-2xl px-4 py-3 text-[13px] text-gray-700 font-medium outline-none border border-gray-200 focus:border-primary resize-none placeholder:text-gray-300"
-          />
-        </div>
-
         {/* Lieu */}
         <div className="rounded-3xl p-5 text-white" style={{ background: "#111" }}>
           <div className="flex items-center justify-between mb-3">

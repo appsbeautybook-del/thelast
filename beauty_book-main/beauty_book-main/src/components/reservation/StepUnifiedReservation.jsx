@@ -5,8 +5,6 @@ import { fr } from "date-fns/locale";
 import { entities } from "@/api/entities";
 
 const CLEANING_MINUTES = 15;
-const SLOT_INTERVAL = 15;
-const MAX_SEATS = 6;
 
 const DAY_MAP = { 0: "dimanche", 1: "lundi", 2: "mardi", 3: "mercredi", 4: "jeudi", 5: "vendredi", 6: "samedi" };
 const DEFAULT_OPEN = "09:00";
@@ -91,24 +89,23 @@ function isInPause(slotStartMin, durationMin, pauseStart, pauseEnd) {
   return slotStartMin < pEnd && slotEnd > pStart;
 }
 
-// Generate time slots respecting pauses and service duration
-function generateTimeSlots(schedule, durationMin) {
+// Generate time slots Planity-style: step = service duration + cleaning, with seat count
+function generateTimeSlots(schedule, durationMin, numSeats) {
   const openMin = parseTime(schedule.start);
   const closeMin = parseTime(schedule.end);
   if (openMin == null || closeMin == null) return [];
   const slots = [];
-  for (let t = openMin; t + durationMin <= closeMin; t += SLOT_INTERVAL) {
-    // Skip slots during pause
+  const step = durationMin; // step includes service + cleaning
+  for (let t = openMin; t + durationMin <= closeMin; t += step) {
     if (isInPause(t, durationMin, schedule.pause_start, schedule.pause_end)) continue;
-    slots.push(formatMinutes(t));
+    slots.push({ time: formatMinutes(t), seats: numSeats });
   }
   return slots;
 }
 
-function getSlotAvailability(date, timeStr) {
-  const seed = (date?.getDate() || 0) + (timeStr.charCodeAt(0)) + (timeStr.charCodeAt(3) || 0);
-  const booked = seed % (MAX_SEATS + 1);
-  return Math.max(0, MAX_SEATS - booked);
+// Get real seat count from pro profile
+function getSeatCount(proProfile) {
+  return proProfile?.seats_count || proProfile?.nb_chaises || 1;
 }
 
 export default function StepUnifiedReservation({
@@ -163,21 +160,18 @@ export default function StepUnifiedReservation({
   };
 
   // ── Time slots for selected date ──
+  const numSeats = getSeatCount(proProfile);
   const availableTimeSlots = useMemo(() => {
     if (!selectedDate) return [];
     const schedule = getDaySchedule(proProfile, selectedDate.getDay());
     if (!schedule) return [];
-    const raw = generateTimeSlots(schedule, totalDurationWithCleaning);
-    return raw.map(time => ({
-      time,
-      seats: getSlotAvailability(selectedDate, time),
-    }));
-  }, [selectedDate, proProfile, totalDurationWithCleaning]);
+    return generateTimeSlots(schedule, totalDurationWithCleaning, numSeats);
+  }, [selectedDate, proProfile, totalDurationWithCleaning, numSeats]);
 
   const morningSlots = availableTimeSlots.filter(s => parseTime(s.time) < 12 * 60);
   const afternoonSlots = availableTimeSlots.filter(s => parseTime(s.time) >= 12 * 60);
-  const morningAvailable = morningSlots.filter(s => s.seats > 0).length;
-  const afternoonAvailable = afternoonSlots.filter(s => s.seats > 0).length;
+  const morningAvailable = morningSlots.length;
+  const afternoonAvailable = afternoonSlots.length;
 
   // ── Prices ──
   const bundlePrice = isBundle ? (booking.bundle?.bundle_price || 0) : 0;
