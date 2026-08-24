@@ -94,7 +94,7 @@ function StepSignup({ onNext, onBack }) {
     try {
       const { error: e } = await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: `${form.prenom} ${form.nom}` } } });
       if (e) { setError(e.message?.includes('already registered') ? "Un compte existe déjà." : e.message || "Erreur."); return; }
-      await supabase.auth.signInWithOtp({ email: form.email }); onNext();
+      onNext();
     } catch { setError("Erreur."); }
   };
 
@@ -211,7 +211,13 @@ function StepVerification({ onNext, onBack }) {
     if (!cd.email) { setError("Email introuvable."); setLoading(false); return; }
     const { error: e } = await supabase.auth.verifyOtp({ email: cd.email, token: fullCode, type: 'email' });
     if (e) { setError("Code incorrect ou expiré."); setCode(["","","","","",""]); inputs.current[0]?.focus(); }
-    else { const u = await supabase.auth.getUser().then(r => r.data?.user).catch(() => null); if (u) await supabase.from('profiles').upsert({ id: u.id, email: u.email, full_name: `${cd.prenom || ""} ${cd.nom || ""}`.trim(), role: 'user', updated_at: new Date().toISOString() }, { onConflict: 'id' }); onNext(); }
+    else {
+      const { error: signInErr } = await supabase.auth.signInWithPassword({ email: cd.email, password: cd.password });
+      if (signInErr) { setError("Vérification OK mais connexion échouée. Réessayez."); setLoading(false); return; }
+      const u = await supabase.auth.getUser().then(r => r.data?.user).catch(() => null);
+      if (u) await supabase.from('profiles').upsert({ id: u.id, email: u.email, full_name: `${cd.prenom || ""} ${cd.nom || ""}`.trim(), role: 'user', updated_at: new Date().toISOString() }, { onConflict: 'id' });
+      onNext();
+    }
     setLoading(false);
   };
 
