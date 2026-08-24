@@ -44,28 +44,70 @@ function StepLabel({ step, total }) {
 
 const EyeIcon = ({ show }) => show ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />;
 
-function StepSplash({ onNext, onDiscover }) {
+function StepSplash({ onNext }) {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const duration = 5000;
+    const interval = 30;
+    const step = (interval / duration) * 100;
+    let current = 0;
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= 100) {
+        setProgress(100);
+        clearInterval(timer);
+        setTimeout(() => onNext(), 200);
+      } else {
+        setProgress(current);
+      }
+    }, interval);
+    return () => clearInterval(timer);
+  }, [onNext]);
+
   return (
-    <div className="min-h-screen bg-white flex flex-col overflow-hidden">
-      <div className="h-1 w-full" style={{ background: BRAND }} />
-      <div className="flex-1 flex flex-col px-6 pt-16 pb-12">
-        <div className="flex items-center gap-3 mb-16">
-          <B size={42} />
-          <span className="text-gray-300 text-[12px] font-extrabold uppercase tracking-[0.3em]">BeautyBook</span>
+    <div className="min-h-screen flex flex-col overflow-hidden relative">
+      {/* Background image */}
+      <div className="absolute inset-0">
+        <img
+          src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200&q=80"
+          alt="Beauty salon"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex-1 flex flex-col px-6 pt-16 pb-10">
+        {/* Logo */}
+        <div className="flex flex-col items-center gap-3 mb-12">
+          <B size={52} />
+          <span className="text-white/80 text-[13px] font-extrabold uppercase tracking-[0.35em]">BeautyBook</span>
         </div>
 
-        <div className="flex-1 flex flex-col justify-center">
-          <h1 className="text-[48px] font-black leading-[0.92] text-gray-900 uppercase tracking-tight mb-5">
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Title */}
+        <div className="mb-10">
+          <h1 className="text-[48px] font-black leading-[0.92] text-white uppercase tracking-tight mb-4">
             REVEAL<br />YOUR<br />
             <span style={{ color: BRAND }}>BEAUTY.</span>
           </h1>
-          <p className="text-[14px] text-gray-400 leading-relaxed max-w-[260px]">La première communauté dédiée à l'excellence esthétique.</p>
+          <p className="text-[14px] text-white/50 leading-relaxed max-w-[260px]">Rejoignez la première communauté dédiée à l'excellence esthétique.</p>
         </div>
 
+        {/* Loading bar */}
         <div className="space-y-3">
-          <button onClick={onDiscover} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
-            Commencer <ArrowRight className="w-4 h-4" />
-          </button>
+          <div className="h-[3px] w-full bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-[30ms] ease-linear"
+              style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${BRAND}, #F59E0B)` }}
+            />
+          </div>
+          <p className="text-center text-[11px] font-bold text-white/30 uppercase tracking-[0.2em]">
+            {progress < 100 ? "Chargement..." : "Bienvenue !"}
+          </p>
         </div>
       </div>
     </div>
@@ -527,7 +569,7 @@ export default function Onboarding() {
 
   return (
     <div className="font-display relative">
-      {step === 0 && <StepSplash onNext={() => setStep(1)} onDiscover={done} />}
+      {step === 0 && <StepSplash onNext={() => setStep(1)} />}
       {step === 1 && <StepSignup onNext={() => setStep(2)} onBack={() => setStep(0)} />}
       {step === 2 && <StepVerification onNext={() => setStep(3)} onBack={() => setStep(1)} />}
       {step === 3 && <StepBeautyProfile onNext={() => setStep(4)} onBack={() => setStep(2)} />}
