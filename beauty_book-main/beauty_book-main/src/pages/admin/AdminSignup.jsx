@@ -52,11 +52,10 @@ export default function AdminSignup() {
         });
       }
 
-      // 3. Si Supabase nécessite confirmation email, afficher un message
+      // 3. Si Supabase nécessite confirmation email, rediriger vers la page de vérification
       if (data?.user && !data.session) {
-        setError("");
-        alert("Compte créé ! Vérifiez votre boîte mail pour confirmer votre email, puis connectez-vous.");
-        navigate("/admin");
+        sessionStorage.setItem("bb_admin_verify_email", email);
+        navigate("/admin/verify?email=" + encodeURIComponent(email));
         return;
       }
 
@@ -64,7 +63,8 @@ export default function AdminSignup() {
       if (data?.session) {
         navigate("/admin/dashboard");
       } else {
-        navigate("/admin");
+        sessionStorage.setItem("bb_admin_verify_email", email);
+        navigate("/admin/verify?email=" + encodeURIComponent(email));
       }
     } catch (err) {
       setError(err.message || "Erreur lors de l'inscription.");

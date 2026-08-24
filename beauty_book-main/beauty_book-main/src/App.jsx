@@ -108,6 +108,7 @@ import ReceptionnistIA from '@/pages/ReceptionnistIA';
 import AIScalingBusiness from '@/pages/AIScalingBusiness';
 import AdminLogin from '@/pages/admin/AdminLogin';
 import AdminSignup from '@/pages/admin/AdminSignup';
+import AdminVerify from '@/pages/admin/AdminVerify';
 import AdminDashboard from '@/pages/admin/AdminDashboard.jsx';
 import VendeurDashboard from '@/pages/VendeurDashboard';
 import VendeurLogin from '@/pages/VendeurLogin';
@@ -393,6 +394,7 @@ const AuthenticatedApp = () => {
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/admin" element={<AdminLogin />} />
       <Route path="/admin/signup" element={<AdminSignup />} />
+      <Route path="/admin/verify" element={<AdminVerify />} />
       <Route path="/admin/dashboard" element={<AdminDashboard />} />
       <Route path="/vendeur" element={<Navigate to="/vendeur/dashboard" replace />} />
       <Route path="/vendeur/dashboard" element={<VendeurDashboard />} />

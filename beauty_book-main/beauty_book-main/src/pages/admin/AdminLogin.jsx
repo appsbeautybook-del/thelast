@@ -30,7 +30,10 @@ export default function AdminLogin() {
         if (authError.message?.includes('provider') || authError.message?.includes('not enabled')) {
           setError("Le provider Email n'est pas activé. Activez-le dans le dashboard Supabase > Authentication > Providers > Email.");
         } else if (authError.message?.includes('Email not confirmed') || authError.message?.includes('email not confirmed')) {
-          setError("Email non confirmé. Vérifiez votre boîte mail, puis réessayez.");
+          setError("");
+          sessionStorage.setItem("bb_admin_verify_email", email);
+          navigate("/admin/verify?email=" + encodeURIComponent(email));
+          return;
         } else if (authError.message?.includes('Invalid login credentials')) {
           setError("Identifiants invalides. Vérifiez votre email et mot de passe. Si vous n'avez pas de compte, créez-en un.");
         } else {
