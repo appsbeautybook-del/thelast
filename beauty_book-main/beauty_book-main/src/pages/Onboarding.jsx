@@ -8,15 +8,30 @@ import { apiClient } from "@/lib/apiClient";
 import { supabase } from '@/api/supabaseClient';
 import { useRateLimit } from '@/hooks/useRateLimit';
 
+const BRAND = "#E8732A";
 const INTERESTS = ["COIFFURE", "MAQUILLAGE", "SOINS", "ONGLES", "MASSAGE", "BARBIER", "ÉPILATION"];
 
-// ── Progress bar ──────────────────────────────────────────────────────────────
+function B({ size = 40 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+      <defs><linearGradient id="bbg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#E8732A"/><stop offset="100%" stopColor="#c45a1c"/></linearGradient></defs>
+      <circle cx="50" cy="50" r="48" fill="url(#bbg2)"/>
+      <path d="M35 28h14c8 0 14 5 14 12s-6 12-14 12H35V28z" fill="white" opacity="0.85"/>
+      <path d="M35 52h15c8 0 14 5 14 12s-6 12-14 12H35V52z" fill="white"/>
+      <circle cx="66" cy="32" r="5" fill="white" opacity="0.7"/>
+    </svg>
+  );
+}
+
+function GlowOrb({ className }) {
+  return <div className={`absolute rounded-full blur-[120px] pointer-events-none ${className}`} />;
+}
+
 function ProgressBar({ step, total }) {
   return (
     <div className="flex gap-1.5">
       {Array.from({ length: total }).map((_, i) => (
-        <div key={i} className="flex-1 h-1 rounded-full transition-all duration-500"
-          style={{ background: i < step ? "#E8732A" : "rgba(255,255,255,0.08)" }} />
+        <div key={i} className="flex-1 h-[3px] rounded-full transition-all duration-500" style={{ background: i < step ? BRAND : "rgba(255,255,255,0.06)" }} />
       ))}
     </div>
   );
@@ -24,61 +39,38 @@ function ProgressBar({ step, total }) {
 
 function StepLabel({ step, total }) {
   return (
-    <div className="flex items-center gap-2 mb-4">
-      <div className="w-1.5 h-1.5 rounded-full bg-[#E8732A]" />
-      <span className="text-[10px] font-black text-[#E8732A] uppercase tracking-[0.2em]">
-        Étape {step} / {total}
-      </span>
+    <div className="flex items-center gap-2 mb-5">
+      <div className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND }} />
+      <span className="text-[10px] font-extrabold uppercase tracking-[0.25em]" style={{ color: BRAND }}>Étape {step}/{total}</span>
     </div>
   );
 }
 
-// ── STEP 0 — Splash ───────────────────────────────────────────────────────────
+const EyeIcon = ({ show }) => show ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />;
+
 function StepSplash({ onNext, onDiscover }) {
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f]" />
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-[#E8732A]/[0.04] blur-[120px]" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-[#E8732A]/[0.03] blur-[100px]" />
+    <div className="relative min-h-screen flex flex-col overflow-hidden bg-[#08080a]">
+      <GlowOrb className="w-[600px] h-[600px] -top-60 -right-60 bg-[#E8732A]/[0.07]" />
+      <GlowOrb className="w-[400px] h-[400px] bottom-20 -left-40 bg-[#E8732A]/[0.05]" />
 
-      {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col px-6 pt-16 pb-12">
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-16">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#E8732A] to-[#d4651e] flex items-center justify-center shadow-lg shadow-[#E8732A]/20">
-            <svg width="24" height="26" viewBox="0 0 42 46" fill="none">
-              <rect x="2" y="2" width="22" height="21" rx="10" fill="white" opacity="0.9"/>
-              <rect x="2" y="19" width="28" height="25" rx="12" fill="white"/>
-              <circle cx="32" cy="8" r="5" fill="white"/>
-            </svg>
-          </div>
-          <span className="text-white/30 text-[13px] font-black uppercase tracking-[0.3em]">BeautyBook</span>
+        <div className="flex items-center gap-3 mb-20">
+          <B size={44} />
+          <span className="text-white/20 text-[12px] font-extrabold uppercase tracking-[0.35em]">BeautyBook</span>
         </div>
 
-        {/* Main Text */}
         <div className="flex-1 flex flex-col justify-center">
-          <h1 className="text-[52px] font-black leading-[0.95] text-white uppercase tracking-tight mb-6">
+          <h1 className="text-[48px] font-black leading-[0.92] text-white uppercase tracking-tight mb-5">
             REVEAL<br />YOUR<br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E8732A] to-[#f4a261]">BEAUTY.</span>
           </h1>
-          <p className="text-[15px] text-white/30 font-medium leading-relaxed max-w-[280px]">
-            Rejoignez la première communauté dédiée à l'excellence esthétique.
-          </p>
+          <p className="text-[14px] text-white/25 leading-relaxed max-w-[260px]">La première communauté dédiée à l'excellence esthétique.</p>
         </div>
 
-        {/* CTA */}
-        <div className="space-y-4">
-          <button
-            onClick={onDiscover}
-            className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            style={{
-              background: "linear-gradient(135deg, #E8732A, #d4651e)",
-              boxShadow: "0 0 50px rgba(232,115,42,0.4)"
-            }}
-          >
-            Commencer l'aventure
-            <ArrowRight className="w-4 h-4" />
+        <div className="space-y-3">
+          <button onClick={onDiscover} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
+            Commencer <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -86,29 +78,18 @@ function StepSplash({ onNext, onDiscover }) {
   );
 }
 
-// ── STEP 1 — Inscription ──────────────────────────────────────────────────────
 function StepSignup({ onNext, onBack }) {
-  const [form, setForm] = useState({ prenom: "", nom: "", email: "", phone: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ prenom: "", nom: "", email: "", password: "", confirm: "" });
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [mode, setMode] = useState("email");
   const [error, setError] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState({ code: "FR", flag: "🇫🇷", name: "France", dial: "+33" });
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
-  const { isLimited, remainingTime, checkLimit } = useRateLimit({ maxAttempts: 5, windowMs: 300000 });
-
-  const pwdChecks = {
-    length: form.password.length >= 8,
-    upper: /[A-Z]/.test(form.password),
-    number: /[0-9]/.test(form.password),
-    special: /[^A-Za-z0-9]/.test(form.password),
-  };
-  const pwdScore = Object.values(pwdChecks).filter(Boolean).length;
-  const pwdStrong = pwdScore >= 3;
-
   const [touched, setTouched] = useState(false);
   const [consentChecked, setConsentChecked] = useState(false);
+  const { checkLimit } = useRateLimit({ maxAttempts: 5, windowMs: 300000 });
+
+  const pwdChecks = { length: form.password.length >= 8, upper: /[A-Z]/.test(form.password), number: /[0-9]/.test(form.password), special: /[^A-Za-z0-9]/.test(form.password) };
+  const pwdScore = Object.values(pwdChecks).filter(Boolean).length;
+  const pwdStrong = pwdScore >= 3;
   const isValid = form.prenom && form.nom && form.email && pwdStrong && form.password === form.confirm && consentChecked;
 
   const handleSubmit = async () => {
@@ -116,145 +97,58 @@ function StepSignup({ onNext, onBack }) {
     if (!isValid) return;
     setError("");
 
-    const banStatus = await checkIfBanned({ email: form.email });
-    if (banStatus.isBanned) {
-      setError(banStatus.reason || "🚫 Cet email ou cet appareil a été banni à vie par l'administration.");
-      return;
-    }
+    const ban = await checkIfBanned({ email: form.email });
+    if (ban.isBanned) { setError(ban.reason || "🚫 Cet email a été banni."); return; }
 
-    sessionStorage.setItem("bb_signup_data", JSON.stringify({
-      prenom: form.prenom,
-      nom: form.nom,
-      email: form.email,
-      phone: "",
-      mode: "email",
-      password: form.password,
-    }));
+    sessionStorage.setItem("bb_signup_data", JSON.stringify({ prenom: form.prenom, nom: form.nom, email: form.email, phone: "", mode: "email", password: form.password }));
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-        options: {
-          data: {
-            full_name: `${form.prenom} ${form.nom}`,
-          },
-        },
-      });
-
-      if (signUpError) {
-        if (signUpError.message?.includes('already registered') || signUpError.message?.includes('already been registered')) {
-          setError("Un compte existe déjà avec cet email. Connectez-vous.");
-        } else if (signUpError.message?.includes('provider') || signUpError.message?.includes('not enabled')) {
-          setError("Le provider Email n'est pas activé. Contactez le support.");
-        } else {
-          setError(signUpError.message || "Erreur lors de l'inscription.");
-        }
+      const { error: e } = await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: `${form.prenom} ${form.nom}` } } });
+      if (e) {
+        if (e.message?.includes('already registered')) setError("Un compte existe déjà avec cet email.");
+        else setError(e.message || "Erreur lors de l'inscription.");
         return;
       }
-
-      const { error: otpError } = await supabase.auth.signInWithOtp({ email: form.email });
-      if (otpError) {
-        console.warn("[Onboarding] OTP notice:", otpError);
-      }
-
+      await supabase.auth.signInWithOtp({ email: form.email });
       onNext();
-    } catch (e) {
-      console.warn("[Onboarding] Sign up error:", e);
-      setError("Erreur lors de l'inscription. Réessayez.");
-    }
+    } catch { setError("Erreur lors de l'inscription."); }
   };
 
-  const handleSocialLogin = async (provider) => {
-    if (form.email || form.prenom || form.nom) {
-      const contact = mode === "email" ? form.email : `${selectedCountry.dial}${form.phone.replace(/\s/g, "")}`;
-      sessionStorage.setItem("bb_signup_data", JSON.stringify({
-        prenom: form.prenom,
-        nom: form.nom,
-        email: form.email,
-        phone: contact,
-        mode,
-      }));
-    }
-    sessionStorage.setItem("bb_social_signup", "1");
-    try {
-      const { isNativeApp, signInWithOAuthMobile, signInWithOAuthWeb } = await import('@/lib/oauth-mobile');
-      if (isNativeApp()) {
-        await signInWithOAuthMobile(provider);
-      } else {
-        await signInWithOAuthWeb(provider);
-      }
-    } catch (e) {
-      console.error(`[${provider} Auth] Error:`, e);
-    }
-  };
-
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-[14px] font-medium text-white outline-none focus:border-[#E8732A]/50 focus:bg-white/[0.07] transition-all placeholder:text-white/20";
-  const labelClass = "text-[11px] font-bold text-white/50 uppercase tracking-widest mb-2 block";
+  const inp = "w-full h-13 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 text-[14px] font-medium text-white outline-none focus:border-white/20 transition placeholder:text-white/15";
+  const lbl = "text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-2 block";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f] flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#E8732A]/[0.03] blur-[120px]" />
+    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
+      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
 
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
-        <div className="mb-8">
-          <ProgressBar step={1} total={8} />
-        </div>
+        <div className="mb-8"><ProgressBar step={1} total={8} /></div>
         <StepLabel step={1} total={8} />
 
-        <h2 className="text-[34px] font-black text-white leading-tight mb-2">Faisons<br />connaissance</h2>
-        <p className="text-[14px] text-white/30 font-medium mb-8">Parlez-nous un peu de vous pour commencer l'aventure.</p>
+        <h2 className="text-[30px] font-extrabold text-white leading-tight mb-1.5 tracking-tight">Faisons<br />connaissance</h2>
+        <p className="text-[13px] text-white/25 mb-8">Parlez-nous un peu de vous.</p>
 
         <div className="space-y-4 flex-1">
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelClass}>Prénom</label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                <input className={inputClass + " pl-11"} placeholder="Sophie" value={form.prenom} onChange={e => setForm({ ...form, prenom: e.target.value })} />
-              </div>
-            </div>
-            <div>
-              <label className={labelClass}>Nom</label>
-              <input className={inputClass} placeholder="Martin" value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} />
-            </div>
+            <div><label className={lbl}>Prénom</label><div className="relative"><User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" /><input className={inp + " pl-10"} placeholder="Sophie" value={form.prenom} onChange={e => setForm({ ...form, prenom: e.target.value })} /></div></div>
+            <div><label className={lbl}>Nom</label><input className={inp} placeholder="Martin" value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} /></div>
           </div>
 
-          <div>
-            <label className={labelClass}>Adresse e-mail</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-              <input className={inputClass + " pl-11"} type="email" placeholder="sophie.martin@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-            </div>
-          </div>
+          <div><label className={lbl}>Email</label><div className="relative"><Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" /><input className={inp + " pl-10"} type="email" placeholder="vous@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div></div>
 
           <div>
-            <label className={labelClass}>Mot de passe</label>
+            <label className={lbl}>Mot de passe</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-              <input className={inputClass + " pl-11 pr-12"} type={showPwd ? "text" : "password"} placeholder="••••••••" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-              <button onClick={() => setShowPwd(!showPwd)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
-                {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" />
+              <input className={inp + " pl-10 pr-11"} type={showPwd ? "text" : "password"} placeholder="••••••••" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+              <button onClick={() => setShowPwd(!showPwd)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/50 transition"><EyeIcon show={showPwd} /></button>
             </div>
             {form.password.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <div className="flex gap-1">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="flex-1 h-1 rounded-full transition-all duration-300"
-                      style={{ background: i <= pwdScore ? (pwdScore <= 1 ? "#ef4444" : pwdScore === 2 ? "#f97316" : pwdScore === 3 ? "#eab308" : "#22c55e") : "rgba(255,255,255,0.08)" }} />
-                  ))}
-                </div>
+              <div className="mt-3">
+                <div className="flex gap-1 mb-2">{[1,2,3,4].map(i => <div key={i} className="flex-1 h-[3px] rounded-full transition-all duration-300" style={{ background: i <= pwdScore ? (pwdScore <= 1 ? "#ef4444" : pwdScore === 2 ? "#f97316" : pwdScore === 3 ? "#eab308" : "#22c55e") : "rgba(255,255,255,0.06)" }} />)}</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  {[
-                    { check: pwdChecks.length, label: "8 car. min" },
-                    { check: pwdChecks.upper, label: "Majuscule" },
-                    { check: pwdChecks.number, label: "Chiffre" },
-                    { check: pwdChecks.special, label: "Spécial" },
-                  ].map(({ check, label }) => (
-                    <span key={label} className={`text-[10px] font-bold ${check ? "text-emerald-400" : "text-white/30"}`}>
-                      {check ? "✓" : "○"} {label}
-                    </span>
+                  {[{ c: pwdChecks.length, l: "8 car." },{ c: pwdChecks.upper, l: "Maj." },{ c: pwdChecks.number, l: "Chiffre" },{ c: pwdChecks.special, l: "Spécial" }].map(({ c, l }) => (
+                    <span key={l} className={`text-[10px] font-bold ${c ? "text-emerald-400" : "text-white/20"}`}>{c ? "✓" : "○"} {l}</span>
                   ))}
                 </div>
               </div>
@@ -262,459 +156,204 @@ function StepSignup({ onNext, onBack }) {
           </div>
 
           <div>
-            <label className={labelClass}>Confirmer le mot de passe</label>
+            <label className={lbl}>Confirmer</label>
             <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-              <input className={inputClass + " pl-11 pr-12"} type={showConfirm ? "text" : "password"} placeholder="••••••••" value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
-              <button onClick={() => setShowConfirm(!showConfirm)} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors">
-                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" />
+              <input className={inp + " pl-10 pr-11"} type={showConfirm ? "text" : "password"} placeholder="••••••••" value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
+              <button onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/50 transition"><EyeIcon show={showConfirm} /></button>
             </div>
           </div>
 
-          {/* RGPD Consent */}
-          <div
-            onClick={() => setConsentChecked(!consentChecked)}
-            className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 flex items-start gap-3 cursor-pointer active:scale-[0.99] transition-all"
-          >
-            <div className={`w-5 h-5 rounded-lg border-2 shrink-0 mt-0.5 flex items-center justify-center transition-all ${consentChecked ? "bg-[#E8732A] border-[#E8732A]" : "border-white/20"}`}>
+          <div onClick={() => setConsentChecked(!consentChecked)} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex items-start gap-3 cursor-pointer active:scale-[0.99] transition">
+            <div className={`w-[18px] h-[18px] rounded-md border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center transition-all ${consentChecked ? "bg-[#E8732A] border-[#E8732A]" : "border-white/15"}`}>
               {consentChecked && <Check className="w-3 h-3 text-white" />}
             </div>
-            <p className="text-[12px] text-white/40 font-medium leading-relaxed">
-              J'accepte les <span className="text-[#E8732A] font-bold">Conditions d'Utilisation</span> et la <span className="text-[#E8732A] font-bold">Politique de Confidentialité</span> de BeautyBook. Je consens au traitement de mes données conformément au RGPD.
+            <p className="text-[11px] text-white/30 leading-relaxed">
+              J'accepte les <span className="text-white/60 font-bold">CGU</span> et la <span className="text-white/60 font-bold">Politique de Confidentialité</span>. Conformément au RGPD.
             </p>
           </div>
 
           {touched && !isValid && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl px-4 py-3">
-              <p className="text-[12px] text-red-400 font-bold">
-                {!form.prenom || !form.nom ? "Prénom et nom sont obligatoires." :
-                 !form.email ? "Votre adresse email est obligatoire." :
-                 !pwdStrong ? "Votre mot de passe n'est pas assez fort." :
-                 form.password !== form.confirm ? "Les mots de passe ne correspondent pas." :
-                 !consentChecked ? "Vous devez accepter les conditions." : ""}
+            <div className="bg-red-500/10 border border-red-500/15 rounded-xl px-4 py-3">
+              <p className="text-[12px] text-red-400/90 font-bold">
+                {!form.prenom || !form.nom ? "Prénom et nom requis." : !form.email ? "Email requis." : !pwdStrong ? "Mot de passe trop faible." : form.password !== form.confirm ? "Mots de passe différents." : !consentChecked ? "Acceptez les conditions." : ""}
               </p>
             </div>
           )}
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl px-4 py-3">
-              <p className="text-[12px] text-red-400 font-medium">{error}</p>
-            </div>
-          )}
+          {error && <div className="bg-red-500/10 border border-red-500/15 rounded-xl px-4 py-3"><p className="text-[12px] text-red-400/90 font-medium">{error}</p></div>}
         </div>
 
-        <div className="mt-6 space-y-4 pb-4">
-          <button
-            onClick={handleSubmit}
-            className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-            style={{
-              background: isValid ? "linear-gradient(135deg, #E8732A, #d4651e)" : "rgba(255,255,255,0.06)",
-              boxShadow: isValid ? "0 0 40px rgba(232,115,42,0.3)" : "none"
-            }}
-          >
-            Suivant
-            <ArrowRight className="w-4 h-4" />
+        <div className="mt-6 space-y-3 pb-4">
+          <button onClick={handleSubmit} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: isValid ? BRAND : "rgba(255,255,255,0.04)" }}>
+            Suivant <ArrowRight className="w-4 h-4" />
           </button>
-
-          <p className="text-center text-[13px] text-white/30 font-medium">
-            Déjà un compte ?{" "}
-            <Link to="/connexion" className="font-bold text-[#E8732A] hover:text-[#E8732A]/80 transition-colors">
-              Se connecter
-            </Link>
-          </p>
-          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/20 uppercase tracking-widest">Retour</button>
+          <p className="text-center text-[13px] text-white/25">Déjà un compte ? <Link to="/connexion" className="font-bold text-white/50 hover:text-white/70 transition">Se connecter</Link></p>
+          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── STEP 2 — Vérification du code (email OU téléphone) ──────────────────────
 function StepVerification({ onNext, onBack }) {
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resending, setResending] = useState(false);
-  const [clipboardToast, setClipboardToast] = useState(false);
   const [resendTimer, setResendTimer] = useState(45);
   const inputs = useRef([]);
   const timerRef = useRef(null);
 
   const [data, setData] = useState(() => JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}"));
   const contact = data.mode === "email" ? data.email : data.phone;
-  const maskedContact = data.mode === "email"
-    ? contact?.replace(/(.{2}).+(@.+)/, "$1***$2")
-    : contact?.replace(/.(?=.{4})/g, "*");
+  const masked = data.mode === "email" ? contact?.replace(/(.{2}).+(@.+)/, "$1***$2") : contact?.replace(/.(?=.{4})/g, "*");
 
   useEffect(() => {
-    timerRef.current = setInterval(() => {
-      setResendTimer(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    timerRef.current = setInterval(() => { setResendTimer(p => { if (p <= 1) { clearInterval(timerRef.current); return 0; } return p - 1; }); }, 1000);
     return () => clearInterval(timerRef.current);
   }, []);
 
   useEffect(() => {
-    const tryReadClipboard = async () => {
-      try {
-        if (navigator.clipboard && navigator.clipboard.readText) {
-          const text = await navigator.clipboard.readText();
-          const digits = text.replace(/\D/g, "").slice(0, 6);
-          if (digits.length === 6) {
-            const arr = digits.split("");
-            setCode(arr);
-            setClipboardToast(true);
-            setTimeout(() => setClipboardToast(false), 2500);
-            handleCodeComplete(arr);
-          }
-        }
-      } catch (_) {}
-    };
-    setTimeout(tryReadClipboard, 600);
+    const read = async () => { try { if (navigator.clipboard?.readText) { const t = await navigator.clipboard.readText(); const d = t.replace(/\D/g, "").slice(0, 6); if (d.length === 6) { setCode(d.split("")); } } } catch {} };
+    setTimeout(read, 600);
   }, []);
-
-  const [smsSent, setSmsSent] = useState(false);
 
   useEffect(() => {
-    const sendCode = async () => {
-      let currentData = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
-      const isSocial = sessionStorage.getItem("bb_social_signup_processed") === "1";
-
-      if (isSocial) {
-        let user = null;
-        for (let i = 0; i < 8; i++) {
-          user = await supabase.auth.getUser().then(({ data }) => data?.user).catch(() => null);
-          if (user?.email) break;
-          await new Promise(r => setTimeout(r, 750));
-        }
-        if (user?.email) {
-          currentData = { ...currentData, email: user.email, mode: "email" };
-          sessionStorage.setItem("bb_signup_data", JSON.stringify(currentData));
-          setData(currentData);
-        }
+    const send = async () => {
+      let cd = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
+      if (sessionStorage.getItem("bb_social_signup_processed") === "1") {
+        let u = null; for (let i = 0; i < 8; i++) { u = await supabase.auth.getUser().then(r => r.data?.user).catch(() => null); if (u?.email) break; await new Promise(r => setTimeout(r, 750)); }
+        if (u?.email) { cd = { ...cd, email: u.email, mode: "email" }; sessionStorage.setItem("bb_signup_data", JSON.stringify(cd)); setData(cd); }
       }
-
-      const isPhone = currentData.mode === "phone";
-
-      if (isPhone && currentData.phone) {
-        try {
-          const { error } = await supabase.auth.signInWithOtp({ phone: currentData.phone });
-          if (error) {
-            console.warn('[Verification] SMS failed:', error.message);
-          } else {
-            setSmsSent(true);
-            console.log('[Verification] SMS envoyé à:', currentData.phone);
-          }
-        } catch (e) {
-          console.warn('[Verification] SMS error:', e);
-        }
-        return;
-      }
+      if (cd.mode === "phone" && cd.phone) { try { await supabase.auth.signInWithOtp({ phone: cd.phone }); } catch {} }
     };
-
-    sendCode();
+    send();
   }, []);
 
-  const handleChange = (i, val) => {
-    if (!/^\d?$/.test(val)) return;
-    const next = [...code];
-    next[i] = val;
-    setCode(next);
-    if (val && i < 5) inputs.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i, e) => {
-    if (e.key === "Backspace" && !code[i] && i > 0) {
-      inputs.current[i - 1]?.focus();
-    }
-  };
-
-  const handlePaste = (e) => {
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
-    if (pasted.length === 6) {
-      setCode(pasted.split(""));
-      inputs.current[5]?.focus();
-    }
-  };
-
+  const handleChange = (i, val) => { if (!/^\d?$/.test(val)) return; const n = [...code]; n[i] = val; setCode(n); if (val && i < 5) inputs.current[i + 1]?.focus(); };
+  const handleKeyDown = (i, e) => { if (e.key === "Backspace" && !code[i] && i > 0) inputs.current[i - 1]?.focus(); };
   const fullCode = code.join("");
 
   const handleVerify = async () => {
     if (fullCode.length < 6 || loading) return;
-    setLoading(true);
-    setError("");
-    const currentData = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
+    setLoading(true); setError("");
+    const cd = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
 
-    if (currentData.mode === "phone") {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        phone: currentData.phone,
-        token: fullCode,
-        type: 'sms',
-      });
-
-      if (verifyError) {
-        setError("Code incorrect ou expiré. Réessayez.");
-        setCode(["", "", "", "", "", ""]);
-        inputs.current[0]?.focus();
-        setLoading(false);
-        return;
-      }
-      onNext();
-      setLoading(false);
-      return;
+    if (cd.mode === "phone") {
+      const { error: e } = await supabase.auth.verifyOtp({ phone: cd.phone, token: fullCode, type: 'sms' });
+      if (e) { setError("Code incorrect."); setCode(["","","","","",""]); inputs.current[0]?.focus(); setLoading(false); return; }
+      onNext(); setLoading(false); return;
     }
 
-    const email = currentData.email;
-    if (!email) { setError("Email introuvable. Recommencez depuis le début."); setLoading(false); return; }
-
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email,
-      token: fullCode,
-      type: 'email',
-    });
-
-    if (verifyError) {
-      setError("Code incorrect ou expiré. Vérifiez le code reçu par email.");
-      setCode(["", "", "", "", "", ""]);
-      inputs.current[0]?.focus();
-    } else {
-      const user = await supabase.auth.getUser().then(({ data }) => data?.user).catch(() => null);
-      if (user) {
-        await supabase.from('profiles').upsert({
-          id: user.id,
-          email: user.email,
-          full_name: `${currentData.prenom || ""} ${currentData.nom || ""}`.trim(),
-          role: 'user',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' });
-      }
+    if (!cd.email) { setError("Email introuvable."); setLoading(false); return; }
+    const { error: e } = await supabase.auth.verifyOtp({ email: cd.email, token: fullCode, type: 'email' });
+    if (e) { setError("Code incorrect ou expiré."); setCode(["","","","","",""]); inputs.current[0]?.focus(); }
+    else {
+      const u = await supabase.auth.getUser().then(r => r.data?.user).catch(() => null);
+      if (u) await supabase.from('profiles').upsert({ id: u.id, email: u.email, full_name: `${cd.prenom || ""} ${cd.nom || ""}`.trim(), role: 'user', updated_at: new Date().toISOString() }, { onConflict: 'id' });
       onNext();
     }
     setLoading(false);
   };
 
   const handleResend = async () => {
-    if (resendTimer > 0) return;
-    setResending(true);
-    setError("");
-    const currentData = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
-    if (currentData.mode === "phone") {
-      try {
-        const { error } = await supabase.auth.signInWithOtp({ phone: currentData.phone });
-        if (!error) setSmsSent(true);
-      } catch {}
-    } else if (currentData.email) {
-      try {
-        await supabase.auth.signInWithOtp({ email: currentData.email });
-      } catch {}
-    }
-    setResending(false);
-    setResendTimer(45);
-    clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setResendTimer(prev => {
-        if (prev <= 1) { clearInterval(timerRef.current); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
+    if (resendTimer > 0 || resending) return;
+    setResending(true); setError("");
+    const cd = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
+    try { if (cd.mode === "phone") await supabase.auth.signInWithOtp({ phone: cd.phone }); else if (cd.email) await supabase.auth.signInWithOtp({ email: cd.email }); } catch {}
+    setResending(false); setResendTimer(45); clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => { setResendTimer(p => { if (p <= 1) { clearInterval(timerRef.current); return 0; } return p - 1; }); }, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f] flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#E8732A]/[0.03] blur-[120px]" />
-
+    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
+      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={2} total={8} /></div>
         <StepLabel step={2} total={8} />
 
-        <h2 className="text-[34px] font-black text-white leading-tight mb-2">Vérifiez<br />votre {data.mode === "email" ? "email" : "numéro"}</h2>
-        <p className="text-[14px] text-white/30 font-medium mb-10">
-          Nous avons envoyé un code à 6 chiffres à{" "}
-          <span className="text-white font-bold">{maskedContact}</span>
-        </p>
+        <h2 className="text-[30px] font-extrabold text-white leading-tight mb-1.5 tracking-tight">Vérifiez<br />votre {data.mode === "email" ? "email" : "numéro"}</h2>
+        <p className="text-[13px] text-white/25 mb-10">Code à 6 chiffres envoyé à <span className="text-white/60 font-bold">{masked}</span></p>
 
-        <div className="flex-1 flex flex-col items-center gap-6 pt-4">
-          {clipboardToast && (
-            <div className="bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[12px] font-bold px-4 py-2.5 rounded-2xl flex items-center gap-2">
-              Code collé depuis le presse-papier !
-            </div>
-          )}
-
-          {data.mode === "phone" && smsSent && (
-            <div className="flex items-center gap-2 text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl px-4 py-3">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-[13px] font-bold">SMS envoyé avec succès</span>
-            </div>
-          )}
-
-          {/* Code input */}
-          <div className="flex gap-3 justify-center" onPaste={handlePaste}>
-            {code.map((digit, i) => (
-              <input
-                key={i}
-                ref={el => inputs.current[i] = el}
-                type="text"
-                inputMode="numeric"
-                pattern="\d*"
-                autoComplete={i === 0 ? "one-time-code" : "off"}
-                maxLength={1}
-                value={digit}
-                onChange={e => handleChange(i, e.target.value)}
-                onKeyDown={e => handleKeyDown(i, e)}
-                className="w-12 h-14 text-center text-[24px] font-black bg-white/5 rounded-2xl outline-none transition-all text-[#E8732A]"
-                style={{
-                  border: digit ? "2px solid #E8732A" : "2px solid rgba(255,255,255,0.1)",
-                }}
-              />
+        <div className="flex-1 flex flex-col items-center gap-6 pt-2">
+          <div className="flex gap-2.5 justify-center">
+            {code.map((d, i) => (
+              <input key={i} ref={el => inputs.current[i] = el} type="text" inputMode="numeric" maxLength={1} value={d} onChange={e => handleChange(i, e.target.value)} onKeyDown={e => handleKeyDown(i, e)} className="w-[46px] h-[54px] text-center text-[22px] font-extrabold bg-white/[0.04] rounded-xl outline-none transition-all text-white/80" style={{ border: d ? `1.5px solid ${BRAND}` : "1.5px solid rgba(255,255,255,0.08)" }} />
             ))}
           </div>
 
-          {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-2xl px-4 py-3 w-full text-center">
-              <p className="text-[13px] text-red-400 font-bold">{error}</p>
-            </div>
-          )}
+          {error && <div className="bg-red-500/10 border border-red-500/15 rounded-xl px-4 py-3 w-full text-center"><p className="text-[12px] text-red-400/90 font-bold">{error}</p></div>}
 
-          <button
-            onClick={handleResend}
-            disabled={resendTimer > 0 || resending}
-            className={`flex items-center gap-2 text-[12px] font-bold active:scale-95 transition-all ${resendTimer > 0 ? 'text-white/20' : 'text-[#E8732A]'}`}
-          >
+          <button onClick={handleResend} disabled={resendTimer > 0 || resending} className={`flex items-center gap-2 text-[11px] font-bold active:scale-95 transition ${resendTimer > 0 ? 'text-white/15' : 'text-white/50'}`}>
             <RotateCcw className={`w-3.5 h-3.5 ${resending ? "animate-spin" : ""}`} />
-            {resendTimer > 0
-              ? `Renvoyer le code dans ${resendTimer}s`
-              : resending ? "Envoi en cours..." : "Renvoyer le code"
-            }
+            {resendTimer > 0 ? `${resendTimer}s` : resending ? "Envoi..." : "Renvoyer"}
           </button>
         </div>
 
-        <div className="space-y-3 mt-6">
-          <button
-            onClick={handleVerify}
-            disabled={fullCode.length < 6 || loading}
-            className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-            style={{
-              background: fullCode.length === 6 && !loading ? "linear-gradient(135deg, #E8732A, #d4651e)" : "rgba(255,255,255,0.06)",
-              boxShadow: fullCode.length === 6 ? "0 0 40px rgba(232,115,42,0.3)" : "none"
-            }}
-          >
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                Confirmer
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
+        <div className="space-y-3">
+          <button onClick={handleVerify} disabled={fullCode.length < 6 || loading} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: fullCode.length === 6 && !loading ? BRAND : "rgba(255,255,255,0.04)" }}>
+            {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <><span>Confirmer</span><ArrowRight className="w-4 h-4" /></>}
           </button>
-          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/20 uppercase tracking-widest">Retour</button>
+          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── STEP 3 — Profil Beauté ────────────────────────────────────────────────────
 function StepBeautyProfile({ onNext, onBack }) {
   const [gender, setGender] = useState(null);
   const [interests, setInterests] = useState([]);
-
-  const toggleInterest = (item) => {
-    setInterests(prev => prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]);
-  };
-
+  const toggle = (item) => setInterests(p => p.includes(item) ? p.filter(i => i !== item) : [...p, item]);
   const isValid = !!gender && interests.length >= 1;
 
   const handleContinue = () => {
     if (!isValid) return;
-    const existing = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
-    sessionStorage.setItem("bb_signup_data", JSON.stringify({ ...existing, gender, interests }));
+    const ex = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
+    sessionStorage.setItem("bb_signup_data", JSON.stringify({ ...ex, gender, interests }));
     onNext();
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f] flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#E8732A]/[0.03] blur-[120px]" />
+  const pill = (active) => `px-5 py-3 rounded-xl text-[11px] font-extrabold border transition-all active:scale-95 uppercase tracking-[0.15em] ${active ? "text-white" : "text-white/40"}`;
+  const pillStyle = (active) => ({ borderColor: active ? BRAND : "rgba(255,255,255,0.08)", background: active ? BRAND : "rgba(255,255,255,0.03)" });
 
+  return (
+    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
+      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={3} total={8} /></div>
         <StepLabel step={3} total={8} />
 
-        <h2 className="text-[34px] font-black text-white leading-tight mb-2">Votre Profil<br />Beauté</h2>
-        <p className="text-[14px] text-white/30 font-medium mb-8">Ces détails nous aident à personnaliser votre feed.</p>
+        <h2 className="text-[30px] font-extrabold text-white leading-tight mb-1.5 tracking-tight">Votre Profil<br />Beauté</h2>
+        <p className="text-[13px] text-white/25 mb-8">Personnalisez votre expérience.</p>
 
         <div className="flex-1 space-y-8">
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <p className="text-[11px] font-bold text-white/50 uppercase tracking-widest">Vous êtes ?</p>
-              <span className="text-[9px] font-bold text-[#E8732A] uppercase tracking-widest">* Obligatoire</span>
+            <p className="text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-3">Vous êtes ? <span className="text-white/15">*obligatoire</span></p>
+            <div className="flex gap-2.5 flex-wrap">
+              {["FEMME", "HOMME", "AUTRE"].map(g => <button key={g} onClick={() => setGender(g)} className={pill(gender === g)} style={pillStyle(gender === g)}>{g}</button>)}
             </div>
-            <div className="flex gap-3 flex-wrap">
-              {["FEMME", "HOMME", "AUTRE"].map(g => (
-                <button key={g} onClick={() => setGender(g)}
-                  className="px-6 py-3.5 rounded-2xl text-[12px] font-black border-2 transition-all active:scale-95 uppercase tracking-widest"
-                  style={{
-                    borderColor: gender === g ? "#E8732A" : "rgba(255,255,255,0.1)",
-                    background: gender === g ? "#E8732A" : "rgba(255,255,255,0.03)",
-                    color: gender === g ? "white" : "rgba(255,255,255,0.5)",
-                    boxShadow: gender === g ? "0 0 30px rgba(232,115,42,0.3)" : "none"
-                  }}>
-                  {g}
-                </button>
-              ))}
-            </div>
-            {!gender && <p className="text-[11px] text-[#E8732A]/60 font-medium mt-3">Veuillez sélectionner une option</p>}
           </div>
 
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <p className="text-[11px] font-bold text-white/50 uppercase tracking-widest">Vos intérêts</p>
-              <span className="text-[9px] font-bold text-[#E8732A] uppercase tracking-widest">* Au moins 1</span>
+            <p className="text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-3">Vos intérêts <span className="text-white/15">*au moins 1</span></p>
+            <div className="flex flex-wrap gap-2.5">
+              {INTERESTS.map(item => <button key={item} onClick={() => toggle(item)} className={pill(interests.includes(item))} style={pillStyle(interests.includes(item))}>{item}</button>)}
             </div>
-            <div className="flex flex-wrap gap-3">
-              {INTERESTS.map(item => (
-                <button key={item} onClick={() => toggleInterest(item)}
-                  className="px-5 py-3 rounded-2xl text-[12px] font-black border-2 transition-all active:scale-95 uppercase tracking-widest"
-                  style={{
-                    borderColor: interests.includes(item) ? "#E8732A" : "rgba(255,255,255,0.1)",
-                    background: interests.includes(item) ? "#E8732A" : "rgba(255,255,255,0.03)",
-                    color: interests.includes(item) ? "white" : "rgba(255,255,255,0.5)",
-                    boxShadow: interests.includes(item) ? "0 0 30px rgba(232,115,42,0.3)" : "none"
-                  }}>
-                  {item}
-                </button>
-              ))}
-            </div>
-            {interests.length === 0 && <p className="text-[11px] text-[#E8732A]/60 font-medium mt-3">Sélectionnez au moins un intérêt</p>}
           </div>
         </div>
 
         <div className="mt-6 space-y-3 pb-4">
-          <button
-            onClick={handleContinue}
-            disabled={!isValid}
-            className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            style={{
-              background: isValid ? "linear-gradient(135deg, #E8732A, #d4651e)" : "rgba(255,255,255,0.06)",
-              boxShadow: isValid ? "0 0 40px rgba(232,115,42,0.3)" : "none"
-            }}
-          >
-            Continuer
-            <ArrowRight className="w-4 h-4" />
+          <button onClick={handleContinue} disabled={!isValid} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: isValid ? BRAND : "rgba(255,255,255,0.04)" }}>
+            Continuer <ArrowRight className="w-4 h-4" />
           </button>
-          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/20 uppercase tracking-widest">Retour</button>
+          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── STEP 4 — Photo de profil + Bannière ──────────────────────────────────────
 function StepPhoto({ onNext, onBack }) {
   const [photo, setPhoto] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
@@ -724,15 +363,8 @@ function StepPhoto({ onNext, onBack }) {
   const photoRef = useRef(null);
   const bannerRef = useRef(null);
 
-  const handlePhotoFile = (e) => {
-    const file = e.target.files?.[0];
-    if (file) { setPhotoFile(file); setPhoto(URL.createObjectURL(file)); }
-  };
-
-  const handleBannerFile = (e) => {
-    const file = e.target.files?.[0];
-    if (file) { setBannerFile(file); setBanner(URL.createObjectURL(file)); }
-  };
+  const handlePhoto = (e) => { const f = e.target.files?.[0]; if (f) { setPhotoFile(f); setPhoto(URL.createObjectURL(f)); } };
+  const handleBanner = (e) => { const f = e.target.files?.[0]; if (f) { setBannerFile(f); setBanner(URL.createObjectURL(f)); } };
 
   const handleFinish = async () => {
     setLoading(true);
@@ -740,448 +372,214 @@ function StepPhoto({ onNext, onBack }) {
       const data = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
-
-      const updates = {
-        id: user.id,
-        email: user.email,
-        gender: data.gender || null,
-        beauty_interests: data.interests || [],
-        full_name: [data.prenom, data.nom].filter(Boolean).join(' ') || user.user_metadata?.full_name || '',
-        role: 'user',
-        updated_at: new Date().toISOString(),
-      };
-
-      if (photoFile) {
-        try {
-          const { file_url } = await uploadFile({ file: photoFile });
-          updates.avatar_url = file_url;
-        } catch (e) { console.error('[StepPhoto] Upload avatar failed:', e); }
-      }
-
-      if (bannerFile) {
-        try {
-          const { file_url } = await uploadFile({ file: bannerFile });
-          updates.cover_url = file_url;
-        } catch (e) { console.error('[StepPhoto] Upload banner failed:', e); }
-      }
-
-      const { error } = await supabase.from('profiles').upsert(updates, { onConflict: 'id' });
-      if (error) console.error('[StepPhoto] Profile upsert error:', error);
-
-      await supabase.auth.updateUser({
-        data: { full_name: updates.full_name, gender: updates.gender, beauty_interests: updates.beauty_interests }
-      });
-    } catch (e) {
-      console.error('[StepPhoto] Error:', e);
-    } finally {
-      setLoading(false);
-      onNext();
-    }
+      const updates = { id: user.id, email: user.email, gender: data.gender || null, beauty_interests: data.interests || [], full_name: [data.prenom, data.nom].filter(Boolean).join(' ') || user.user_metadata?.full_name || '', role: 'user', updated_at: new Date().toISOString() };
+      if (photoFile) try { const { file_url } = await uploadFile({ file: photoFile }); updates.avatar_url = file_url; } catch {}
+      if (bannerFile) try { const { file_url } = await uploadFile({ file: bannerFile }); updates.cover_url = file_url; } catch {}
+      await supabase.from('profiles').upsert(updates, { onConflict: 'id' });
+      await supabase.auth.updateUser({ data: { full_name: updates.full_name, gender: updates.gender, beauty_interests: updates.beauty_interests } });
+    } catch (e) { console.error(e); } finally { setLoading(false); onNext(); }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f] flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#E8732A]/[0.03] blur-[120px]" />
-
+    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
+      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={4} total={8} /></div>
         <StepLabel step={4} total={8} />
 
-        <h2 className="text-[34px] font-black text-white leading-tight mb-2">Personnalisez<br />votre profil</h2>
-        <p className="text-[14px] text-white/30 font-medium mb-8">Ajoutez une photo et une bannière pour vous identifier.</p>
+        <h2 className="text-[30px] font-extrabold text-white leading-tight mb-1.5 tracking-tight">Votre<br />profil</h2>
+        <p className="text-[13px] text-white/25 mb-8">Ajoutez une photo pour vous identifier.</p>
 
         <div className="flex-1 space-y-6">
-          {/* Banner */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-[11px] font-bold text-white/50 uppercase tracking-widest">Bannière de profil</p>
-              <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">Optionnelle</span>
+            <p className="text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-3">Bannière <span className="text-white/15">optionnelle</span></p>
+            <div onClick={() => bannerRef.current?.click()} className="relative w-full h-28 rounded-xl overflow-hidden cursor-pointer active:scale-[0.99] transition border border-dashed" style={{ borderColor: banner ? BRAND : "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+              {banner ? <img src={banner} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center gap-2"><Camera className="w-7 h-7 text-white/10" strokeWidth={1} /><span className="text-[10px] font-bold text-white/15 uppercase tracking-[0.2em]">Ajouter</span></div>}
             </div>
-            <div
-              onClick={() => bannerRef.current?.click()}
-              className="relative w-full h-32 rounded-2xl overflow-hidden cursor-pointer active:scale-[0.99] transition-all border-2 border-dashed"
-              style={{ borderColor: banner ? "#E8732A" : "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}
-            >
-              {banner ? (
-                <img src={banner} alt="Bannière" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                  <Camera className="w-8 h-8 text-white/15" strokeWidth={1} />
-                  <span className="text-[11px] font-bold text-white/20 uppercase tracking-widest">Ajouter une bannière</span>
-                </div>
-              )}
-            </div>
-            <input ref={bannerRef} type="file" accept="image/*" onChange={handleBannerFile} className="hidden" />
+            <input ref={bannerRef} type="file" accept="image/*" onChange={handleBanner} className="hidden" />
           </div>
 
-          {/* Avatar */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <p className="text-[11px] font-bold text-white/50 uppercase tracking-widest">Photo de profil</p>
-              <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest">Optionnelle</span>
-            </div>
+            <p className="text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-3">Photo de profil <span className="text-white/15">optionnelle</span></p>
             <div className="flex items-center gap-5">
               <div className="relative">
-                <div
-                  onClick={() => photoRef.current?.click()}
-                  className="w-24 h-24 rounded-full flex items-center justify-center border-2 border-dashed cursor-pointer"
-                  style={{ borderColor: photo ? "#E8732A" : "rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)" }}>
-                  {photo ? (
-                    <img src={photo} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    <Camera className="w-8 h-8 text-white/15" strokeWidth={1} />
-                  )}
+                <div onClick={() => photoRef.current?.click()} className="w-20 h-20 rounded-full flex items-center justify-center border border-dashed cursor-pointer" style={{ borderColor: photo ? BRAND : "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+                  {photo ? <img src={photo} alt="" className="w-full h-full rounded-full object-cover" /> : <Camera className="w-7 h-7 text-white/10" strokeWidth={1} />}
                 </div>
-                <button onClick={() => photoRef.current?.click()}
-                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all"
-                  style={{ background: "#E8732A" }}>
-                  <Camera className="w-3.5 h-3.5 text-white" />
-                </button>
-                <input ref={photoRef} type="file" accept="image/*" onChange={handlePhotoFile} className="hidden" />
+                <button onClick={() => photoRef.current?.click()} className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: BRAND }}><Camera className="w-3 h-3 text-white" /></button>
+                <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
               </div>
-              <div>
-                <p className="text-[14px] font-bold text-white">Photo de profil</p>
-                <p className="text-[12px] text-white/30 font-medium mt-1">Visible par la communauté</p>
-              </div>
+              <div><p className="text-[13px] font-bold text-white/70">Photo de profil</p><p className="text-[11px] text-white/25 mt-0.5">Visible par la communauté</p></div>
             </div>
           </div>
         </div>
 
         <div className="space-y-3 mt-6 pb-4">
-          <button onClick={handleFinish} disabled={loading}
-            className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            style={{
-              background: !loading ? "linear-gradient(135deg, #E8732A, #d4651e)" : "rgba(255,255,255,0.06)",
-              boxShadow: !loading ? "0 0 40px rgba(232,115,42,0.3)" : "none"
-            }}>
-            {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              <>
-                Terminer mon profil
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
+          <button onClick={handleFinish} disabled={loading} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: !loading ? BRAND : "rgba(255,255,255,0.04)" }}>
+            {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <><span>Terminer</span><ArrowRight className="w-4 h-4" /></>}
           </button>
-          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/20 uppercase tracking-widest">Retour</button>
+          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── STEP 5 — Success ──────────────────────────────────────────────────────────
 function StepSuccess({ onDone }) {
   const data = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
   const prenom = data.prenom || "";
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center px-6 bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f] overflow-hidden">
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full bg-[#E8732A]/[0.05] blur-[150px]" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full bg-[#E8732A]/[0.03] blur-[100px]" />
-
+    <div className="min-h-screen bg-[#08080a] flex flex-col items-center justify-center px-6 relative overflow-hidden">
+      <GlowOrb className="w-[600px] h-[600px] -top-40 left-1/2 -translate-x-1/2 bg-[#E8732A]/[0.08]" />
       <div className="relative z-10 text-center">
-        <div className="w-24 h-24 mx-auto rounded-3xl bg-gradient-to-br from-[#E8732A] to-[#d4651e] flex items-center justify-center mb-10 shadow-2xl shadow-[#E8732A]/30">
-          <Sparkles className="w-12 h-12 text-white" />
+        <div className="w-20 h-20 mx-auto rounded-[24px] flex items-center justify-center mb-10" style={{ background: BRAND }}>
+          <Sparkles className="w-10 h-10 text-white" />
         </div>
-        <h2 className="text-[42px] font-black text-white leading-tight mb-4">
-          {prenom ? `Bienvenue\n${prenom} !` : "Bienvenue !"}
-        </h2>
-        <p className="text-[15px] text-white/30 font-medium leading-relaxed max-w-[280px] mx-auto">
-          Votre profil est prêt. Bienvenue dans la communauté BeautyBook.
-        </p>
+        <h2 className="text-[38px] font-black text-white leading-tight mb-3 tracking-tight">{prenom ? `Bienvenue\n${prenom} !` : "Bienvenue !"}</h2>
+        <p className="text-[14px] text-white/30 max-w-[260px] mx-auto">Votre profil est prêt. Rejoignez la communauté.</p>
       </div>
-
       <div className="relative z-10 w-full mt-16">
-        <button onClick={onDone}
-          className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          style={{
-            background: "linear-gradient(135deg, #E8732A, #d4651e)",
-            boxShadow: "0 0 50px rgba(232,115,42,0.4)"
-          }}>
-          Découvrir BeautyBook
-          <ArrowRight className="w-4 h-4" />
+        <button onClick={onDone} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
+          Découvrir <ArrowRight className="w-4 h-4" />
         </button>
       </div>
     </div>
   );
 }
 
-// ── STEP 6 — Autorisation Notifications ──────────────────────────────────────
 function StepNotifications({ onNext }) {
   const [status, setStatus] = useState('idle');
-
   const handleAllow = async () => {
-    if (!('Notification' in window)) { setStatus('unavailable'); setTimeout(onNext, 1500); return; }
-    if (Notification.permission === 'granted') { setStatus('granted'); setTimeout(onNext, 800); return; }
+    if (!('Notification' in window)) { setStatus('unavailable'); setTimeout(onNext, 1200); return; }
+    if (Notification.permission === 'granted') { setStatus('granted'); setTimeout(onNext, 600); return; }
     setStatus('loading');
-    try {
-      const result = await Notification.requestPermission();
-      setStatus(result === 'granted' ? 'granted' : 'denied');
-    } catch (_) { setStatus('denied'); }
-    setTimeout(onNext, 1200);
+    try { const r = await Notification.requestPermission(); setStatus(r === 'granted' ? 'granted' : 'denied'); } catch { setStatus('denied'); }
+    setTimeout(onNext, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f] flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#E8732A]/[0.03] blur-[120px]" />
-
+    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
+      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={5} total={8} /></div>
         <StepLabel step={5} total={8} />
-
-        <div className="flex-1 flex flex-col items-center justify-center text-center gap-10">
-          <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-[#E8732A]/20 to-[#E8732A]/5 border border-[#E8732A]/30 flex items-center justify-center">
-            <span className="text-[56px]">🔔</span>
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center gap-8">
+          <div className="w-24 h-24 rounded-[28px] bg-white/[0.04] border border-white/[0.08] flex items-center justify-center"><span className="text-[48px]">🔔</span></div>
           <div>
-            <h2 className="text-[36px] font-black text-white leading-tight mb-4">Notifications</h2>
-            <p className="text-[15px] text-white/30 font-medium leading-relaxed max-w-[320px] mx-auto">
-              Recevez des alertes pour vos réservations, messages et offres exclusives.
-            </p>
+            <h2 className="text-[32px] font-extrabold text-white leading-tight mb-3 tracking-tight">Notifications</h2>
+            <p className="text-[14px] text-white/25 max-w-[280px] mx-auto">Alertes réservations, messages et offres.</p>
           </div>
-          {status === 'granted' && (
-            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-5 py-3 rounded-2xl">
-              <Check className="w-5 h-5 text-emerald-400" />
-              <span className="text-emerald-400 text-[13px] font-bold">Notifications activées</span>
-            </div>
-          )}
-          {status === 'denied' && (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-5 py-3 rounded-2xl">
-              <span className="text-red-400 text-[20px]">✕</span>
-              <span className="text-red-400 text-[13px] font-bold">Autorisation refusée</span>
-            </div>
-          )}
+          {status === 'granted' && <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 rounded-xl"><Check className="w-4 h-4 text-emerald-400" /><span className="text-emerald-400 text-[12px] font-bold">Activées</span></div>}
+          {status === 'denied' && <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl"><span className="text-red-400 text-[12px] font-bold">Refusé</span></div>}
         </div>
-
         <div className="space-y-3">
-          {status === 'idle' || status === 'loading' ? (
-            <button onClick={handleAllow} disabled={status === 'loading'}
-              className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              style={{
-                background: "linear-gradient(135deg, #E8732A, #d4651e)",
-                boxShadow: "0 0 40px rgba(232,115,42,0.3)"
-              }}>
-              {status === 'loading' ? "En attente..." : "Activer les notifications"}
-            </button>
-          ) : null}
-          <button onClick={onNext} className="w-full py-3 text-center text-[12px] font-bold text-white/20 uppercase tracking-widest active:scale-95 transition-all">
-            Passer
-          </button>
+          {(status === 'idle' || status === 'loading') && <button onClick={handleAllow} disabled={status === 'loading'} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>{status === 'loading' ? "En attente..." : "Activer"}</button>}
+          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── STEP 7 — Autorisation Localisation ───────────────────────────────────────
 function StepLocation({ onNext }) {
   const [status, setStatus] = useState('idle');
-
   const handleAllow = async () => {
-    if (!navigator.geolocation) { setStatus('unavailable'); setTimeout(onNext, 1500); return; }
+    if (!navigator.geolocation) { setStatus('unavailable'); setTimeout(onNext, 1200); return; }
     setStatus('loading');
     try {
-      const result = await new Promise((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          () => resolve('granted'),
-          () => resolve('denied'),
-          { timeout: 10000 }
-        );
-      });
-      setStatus(result);
-      if (result === 'granted') {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await supabase.from('profiles').upsert({
-              id: user.id, latitude: pos.coords.latitude, longitude: pos.coords.longitude, updated_at: new Date().toISOString()
-            }, { onConflict: 'id' });
-          }
-        }, () => {}, { enableHighAccuracy: false });
-      }
-    } catch (_) { setStatus('denied'); }
-    setTimeout(onNext, 1200);
+      const r = await new Promise(res => navigator.geolocation.getCurrentPosition(() => res('granted'), () => res('denied'), { timeout: 10000 }));
+      setStatus(r);
+      if (r === 'granted') navigator.geolocation.getCurrentPosition(async pos => { const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('profiles').upsert({ id: user.id, latitude: pos.coords.latitude, longitude: pos.coords.longitude, updated_at: new Date().toISOString() }, { onConflict: 'id' }); }, () => {}, { enableHighAccuracy: false });
+    } catch { setStatus('denied'); }
+    setTimeout(onNext, 1000);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f] flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#E8732A]/[0.03] blur-[120px]" />
-
+    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
+      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={6} total={8} /></div>
         <StepLabel step={6} total={8} />
-
-        <div className="flex-1 flex flex-col items-center justify-center text-center gap-10">
-          <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-[#E8732A]/20 to-[#E8732A]/5 border border-[#E8732A]/30 flex items-center justify-center">
-            <span className="text-[56px]">📍</span>
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center gap-8">
+          <div className="w-24 h-24 rounded-[28px] bg-white/[0.04] border border-white/[0.08] flex items-center justify-center"><span className="text-[48px]">📍</span></div>
           <div>
-            <h2 className="text-[36px] font-black text-white leading-tight mb-4">Localisation</h2>
-            <p className="text-[15px] text-white/30 font-medium leading-relaxed max-w-[320px] mx-auto">
-              Trouvez les salons et professionnels beauté les plus proches de chez vous.
-            </p>
+            <h2 className="text-[32px] font-extrabold text-white leading-tight mb-3 tracking-tight">Localisation</h2>
+            <p className="text-[14px] text-white/25 max-w-[280px] mx-auto">Trouvez les salons les plus proches.</p>
           </div>
-          {status === 'granted' && (
-            <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-5 py-3 rounded-2xl">
-              <Check className="w-5 h-5 text-emerald-400" />
-              <span className="text-emerald-400 text-[13px] font-bold">Localisation activée</span>
-            </div>
-          )}
-          {status === 'denied' && (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-5 py-3 rounded-2xl">
-              <span className="text-red-400 text-[20px]">✕</span>
-              <span className="text-red-400 text-[13px] font-bold">Autorisation refusée</span>
-            </div>
-          )}
+          {status === 'granted' && <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 rounded-xl"><Check className="w-4 h-4 text-emerald-400" /><span className="text-emerald-400 text-[12px] font-bold">Activée</span></div>}
+          {status === 'denied' && <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl"><span className="text-red-400 text-[12px] font-bold">Refusé</span></div>}
         </div>
-
         <div className="space-y-3">
-          {status === 'idle' || status === 'loading' ? (
-            <button onClick={handleAllow} disabled={status === 'loading'}
-              className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              style={{
-                background: "linear-gradient(135deg, #E8732A, #d4651e)",
-                boxShadow: "0 0 40px rgba(232,115,42,0.3)"
-              }}>
-              {status === 'loading' ? "En attente..." : "Activer la localisation"}
-            </button>
-          ) : null}
-          <button onClick={onNext} className="w-full py-3 text-center text-[12px] font-bold text-white/20 uppercase tracking-widest active:scale-95 transition-all">
-            Passer
-          </button>
+          {(status === 'idle' || status === 'loading') && <button onClick={handleAllow} disabled={status === 'loading'} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>{status === 'loading' ? "En attente..." : "Activer"}</button>}
+          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── STEP 8 — Autorisation Caméra & Micro ─────────────────────────────────────
 function StepCameraMic({ onNext }) {
   const [camStatus, setCamStatus] = useState('idle');
   const [micStatus, setMicStatus] = useState('idle');
 
   const handleAllow = async () => {
-    setCamStatus('loading');
-    setMicStatus('loading');
-
-    try {
-      const stream = await navigator.mediaDevices?.getUserMedia({ video: true });
-      stream.getTracks().forEach(t => t.stop());
-      setCamStatus('granted');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) await supabase.from('profiles').upsert({ id: user.id, camera_enabled: true, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-    } catch (_) { setCamStatus('denied'); }
-
-    try {
-      const stream = await navigator.mediaDevices?.getUserMedia({ audio: true });
-      stream.getTracks().forEach(t => t.stop());
-      setMicStatus('granted');
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) await supabase.from('profiles').upsert({ id: user.id, mic_enabled: true, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-    } catch (_) { setMicStatus('denied'); }
-
-    setTimeout(onNext, 1200);
+    setCamStatus('loading'); setMicStatus('loading');
+    try { const s = await navigator.mediaDevices?.getUserMedia({ video: true }); s.getTracks().forEach(t => t.stop()); setCamStatus('granted'); const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('profiles').upsert({ id: user.id, camera_enabled: true, updated_at: new Date().toISOString() }, { onConflict: 'id' }); } catch { setCamStatus('denied'); }
+    try { const s = await navigator.mediaDevices?.getUserMedia({ audio: true }); s.getTracks().forEach(t => t.stop()); setMicStatus('granted'); const { data: { user } } = await supabase.auth.getUser(); if (user) await supabase.from('profiles').upsert({ id: user.id, mic_enabled: true, updated_at: new Date().toISOString() }, { onConflict: 'id' }); } catch { setMicStatus('denied'); }
+    setTimeout(onNext, 1000);
   };
 
-  const isIdle = camStatus === 'idle';
+  const badge = (s) => `flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${s === 'granted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : s === 'denied' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-white/[0.03] text-white/25 border border-white/[0.06]'}`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0f0f0f] via-[#1a1208] to-[#0f0f0f] flex flex-col relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-[#E8732A]/[0.03] blur-[120px]" />
-
+    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
+      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={7} total={8} /></div>
         <StepLabel step={7} total={8} />
-
-        <div className="flex-1 flex flex-col items-center justify-center text-center gap-10">
-          <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-[#E8732A]/20 to-[#E8732A]/5 border border-[#E8732A]/30 flex items-center justify-center">
-            <span className="text-[56px]">📸</span>
-          </div>
+        <div className="flex-1 flex flex-col items-center justify-center text-center gap-8">
+          <div className="w-24 h-24 rounded-[28px] bg-white/[0.04] border border-white/[0.08] flex items-center justify-center"><span className="text-[48px]">📸</span></div>
           <div>
-            <h2 className="text-[36px] font-black text-white leading-tight mb-4">Caméra & Micro</h2>
-            <p className="text-[15px] text-white/30 font-medium leading-relaxed max-w-[320px] mx-auto">
-              Prenez des photos, enregistrez des reels et utilisez l'assistant vocal.
-            </p>
+            <h2 className="text-[32px] font-extrabold text-white leading-tight mb-3 tracking-tight">Caméra & Micro</h2>
+            <p className="text-[14px] text-white/25 max-w-[280px] mx-auto">Photos, reels et assistant vocal.</p>
           </div>
-          <div className="flex gap-3">
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-bold transition-all ${camStatus === 'granted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : camStatus === 'denied' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-white/5 text-white/30 border border-white/10'}`}>
-              📷 {camStatus === 'granted' ? 'Activé' : camStatus === 'denied' ? 'Refusé' : 'Caméra'}
-            </div>
-            <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-bold transition-all ${micStatus === 'granted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : micStatus === 'denied' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-white/5 text-white/30 border border-white/10'}`}>
-              🎙️ {micStatus === 'granted' ? 'Activé' : micStatus === 'denied' ? 'Refusé' : 'Micro'}
-            </div>
+          <div className="flex gap-2.5">
+            <div className={badge(camStatus)}>📷 {camStatus === 'granted' ? 'OK' : camStatus === 'denied' ? 'Non' : 'Cam'}</div>
+            <div className={badge(micStatus)}>🎙️ {micStatus === 'granted' ? 'OK' : micStatus === 'denied' ? 'Non' : 'Mic'}</div>
           </div>
         </div>
-
         <div className="space-y-3">
-          {isIdle ? (
-            <button onClick={handleAllow}
-              className="w-full py-4 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              style={{
-                background: "linear-gradient(135deg, #E8732A, #d4651e)",
-                boxShadow: "0 0 40px rgba(232,115,42,0.3)"
-              }}>
-              Autoriser l'accès
-            </button>
-          ) : null}
-          <button onClick={onNext} className="w-full py-3 text-center text-[12px] font-bold text-white/20 uppercase tracking-widest active:scale-95 transition-all">
-            Passer
-          </button>
+          {camStatus === 'idle' && <button onClick={handleAllow} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>Autoriser</button>}
+          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ── Main Onboarding ───────────────────────────────────────────────────────────
 export default function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(() => {
-    if (sessionStorage.getItem("bb_social_signup") === "1") {
-      sessionStorage.removeItem("bb_social_signup");
-      sessionStorage.setItem("bb_social_signup_processed", "1");
-      return 2;
-    }
-    if (sessionStorage.getItem("bb_from_login") === "1") {
-      sessionStorage.removeItem("bb_from_login");
-      return 1;
-    }
+    if (sessionStorage.getItem("bb_social_signup") === "1") { sessionStorage.removeItem("bb_social_signup"); sessionStorage.setItem("bb_social_signup_processed", "1"); return 2; }
+    if (sessionStorage.getItem("bb_from_login") === "1") { sessionStorage.removeItem("bb_from_login"); return 1; }
     return 0;
   });
 
-  const done = () => {
-    localStorage.setItem("bb_onboarded", "1");
-    localStorage.removeItem("bb_is_pro");
-    sessionStorage.removeItem("bb_signup_data");
-    sessionStorage.removeItem("bb_social_signup_processed");
-    window.location.href = "/";
-  };
-
-  const handleSignupNext = () => {
-    setStep(2);
-  };
+  const done = () => { localStorage.setItem("bb_onboarded", "1"); localStorage.removeItem("bb_is_pro"); sessionStorage.removeItem("bb_signup_data"); sessionStorage.removeItem("bb_social_signup_processed"); window.location.href = "/"; };
 
   return (
     <div className="font-display relative">
       {step === 0 && <StepSplash onNext={() => setStep(1)} onDiscover={done} />}
-      {step === 1 && <StepSignup onNext={handleSignupNext} onBack={() => setStep(0)} />}
+      {step === 1 && <StepSignup onNext={() => setStep(2)} onBack={() => setStep(0)} />}
       {step === 2 && <StepVerification onNext={() => setStep(3)} onBack={() => setStep(1)} />}
       {step === 3 && <StepBeautyProfile onNext={() => setStep(4)} onBack={() => setStep(2)} />}
       {step === 4 && <StepPhoto onNext={done} onBack={() => setStep(3)} />}
       {step === 8 && <StepSuccess onDone={done} />}
 
-      {step !== 0 && step !== 8 && (
-        <button
-          onClick={() => {
-            if (step === 1) navigate(-1);
-            else if (step === 2) setStep(1);
-            else if (step === 3) setStep(2);
-            else if (step === 4) setStep(3);
-          }}
-          className="fixed bottom-6 left-6 w-11 h-11 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center shadow-lg active:scale-90 transition-all z-50"
-        >
-          <ArrowLeft className="w-5 h-5 text-white/60" />
+      {step > 0 && step < 8 && (
+        <button onClick={() => { if (step === 1) navigate(-1); else setStep(step - 1); }} className="fixed bottom-6 left-6 w-10 h-10 bg-white/[0.04] border border-white/[0.08] rounded-xl flex items-center justify-center active:scale-90 transition z-50">
+          <ArrowLeft className="w-4 h-4 text-white/40" />
         </button>
       )}
     </div>
