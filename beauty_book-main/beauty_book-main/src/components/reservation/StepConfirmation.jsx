@@ -737,7 +737,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
           <ArrowLeft className="w-5 h-5 text-gray-900" />
         </button>
         <div className="text-center">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Étape 4 sur 4</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Étape 3 sur 3</p>
           <p className="text-[17px] font-black text-gray-900">Confirmation</p>
         </div>
         <div className="w-9" />

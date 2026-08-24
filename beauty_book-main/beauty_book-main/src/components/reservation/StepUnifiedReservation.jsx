@@ -1,31 +1,8 @@
 import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Check, Sparkles, Scissors, Info, Shield, ChevronRight } from "lucide-react";
-import { format, addDays, isSameDay } from "date-fns";
+import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Check, ChevronRight, ChevronLeft, Sun, Cloud, Users } from "lucide-react";
+import { format, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, isSameMonth, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
 import { fr } from "date-fns/locale";
-
-const QUESTIONNAIRES = {
-  coiffure: [
-    { id: "hair_type", question: "Quelle est la nature de vos cheveux ?", options: ["Crépus / Afro (4A-4C)", "Bouclés / Frisés (3A-3C)", "Ondulés (2A-2C)", "Lisses (1A-1C)"] },
-    { id: "hair_length", question: "Quelle est votre longueur de cheveux actuelle ?", options: ["Courts", "Mi-longs", "Longs", "Très longs"] },
-    { id: "extensions_provided", question: "Fourniture des mèches / rajouts ?", options: ["Mèches fournies par le salon", "J'apporte mes propres mèches"] },
-    { id: "sensitivities", question: "Avez-vous des sensibilités particulières ?", options: ["Cuir chevelu sensible", "Bordures délicates", "Aucune particularité"] },
-  ],
-  onglerie: [
-    { id: "nail_status", question: "Quel est l'état actuel de vos ongles ?", options: ["Ongles naturels", "Pose gel/résine à déposer (+15 min)", "Ongles fragiles/abîmés"] },
-    { id: "nail_shape", question: "Quelle forme d'ongle souhaitez-vous ?", options: ["Carrée", "Amande", "Stiletto", "Ronde"] },
-  ],
-  visage: [
-    { id: "skin_type", question: "Quel est votre type de peau ?", options: ["Sèche / Déshydratée", "Mixte à Grasse", "Sensible / Réactive", "Normale"] },
-    { id: "allergies", question: "Allergies ou réactivités connues ?", options: ["Aucune allergie", "Peau très réactive / Allergique"] },
-  ],
-  massage: [
-    { id: "target_areas", question: "Quelles zones de tension privilégier ?", options: ["Dos & Épaules", "Jambes & Pieds", "Tête & Nuque", "Corps entier"] },
-    { id: "pressure", question: "Quelle intensité de pression désirez-vous ?", options: ["Douce & Relaxante", "Modérée", "Forte & Profonde"] },
-  ],
-  general: [
-    { id: "prep_notes", question: "Préférences particulières pour votre rendez-vous", options: ["Silence / Moment de détente", "Conseils personnalisés souhaités", "Pas de préférence"] },
-  ]
-};
+import { entities } from "@/api/entities";
 
 export default function StepUnifiedReservation({
   booking,
@@ -35,57 +12,83 @@ export default function StepUnifiedReservation({
   onBack
 }) {
   const primaryService = booking.services?.[0] || {};
-  const categoryRaw = (primaryService.category || "coiffure").toLowerCase();
+  const proEmail = primaryService.pro_email || booking.salon?.pro_email;
 
-  const getQuestionSet = () => {
-    if (categoryRaw.includes("coiff") || categoryRaw.includes("cheveux") || categoryRaw.includes("tresses") || categoryRaw.includes("braid")) return QUESTIONNAIRES.coiffure;
-    if (categoryRaw.includes("ongle") || categoryRaw.includes("manucure") || categoryRaw.includes("pedicure") || categoryRaw.includes("nail")) return QUESTIONNAIRES.onglerie;
-    if (categoryRaw.includes("visage") || categoryRaw.includes("soin") || categoryRaw.includes("maquillage") || categoryRaw.includes("beaute")) return QUESTIONNAIRES.visage;
-    if (categoryRaw.includes("massage") || categoryRaw.includes("spa") || categoryRaw.includes("bien-etre")) return QUESTIONNAIRES.massage;
-    return QUESTIONNAIRES.coiffure;
-  };
-
-  const questions = getQuestionSet();
-
-  // Load saved preferences from localStorage
-  const [answers, setAnswers] = useState(() => {
-    try {
-      const saved = localStorage.getItem("bb_client_service_preferences");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return {};
-  });
-
-  // State for date & time & expert
   const [selectedDate, setSelectedDate] = useState(booking.date || addDays(new Date(), 1));
-  const [selectedTime, setSelectedTime] = useState(booking.time || "10:00");
-  const [selectedExpert, setSelectedExpert] = useState(booking.expert || "N'importe quel pro disponible");
+  const [selectedTime, setSelectedTime] = useState(booking.time || null);
+  const [selectedExpert, setSelectedExpert] = useState(booking.expert || null);
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [loadingTeam, setLoadingTeam] = useState(false);
 
-  // Generate dates next 14 days
-  const availableDates = Array.from({ length: 14 }).map((_, i) => addDays(new Date(), i + 1));
-  const timeSlots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+  // Fetch team members
+  useEffect(() => {
+    if (!proEmail) return;
+    setLoadingTeam(true);
+    entities.MembreEquipe.filter({ pro_email: proEmail, status: "active" }, "-created_at", 50)
+      .then(res => { setTeamMembers(res || []); setLoadingTeam(false); })
+      .catch(() => setLoadingTeam(false));
+  }, [proEmail]);
 
-  // Save answers to localStorage on change
-  const handleAnswerSelect = (questionText, option) => {
-    setAnswers(prev => {
-      const next = { ...prev, [questionText]: option };
-      try { localStorage.setItem("bb_client_service_preferences", JSON.stringify(next)); } catch {}
-      return next;
-    });
+  // Generate calendar days for month view
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+  const calendarDays = eachDayOfInterval({ start: calStart, end: calEnd });
+
+  const timeSlots = [
+    { time: "09:00", period: "morning" },
+    { time: "10:00", period: "morning" },
+    { time: "11:00", period: "morning" },
+    { time: "12:00", period: "morning" },
+    { time: "13:00", period: "afternoon" },
+    { time: "14:00", period: "afternoon" },
+    { time: "15:00", period: "afternoon" },
+    { time: "16:00", period: "afternoon" },
+    { time: "17:00", period: "afternoon" },
+    { time: "18:00", period: "afternoon" },
+    { time: "19:00", period: "afternoon" },
+  ];
+
+  // Simulate availability per slot (6 seats max)
+  const getAvailability = (time) => {
+    const seed = time.charCodeAt(0) + (selectedDate?.getDate() || 0);
+    return Math.max(0, Math.min(6, (seed % 5) + 1));
   };
+
+  const morningSlots = timeSlots.filter(s => s.period === "morning");
+  const afternoonSlots = timeSlots.filter(s => s.period === "afternoon");
+
+  const morningAvailable = morningSlots.filter(s => getAvailability(s.time) > 0).length;
+  const afternoonAvailable = afternoonSlots.filter(s => getAvailability(s.time) > 0).length;
 
   const handleValidateStep = () => {
+    if (!selectedDate || !selectedTime) return;
     onUpdateBooking({
       date: selectedDate,
       time: selectedTime,
-      expert: selectedExpert,
-      customAnswers: answers
+      expert: selectedExpert || "N'importe quel pro disponible",
     });
     onNext();
   };
 
   const totalAmount = booking.services.reduce((sum, s) => sum + (parseFloat(s.price) || 0) * (s.persons || 1), 0);
   const totalMin = booking.services.reduce((sum, s) => sum + (parseInt(s.duration || s.duration_min) || 60), 0);
+
+  const isDateDisabled = (day) => {
+    if (isBefore(day, startOfDay(new Date()))) return true;
+    return false;
+  };
+
+  // Check if date has availability (simulated)
+  const dateHasAvailability = (day) => {
+    if (isDateDisabled(day)) return false;
+    const dayOfWeek = day.getDay();
+    if (dayOfWeek === 0) return false; // Closed on Sunday
+    const seed = day.getDate() + day.getMonth();
+    return seed % 7 !== 0;
+  };
 
   return (
     <div className="min-h-screen bg-[#FFF5F0] font-display pb-36">
@@ -95,150 +98,281 @@ export default function StepUnifiedReservation({
           <ArrowLeft className="w-5 h-5 text-gray-900" />
         </button>
         <div className="text-center">
-          <p className="text-[10px] font-black text-[#E8732A] uppercase tracking-widest">Étape 1 sur 2</p>
-          <p className="text-[17px] font-black text-gray-900">Date, Horaire & Préférences</p>
+          <p className="text-[10px] font-black text-[#E8732A] uppercase tracking-widest">Étape 1 sur 3</p>
+          <p className="text-[17px] font-black text-gray-900">Date, Horaire & Professionnel</p>
         </div>
         <div className="w-9" />
       </div>
 
-      <div className="px-5 pt-5 space-y-6">
+      <div className="px-5 pt-5 space-y-5">
 
         {/* Selected Service Card Summary */}
         <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 border border-orange-200">
-            <Sparkles className="w-7 h-7 text-[#E8732A]" />
+            <CalendarIcon className="w-7 h-7 text-[#E8732A]" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[15px] font-black text-gray-900 truncate">
               {primaryService.title || primaryService.name || "Réservation Service"}
             </p>
             <div className="flex items-center gap-2 mt-1 text-[12px] text-gray-400 font-medium">
-              <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-[#E8732A]" /> {totalMin} min</span>
+              <span>{totalMin} min</span>
               <span>•</span>
               <span className="font-black text-gray-900">{totalAmount} €</span>
             </div>
           </div>
         </div>
 
-        {/* 1. Date Selector */}
-        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-3">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="w-5 h-5 text-[#E8732A]" />
-            <h3 className="text-[16px] font-black text-gray-900">1. Choisissez votre Date</h3>
+        {/* 1. CALENDAR - Full Month View */}
+        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
+          {/* Month Navigation */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95 transition-all"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-700" />
+            </button>
+            <h3 className="text-[17px] font-black text-gray-900 capitalize">
+              {format(currentMonth, "MMMM yyyy", { locale: fr })}
+            </h3>
+            <button
+              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center active:scale-95 transition-all"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-700" />
+            </button>
           </div>
 
-          <div className="flex gap-2.5 overflow-x-auto pb-2 hide-scrollbar">
-            {availableDates.map((d, i) => {
-              const isSelected = isSameDay(d, selectedDate);
+          {/* Day Headers */}
+          <div className="grid grid-cols-7 gap-1">
+            {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map(d => (
+              <div key={d} className="text-center text-[10px] font-black text-gray-400 uppercase py-1">
+                {d}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {calendarDays.map((day, i) => {
+              const inMonth = isSameMonth(day, currentMonth);
+              const isSelected = isSameDay(day, selectedDate);
+              const disabled = isDateDisabled(day);
+              const hasAvailability = dateHasAvailability(day);
+              const isToday = isSameDay(day, new Date());
+
               return (
                 <button
                   key={i}
-                  onClick={() => setSelectedDate(d)}
-                  className={`shrink-0 w-16 py-3 rounded-2xl border-2 flex flex-col items-center gap-1 transition-all active:scale-95 ${
-                    isSelected ? "border-[#E8732A] bg-orange-50/80 shadow-md" : "border-gray-100 bg-white"
+                  onClick={() => !disabled && inMonth && setSelectedDate(day)}
+                  disabled={!inMonth || disabled}
+                  className={`relative flex flex-col items-center justify-center py-2.5 rounded-xl transition-all active:scale-95 ${
+                    !inMonth ? "opacity-0 pointer-events-none" :
+                    isSelected ? "bg-[#E8732A] shadow-md" :
+                    disabled ? "text-gray-300 cursor-not-allowed" :
+                    "text-gray-900 hover:bg-orange-50"
                   }`}
                 >
-                  <span className={`text-[10px] font-black uppercase ${isSelected ? "text-[#E8732A]" : "text-gray-400"}`}>
-                    {format(d, "EEE", { locale: fr })}
+                  <span className={`text-[15px] font-black ${
+                    isSelected ? "text-white" :
+                    isToday ? "text-[#E8732A]" : ""
+                  }`}>
+                    {format(day, "d")}
                   </span>
-                  <span className={`text-[18px] font-black ${isSelected ? "text-[#E8732A]" : "text-gray-900"}`}>
-                    {format(d, "d")}
-                  </span>
-                  <span className="text-[9px] font-bold text-gray-400">
-                    {format(d, "MMM", { locale: fr })}
-                  </span>
+                  {/* Availability dot */}
+                  {inMonth && !disabled && (
+                    <div className={`w-1.5 h-1.5 rounded-full mt-1 ${
+                      isSelected ? "bg-white/80" :
+                      hasAvailability ? "bg-[#E8732A]" : "bg-gray-300"
+                    }`} />
+                  )}
                 </button>
               );
             })}
           </div>
+
+          {/* Legend */}
+          <div className="flex items-center gap-4 pt-2 border-t border-gray-50">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-[#E8732A]" />
+              <span className="text-[10px] font-bold text-gray-400">Disponible</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-gray-300" />
+              <span className="text-[10px] font-bold text-gray-400">Complet / Fermé</span>
+            </div>
+          </div>
         </div>
 
-        {/* 2. Time Slot Selector */}
-        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-3">
+        {/* 2. TIME SLOTS - Grouped by Matinée / Après-midi */}
+        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-[#E8732A]" />
-            <h3 className="text-[16px] font-black text-gray-900">2. Créneau Horaire</h3>
+            <h3 className="text-[16px] font-black text-gray-900">Créneaux du {selectedDate ? format(selectedDate, "EEEE d MMMM", { locale: fr }) : "..."}</h3>
           </div>
 
-          <div className="grid grid-cols-5 gap-2">
-            {timeSlots.map((slot) => {
-              const isSelected = selectedTime === slot;
-              return (
-                <button
-                  key={slot}
-                  onClick={() => setSelectedTime(slot)}
-                  className={`py-3 rounded-xl border-2 text-[13px] font-black transition-all active:scale-95 ${
-                    isSelected ? "border-[#E8732A] bg-[#E8732A] text-white shadow-md" : "border-gray-100 bg-gray-50 text-gray-800"
-                  }`}
-                >
-                  {slot}
-                </button>
-              );
-            })}
+          {/* Matinée */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sun className="w-4 h-4 text-amber-400" />
+                <span className="text-[14px] font-black text-gray-800">Matinée</span>
+              </div>
+              <span className="text-[11px] font-black text-[#E8732A] uppercase tracking-wider">{morningAvailable} DISPO</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {morningSlots.map(({ time }) => {
+                const seats = getAvailability(time);
+                const isSelected = selectedTime === time;
+                const isEmpty = seats === 0;
+                return (
+                  <button
+                    key={time}
+                    onClick={() => !isEmpty && setSelectedTime(time)}
+                    disabled={isEmpty}
+                    className={`px-4 py-3 rounded-2xl border-2 flex flex-col items-center min-w-[70px] transition-all active:scale-95 ${
+                      isSelected ? "border-[#E8732A] bg-[#E8732A] shadow-md" :
+                      isEmpty ? "border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed" :
+                      "border-gray-100 bg-white"
+                    }`}
+                  >
+                    <span className={`text-[15px] font-black ${isSelected ? "text-white" : "text-gray-900"}`}>
+                      {time}
+                    </span>
+                    <span className={`text-[10px] font-bold ${isSelected ? "text-white/80" : "text-[#E8732A]"}`}>
+                      {isEmpty ? "Complet" : `${seats} sièges`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Après-midi */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Cloud className="w-4 h-4 text-orange-300" />
+                <span className="text-[14px] font-black text-gray-800">Après-midi</span>
+              </div>
+              <span className="text-[11px] font-black text-[#E8732A] uppercase tracking-wider">{afternoonAvailable} DISPO</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {afternoonSlots.map(({ time }) => {
+                const seats = getAvailability(time);
+                const isSelected = selectedTime === time;
+                const isEmpty = seats === 0;
+                return (
+                  <button
+                    key={time}
+                    onClick={() => !isEmpty && setSelectedTime(time)}
+                    disabled={isEmpty}
+                    className={`px-4 py-3 rounded-2xl border-2 flex flex-col items-center min-w-[70px] transition-all active:scale-95 ${
+                      isSelected ? "border-[#E8732A] bg-[#E8732A] shadow-md" :
+                      isEmpty ? "border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed" :
+                      "border-gray-100 bg-white"
+                    }`}
+                  >
+                    <span className={`text-[15px] font-black ${isSelected ? "text-white" : "text-gray-900"}`}>
+                      {time}
+                    </span>
+                    <span className={`text-[10px] font-bold ${isSelected ? "text-white/80" : "text-[#E8732A]"}`}>
+                      {isEmpty ? "Complet" : `${seats} sièges`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* 3. Expert Selector */}
+        {/* 3. PROFESSIONAL / TEAM SELECTOR */}
         <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-3">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-[#E8732A]" />
-            <h3 className="text-[16px] font-black text-gray-900">3. Choix du Professionnel</h3>
+            <h3 className="text-[16px] font-black text-gray-900">Choix du Professionnel</h3>
           </div>
 
-          <div className="flex items-center gap-3 bg-orange-50/60 p-3.5 rounded-2xl border border-orange-100">
-            <div className="w-10 h-10 rounded-full bg-[#E8732A] text-white font-black flex items-center justify-center text-sm">
-              {(proProfile?.salon_name || "P")[0].toUpperCase()}
-            </div>
-            <div className="flex-1">
-              <p className="text-[14px] font-black text-gray-900">{proProfile?.salon_name || "Pro disponible"}</p>
-              <p className="text-[11px] text-gray-500 font-medium">Expert confirmé du salon</p>
-            </div>
-            <Check className="w-5 h-5 text-[#E8732A]" />
-          </div>
-        </div>
+          <div className="space-y-2">
+            {/* Any professional option */}
+            <button
+              onClick={() => setSelectedExpert(null)}
+              className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all active:scale-[0.98] text-left ${
+                selectedExpert === null ? "border-[#E8732A] bg-orange-50/60 shadow-sm" : "border-gray-100 bg-white"
+              }`}
+            >
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#E8732A] to-[#E84466] text-white font-black flex items-center justify-center text-sm shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[14px] font-black text-gray-900">N'importe quel pro disponible</p>
+                <p className="text-[11px] text-gray-400 font-medium">Premier créneau libre trouvé</p>
+              </div>
+              {selectedExpert === null && <Check className="w-5 h-5 text-[#E8732A] shrink-0" />}
+            </button>
 
-        {/* 4. DYNAMIC QUESTIONNAIRE SECTION (Adapts by Service Category & Saved in localStorage) */}
-        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-            <Scissors className="w-5 h-5 text-[#E8732A]" />
-            <div>
-              <h3 className="text-[16px] font-black text-gray-900">4. Préparation & Caractéristiques</h3>
-              <p className="text-[11px] text-gray-400 font-medium">Sauvegardé automatiquement pour vos prochaines réservations</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            {questions.map((qItem, qIdx) => {
-              const currentAns = answers[qItem.question] || "";
-              return (
-                <div key={qIdx} className="space-y-2">
-                  <p className="text-[13px] font-black text-gray-800 flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-full bg-orange-100 text-[#E8732A] text-[11px] font-black flex items-center justify-center">{qIdx + 1}</span>
-                    {qItem.question}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {qItem.options.map((opt) => {
-                      const isSelected = currentAns === opt;
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => handleAnswerSelect(qItem.question, opt)}
-                          className={`px-3.5 py-2 rounded-xl text-[12px] font-bold transition-all border ${
-                            isSelected
-                              ? "bg-[#E8732A] text-white border-[#E8732A] shadow-sm"
-                              : "bg-gray-50 text-gray-700 border-gray-100 hover:bg-gray-100"
-                          }`}
-                        >
-                          {isSelected && <span className="mr-1">✓</span>}
-                          {opt}
-                        </button>
-                      );
-                    })}
-                  </div>
+            {/* Salon pro card */}
+            {proProfile && (
+              <button
+                onClick={() => setSelectedExpert(proProfile)}
+                className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all active:scale-[0.98] text-left ${
+                  selectedExpert?.id === proProfile.id ? "border-[#E8732A] bg-orange-50/60 shadow-sm" : "border-gray-100 bg-white"
+                }`}
+              >
+                <div className="w-11 h-11 rounded-full bg-[#E8732A] text-white font-black flex items-center justify-center text-sm shrink-0 overflow-hidden">
+                  {proProfile.avatar_url ? (
+                    <img src={proProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    (proProfile.salon_name || "P")[0].toUpperCase()
+                  )}
                 </div>
-              );
-            })}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-black text-gray-900">{proProfile.salon_name || "Professionnel"}</p>
+                  <p className="text-[11px] text-gray-400 font-medium truncate">
+                    {proProfile.specialites || "Expert confirmé du salon"}
+                  </p>
+                </div>
+                {selectedExpert?.id === proProfile.id && <Check className="w-5 h-5 text-[#E8732A] shrink-0" />}
+              </button>
+            )}
+
+            {/* Team members */}
+            {loadingTeam && (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-5 h-5 border-2 border-[#E8732A] border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+            {teamMembers.map((member) => (
+              <button
+                key={member.id}
+                onClick={() => setSelectedExpert(member)}
+                className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all active:scale-[0.98] text-left ${
+                  selectedExpert?.id === member.id ? "border-[#E8732A] bg-orange-50/60 shadow-sm" : "border-gray-100 bg-white"
+                }`}
+              >
+                <div className="w-11 h-11 rounded-full bg-orange-100 text-[#E8732A] font-black flex items-center justify-center text-sm shrink-0 overflow-hidden">
+                  {member.membre_avatar ? (
+                    <img src={member.membre_avatar} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    (member.membre_name || member.name || "M")[0].toUpperCase()
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[14px] font-black text-gray-900">{member.membre_name || member.name}</p>
+                  <p className="text-[11px] text-gray-400 font-medium truncate">
+                    {member.specialites || member.specialties || member.role || "Membre de l'équipe"}
+                  </p>
+                </div>
+                {selectedExpert?.id === member.id && <Check className="w-5 h-5 text-[#E8732A] shrink-0" />}
+              </button>
+            ))}
+
+            {!loadingTeam && teamMembers.length === 0 && !proProfile && (
+              <div className="text-center py-4 text-[13px] text-gray-400 font-medium">
+                Aucun professionnel disponible pour ce service
+              </div>
+            )}
           </div>
         </div>
 
@@ -248,10 +382,11 @@ export default function StepUnifiedReservation({
       <div className="fixed bottom-[70px] left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[90] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
         <button
           onClick={handleValidateStep}
-          className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-          style={{ background: "linear-gradient(135deg, #E8732A, #E84466)", boxShadow: "0 8px 25px rgba(232,115,42,0.35)" }}
+          disabled={!selectedDate || !selectedTime}
+          className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: selectedDate && selectedTime ? "linear-gradient(135deg, #E8732A, #E84466)" : "#ccc", boxShadow: selectedDate && selectedTime ? "0 8px 25px rgba(232,115,42,0.35)" : "none" }}
         >
-          Continuer vers la confirmation <ChevronRight className="w-5 h-5" />
+          Continuer <ChevronRight className="w-5 h-5" />
         </button>
       </div>
     </div>

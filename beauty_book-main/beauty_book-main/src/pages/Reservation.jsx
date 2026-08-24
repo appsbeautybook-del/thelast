@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import StepUnifiedReservation from "@/components/reservation/StepUnifiedReservation";
+import StepQuestionnaire from "@/components/reservation/StepQuestionnaire";
 import StepConfirmation from "@/components/reservation/StepConfirmation";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import AuthModal from "@/components/ui/AuthModal";
@@ -59,13 +60,27 @@ export default function Reservation() {
     );
   }
 
+  if (step === 2) {
+    return (
+      <>
+        <AuthModal open={showAuthModal} onClose={closeAuthModal} message={authMessage} />
+        <StepQuestionnaire
+          booking={booking}
+          onUpdateBooking={updateBookingData}
+          onNext={() => setStep(3)}
+          onBack={() => setStep(1)}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <AuthModal open={showAuthModal} onClose={closeAuthModal} message={authMessage} />
       <StepConfirmation
         booking={booking}
         onConfirm={() => navigate("/")}
-        onBack={() => setStep(1)}
+        onBack={() => setStep(2)}
       />
     </>
   );
