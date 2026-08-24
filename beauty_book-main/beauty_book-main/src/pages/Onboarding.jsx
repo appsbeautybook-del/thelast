@@ -9,13 +9,13 @@ import { supabase } from '@/api/supabaseClient';
 import { useRateLimit } from '@/hooks/useRateLimit';
 
 const BRAND = "#E8732A";
+const BRAND_LIGHT = "#FFF4ED";
 const INTERESTS = ["COIFFURE", "MAQUILLAGE", "SOINS", "ONGLES", "MASSAGE", "BARBIER", "ÉPILATION"];
 
 function B({ size = 40 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
-      <defs><linearGradient id="bbg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#E8732A"/><stop offset="100%" stopColor="#c45a1c"/></linearGradient></defs>
-      <circle cx="50" cy="50" r="48" fill="url(#bbg2)"/>
+      <circle cx="50" cy="50" r="48" fill={BRAND}/>
       <path d="M35 28h14c8 0 14 5 14 12s-6 12-14 12H35V28z" fill="white" opacity="0.85"/>
       <path d="M35 52h15c8 0 14 5 14 12s-6 12-14 12H35V52z" fill="white"/>
       <circle cx="66" cy="32" r="5" fill="white" opacity="0.7"/>
@@ -23,15 +23,11 @@ function B({ size = 40 }) {
   );
 }
 
-function GlowOrb({ className }) {
-  return <div className={`absolute rounded-full blur-[120px] pointer-events-none ${className}`} />;
-}
-
 function ProgressBar({ step, total }) {
   return (
     <div className="flex gap-1.5">
       {Array.from({ length: total }).map((_, i) => (
-        <div key={i} className="flex-1 h-[3px] rounded-full transition-all duration-500" style={{ background: i < step ? BRAND : "rgba(255,255,255,0.06)" }} />
+        <div key={i} className="flex-1 h-[3px] rounded-full transition-all duration-500" style={{ background: i < step ? BRAND : "#f3f4f6" }} />
       ))}
     </div>
   );
@@ -50,26 +46,24 @@ const EyeIcon = ({ show }) => show ? <EyeOff className="w-[18px] h-[18px]" /> : 
 
 function StepSplash({ onNext, onDiscover }) {
   return (
-    <div className="relative min-h-screen flex flex-col overflow-hidden bg-[#08080a]">
-      <GlowOrb className="w-[600px] h-[600px] -top-60 -right-60 bg-[#E8732A]/[0.07]" />
-      <GlowOrb className="w-[400px] h-[400px] bottom-20 -left-40 bg-[#E8732A]/[0.05]" />
-
-      <div className="relative z-10 flex-1 flex flex-col px-6 pt-16 pb-12">
-        <div className="flex items-center gap-3 mb-20">
-          <B size={44} />
-          <span className="text-white/20 text-[12px] font-extrabold uppercase tracking-[0.35em]">BeautyBook</span>
+    <div className="min-h-screen bg-white flex flex-col overflow-hidden">
+      <div className="h-1 w-full" style={{ background: BRAND }} />
+      <div className="flex-1 flex flex-col px-6 pt-16 pb-12">
+        <div className="flex items-center gap-3 mb-16">
+          <B size={42} />
+          <span className="text-gray-300 text-[12px] font-extrabold uppercase tracking-[0.3em]">BeautyBook</span>
         </div>
 
         <div className="flex-1 flex flex-col justify-center">
-          <h1 className="text-[48px] font-black leading-[0.92] text-white uppercase tracking-tight mb-5">
+          <h1 className="text-[48px] font-black leading-[0.92] text-gray-900 uppercase tracking-tight mb-5">
             REVEAL<br />YOUR<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E8732A] to-[#f4a261]">BEAUTY.</span>
+            <span style={{ color: BRAND }}>BEAUTY.</span>
           </h1>
-          <p className="text-[14px] text-white/25 leading-relaxed max-w-[260px]">La première communauté dédiée à l'excellence esthétique.</p>
+          <p className="text-[14px] text-gray-400 leading-relaxed max-w-[260px]">La première communauté dédiée à l'excellence esthétique.</p>
         </div>
 
         <div className="space-y-3">
-          <button onClick={onDiscover} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
+          <button onClick={onDiscover} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
             Commencer <ArrowRight className="w-4 h-4" />
           </button>
         </div>
@@ -93,62 +87,51 @@ function StepSignup({ onNext, onBack }) {
   const isValid = form.prenom && form.nom && form.email && pwdStrong && form.password === form.confirm && consentChecked;
 
   const handleSubmit = async () => {
-    setTouched(true);
-    if (!isValid) return;
-    setError("");
-
+    setTouched(true); if (!isValid) return; setError("");
     const ban = await checkIfBanned({ email: form.email });
     if (ban.isBanned) { setError(ban.reason || "🚫 Cet email a été banni."); return; }
-
     sessionStorage.setItem("bb_signup_data", JSON.stringify({ prenom: form.prenom, nom: form.nom, email: form.email, phone: "", mode: "email", password: form.password }));
-
     try {
       const { error: e } = await supabase.auth.signUp({ email: form.email, password: form.password, options: { data: { full_name: `${form.prenom} ${form.nom}` } } });
-      if (e) {
-        if (e.message?.includes('already registered')) setError("Un compte existe déjà avec cet email.");
-        else setError(e.message || "Erreur lors de l'inscription.");
-        return;
-      }
-      await supabase.auth.signInWithOtp({ email: form.email });
-      onNext();
-    } catch { setError("Erreur lors de l'inscription."); }
+      if (e) { setError(e.message?.includes('already registered') ? "Un compte existe déjà." : e.message || "Erreur."); return; }
+      await supabase.auth.signInWithOtp({ email: form.email }); onNext();
+    } catch { setError("Erreur."); }
   };
 
-  const inp = "w-full h-13 bg-white/[0.04] border border-white/[0.08] rounded-xl px-4 text-[14px] font-medium text-white outline-none focus:border-white/20 transition placeholder:text-white/15";
-  const lbl = "text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-2 block";
+  const inp = "w-full h-12 bg-gray-50 border border-gray-100 rounded-xl px-4 text-[14px] font-medium text-gray-800 outline-none focus:border-orange-200 focus:bg-white transition placeholder:text-gray-300";
+  const lbl = "text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] mb-2 block";
 
   return (
-    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
-      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
-
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-1 w-full" style={{ background: BRAND }} />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={1} total={8} /></div>
         <StepLabel step={1} total={8} />
 
-        <h2 className="text-[30px] font-extrabold text-white leading-tight mb-1.5 tracking-tight">Faisons<br />connaissance</h2>
-        <p className="text-[13px] text-white/25 mb-8">Parlez-nous un peu de vous.</p>
+        <h2 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1.5 tracking-tight">Faisons<br />connaissance</h2>
+        <p className="text-[13px] text-gray-400 mb-6">Parlez-nous un peu de vous.</p>
 
-        <div className="space-y-4 flex-1">
+        <div className="space-y-3.5 flex-1">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className={lbl}>Prénom</label><div className="relative"><User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" /><input className={inp + " pl-10"} placeholder="Sophie" value={form.prenom} onChange={e => setForm({ ...form, prenom: e.target.value })} /></div></div>
+            <div><label className={lbl}>Prénom</label><div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" /><input className={inp + " pl-9"} placeholder="Sophie" value={form.prenom} onChange={e => setForm({ ...form, prenom: e.target.value })} /></div></div>
             <div><label className={lbl}>Nom</label><input className={inp} placeholder="Martin" value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} /></div>
           </div>
 
-          <div><label className={lbl}>Email</label><div className="relative"><Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" /><input className={inp + " pl-10"} type="email" placeholder="vous@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div></div>
+          <div><label className={lbl}>Email</label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" /><input className={inp + " pl-9"} type="email" placeholder="vous@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div></div>
 
           <div>
             <label className={lbl}>Mot de passe</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" />
-              <input className={inp + " pl-10 pr-11"} type={showPwd ? "text" : "password"} placeholder="••••••••" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-              <button onClick={() => setShowPwd(!showPwd)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/50 transition"><EyeIcon show={showPwd} /></button>
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+              <input className={inp + " pl-9 pr-10"} type={showPwd ? "text" : "password"} placeholder="••••••••" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+              <button onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition"><EyeIcon show={showPwd} /></button>
             </div>
             {form.password.length > 0 && (
-              <div className="mt-3">
-                <div className="flex gap-1 mb-2">{[1,2,3,4].map(i => <div key={i} className="flex-1 h-[3px] rounded-full transition-all duration-300" style={{ background: i <= pwdScore ? (pwdScore <= 1 ? "#ef4444" : pwdScore === 2 ? "#f97316" : pwdScore === 3 ? "#eab308" : "#22c55e") : "rgba(255,255,255,0.06)" }} />)}</div>
+              <div className="mt-2.5">
+                <div className="flex gap-1 mb-1.5">{[1,2,3,4].map(i => <div key={i} className="flex-1 h-[3px] rounded-full transition-all duration-300" style={{ background: i <= pwdScore ? (pwdScore <= 1 ? "#ef4444" : pwdScore === 2 ? "#f97316" : pwdScore === 3 ? "#eab308" : "#22c55e") : "#f3f4f6" }} />)}</div>
                 <div className="flex flex-wrap gap-x-3 gap-y-1">
                   {[{ c: pwdChecks.length, l: "8 car." },{ c: pwdChecks.upper, l: "Maj." },{ c: pwdChecks.number, l: "Chiffre" },{ c: pwdChecks.special, l: "Spécial" }].map(({ c, l }) => (
-                    <span key={l} className={`text-[10px] font-bold ${c ? "text-emerald-400" : "text-white/20"}`}>{c ? "✓" : "○"} {l}</span>
+                    <span key={l} className={`text-[10px] font-bold ${c ? "text-green-500" : "text-gray-300"}`}>{c ? "✓" : "○"} {l}</span>
                   ))}
                 </div>
               </div>
@@ -158,37 +141,37 @@ function StepSignup({ onNext, onBack }) {
           <div>
             <label className={lbl}>Confirmer</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/15" />
-              <input className={inp + " pl-10 pr-11"} type={showConfirm ? "text" : "password"} placeholder="••••••••" value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
-              <button onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/25 hover:text-white/50 transition"><EyeIcon show={showConfirm} /></button>
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+              <input className={inp + " pl-9 pr-10"} type={showConfirm ? "text" : "password"} placeholder="••••••••" value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
+              <button onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition"><EyeIcon show={showConfirm} /></button>
             </div>
           </div>
 
-          <div onClick={() => setConsentChecked(!consentChecked)} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-4 flex items-start gap-3 cursor-pointer active:scale-[0.99] transition">
-            <div className={`w-[18px] h-[18px] rounded-md border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center transition-all ${consentChecked ? "bg-[#E8732A] border-[#E8732A]" : "border-white/15"}`}>
+          <div onClick={() => setConsentChecked(!consentChecked)} className="bg-gray-50 border border-gray-100 rounded-xl p-3.5 flex items-start gap-3 cursor-pointer active:scale-[0.99] transition">
+            <div className={`w-[18px] h-[18px] rounded-md border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center transition-all ${consentChecked ? "bg-[#E8732A] border-[#E8732A]" : "border-gray-200 bg-white"}`}>
               {consentChecked && <Check className="w-3 h-3 text-white" />}
             </div>
-            <p className="text-[11px] text-white/30 leading-relaxed">
-              J'accepte les <span className="text-white/60 font-bold">CGU</span> et la <span className="text-white/60 font-bold">Politique de Confidentialité</span>. Conformément au RGPD.
+            <p className="text-[11px] text-gray-400 leading-relaxed">
+              J'accepte les <span className="font-bold" style={{ color: BRAND }}>CGU</span> et la <span className="font-bold" style={{ color: BRAND }}>Politique de Confidentialité</span>. RGPD.
             </p>
           </div>
 
           {touched && !isValid && (
-            <div className="bg-red-500/10 border border-red-500/15 rounded-xl px-4 py-3">
-              <p className="text-[12px] text-red-400/90 font-bold">
+            <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+              <p className="text-[12px] text-red-500 font-bold">
                 {!form.prenom || !form.nom ? "Prénom et nom requis." : !form.email ? "Email requis." : !pwdStrong ? "Mot de passe trop faible." : form.password !== form.confirm ? "Mots de passe différents." : !consentChecked ? "Acceptez les conditions." : ""}
               </p>
             </div>
           )}
-          {error && <div className="bg-red-500/10 border border-red-500/15 rounded-xl px-4 py-3"><p className="text-[12px] text-red-400/90 font-medium">{error}</p></div>}
+          {error && <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3"><p className="text-[12px] text-red-500 font-medium">{error}</p></div>}
         </div>
 
-        <div className="mt-6 space-y-3 pb-4">
-          <button onClick={handleSubmit} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: isValid ? BRAND : "rgba(255,255,255,0.04)" }}>
+        <div className="mt-5 space-y-3 pb-4">
+          <button onClick={handleSubmit} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: isValid ? BRAND : "#e5e7eb" }}>
             Suivant <ArrowRight className="w-4 h-4" />
           </button>
-          <p className="text-center text-[13px] text-white/25">Déjà un compte ? <Link to="/connexion" className="font-bold text-white/50 hover:text-white/70 transition">Se connecter</Link></p>
-          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em]">Retour</button>
+          <p className="text-center text-[13px] text-gray-400">Déjà un compte ? <Link to="/connexion" className="font-bold" style={{ color: BRAND }}>Se connecter</Link></p>
+          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
     </div>
@@ -203,31 +186,18 @@ function StepVerification({ onNext, onBack }) {
   const [resendTimer, setResendTimer] = useState(45);
   const inputs = useRef([]);
   const timerRef = useRef(null);
-
   const [data, setData] = useState(() => JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}"));
   const contact = data.mode === "email" ? data.email : data.phone;
   const masked = data.mode === "email" ? contact?.replace(/(.{2}).+(@.+)/, "$1***$2") : contact?.replace(/.(?=.{4})/g, "*");
 
-  useEffect(() => {
-    timerRef.current = setInterval(() => { setResendTimer(p => { if (p <= 1) { clearInterval(timerRef.current); return 0; } return p - 1; }); }, 1000);
-    return () => clearInterval(timerRef.current);
-  }, []);
-
-  useEffect(() => {
-    const read = async () => { try { if (navigator.clipboard?.readText) { const t = await navigator.clipboard.readText(); const d = t.replace(/\D/g, "").slice(0, 6); if (d.length === 6) { setCode(d.split("")); } } } catch {} };
-    setTimeout(read, 600);
-  }, []);
-
+  useEffect(() => { timerRef.current = setInterval(() => { setResendTimer(p => { if (p <= 1) { clearInterval(timerRef.current); return 0; } return p - 1; }); }, 1000); return () => clearInterval(timerRef.current); }, []);
+  useEffect(() => { const read = async () => { try { if (navigator.clipboard?.readText) { const t = await navigator.clipboard.readText(); const d = t.replace(/\D/g, "").slice(0, 6); if (d.length === 6) setCode(d.split("")); } } catch {} }; setTimeout(read, 600); }, []);
   useEffect(() => {
     const send = async () => {
       let cd = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
-      if (sessionStorage.getItem("bb_social_signup_processed") === "1") {
-        let u = null; for (let i = 0; i < 8; i++) { u = await supabase.auth.getUser().then(r => r.data?.user).catch(() => null); if (u?.email) break; await new Promise(r => setTimeout(r, 750)); }
-        if (u?.email) { cd = { ...cd, email: u.email, mode: "email" }; sessionStorage.setItem("bb_signup_data", JSON.stringify(cd)); setData(cd); }
-      }
+      if (sessionStorage.getItem("bb_social_signup_processed") === "1") { let u = null; for (let i = 0; i < 8; i++) { u = await supabase.auth.getUser().then(r => r.data?.user).catch(() => null); if (u?.email) break; await new Promise(r => setTimeout(r, 750)); } if (u?.email) { cd = { ...cd, email: u.email, mode: "email" }; sessionStorage.setItem("bb_signup_data", JSON.stringify(cd)); setData(cd); } }
       if (cd.mode === "phone" && cd.phone) { try { await supabase.auth.signInWithOtp({ phone: cd.phone }); } catch {} }
-    };
-    send();
+    }; send();
   }, []);
 
   const handleChange = (i, val) => { if (!/^\d?$/.test(val)) return; const n = [...code]; n[i] = val; setCode(n); if (val && i < 5) inputs.current[i + 1]?.focus(); };
@@ -235,30 +205,18 @@ function StepVerification({ onNext, onBack }) {
   const fullCode = code.join("");
 
   const handleVerify = async () => {
-    if (fullCode.length < 6 || loading) return;
-    setLoading(true); setError("");
+    if (fullCode.length < 6 || loading) return; setLoading(true); setError("");
     const cd = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
-
-    if (cd.mode === "phone") {
-      const { error: e } = await supabase.auth.verifyOtp({ phone: cd.phone, token: fullCode, type: 'sms' });
-      if (e) { setError("Code incorrect."); setCode(["","","","","",""]); inputs.current[0]?.focus(); setLoading(false); return; }
-      onNext(); setLoading(false); return;
-    }
-
+    if (cd.mode === "phone") { const { error: e } = await supabase.auth.verifyOtp({ phone: cd.phone, token: fullCode, type: 'sms' }); if (e) { setError("Code incorrect."); setCode(["","","","","",""]); inputs.current[0]?.focus(); setLoading(false); return; } onNext(); setLoading(false); return; }
     if (!cd.email) { setError("Email introuvable."); setLoading(false); return; }
     const { error: e } = await supabase.auth.verifyOtp({ email: cd.email, token: fullCode, type: 'email' });
     if (e) { setError("Code incorrect ou expiré."); setCode(["","","","","",""]); inputs.current[0]?.focus(); }
-    else {
-      const u = await supabase.auth.getUser().then(r => r.data?.user).catch(() => null);
-      if (u) await supabase.from('profiles').upsert({ id: u.id, email: u.email, full_name: `${cd.prenom || ""} ${cd.nom || ""}`.trim(), role: 'user', updated_at: new Date().toISOString() }, { onConflict: 'id' });
-      onNext();
-    }
+    else { const u = await supabase.auth.getUser().then(r => r.data?.user).catch(() => null); if (u) await supabase.from('profiles').upsert({ id: u.id, email: u.email, full_name: `${cd.prenom || ""} ${cd.nom || ""}`.trim(), role: 'user', updated_at: new Date().toISOString() }, { onConflict: 'id' }); onNext(); }
     setLoading(false);
   };
 
   const handleResend = async () => {
-    if (resendTimer > 0 || resending) return;
-    setResending(true); setError("");
+    if (resendTimer > 0 || resending) return; setResending(true); setError("");
     const cd = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
     try { if (cd.mode === "phone") await supabase.auth.signInWithOtp({ phone: cd.phone }); else if (cd.email) await supabase.auth.signInWithOtp({ email: cd.email }); } catch {}
     setResending(false); setResendTimer(45); clearInterval(timerRef.current);
@@ -266,35 +224,35 @@ function StepVerification({ onNext, onBack }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
-      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-1 w-full" style={{ background: BRAND }} />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={2} total={8} /></div>
         <StepLabel step={2} total={8} />
 
-        <h2 className="text-[30px] font-extrabold text-white leading-tight mb-1.5 tracking-tight">Vérifiez<br />votre {data.mode === "email" ? "email" : "numéro"}</h2>
-        <p className="text-[13px] text-white/25 mb-10">Code à 6 chiffres envoyé à <span className="text-white/60 font-bold">{masked}</span></p>
+        <h2 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1.5 tracking-tight">Vérifiez<br />votre {data.mode === "email" ? "email" : "numéro"}</h2>
+        <p className="text-[13px] text-gray-400 mb-8">Code à 6 chiffres envoyé à <span className="font-bold text-gray-700">{masked}</span></p>
 
-        <div className="flex-1 flex flex-col items-center gap-6 pt-2">
+        <div className="flex-1 flex flex-col items-center gap-5 pt-2">
           <div className="flex gap-2.5 justify-center">
             {code.map((d, i) => (
-              <input key={i} ref={el => inputs.current[i] = el} type="text" inputMode="numeric" maxLength={1} value={d} onChange={e => handleChange(i, e.target.value)} onKeyDown={e => handleKeyDown(i, e)} className="w-[46px] h-[54px] text-center text-[22px] font-extrabold bg-white/[0.04] rounded-xl outline-none transition-all text-white/80" style={{ border: d ? `1.5px solid ${BRAND}` : "1.5px solid rgba(255,255,255,0.08)" }} />
+              <input key={i} ref={el => inputs.current[i] = el} type="text" inputMode="numeric" maxLength={1} value={d} onChange={e => handleChange(i, e.target.value)} onKeyDown={e => handleKeyDown(i, e)} className="w-[44px] h-[52px] text-center text-[20px] font-extrabold bg-gray-50 border border-gray-100 rounded-xl outline-none transition-all text-gray-800 focus:border-orange-200 focus:bg-white" style={{ border: d ? `1.5px solid ${BRAND}` : undefined }} />
             ))}
           </div>
 
-          {error && <div className="bg-red-500/10 border border-red-500/15 rounded-xl px-4 py-3 w-full text-center"><p className="text-[12px] text-red-400/90 font-bold">{error}</p></div>}
+          {error && <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 w-full text-center"><p className="text-[12px] text-red-500 font-bold">{error}</p></div>}
 
-          <button onClick={handleResend} disabled={resendTimer > 0 || resending} className={`flex items-center gap-2 text-[11px] font-bold active:scale-95 transition ${resendTimer > 0 ? 'text-white/15' : 'text-white/50'}`}>
+          <button onClick={handleResend} disabled={resendTimer > 0 || resending} className={`flex items-center gap-2 text-[11px] font-bold active:scale-95 transition ${resendTimer > 0 ? 'text-gray-300' : ''}`} style={{ color: resendTimer > 0 ? undefined : BRAND }}>
             <RotateCcw className={`w-3.5 h-3.5 ${resending ? "animate-spin" : ""}`} />
             {resendTimer > 0 ? `${resendTimer}s` : resending ? "Envoi..." : "Renvoyer"}
           </button>
         </div>
 
         <div className="space-y-3">
-          <button onClick={handleVerify} disabled={fullCode.length < 6 || loading} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: fullCode.length === 6 && !loading ? BRAND : "rgba(255,255,255,0.04)" }}>
-            {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <><span>Confirmer</span><ArrowRight className="w-4 h-4" /></>}
+          <button onClick={handleVerify} disabled={fullCode.length < 6 || loading} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: fullCode.length === 6 && !loading ? BRAND : "#e5e7eb" }}>
+            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><span>Confirmer</span><ArrowRight className="w-4 h-4" /></>}
           </button>
-          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em]">Retour</button>
+          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
     </div>
@@ -307,47 +265,41 @@ function StepBeautyProfile({ onNext, onBack }) {
   const toggle = (item) => setInterests(p => p.includes(item) ? p.filter(i => i !== item) : [...p, item]);
   const isValid = !!gender && interests.length >= 1;
 
-  const handleContinue = () => {
-    if (!isValid) return;
-    const ex = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}");
-    sessionStorage.setItem("bb_signup_data", JSON.stringify({ ...ex, gender, interests }));
-    onNext();
-  };
+  const handleContinue = () => { if (!isValid) return; const ex = JSON.parse(sessionStorage.getItem("bb_signup_data") || "{}"); sessionStorage.setItem("bb_signup_data", JSON.stringify({ ...ex, gender, interests })); onNext(); };
 
-  const pill = (active) => `px-5 py-3 rounded-xl text-[11px] font-extrabold border transition-all active:scale-95 uppercase tracking-[0.15em] ${active ? "text-white" : "text-white/40"}`;
-  const pillStyle = (active) => ({ borderColor: active ? BRAND : "rgba(255,255,255,0.08)", background: active ? BRAND : "rgba(255,255,255,0.03)" });
+  const pill = (active) => `px-5 py-2.5 rounded-xl text-[11px] font-extrabold border transition-all active:scale-95 uppercase tracking-[0.15em] ${active ? "text-white border-transparent" : "text-gray-500 border-gray-100 bg-gray-50"}`;
 
   return (
-    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
-      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-1 w-full" style={{ background: BRAND }} />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={3} total={8} /></div>
         <StepLabel step={3} total={8} />
 
-        <h2 className="text-[30px] font-extrabold text-white leading-tight mb-1.5 tracking-tight">Votre Profil<br />Beauté</h2>
-        <p className="text-[13px] text-white/25 mb-8">Personnalisez votre expérience.</p>
+        <h2 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1.5 tracking-tight">Votre Profil<br />Beauté</h2>
+        <p className="text-[13px] text-gray-400 mb-6">Personnalisez votre expérience.</p>
 
-        <div className="flex-1 space-y-8">
+        <div className="flex-1 space-y-6">
           <div>
-            <p className="text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-3">Vous êtes ? <span className="text-white/15">*obligatoire</span></p>
+            <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] mb-3">Vous êtes ? <span className="text-gray-300">*obligatoire</span></p>
             <div className="flex gap-2.5 flex-wrap">
-              {["FEMME", "HOMME", "AUTRE"].map(g => <button key={g} onClick={() => setGender(g)} className={pill(gender === g)} style={pillStyle(gender === g)}>{g}</button>)}
+              {["FEMME", "HOMME", "AUTRE"].map(g => <button key={g} onClick={() => setGender(g)} className={pill(gender === g)} style={gender === g ? { background: BRAND } : {}}>{g}</button>)}
             </div>
           </div>
 
           <div>
-            <p className="text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-3">Vos intérêts <span className="text-white/15">*au moins 1</span></p>
+            <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] mb-3">Vos intérêts <span className="text-gray-300">*au moins 1</span></p>
             <div className="flex flex-wrap gap-2.5">
-              {INTERESTS.map(item => <button key={item} onClick={() => toggle(item)} className={pill(interests.includes(item))} style={pillStyle(interests.includes(item))}>{item}</button>)}
+              {INTERESTS.map(item => <button key={item} onClick={() => toggle(item)} className={pill(interests.includes(item))} style={interests.includes(item) ? { background: BRAND } : {}}>{item}</button>)}
             </div>
           </div>
         </div>
 
-        <div className="mt-6 space-y-3 pb-4">
-          <button onClick={handleContinue} disabled={!isValid} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: isValid ? BRAND : "rgba(255,255,255,0.04)" }}>
+        <div className="mt-5 space-y-3 pb-4">
+          <button onClick={handleContinue} disabled={!isValid} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: isValid ? BRAND : "#e5e7eb" }}>
             Continuer <ArrowRight className="w-4 h-4" />
           </button>
-          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em]">Retour</button>
+          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
     </div>
@@ -381,44 +333,44 @@ function StepPhoto({ onNext, onBack }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
-      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-1 w-full" style={{ background: BRAND }} />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={4} total={8} /></div>
         <StepLabel step={4} total={8} />
 
-        <h2 className="text-[30px] font-extrabold text-white leading-tight mb-1.5 tracking-tight">Votre<br />profil</h2>
-        <p className="text-[13px] text-white/25 mb-8">Ajoutez une photo pour vous identifier.</p>
+        <h2 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1.5 tracking-tight">Votre<br />profil</h2>
+        <p className="text-[13px] text-gray-400 mb-6">Ajoutez une photo pour vous identifier.</p>
 
-        <div className="flex-1 space-y-6">
+        <div className="flex-1 space-y-5">
           <div>
-            <p className="text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-3">Bannière <span className="text-white/15">optionnelle</span></p>
-            <div onClick={() => bannerRef.current?.click()} className="relative w-full h-28 rounded-xl overflow-hidden cursor-pointer active:scale-[0.99] transition border border-dashed" style={{ borderColor: banner ? BRAND : "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
-              {banner ? <img src={banner} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center gap-2"><Camera className="w-7 h-7 text-white/10" strokeWidth={1} /><span className="text-[10px] font-bold text-white/15 uppercase tracking-[0.2em]">Ajouter</span></div>}
+            <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] mb-2.5">Bannière <span className="text-gray-300">optionnelle</span></p>
+            <div onClick={() => bannerRef.current?.click()} className="relative w-full h-28 rounded-xl overflow-hidden cursor-pointer active:scale-[0.99] transition border border-dashed border-gray-200 bg-gray-50">
+              {banner ? <img src={banner} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center gap-2"><Camera className="w-7 h-7 text-gray-200" strokeWidth={1} /><span className="text-[10px] font-bold text-gray-300 uppercase tracking-[0.18em]">Ajouter</span></div>}
             </div>
             <input ref={bannerRef} type="file" accept="image/*" onChange={handleBanner} className="hidden" />
           </div>
 
           <div>
-            <p className="text-[10px] font-extrabold text-white/30 uppercase tracking-[0.2em] mb-3">Photo de profil <span className="text-white/15">optionnelle</span></p>
+            <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-[0.18em] mb-2.5">Photo de profil <span className="text-gray-300">optionnelle</span></p>
             <div className="flex items-center gap-5">
               <div className="relative">
-                <div onClick={() => photoRef.current?.click()} className="w-20 h-20 rounded-full flex items-center justify-center border border-dashed cursor-pointer" style={{ borderColor: photo ? BRAND : "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
-                  {photo ? <img src={photo} alt="" className="w-full h-full rounded-full object-cover" /> : <Camera className="w-7 h-7 text-white/10" strokeWidth={1} />}
+                <div onClick={() => photoRef.current?.click()} className="w-20 h-20 rounded-full flex items-center justify-center border border-dashed border-gray-200 bg-gray-50 cursor-pointer">
+                  {photo ? <img src={photo} alt="" className="w-full h-full rounded-full object-cover" /> : <Camera className="w-7 h-7 text-gray-200" strokeWidth={1} />}
                 </div>
                 <button onClick={() => photoRef.current?.click()} className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full flex items-center justify-center" style={{ background: BRAND }}><Camera className="w-3 h-3 text-white" /></button>
                 <input ref={photoRef} type="file" accept="image/*" onChange={handlePhoto} className="hidden" />
               </div>
-              <div><p className="text-[13px] font-bold text-white/70">Photo de profil</p><p className="text-[11px] text-white/25 mt-0.5">Visible par la communauté</p></div>
+              <div><p className="text-[13px] font-bold text-gray-700">Photo de profil</p><p className="text-[11px] text-gray-400 mt-0.5">Visible par la communauté</p></div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-3 mt-6 pb-4">
-          <button onClick={handleFinish} disabled={loading} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: !loading ? BRAND : "rgba(255,255,255,0.04)" }}>
-            {loading ? <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <><span>Terminer</span><ArrowRight className="w-4 h-4" /></>}
+        <div className="space-y-3 mt-5 pb-4">
+          <button onClick={handleFinish} disabled={loading} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: !loading ? BRAND : "#e5e7eb" }}>
+            {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><span>Terminer</span><ArrowRight className="w-4 h-4" /></>}
           </button>
-          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em]">Retour</button>
+          <button onClick={onBack} className="w-full text-center text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
     </div>
@@ -430,17 +382,16 @@ function StepSuccess({ onDone }) {
   const prenom = data.prenom || "";
 
   return (
-    <div className="min-h-screen bg-[#08080a] flex flex-col items-center justify-center px-6 relative overflow-hidden">
-      <GlowOrb className="w-[600px] h-[600px] -top-40 left-1/2 -translate-x-1/2 bg-[#E8732A]/[0.08]" />
-      <div className="relative z-10 text-center">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-6">
+      <div className="text-center">
         <div className="w-20 h-20 mx-auto rounded-[24px] flex items-center justify-center mb-10" style={{ background: BRAND }}>
           <Sparkles className="w-10 h-10 text-white" />
         </div>
-        <h2 className="text-[38px] font-black text-white leading-tight mb-3 tracking-tight">{prenom ? `Bienvenue\n${prenom} !` : "Bienvenue !"}</h2>
-        <p className="text-[14px] text-white/30 max-w-[260px] mx-auto">Votre profil est prêt. Rejoignez la communauté.</p>
+        <h2 className="text-[34px] font-black text-gray-900 leading-tight mb-3 tracking-tight">{prenom ? `Bienvenue\n${prenom} !` : "Bienvenue !"}</h2>
+        <p className="text-[14px] text-gray-400 max-w-[260px] mx-auto">Votre profil est prêt. Rejoignez la communauté.</p>
       </div>
-      <div className="relative z-10 w-full mt-16">
-        <button onClick={onDone} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
+      <div className="w-full mt-14">
+        <button onClick={onDone} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
           Découvrir <ArrowRight className="w-4 h-4" />
         </button>
       </div>
@@ -459,23 +410,23 @@ function StepNotifications({ onNext }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
-      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-1 w-full" style={{ background: BRAND }} />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={5} total={8} /></div>
         <StepLabel step={5} total={8} />
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-8">
-          <div className="w-24 h-24 rounded-[28px] bg-white/[0.04] border border-white/[0.08] flex items-center justify-center"><span className="text-[48px]">🔔</span></div>
+          <div className="w-24 h-24 rounded-[28px] flex items-center justify-center" style={{ background: BRAND_LIGHT }}><span className="text-[48px]">🔔</span></div>
           <div>
-            <h2 className="text-[32px] font-extrabold text-white leading-tight mb-3 tracking-tight">Notifications</h2>
-            <p className="text-[14px] text-white/25 max-w-[280px] mx-auto">Alertes réservations, messages et offres.</p>
+            <h2 className="text-[30px] font-extrabold text-gray-900 leading-tight mb-3 tracking-tight">Notifications</h2>
+            <p className="text-[14px] text-gray-400 max-w-[280px] mx-auto">Alertes réservations, messages et offres.</p>
           </div>
-          {status === 'granted' && <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 rounded-xl"><Check className="w-4 h-4 text-emerald-400" /><span className="text-emerald-400 text-[12px] font-bold">Activées</span></div>}
-          {status === 'denied' && <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl"><span className="text-red-400 text-[12px] font-bold">Refusé</span></div>}
+          {status === 'granted' && <div className="flex items-center gap-2 bg-green-50 border border-green-100 px-4 py-2.5 rounded-xl"><Check className="w-4 h-4 text-green-500" /><span className="text-green-600 text-[12px] font-bold">Activées</span></div>}
+          {status === 'denied' && <div className="flex items-center gap-2 bg-red-50 border border-red-100 px-4 py-2.5 rounded-xl"><span className="text-red-500 text-[12px] font-bold">Refusé</span></div>}
         </div>
         <div className="space-y-3">
-          {(status === 'idle' || status === 'loading') && <button onClick={handleAllow} disabled={status === 'loading'} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>{status === 'loading' ? "En attente..." : "Activer"}</button>}
-          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
+          {(status === 'idle' || status === 'loading') && <button onClick={handleAllow} disabled={status === 'loading'} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>{status === 'loading' ? "En attente..." : "Activer"}</button>}
+          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
         </div>
       </div>
     </div>
@@ -496,23 +447,23 @@ function StepLocation({ onNext }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
-      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-1 w-full" style={{ background: BRAND }} />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={6} total={8} /></div>
         <StepLabel step={6} total={8} />
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-8">
-          <div className="w-24 h-24 rounded-[28px] bg-white/[0.04] border border-white/[0.08] flex items-center justify-center"><span className="text-[48px]">📍</span></div>
+          <div className="w-24 h-24 rounded-[28px] flex items-center justify-center" style={{ background: BRAND_LIGHT }}><span className="text-[48px]">📍</span></div>
           <div>
-            <h2 className="text-[32px] font-extrabold text-white leading-tight mb-3 tracking-tight">Localisation</h2>
-            <p className="text-[14px] text-white/25 max-w-[280px] mx-auto">Trouvez les salons les plus proches.</p>
+            <h2 className="text-[30px] font-extrabold text-gray-900 leading-tight mb-3 tracking-tight">Localisation</h2>
+            <p className="text-[14px] text-gray-400 max-w-[280px] mx-auto">Trouvez les salons les plus proches.</p>
           </div>
-          {status === 'granted' && <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2.5 rounded-xl"><Check className="w-4 h-4 text-emerald-400" /><span className="text-emerald-400 text-[12px] font-bold">Activée</span></div>}
-          {status === 'denied' && <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 px-4 py-2.5 rounded-xl"><span className="text-red-400 text-[12px] font-bold">Refusé</span></div>}
+          {status === 'granted' && <div className="flex items-center gap-2 bg-green-50 border border-green-100 px-4 py-2.5 rounded-xl"><Check className="w-4 h-4 text-green-500" /><span className="text-green-600 text-[12px] font-bold">Activée</span></div>}
+          {status === 'denied' && <div className="flex items-center gap-2 bg-red-50 border border-red-100 px-4 py-2.5 rounded-xl"><span className="text-red-500 text-[12px] font-bold">Refusé</span></div>}
         </div>
         <div className="space-y-3">
-          {(status === 'idle' || status === 'loading') && <button onClick={handleAllow} disabled={status === 'loading'} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>{status === 'loading' ? "En attente..." : "Activer"}</button>}
-          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
+          {(status === 'idle' || status === 'loading') && <button onClick={handleAllow} disabled={status === 'loading'} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>{status === 'loading' ? "En attente..." : "Activer"}</button>}
+          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
         </div>
       </div>
     </div>
@@ -530,19 +481,19 @@ function StepCameraMic({ onNext }) {
     setTimeout(onNext, 1000);
   };
 
-  const badge = (s) => `flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${s === 'granted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : s === 'denied' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-white/[0.03] text-white/25 border border-white/[0.06]'}`;
+  const badge = (s) => `flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold transition-all ${s === 'granted' ? 'bg-green-50 text-green-600 border border-green-100' : s === 'denied' ? 'bg-red-50 text-red-500 border border-red-100' : 'bg-gray-50 text-gray-400 border border-gray-100'}`;
 
   return (
-    <div className="min-h-screen bg-[#08080a] flex flex-col relative overflow-hidden">
-      <GlowOrb className="w-[400px] h-[400px] -top-40 -right-40 bg-[#E8732A]/[0.05]" />
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="h-1 w-full" style={{ background: BRAND }} />
       <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
         <div className="mb-8"><ProgressBar step={7} total={8} /></div>
         <StepLabel step={7} total={8} />
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-8">
-          <div className="w-24 h-24 rounded-[28px] bg-white/[0.04] border border-white/[0.08] flex items-center justify-center"><span className="text-[48px]">📸</span></div>
+          <div className="w-24 h-24 rounded-[28px] flex items-center justify-center" style={{ background: BRAND_LIGHT }}><span className="text-[48px]">📸</span></div>
           <div>
-            <h2 className="text-[32px] font-extrabold text-white leading-tight mb-3 tracking-tight">Caméra & Micro</h2>
-            <p className="text-[14px] text-white/25 max-w-[280px] mx-auto">Photos, reels et assistant vocal.</p>
+            <h2 className="text-[30px] font-extrabold text-gray-900 leading-tight mb-3 tracking-tight">Caméra & Micro</h2>
+            <p className="text-[14px] text-gray-400 max-w-[280px] mx-auto">Photos, reels et assistant vocal.</p>
           </div>
           <div className="flex gap-2.5">
             <div className={badge(camStatus)}>📷 {camStatus === 'granted' ? 'OK' : camStatus === 'denied' ? 'Non' : 'Cam'}</div>
@@ -550,8 +501,8 @@ function StepCameraMic({ onNext }) {
           </div>
         </div>
         <div className="space-y-3">
-          {camStatus === 'idle' && <button onClick={handleAllow} className="w-full h-14 rounded-2xl font-extrabold text-[13px] uppercase tracking-[0.15em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>Autoriser</button>}
-          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-white/15 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
+          {camStatus === 'idle' && <button onClick={handleAllow} className="w-full h-13 rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all" style={{ background: BRAND }}>Autoriser</button>}
+          <button onClick={onNext} className="w-full py-3 text-center text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em] active:scale-95 transition">Passer</button>
         </div>
       </div>
     </div>
@@ -578,8 +529,8 @@ export default function Onboarding() {
       {step === 8 && <StepSuccess onDone={done} />}
 
       {step > 0 && step < 8 && (
-        <button onClick={() => { if (step === 1) navigate(-1); else setStep(step - 1); }} className="fixed bottom-6 left-6 w-10 h-10 bg-white/[0.04] border border-white/[0.08] rounded-xl flex items-center justify-center active:scale-90 transition z-50">
-          <ArrowLeft className="w-4 h-4 text-white/40" />
+        <button onClick={() => { if (step === 1) navigate(-1); else setStep(step - 1); }} className="fixed bottom-6 left-6 w-10 h-10 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-center active:scale-90 transition z-50">
+          <ArrowLeft className="w-4 h-4 text-gray-400" />
         </button>
       )}
     </div>
