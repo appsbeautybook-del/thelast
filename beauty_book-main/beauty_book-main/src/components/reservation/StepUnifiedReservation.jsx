@@ -1,8 +1,58 @@
-import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Check, ChevronRight, ChevronLeft, Sun, Cloud, Users } from "lucide-react";
-import { format, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, isSameMonth, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
+import { useState, useEffect, useMemo } from "react";
+import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Check, ChevronRight, ChevronLeft, Sun, Cloud, Users, Minus, Plus, Package, Sparkles, Tag } from "lucide-react";
+import { format, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, isSameMonth, isBefore, startOfDay, eachDayOfInterval, getDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { entities } from "@/api/entities";
+
+const CLEANING_MINUTES = 15;
+const SLOT_INTERVAL = 15;
+const MAX_SEATS = 6;
+
+// Default opening hours if proProfile.horaires not available
+const DEFAULT_HOURS = { open: "09:00", close: "19:00" };
+
+function parseTime(str) {
+  if (!str) return null;
+  const [h, m] = str.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function formatMinutes(mins) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function getOpeningHours(proProfile, dayOfWeek) {
+  if (!proProfile?.horaires) return DEFAULT_HOURS;
+  try {
+    const horaires = typeof proProfile.horaires === "string" ? JSON.parse(proProfile.horaires) : proProfile.horaires;
+    const dayMap = { 0: "dim", 1: "lun", 2: "mar", 3: "mer", 4: "jeu", 5: "ven", 6: "sam" };
+    const dayKey = dayMap[dayOfWeek];
+    const daySchedule = horaires[dayKey];
+    if (!daySchedule || daySchedule.ferme) return null;
+    return { open: daySchedule.ouverture || "09:00", close: daySchedule.fermeture || "19:00" };
+  } catch {
+    return DEFAULT_HOURS;
+  }
+}
+
+function generateTimeSlots(openStr, closeStr, durationMin) {
+  const openMin = parseTime(openStr);
+  const closeMin = parseTime(closeStr);
+  if (openMin == null || closeMin == null) return [];
+  const slots = [];
+  for (let t = openMin; t + durationMin <= closeMin; t += SLOT_INTERVAL) {
+    slots.push(formatMinutes(t));
+  }
+  return slots;
+}
+
+function getSlotAvailability(date, timeStr, teamMembers) {
+  const seed = (date?.getDate() || 0) + (timeStr.charCodeAt(0)) + (timeStr.charCodeAt(3) || 0);
+  const booked = seed % (MAX_SEATS + 1);
+  return Math.max(0, MAX_SEATS - booked);
+}
 
 export default function StepUnifiedReservation({
   booking,
@@ -11,6 +61,7 @@ export default function StepUnifiedReservation({
   onNext,
   onBack
 }) {
+  const isBundle = !!booking.bundle;
   const primaryService = booking.services?.[0] || {};
   const proEmail = primaryService.pro_email || booking.salon?.pro_email;
 
@@ -20,6 +71,7 @@ export default function StepUnifiedReservation({
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [teamMembers, setTeamMembers] = useState([]);
   const [loadingTeam, setLoadingTeam] = useState(false);
+  const [persons, setPersons] = useState(booking.services?.[0]?.persons || 1);
 
   // Fetch team members
   useEffect(() => {
@@ -30,66 +82,72 @@ export default function StepUnifiedReservation({
       .catch(() => setLoadingTeam(false));
   }, [proEmail]);
 
-  // Generate calendar days for month view
+  // ── Total duration (service + cleaning) ──
+  const totalServiceMin = booking.services.reduce((sum, s) => sum + (parseInt(s.duration_min || s.duration) || 60), 0);
+  const totalDurationWithCleaning = totalServiceMin + CLEANING_MINUTES;
+
+  // ── Calendar ──
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const calendarDays = eachDayOfInterval({ start: calStart, end: calEnd });
 
-  const timeSlots = [
-    { time: "09:00", period: "morning" },
-    { time: "10:00", period: "morning" },
-    { time: "11:00", period: "morning" },
-    { time: "12:00", period: "morning" },
-    { time: "13:00", period: "afternoon" },
-    { time: "14:00", period: "afternoon" },
-    { time: "15:00", period: "afternoon" },
-    { time: "16:00", period: "afternoon" },
-    { time: "17:00", period: "afternoon" },
-    { time: "18:00", period: "afternoon" },
-    { time: "19:00", period: "afternoon" },
-  ];
+  const isDateDisabled = (day) => isBefore(day, startOfDay(new Date()));
 
-  // Simulate availability per slot (6 seats max)
-  const getAvailability = (time) => {
-    const seed = time.charCodeAt(0) + (selectedDate?.getDate() || 0);
-    return Math.max(0, Math.min(6, (seed % 5) + 1));
-  };
-
-  const morningSlots = timeSlots.filter(s => s.period === "morning");
-  const afternoonSlots = timeSlots.filter(s => s.period === "afternoon");
-
-  const morningAvailable = morningSlots.filter(s => getAvailability(s.time) > 0).length;
-  const afternoonAvailable = afternoonSlots.filter(s => getAvailability(s.time) > 0).length;
-
-  const handleValidateStep = () => {
-    if (!selectedDate || !selectedTime) return;
-    onUpdateBooking({
-      date: selectedDate,
-      time: selectedTime,
-      expert: selectedExpert || "N'importe quel pro disponible",
-    });
-    onNext();
-  };
-
-  const totalAmount = booking.services.reduce((sum, s) => sum + (parseFloat(s.price) || 0) * (s.persons || 1), 0);
-  const totalMin = booking.services.reduce((sum, s) => sum + (parseInt(s.duration || s.duration_min) || 60), 0);
-
-  const isDateDisabled = (day) => {
-    if (isBefore(day, startOfDay(new Date()))) return true;
-    return false;
-  };
-
-  // Check if date has availability (simulated)
   const dateHasAvailability = (day) => {
     if (isDateDisabled(day)) return false;
-    const dayOfWeek = day.getDay();
-    if (dayOfWeek === 0) return false; // Closed on Sunday
+    const dow = day.getDay();
+    if (dow === 0) return false;
+    const hours = getOpeningHours(proProfile, dow);
+    if (!hours) return false;
     const seed = day.getDate() + day.getMonth();
     return seed % 7 !== 0;
   };
 
+  // ── Adaptive time slots for selected date ──
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedDate) return [];
+    const dow = selectedDate.getDay();
+    const hours = getOpeningHours(proProfile, dow);
+    if (!hours) return [];
+    const raw = generateTimeSlots(hours.open, hours.close, totalDurationWithCleaning);
+    return raw.map(time => ({
+      time,
+      seats: getSlotAvailability(selectedDate, time, teamMembers),
+    }));
+  }, [selectedDate, proProfile, totalDurationWithCleaning, teamMembers]);
+
+  const morningSlots = availableTimeSlots.filter(s => parseTime(s.time) < 12 * 60);
+  const afternoonSlots = availableTimeSlots.filter(s => parseTime(s.time) >= 12 * 60);
+  const morningAvailable = morningSlots.filter(s => s.seats > 0).length;
+  const afternoonAvailable = afternoonSlots.filter(s => s.seats > 0).length;
+
+  // ── Prices ──
+  const bundlePrice = isBundle ? (booking.bundle?.bundle_price || 0) : 0;
+  const bundlePP = isBundle ? (booking.bundle?.bundle_price_per_person || 0) : 0;
+  const isGroupBundle = isBundle && booking.bundle?.is_group;
+  const minPersons = isGroupBundle ? (booking.bundle?.min_persons || 1) : 1;
+  const maxPersons = isGroupBundle ? (booking.bundle?.max_persons || 10) : 1;
+
+  const totalAmount = isBundle
+    ? (isGroupBundle ? bundlePP * persons : bundlePrice)
+    : booking.services.reduce((sum, s) => sum + (parseFloat(s.price) || 0) * persons, 0);
+
+  const handleValidateStep = () => {
+    if (!selectedDate || !selectedTime) return;
+    const updatedServices = booking.services.map(s => ({ ...s, persons }));
+    onUpdateBooking({
+      date: selectedDate,
+      time: selectedTime,
+      expert: selectedExpert || null,
+      services: updatedServices,
+      persons,
+    });
+    onNext();
+  };
+
+  // ── Render ──
   return (
     <div className="min-h-screen bg-[#FFF5F0] font-display pb-36">
       {/* Header */}
@@ -106,25 +164,142 @@ export default function StepUnifiedReservation({
 
       <div className="px-5 pt-5 space-y-5">
 
-        {/* Selected Service Card Summary */}
-        <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 border border-orange-200">
-            <CalendarIcon className="w-7 h-7 text-[#E8732A]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[15px] font-black text-gray-900 truncate">
-              {primaryService.title || primaryService.name || "Réservation Service"}
-            </p>
-            <div className="flex items-center gap-2 mt-1 text-[12px] text-gray-400 font-medium">
-              <span>{totalMin} min</span>
-              <span>•</span>
-              <span className="font-black text-gray-900">{totalAmount} €</span>
+        {/* ── SERVICE / BUNDLE SUMMARY CARD ── */}
+        {isBundle ? (
+          <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-100 to-pink-100 flex items-center justify-center shrink-0 border border-purple-200">
+                <Package className="w-7 h-7 text-purple-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-[15px] font-black text-gray-900 truncate">{booking.bundle?.name || "Bundle"}</p>
+                  {booking.bundle?.discount_percent > 0 && (
+                    <span className="shrink-0 px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-black rounded-full">
+                      -{booking.bundle.discount_percent}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                  {booking.services.length} prestations incluses • {totalServiceMin} min
+                </p>
+              </div>
+              <span className="text-[18px] font-black text-[#E8732A] shrink-0">
+                {isGroupBundle ? `${bundlePP}€/pers` : `${bundlePrice}€`}
+              </span>
+            </div>
+            {/* Included services list */}
+            <div className="bg-purple-50/60 rounded-2xl p-3 space-y-1.5 border border-purple-100/60">
+              {booking.services.map((svc, i) => (
+                <div key={svc.id || i} className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-purple-200 text-purple-700 text-[9px] font-black flex items-center justify-center shrink-0">
+                    {i + 1}
+                  </div>
+                  <span className="text-[12px] font-bold text-gray-700 flex-1 truncate">{svc.title || svc.name}</span>
+                  <span className="text-[11px] font-bold text-gray-400">{svc.duration_min || svc.duration || "—"} min</span>
+                </div>
+              ))}
+              {booking.bundle?.bonus && (
+                <div className="flex items-center gap-2 pt-1 border-t border-purple-100">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                  <span className="text-[11px] font-bold text-purple-600">{booking.bundle.bonus}</span>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 border border-orange-200">
+              <Sparkles className="w-7 h-7 text-[#E8732A]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-black text-gray-900 truncate">
+                {primaryService.title || primaryService.name || "Réservation"}
+              </p>
+              <div className="flex items-center gap-2 mt-1 text-[12px] text-gray-400 font-medium">
+                <span>{totalServiceMin} min</span>
+                <span>•</span>
+                <span className="font-black text-gray-900">{primaryService.price}€</span>
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* 1. CALENDAR - Full Month View */}
-        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
+        {/* ── PERSONS SELECTOR ── */}
+        {isBundle && isGroupBundle ? (
+          <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                  <Users className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-black text-gray-900">Nombre de personnes</p>
+                  <p className="text-[11px] text-gray-400 font-medium">{minPersons} à {maxPersons} personnes</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPersons(p => Math.max(minPersons, p - 1))}
+                  disabled={persons <= minPersons}
+                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center active:scale-95 transition-all disabled:opacity-30"
+                >
+                  <Minus className="w-4 h-4 text-gray-700" />
+                </button>
+                <span className="text-[20px] font-black text-gray-900 w-8 text-center">{persons}</span>
+                <button
+                  onClick={() => setPersons(p => Math.min(maxPersons, p + 1))}
+                  disabled={persons >= maxPersons}
+                  className="w-9 h-9 rounded-full bg-[#E8732A] flex items-center justify-center active:scale-95 transition-all disabled:opacity-30"
+                >
+                  <Plus className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            </div>
+            {isGroupBundle && (
+              <div className="mt-3 flex items-center gap-2 bg-purple-50 rounded-xl px-3 py-2">
+                <Tag className="w-3.5 h-3.5 text-purple-500" />
+                <span className="text-[11px] font-bold text-purple-600">
+                  {bundlePP}€ × {persons} pers. = {bundlePP * persons}€
+                </span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-4 border border-gray-100 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
+                  <Users className="w-5 h-5 text-[#E8732A]" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-black text-gray-900">Nombre de personnes</p>
+                  <p className="text-[11px] text-gray-400 font-medium">Maximum 6 personnes</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPersons(p => Math.max(1, p - 1))}
+                  disabled={persons <= 1}
+                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center active:scale-95 transition-all disabled:opacity-30"
+                >
+                  <Minus className="w-4 h-4 text-gray-700" />
+                </button>
+                <span className="text-[20px] font-black text-gray-900 w-8 text-center">{persons}</span>
+                <button
+                  onClick={() => setPersons(p => Math.min(6, p + 1))}
+                  disabled={persons >= 6}
+                  className="w-9 h-9 rounded-full bg-[#E8732A] flex items-center justify-center active:scale-95 transition-all disabled:opacity-30"
+                >
+                  <Plus className="w-4 h-4 text-white" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CALENDAR (Planity Style) ── */}
+        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-3">
           {/* Month Navigation */}
           <div className="flex items-center justify-between">
             <button
@@ -145,46 +320,50 @@ export default function StepUnifiedReservation({
           </div>
 
           {/* Day Headers */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7">
             {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map(d => (
-              <div key={d} className="text-center text-[10px] font-black text-gray-400 uppercase py-1">
+              <div key={d} className="text-center text-[11px] font-bold text-gray-400 py-1">
                 {d}
               </div>
             ))}
           </div>
 
           {/* Calendar Grid */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7">
             {calendarDays.map((day, i) => {
               const inMonth = isSameMonth(day, currentMonth);
               const isSelected = isSameDay(day, selectedDate);
-              const disabled = isDateDisabled(day);
-              const hasAvailability = dateHasAvailability(day);
+              const disabled = !inMonth || isDateDisabled(day);
+              const hasAvail = dateHasAvailability(day);
               const isToday = isSameDay(day, new Date());
+
+              if (!inMonth) return <div key={i} />;
 
               return (
                 <button
                   key={i}
-                  onClick={() => !disabled && inMonth && setSelectedDate(day)}
-                  disabled={!inMonth || disabled}
-                  className={`relative flex flex-col items-center justify-center py-2.5 rounded-xl transition-all active:scale-95 ${
-                    !inMonth ? "opacity-0 pointer-events-none" :
-                    isSelected ? "bg-[#E8732A] shadow-md" :
-                    disabled ? "text-gray-300 cursor-not-allowed" :
-                    "text-gray-900 hover:bg-orange-50"
-                  }`}
+                  onClick={() => !disabled && setSelectedDate(day)}
+                  disabled={disabled}
+                  className="flex flex-col items-center justify-center py-1.5"
                 >
-                  <span className={`text-[15px] font-black ${
-                    isSelected ? "text-white" :
-                    isToday ? "text-[#E8732A]" : ""
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                    isSelected
+                      ? "bg-[#E8732A] shadow-lg"
+                      : disabled
+                        ? "text-gray-300"
+                        : "text-gray-900 hover:bg-orange-50"
                   }`}>
-                    {format(day, "d")}
-                  </span>
+                    <span className={`text-[15px] font-bold ${
+                      isSelected ? "text-white" :
+                      isToday ? "text-[#E8732A] font-black" : ""
+                    }`}>
+                      {format(day, "d")}
+                    </span>
+                  </div>
                   {/* Availability dot */}
-                  {inMonth && !disabled && (
-                    <div className={`w-1.5 h-1.5 rounded-full mt-1 ${
-                      isSelected ? "bg-white/80" :
-                      hasAvailability ? "bg-[#E8732A]" : "bg-gray-300"
+                  {!disabled && (
+                    <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                      hasAvail ? "bg-[#E8732A]" : "bg-gray-300"
                     }`} />
                   )}
                 </button>
@@ -193,7 +372,7 @@ export default function StepUnifiedReservation({
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-4 pt-2 border-t border-gray-50">
+          <div className="flex items-center gap-5 pt-1">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-[#E8732A]" />
               <span className="text-[10px] font-bold text-gray-400">Disponible</span>
@@ -205,89 +384,104 @@ export default function StepUnifiedReservation({
           </div>
         </div>
 
-        {/* 2. TIME SLOTS - Grouped by Matinée / Après-midi */}
+        {/* ── TIME SLOTS ── */}
         <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
             <Clock className="w-5 h-5 text-[#E8732A]" />
-            <h3 className="text-[16px] font-black text-gray-900">Créneaux du {selectedDate ? format(selectedDate, "EEEE d MMMM", { locale: fr }) : "..."}</h3>
+            <div>
+              <p className="text-[14px] font-black text-[#E8732A] capitalize">
+                {selectedDate ? format(selectedDate, "EEEE d MMMM", { locale: fr }) : "..."}
+              </p>
+              <p className="text-[10px] text-gray-400 font-medium">
+                Créneaux adaptés à {totalServiceMin} min de prestation + {CLEANING_MINUTES} min nettoyage
+              </p>
+            </div>
           </div>
 
           {/* Matinée */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sun className="w-4 h-4 text-amber-400" />
-                <span className="text-[14px] font-black text-gray-800">Matinée</span>
+          {morningSlots.length > 0 && (
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sun className="w-4 h-4 text-amber-400" />
+                  <span className="text-[14px] font-black text-gray-800">Matinée</span>
+                </div>
+                <span className="text-[11px] font-black text-[#E8732A] uppercase tracking-wider">{morningAvailable} DISPO</span>
               </div>
-              <span className="text-[11px] font-black text-[#E8732A] uppercase tracking-wider">{morningAvailable} DISPO</span>
+              <div className="flex flex-wrap gap-2">
+                {morningSlots.map(({ time, seats }) => {
+                  const isSelected = selectedTime === time;
+                  const isEmpty = seats === 0;
+                  return (
+                    <button
+                      key={time}
+                      onClick={() => !isEmpty && setSelectedTime(time)}
+                      disabled={isEmpty}
+                      className={`px-4 py-3 rounded-2xl border-2 flex flex-col items-center min-w-[72px] transition-all active:scale-95 ${
+                        isSelected ? "border-[#E8732A] bg-[#E8732A] shadow-lg" :
+                        isEmpty ? "border-gray-100 bg-gray-50 opacity-30 cursor-not-allowed" :
+                        "border-gray-100 bg-white"
+                      }`}
+                    >
+                      <span className={`text-[15px] font-black ${isSelected ? "text-white" : "text-gray-900"}`}>
+                        {time}
+                      </span>
+                      <span className={`text-[10px] font-bold ${isSelected ? "text-white/80" : "text-[#E8732A]"}`}>
+                        {isEmpty ? "Complet" : `${seats} sièges`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {morningSlots.map(({ time }) => {
-                const seats = getAvailability(time);
-                const isSelected = selectedTime === time;
-                const isEmpty = seats === 0;
-                return (
-                  <button
-                    key={time}
-                    onClick={() => !isEmpty && setSelectedTime(time)}
-                    disabled={isEmpty}
-                    className={`px-4 py-3 rounded-2xl border-2 flex flex-col items-center min-w-[70px] transition-all active:scale-95 ${
-                      isSelected ? "border-[#E8732A] bg-[#E8732A] shadow-md" :
-                      isEmpty ? "border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed" :
-                      "border-gray-100 bg-white"
-                    }`}
-                  >
-                    <span className={`text-[15px] font-black ${isSelected ? "text-white" : "text-gray-900"}`}>
-                      {time}
-                    </span>
-                    <span className={`text-[10px] font-bold ${isSelected ? "text-white/80" : "text-[#E8732A]"}`}>
-                      {isEmpty ? "Complet" : `${seats} sièges`}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          )}
 
           {/* Après-midi */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Cloud className="w-4 h-4 text-orange-300" />
-                <span className="text-[14px] font-black text-gray-800">Après-midi</span>
+          {afternoonSlots.length > 0 && (
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Cloud className="w-4 h-4 text-orange-300" />
+                  <span className="text-[14px] font-black text-gray-800">Après-midi</span>
+                </div>
+                <span className="text-[11px] font-black text-[#E8732A] uppercase tracking-wider">{afternoonAvailable} DISPO</span>
               </div>
-              <span className="text-[11px] font-black text-[#E8732A] uppercase tracking-wider">{afternoonAvailable} DISPO</span>
+              <div className="flex flex-wrap gap-2">
+                {afternoonSlots.map(({ time, seats }) => {
+                  const isSelected = selectedTime === time;
+                  const isEmpty = seats === 0;
+                  return (
+                    <button
+                      key={time}
+                      onClick={() => !isEmpty && setSelectedTime(time)}
+                      disabled={isEmpty}
+                      className={`px-4 py-3 rounded-2xl border-2 flex flex-col items-center min-w-[72px] transition-all active:scale-95 ${
+                        isSelected ? "border-[#E8732A] bg-[#E8732A] shadow-lg" :
+                        isEmpty ? "border-gray-100 bg-gray-50 opacity-30 cursor-not-allowed" :
+                        "border-gray-100 bg-white"
+                      }`}
+                    >
+                      <span className={`text-[15px] font-black ${isSelected ? "text-white" : "text-gray-900"}`}>
+                        {time}
+                      </span>
+                      <span className={`text-[10px] font-bold ${isSelected ? "text-white/80" : "text-[#E8732A]"}`}>
+                        {isEmpty ? "Complet" : `${seats} sièges`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {afternoonSlots.map(({ time }) => {
-                const seats = getAvailability(time);
-                const isSelected = selectedTime === time;
-                const isEmpty = seats === 0;
-                return (
-                  <button
-                    key={time}
-                    onClick={() => !isEmpty && setSelectedTime(time)}
-                    disabled={isEmpty}
-                    className={`px-4 py-3 rounded-2xl border-2 flex flex-col items-center min-w-[70px] transition-all active:scale-95 ${
-                      isSelected ? "border-[#E8732A] bg-[#E8732A] shadow-md" :
-                      isEmpty ? "border-gray-100 bg-gray-50 opacity-40 cursor-not-allowed" :
-                      "border-gray-100 bg-white"
-                    }`}
-                  >
-                    <span className={`text-[15px] font-black ${isSelected ? "text-white" : "text-gray-900"}`}>
-                      {time}
-                    </span>
-                    <span className={`text-[10px] font-bold ${isSelected ? "text-white/80" : "text-[#E8732A]"}`}>
-                      {isEmpty ? "Complet" : `${seats} sièges`}
-                    </span>
-                  </button>
-                );
-              })}
+          )}
+
+          {availableTimeSlots.length === 0 && (
+            <div className="text-center py-6 text-[13px] text-gray-400 font-medium">
+              Aucun créneau disponible pour cette date
             </div>
-          </div>
+          )}
         </div>
 
-        {/* 3. PROFESSIONAL / TEAM SELECTOR */}
+        {/* ── PROFESSIONAL / TEAM SELECTOR ── */}
         <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-3">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-[#E8732A]" />
@@ -311,31 +505,6 @@ export default function StepUnifiedReservation({
               </div>
               {selectedExpert === null && <Check className="w-5 h-5 text-[#E8732A] shrink-0" />}
             </button>
-
-            {/* Salon pro card */}
-            {proProfile && (
-              <button
-                onClick={() => setSelectedExpert(proProfile)}
-                className={`w-full flex items-center gap-3 p-3.5 rounded-2xl border-2 transition-all active:scale-[0.98] text-left ${
-                  selectedExpert?.id === proProfile.id ? "border-[#E8732A] bg-orange-50/60 shadow-sm" : "border-gray-100 bg-white"
-                }`}
-              >
-                <div className="w-11 h-11 rounded-full bg-[#E8732A] text-white font-black flex items-center justify-center text-sm shrink-0 overflow-hidden">
-                  {proProfile.avatar_url ? (
-                    <img src={proProfile.avatar_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    (proProfile.salon_name || "P")[0].toUpperCase()
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-black text-gray-900">{proProfile.salon_name || "Professionnel"}</p>
-                  <p className="text-[11px] text-gray-400 font-medium truncate">
-                    {proProfile.specialites || "Expert confirmé du salon"}
-                  </p>
-                </div>
-                {selectedExpert?.id === proProfile.id && <Check className="w-5 h-5 text-[#E8732A] shrink-0" />}
-              </button>
-            )}
 
             {/* Team members */}
             {loadingTeam && (
@@ -368,9 +537,9 @@ export default function StepUnifiedReservation({
               </button>
             ))}
 
-            {!loadingTeam && teamMembers.length === 0 && !proProfile && (
+            {!loadingTeam && teamMembers.length === 0 && (
               <div className="text-center py-4 text-[13px] text-gray-400 font-medium">
-                Aucun professionnel disponible pour ce service
+                Aucun membre d'équipe disponible
               </div>
             )}
           </div>
@@ -378,16 +547,35 @@ export default function StepUnifiedReservation({
 
       </div>
 
-      {/* Fixed bottom CTA */}
-      <div className="fixed bottom-[70px] left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 z-[90] shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-        <button
-          onClick={handleValidateStep}
-          disabled={!selectedDate || !selectedTime}
-          className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: selectedDate && selectedTime ? "linear-gradient(135deg, #E8732A, #E84466)" : "#ccc", boxShadow: selectedDate && selectedTime ? "0 8px 25px rgba(232,115,42,0.35)" : "none" }}
-        >
-          Continuer <ChevronRight className="w-5 h-5" />
-        </button>
+      {/* ── FIXED BOTTOM: VOTRE RENDEZ-VOUS ── */}
+      <div className="fixed bottom-[70px] left-0 right-0 z-[90]">
+        {/* Mini recap bar */}
+        {selectedDate && selectedTime && (
+          <div className="mx-4 mb-2 bg-white rounded-2xl px-4 py-3 border border-gray-100 shadow-md flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-black text-gray-900 truncate">
+                {format(selectedDate, "EEEE d MMMM", { locale: fr })} • {selectedTime}
+              </p>
+              <p className="text-[10px] text-gray-400 font-medium truncate">
+                {isBundle ? booking.bundle?.name : (primaryService.title || primaryService.name)}
+                {persons > 1 ? ` • ${persons} pers.` : ""}
+              </p>
+            </div>
+            <span className="text-[14px] font-black text-[#E8732A] shrink-0">{totalAmount}€</span>
+          </div>
+        )}
+        {/* CTA Button */}
+        <div className="bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <button
+            onClick={handleValidateStep}
+            disabled={!selectedDate || !selectedTime}
+            className="w-full py-4 rounded-2xl font-black text-[15px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: selectedDate && selectedTime ? "linear-gradient(135deg, #E8732A, #E84466)" : "#ccc", boxShadow: selectedDate && selectedTime ? "0 8px 25px rgba(232,115,42,0.35)" : "none" }}
+          >
+            Continuer <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

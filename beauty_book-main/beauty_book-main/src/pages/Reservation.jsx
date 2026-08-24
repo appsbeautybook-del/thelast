@@ -37,8 +37,9 @@ export default function Reservation() {
     bundle: state?.bundle || null,
     expert: null,
     date: null,
-    time: "10:00",
+    time: null,
     seat: null,
+    persons: state?.nbPers || state?.services?.[0]?.persons || 1,
     customAnswers: {},
     salon: { name: state?.service?.pro_name || "Professionnel BeautyBook", address: state?.service?.pro_city || "" },
   });
