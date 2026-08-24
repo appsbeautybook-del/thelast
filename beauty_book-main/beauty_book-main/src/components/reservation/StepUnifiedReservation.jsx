@@ -165,7 +165,13 @@ export default function StepUnifiedReservation({
     if (!selectedDate) return [];
     const schedule = getDaySchedule(proProfile, selectedDate.getDay());
     if (!schedule) return [];
-    return generateTimeSlots(schedule, totalDurationWithCleaning, numSeats);
+    const slots = generateTimeSlots(schedule, totalDurationWithCleaning, numSeats);
+    // Filter past time slots if selected date is today
+    const now = new Date();
+    const isToday = isSameDay(selectedDate, now);
+    if (!isToday) return slots;
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    return slots.filter(s => parseTime(s.time) > nowMinutes);
   }, [selectedDate, proProfile, totalDurationWithCleaning, numSeats]);
 
   const morningSlots = availableTimeSlots.filter(s => parseTime(s.time) < 12 * 60);

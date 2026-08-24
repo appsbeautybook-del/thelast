@@ -307,7 +307,8 @@ export default function ModifierProfilPro() {
         const { error } = await supabase.from('ProfilPro').update(core).eq('id', existing.id);
         saveError = error;
       } else {
-        const { error } = await supabase.from('ProfilPro').insert({ ...core, user_email: user.email });
+        const { user: authUser } = await supabase.auth.getUser();
+        const { error } = await supabase.from('ProfilPro').insert({ ...core, user_email: user.email, created_by_id: authUser?.id || null });
         saveError = error;
       }
       if (saveError) throw saveError;

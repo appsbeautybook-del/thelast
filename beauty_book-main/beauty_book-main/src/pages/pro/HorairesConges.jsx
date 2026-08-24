@@ -450,12 +450,24 @@ export default function HorairesConges() {
           .select()
           .single();
         saveErr = error;
-        if (!error && updated) setProfil(updated);
+        // If RLS blocks update (created_by_id mismatch), try with user_email match
+        if (error) {
+          const { data: updated2, error: error2 } = await supabase
+            .from('ProfilPro')
+            .update(updateData)
+            .eq('user_email', user.email)
+            .select()
+            .single();
+          if (!error2 && updated2) { saveErr = null; setProfil(updated2); }
+        }
+        if (!saveErr && updated) setProfil(updated);
       } else {
+        const { user: authUser } = await supabase.auth.getUser();
         const { data: created, error } = await supabase
           .from('ProfilPro')
           .insert({
             user_email: user.email,
+            created_by_id: authUser?.id || null,
             ...updateData
           })
           .select()
