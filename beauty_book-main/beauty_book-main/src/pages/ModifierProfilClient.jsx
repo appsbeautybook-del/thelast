@@ -32,6 +32,8 @@ export default function ModifierProfilClient() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
+  const [emailChanged, setEmailChanged] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
 
   const pendingAvatarRef = useRef(null);
   const pendingCoverRef = useRef(null);
@@ -86,12 +88,27 @@ export default function ModifierProfilClient() {
   const save = async () => {
     setSaving(true);
     setError(null);
+    setEmailChanged(false);
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
         setError("Vous devez être connecté");
         setSaving(false);
         return;
+      }
+
+      // Si l'email a changé, mettre à jour via Supabase Auth
+      if (form.email && form.email !== authUser.email) {
+        setEmailLoading(true);
+        const { error: emailErr } = await supabase.auth.updateUser({ email: form.email });
+        if (emailErr) {
+          setError("Erreur email: " + (emailErr.message || "Impossible de modifier l'email. Vérifiez que l'adresse est valide."));
+          setSaving(false);
+          setEmailLoading(false);
+          return;
+        }
+        setEmailChanged(true);
+        setEmailLoading(false);
       }
 
       const profileData = { id: authUser.id, updated_at: new Date().toISOString() };
@@ -159,7 +176,11 @@ export default function ModifierProfilClient() {
       setSaved(true);
       if (refreshUser) await refreshUser();
       setTimeout(() => {
-        window.location.replace('/profil?' + Date.now());
+        if (emailChanged) {
+          window.location.replace('/profil?' + Date.now());
+        } else {
+          window.location.replace('/profil?' + Date.now());
+        }
       }, 300);
     } catch (error) {
       console.error("[ModifierProfil] Error saving:", error);
@@ -212,6 +233,11 @@ export default function ModifierProfilClient() {
             <p className="text-[13px] text-red-600 font-medium">{error}</p>
           </div>
         )}
+        {emailChanged && (
+          <div className="mx-4 mb-3 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3">
+            <p className="text-[13px] text-blue-600 font-medium">Un email de confirmation a été envoyé à <strong>{form.email}</strong>. Veuillez confirmer pour finaliser le changement.</p>
+          </div>
+        )}
 
         <div className="bg-white px-5 py-5 space-y-5 mb-3">
           <div>
@@ -231,6 +257,7 @@ export default function ModifierProfilClient() {
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Adresse e-mail</p>
             <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               placeholder="votre@email.com" className="w-full bg-gray-100 rounded-2xl px-4 py-3.5 text-[15px] font-medium text-gray-800 outline-none" />
+            <p className="text-[10px] text-gray-400 mt-1">Un email de confirmation sera envoyé à la nouvelle adresse</p>
           </div>
           <div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Numéro de téléphone</p>

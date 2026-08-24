@@ -15,6 +15,7 @@ export default function Securite() {
   const [showPwd, setShowPwd] = useState({ current: false, next: false, confirm: false });
   const [pwdSaved, setPwdSaved] = useState(false);
   const [pwdError, setPwdError] = useState("");
+  const [pwdLoading, setPwdLoading] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [lastPwdChange, setLastPwdChange] = useState(null);
 
@@ -44,20 +45,43 @@ export default function Securite() {
 
   const handleSavePwd = async () => {
     if (!pwd.current || !pwd.next || pwd.next !== pwd.confirm) return;
+    if (pwd.next.length < 6) { setPwdError("Le mot de passe doit faire au moins 6 caractères."); return; }
     setPwdError("");
+    setPwdLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password: pwd.next });
-      if (error) {
-        setPwdError(error.message || "Erreur lors du changement de mot de passe");
+      const email = user?.email;
+      if (!email) { setPwdError("Aucun email associé au compte."); setPwdLoading(false); return; }
+
+      // Ré-authentifier avec le mot de passe actuel
+      const { error: reAuthErr } = await supabase.auth.signInWithPassword({ email, password: pwd.current });
+      if (reAuthErr) {
+        setPwdError("Mot de passe actuel incorrect.");
+        setPwdLoading(false);
         return;
       }
+
+      // Mettre à jour le mot de passe
+      const { error } = await supabase.auth.updateUser({ password: pwd.next });
+      if (error) {
+        setPwdError(error.message || "Erreur lors du changement de mot de passe.");
+        setPwdLoading(false);
+        return;
+      }
+
+      // Mettre à jour la date dans le profil
+      try {
+        await supabase.from('profiles').update({ password_changed_at: new Date().toISOString() }).eq('id', user.id);
+      } catch {}
+
       setPwdSaved(true);
       setShowChangePwd(false);
       setPwd({ current: "", next: "", confirm: "" });
       setLastPwdChange(new Date().toISOString());
+      setPwdLoading(false);
       setTimeout(() => setPwdSaved(false), 3000);
     } catch (e) {
-      setPwdError("Erreur: " + e.message);
+      setPwdError("Erreur: " + (e.message || "Inconnue"));
+      setPwdLoading(false);
     }
   };
 
@@ -126,14 +150,17 @@ export default function Securite() {
                       </div>
                     </div>
                   ))}
-                  {pwd.next && pwd.confirm && pwd.next !== pwd.confirm && (
+                   {pwd.next && pwd.confirm && pwd.next !== pwd.confirm && (
                     <p className="text-[11px] text-red-400 font-bold">Les mots de passe ne correspondent pas.</p>
                   )}
+                  {pwd.next && pwd.next.length < 6 && (
+                    <p className="text-[11px] text-red-400 font-bold">Minimum 6 caractères.</p>
+                  )}
                   {pwdError && <p className="text-[11px] text-red-400 font-bold">{pwdError}</p>}
-                  <button onClick={handleSavePwd} disabled={!pwd.current || !pwd.next || pwd.next !== pwd.confirm}
-                    className="w-full py-3.5 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white transition-all active:scale-95 disabled:opacity-40"
+                  <button onClick={handleSavePwd} disabled={!pwd.current || !pwd.next || pwd.next !== pwd.confirm || pwd.next.length < 6 || pwdLoading}
+                    className="w-full py-3.5 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
                     style={{ background: "#E8732A" }}>
-                    Enregistrer
+                    {pwdLoading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Vérification...</> : "Enregistrer"}
                   </button>
                 </div>
               )}

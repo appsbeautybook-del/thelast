@@ -68,6 +68,7 @@ export default function ModifierProfilPro() {
     travail_nuit: false,
     menu_restaurant: [], menu_bar: [], additional_services: [],
     galerie_urls: [],
+    email: "",
   });
   const [coords, setCoords] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -77,6 +78,7 @@ export default function ModifierProfilPro() {
   const [catalogueOptions, setCatalogueOptions] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [emailChanged, setEmailChanged] = useState(false);
   const avatarRef = useRef(null);
   const bannerRef = useRef(null);
   const galerieRef = useRef(null);
@@ -120,6 +122,7 @@ export default function ModifierProfilPro() {
             menu_restaurant: profile.menu_restaurant || [], menu_bar: profile.menu_bar || [],
             additional_services: profile.additional_services || [],
             galerie_urls: Array.isArray(profile.galerie_urls) ? profile.galerie_urls : [],
+            email: user?.email || "",
           });
         }
         setLoading(false);
@@ -269,7 +272,19 @@ export default function ModifierProfilPro() {
   const handleSave = async () => {
     setSaving(true);
     setError("");
+    setEmailChanged(false);
     try {
+      // Si l'email a changé, mettre à jour via Supabase Auth
+      if (data.email && data.email !== user?.email) {
+        const { error: emailErr } = await supabase.auth.updateUser({ email: data.email });
+        if (emailErr) {
+          setError("Erreur email: " + (emailErr.message || "Impossible de modifier l'email."));
+          setSaving(false);
+          return;
+        }
+        setEmailChanged(true);
+      }
+
       const { data: existing } = await supabase.from('ProfilPro').select('id').eq('user_email', user.email).maybeSingle();
 
       const coords = await geocodeAndSave(data.address, data.city);
@@ -382,6 +397,14 @@ export default function ModifierProfilPro() {
             <p className="text-[12px] text-green-600 font-bold">Modifications enregistrées !</p>
           </div>
         )}
+        {emailChanged && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 flex items-center gap-2">
+            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-blue-600 text-[10px] font-black">@</span>
+            </div>
+            <p className="text-[12px] text-blue-600 font-bold">Un email de confirmation a été envoyé à <strong>{data.email}</strong>.</p>
+          </div>
+        )}
 
         {/* Photos */}
         <div className={sectionCls + " p-4"}>
@@ -476,8 +499,9 @@ export default function ModifierProfilPro() {
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg> Email du compte
                 </p>
-                <input value={user?.email || ""} readOnly className={inputCls + " bg-gray-100 text-gray-500 cursor-not-allowed"} />
-                <p className="text-[10px] text-gray-400 mt-1">Email utilisé pour la connexion au compte</p>
+                <input type="email" value={data.email} onChange={e => setData(d => ({ ...d, email: e.target.value }))}
+                  placeholder="votre@email.com" className={inputCls} />
+                <p className="text-[10px] text-gray-400 mt-1">Un email de confirmation sera envoyé à la nouvelle adresse</p>
               </div>
               <div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
