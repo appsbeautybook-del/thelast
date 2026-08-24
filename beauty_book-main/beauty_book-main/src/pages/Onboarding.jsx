@@ -559,11 +559,11 @@ export default function Onboarding() {
     return 0;
   });
 
-  const done = () => { localStorage.setItem("bb_onboarded", "1"); localStorage.removeItem("bb_is_pro"); sessionStorage.removeItem("bb_signup_data"); sessionStorage.removeItem("bb_social_signup_processed"); window.location.href = "/"; };
+  const done = () => { localStorage.setItem("bb_onboarded", "1"); localStorage.removeItem("bb_is_pro"); sessionStorage.removeItem("bb_signup_data"); sessionStorage.removeItem("bb_social_signup_processed"); navigate("/", { replace: true }); };
 
   const handleSplashDone = () => {
     sessionStorage.setItem("bb_splash_done", "1");
-    window.location.href = "/";
+    navigate("/", { replace: true });
   };
 
   return (
