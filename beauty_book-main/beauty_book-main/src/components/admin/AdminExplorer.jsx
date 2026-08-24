@@ -318,9 +318,23 @@ function SalonsTab() {
   };
 
   const deleteS = async (id) => {
-    if (!confirm("Supprimer ce salon ?")) return;
-    await entities.ProfilPro.delete(id);
-    setSalons(prev => prev.filter(s => s.id !== id));
+    if (!confirm("Supprimer ce salon et toutes ses données ?")) return;
+    if (!confirm("Cette action est IRRÉVERSIBLE. Continuer ?")) return;
+    try {
+      const salon = salons.find(s => s.id === id);
+      const email = salon?.user_email;
+      // Supprimer les données liées
+      if (email) {
+        await entities.Service.filter({ pro_email: email }).then(services => {
+          services.forEach(s => entities.Service.delete(s.id));
+        }).catch(() => {});
+        await entities.MembreEquipe.filter({ pro_email: email }).then(members => {
+          members.forEach(m => entities.MembreEquipe.delete(m.id));
+        }).catch(() => {});
+      }
+      await entities.ProfilPro.delete(id);
+      setSalons(prev => prev.filter(s => s.id !== id));
+    } catch (e) { alert("Erreur: " + e.message); }
   };
 
   if (loading) return <div className="flex justify-center py-16"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
@@ -379,6 +393,25 @@ function ParticuliersTab() {
     setPros(prev => prev.map(x => x.id === s.id ? { ...x, status: newStatus } : x));
   };
 
+  const deleteP = async (id) => {
+    if (!confirm("Supprimer ce particulier et toutes ses données ?")) return;
+    if (!confirm("Cette action est IRRÉVERSIBLE. Continuer ?")) return;
+    try {
+      const pro = pros.find(p => p.id === id);
+      const email = pro?.user_email;
+      if (email) {
+        await entities.Service.filter({ pro_email: email }).then(services => {
+          services.forEach(s => entities.Service.delete(s.id));
+        }).catch(() => {});
+        await entities.MembreEquipe.filter({ pro_email: email }).then(members => {
+          members.forEach(m => entities.MembreEquipe.delete(m.id));
+        }).catch(() => {});
+      }
+      await entities.ProfilPro.delete(id);
+      setPros(prev => prev.filter(p => p.id !== id));
+    } catch (e) { alert("Erreur: " + e.message); }
+  };
+
   if (loading) return <div className="flex justify-center py-16"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
@@ -401,9 +434,14 @@ function ParticuliersTab() {
               </div>
               <p className="text-[11px] text-gray-400">{p.city || "—"} • {p.specialites?.slice(0, 2).join(", ") || "—"}</p>
             </div>
-            <button onClick={() => toggleStatus(p)} className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center shrink-0">
-              {p.status === "actif" ? <EyeOff className="w-3.5 h-3.5 text-amber-500" /> : <Eye className="w-3.5 h-3.5 text-green-500" />}
-            </button>
+            <div className="flex gap-1 shrink-0">
+              <button onClick={() => toggleStatus(p)} className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                {p.status === "actif" ? <EyeOff className="w-3.5 h-3.5 text-amber-500" /> : <Eye className="w-3.5 h-3.5 text-green-500" />}
+              </button>
+              <button onClick={() => deleteP(p.id)} className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
+                <Trash2 className="w-3.5 h-3.5 text-red-500" />
+              </button>
+            </div>
           </div>
         ))}
         {pros.length === 0 && <p className="text-gray-400 text-center py-10 text-[13px]">Aucun profil particulier.</p>}

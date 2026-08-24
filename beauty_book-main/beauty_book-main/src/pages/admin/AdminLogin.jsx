@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Shield, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Shield, Eye, EyeOff, Loader2, Mail, CheckCircle } from "lucide-react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 import { setAdminToken } from "@/lib/adminApiClient";
@@ -14,6 +14,9 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,7 +32,7 @@ export default function AdminLogin() {
         } else if (authError.message?.includes('Email not confirmed') || authError.message?.includes('email not confirmed')) {
           setError("Email non confirmé. Vérifiez votre boîte mail, puis réessayez.");
         } else if (authError.message?.includes('Invalid login credentials')) {
-          setError("Identifiants invalides. Vérifiez votre email et mot de passe.");
+          setError("Identifiants invalides. Vérifiez votre email et mot de passe. Si vous n'avez pas de compte, créez-en un.");
         } else {
           setError("Erreur : " + (authError.message || "Identifiants invalides."));
         }
@@ -44,7 +47,7 @@ export default function AdminLogin() {
       }
       
       if (role !== 'admin') {
-        setError("Accès refusé. Vous n'êtes pas administrateur.");
+        setError("Accès refusé. Vous n'êtes pas administrateur. Votre rôle: " + (role || 'aucun'));
         setLoading(false);
         return;
       }
@@ -56,6 +59,21 @@ export default function AdminLogin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResetPassword = async () => {
+    if (!email) { setError("Entrez votre email d'abord."); return; }
+    setResetLoading(true);
+    setError("");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/admin'
+    });
+    if (error) {
+      setError("Erreur: " + error.message);
+    } else {
+      setResetSent(true);
+    }
+    setResetLoading(false);
   };
 
   return (
@@ -114,9 +132,33 @@ export default function AdminLogin() {
         </form>
 
         <div className="mt-8 text-center text-[12px] text-gray-500">
-          Pas encore de compte ?{" "}
-          <Link to="/admin/signup" className="text-primary font-black underline">Créer un compte</Link>
+          <p className="mb-2">Pas encore de compte ?{" "}
+          <Link to="/admin/signup" className="text-primary font-black underline">Créer un compte</Link></p>
+          <button onClick={() => { setResetMode(!resetMode); setResetSent(false); setError(""); }}
+            className="text-primary font-bold hover:underline">
+            Mot de passe oublié ?
+          </button>
         </div>
+
+        {resetMode && (
+          <div className="mt-4 bg-gray-800 border border-gray-700 rounded-2xl p-4 space-y-3">
+            {resetSent ? (
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+                <p className="text-green-400 text-[12px] font-medium">Email envoyé ! Vérifiez votre boîte mail.</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-gray-400 text-[12px]">Un email de réinitialisation sera envoyé à l'adresse ci-dessus.</p>
+                <button onClick={handleResetPassword} disabled={resetLoading || !email}
+                  className="w-full bg-gray-700 text-white font-black py-3 rounded-xl text-[13px] uppercase tracking-widest active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-2">
+                  {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                  {resetLoading ? "Envoi..." : "Envoyer le lien"}
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
