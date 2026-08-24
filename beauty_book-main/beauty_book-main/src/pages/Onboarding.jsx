@@ -174,7 +174,7 @@ function StepSignup({ onNext, onBack }) {
 
     try {
       // 1. Tenter l'inscription dans Supabase Auth
-      await supabase.auth.signUp({
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
@@ -184,13 +184,28 @@ function StepSignup({ onNext, onBack }) {
         },
       });
 
+      if (signUpError) {
+        if (signUpError.message?.includes('already registered') || signUpError.message?.includes('already been registered')) {
+          setError("Un compte existe déjà avec cet email. Connectez-vous.");
+        } else if (signUpError.message?.includes('provider') || signUpError.message?.includes('not enabled')) {
+          setError("Le provider Email n'est pas activé. Contactez le support.");
+        } else {
+          setError(signUpError.message || "Erreur lors de l'inscription.");
+        }
+        return;
+      }
+
       // 2. Envoyer/Déclencher le code de vérification OTP par e-mail
-      await supabase.auth.signInWithOtp({ email: form.email });
-    } catch (e) {
-      console.warn("[Onboarding] Sign up OTP notice:", e);
-    } finally {
-      // 3. Passer directement à l'Étape 2 (Vérification du code e-mail)
+      const { error: otpError } = await supabase.auth.signInWithOtp({ email: form.email });
+      if (otpError) {
+        console.warn("[Onboarding] OTP notice:", otpError);
+      }
+
+      // 3. Passer à l'Étape 2 (Vérification du code e-mail)
       onNext();
+    } catch (e) {
+      console.warn("[Onboarding] Sign up error:", e);
+      setError("Erreur lors de l'inscription. Réessayez.");
     }
   };
 

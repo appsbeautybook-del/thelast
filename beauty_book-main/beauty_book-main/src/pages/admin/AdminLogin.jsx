@@ -26,8 +26,12 @@ export default function AdminLogin() {
       if (authError) {
         if (authError.message?.includes('provider') || authError.message?.includes('not enabled')) {
           setError("Le provider Email n'est pas activé. Activez-le dans le dashboard Supabase > Authentication > Providers > Email.");
+        } else if (authError.message?.includes('Email not confirmed') || authError.message?.includes('email not confirmed')) {
+          setError("Email non confirmé. Vérifiez votre boîte mail, puis réessayez.");
+        } else if (authError.message?.includes('Invalid login credentials')) {
+          setError("Identifiants invalides. Vérifiez votre email et mot de passe.");
         } else {
-          setError("Identifiants invalides.");
+          setError("Erreur : " + (authError.message || "Identifiants invalides."));
         }
         setLoading(false);
         return;

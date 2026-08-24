@@ -359,6 +359,7 @@ export default function Connexion() {
       return;
     }
 
+    let loginSuccess = false;
     try {
       // 1. Enregistrer l'état d'onboarding et l'email dans localStorage
       localStorage.setItem("bb_onboarded", "1");
@@ -371,55 +372,42 @@ export default function Connexion() {
 
       // 2. Connecter au compte inscrit avec l'email et le mot de passe
       if (email && password) {
-        let userToProfile = null;
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
 
-        try {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-          if (!signInError && signInData?.user) {
-            userToProfile = signInData.user;
+        if (signInError) {
+          if (signInError.message?.includes('Email not confirmed') || signInError.message?.includes('email not confirmed')) {
+            setEmailNotConfirmed(true);
+            setError("Email non confirmé. Vérifiez votre boîte mail ou cliquez sur renvoyer.");
           } else {
-            console.warn("[Connexion] signInWithPassword notice:", signInError?.message);
-
-            try {
-              const { data: signUpData } = await supabase.auth.signUp({
-                email,
-                password,
-                options: {
-                  data: { full_name: email.split('@')[0] }
-                }
-              });
-              if (signUpData?.user) {
-                userToProfile = signUpData.user;
-              }
-            } catch (errSignUp) {
-              console.warn("[Connexion] signUp fallback notice:", errSignUp);
-            }
+            setError("Identifiants invalides. Vérifiez votre email et mot de passe.");
           }
-        } catch (errAuth) {
-          console.warn("[Connexion] Auth notice:", errAuth);
+          setLoading(false);
+          return;
         }
 
-        // S'assurer que le profil existe dans la table profiles
-        if (userToProfile) {
+        if (signInData?.user) {
           try {
             await supabase.from('profiles').upsert({
-              id: userToProfile.id,
+              id: signInData.user.id,
               email: email,
-              full_name: userToProfile.user_metadata?.full_name || email.split('@')[0],
+              full_name: signInData.user.user_metadata?.full_name || email.split('@')[0],
               role: 'client',
               updated_at: new Date().toISOString()
             }, { onConflict: 'id' });
           } catch (errProfile) {
             console.warn("[Connexion] Profile upsert notice:", errProfile);
           }
+          loginSuccess = true;
         }
       }
     } catch (e) {
       console.warn("[Connexion] Login process error:", e);
+      setError("Erreur lors de la connexion. Réessayez.");
     } finally {
       setLoading(false);
-      // Rediriger immédiatement vers la page d'accueil
-      navigate("/", { replace: true });
+      if (loginSuccess) {
+        navigate("/", { replace: true });
+      }
     }
   };
 
@@ -545,6 +533,16 @@ export default function Connexion() {
           {error && (
             <div>
               <p className="text-[12px] text-red-500 font-medium">{error}</p>
+              {emailNotConfirmed && (
+                <button
+                  onClick={handleResendConfirmation}
+                  disabled={resending}
+                  className="text-[12px] font-black mt-2 underline"
+                  style={{ color: "#E8732A" }}
+                >
+                  {resending ? "Envoi en cours..." : "Renvoyer l'email de confirmation"}
+                </button>
+              )}
             </div>
           )}
         </div>

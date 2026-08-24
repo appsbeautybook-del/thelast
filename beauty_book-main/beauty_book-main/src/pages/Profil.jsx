@@ -252,7 +252,7 @@ export default function Profil() {
 
     // Stats réelles pour les quick links
     const rdvAVenir = reservations.filter(r => r.date >= today && r.status !== "annule" && r.status !== "termine").length;
-    const totalPoints = pointsFidelite[0]?.points_total || 0;
+    const totalPoints = (pointsFidelite[0]?.points_total || 0) - (pointsFidelite[0]?.points_depenses || 0);
     const soldeDisponible = pointsFidelite[0]?.solde || 0;
     setStats({
       commandes: commandes.length,
