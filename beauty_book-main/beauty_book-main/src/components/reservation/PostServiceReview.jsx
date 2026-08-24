@@ -105,7 +105,7 @@ export default function PostServiceReview({ reservation, proEmail, proName, onCl
         reservation_id: reservation.id,
         type: "client_to_pro",
         auteur_email: reservation.client_email,
-        auteur_nom: reservation.client_email,
+        auteur_nom: reservation.client_name || reservation.client_email?.split("@")[0] || "Client",
         cible_email: targetEmail,
         cible_nom: proName || reservation.pro_name,
         note,

@@ -83,7 +83,7 @@ export default function NoterClientModal({ reservation, onClose, onSuccess }) {
         auteur_email: user.email,
         auteur_nom: user.full_name || "Pro",
         cible_email: reservation.client_email,
-        cible_nom: reservation.client_email,
+        cible_nom: reservation.client_name || reservation.client_email?.split("@")[0] || "Client",
         note,
         commentaire,
         service_nom: reservation.service_name,

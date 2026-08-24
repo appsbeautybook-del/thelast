@@ -514,13 +514,33 @@ function NouveauRdvModal({ onClose, proEmail, onCreated }) {
     entities.Reservation.filter({ pro_email: proEmail }, "-created_at", 100)
       .then(reservations => {
         console.log('[NouveauRdv] Loaded previous reservations for clients:', reservations?.length);
-        const seen = {};
-        reservations.forEach(r => {
-          if (!seen[r.client_email]) {
-            seen[r.client_email] = { email: r.client_email, name: r.client_email };
-          }
-        });
-        setClients(Object.values(seen));
+        // Also fetch Client table to get real names
+        entities.Client.filter({ pro_email: proEmail }, "-created_at", 500)
+          .then(clientRows => {
+            const nameLookup = {};
+            (clientRows || []).forEach(c => {
+              if (c.email && c.name) nameLookup[c.email] = c.name;
+            });
+            const seen = {};
+            reservations.forEach(r => {
+              if (!seen[r.client_email]) {
+                seen[r.client_email] = {
+                  email: r.client_email,
+                  name: nameLookup[r.client_email] || r.client_name || emailToDisplayName(r.client_email),
+                };
+              }
+            });
+            setClients(Object.values(seen));
+          })
+          .catch(() => {
+            const seen = {};
+            reservations.forEach(r => {
+              if (!seen[r.client_email]) {
+                seen[r.client_email] = { email: r.client_email, name: emailToDisplayName(r.client_email) };
+              }
+            });
+            setClients(Object.values(seen));
+          });
       }).catch(e => console.error('[NouveauRdv] Error loading clients:', e));
     // Charger services du pro
     entities.Service.filter({ pro_email: proEmail, status: "actif" }, "title", 50)
@@ -952,7 +972,7 @@ function PlanningTab({ proEmail, reservations, onSelectRdv }) {
                       {isDone && <span className="text-[8px] font-black text-green-500 bg-green-50 px-1.5 py-0.5 rounded-full shrink-0">✓</span>}
                       <SourceBadge source={rdv.source} />
                     </div>
-                    <p className="text-[12px] font-medium text-gray-500 truncate">{rdv.client_name || rdv.client_email}</p>
+                    <p className="text-[12px] font-medium text-gray-500 truncate">{rdv.client_name || emailToDisplayName(rdv.client_email)}</p>
                   </div>
 
                   {/* Price */}
@@ -1142,10 +1162,10 @@ function DemandesTab({ proEmail, reservations, setReservations, onSelectRdv, aut
                 </div>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
-                    <span className="text-[18px] font-black text-primary">{(r.client_email || "?")[0].toUpperCase()}</span>
+                    <span className="text-[18px] font-black text-primary">{(r.client_name || emailToDisplayName(r.client_email) || "?")[0].toUpperCase()}</span>
                   </div>
                   <div>
-                    <p className="text-[16px] font-black text-gray-900">{r.client_name || r.client_email}</p>
+                    <p className="text-[16px] font-black text-gray-900">{r.client_name || emailToDisplayName(r.client_email)}</p>
                     <p className="text-[12px] font-medium text-gray-500">{r.service_name}</p>
                   </div>
                 </div>
@@ -1251,13 +1271,18 @@ function CrmTab({ reservations, proEmail }) {
   };
 
   // Construire la base clients depuis les réservations ET les clients Supabase
+  const nameLookup = {};
+  manualClients.forEach(c => {
+    const email = c.email || c.client_email;
+    if (email && c.name) nameLookup[email] = c.name;
+  });
   const clientMap = {};
   reservations.forEach(r => {
     if (!r.client_email) return;
     if (!clientMap[r.client_email]) {
       clientMap[r.client_email] = {
         email: r.client_email,
-        name: r.client_email,
+        name: nameLookup[r.client_email] || r.client_name || emailToDisplayName(r.client_email),
         phone: r.client_phone || "",
         rdvs: [],
         totalSpent: 0,

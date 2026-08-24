@@ -134,7 +134,7 @@ export default function StepUnifiedReservation({
   useEffect(() => {
     if (!proEmail) return;
     setLoadingTeam(true);
-    entities.MembreEquipe.filter({ pro_email: proEmail, status: "active" }, "-created_at", 50)
+    entities.MembreEquipe.filter({ pro_email: proEmail }, "-created_at", 50)
       .then(res => { setTeamMembers(res || []); setLoadingTeam(false); })
       .catch(() => setLoadingTeam(false));
   }, [proEmail]);

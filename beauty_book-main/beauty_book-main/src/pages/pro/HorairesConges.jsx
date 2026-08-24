@@ -9,7 +9,7 @@ import { fr } from "date-fns/locale";
 
 const DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
 const DAY_LABELS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-const DEFAULT_DAY = { open: true, start: "09:00", end: "19:00", pause_start: "", pause_end: "" };
+const DEFAULT_DAY = { open: false, start: "", end: "", pause_start: "", pause_end: "" };
 
 // ── Horaires Form ──────────────────────────────────────────────────────────────
 function HorairesForm({ horaires, onChange }) {
@@ -357,14 +357,18 @@ export default function HorairesConges() {
           const ouv = row.ouverture || row.horaires || {};
           const init = {};
           DAYS.forEach(d => {
-            const existing = ouv[d] || { ...DEFAULT_DAY };
-            init[d] = {
-              open: existing.open !== undefined ? existing.open : true,
-              start: existing.start || "09:00",
-              end: existing.end || "19:00",
-              pause_start: existing.pause_start || "",
-              pause_end: existing.pause_end || "",
-            };
+            const existing = ouv[d];
+            if (existing) {
+              init[d] = {
+                open: existing.open !== undefined ? existing.open : false,
+                start: existing.start || "",
+                end: existing.end || "",
+                pause_start: existing.pause_start || "",
+                pause_end: existing.pause_end || "",
+              };
+            } else {
+              init[d] = { ...DEFAULT_DAY };
+            }
           });
           setHoraires(init);
           setConges(row.conges || ouv.conges || []);
@@ -432,7 +436,6 @@ export default function HorairesConges() {
       const updateData = {
         ouverture,
         horaires: ouverture,
-        pauses,
         conges,
         travail_nuit: travailNuit,
         updated_at: new Date().toISOString(),
@@ -440,11 +443,14 @@ export default function HorairesConges() {
 
       let saveErr = null;
       if (profileId) {
-        const { error } = await supabase
+        const { data: updated, error } = await supabase
           .from('ProfilPro')
           .update(updateData)
-          .eq('id', profileId);
+          .eq('id', profileId)
+          .select()
+          .single();
         saveErr = error;
+        if (!error && updated) setProfil(updated);
       } else {
         const { data: created, error } = await supabase
           .from('ProfilPro')
