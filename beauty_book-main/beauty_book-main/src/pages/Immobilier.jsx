@@ -84,7 +84,7 @@ function ListingCard({ listing, onPress }) {
     <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-all">
       <div className="relative h-52" onClick={() => onPress(listing)}>
         <img
-          src={listing.images?.[imgIdx] || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=800"}
+          src={listing.images?.[imgIdx] || ""}
           alt={listing.title}
           className="w-full h-full object-cover"
         />

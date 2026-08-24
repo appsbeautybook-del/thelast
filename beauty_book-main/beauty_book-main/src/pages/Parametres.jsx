@@ -7,7 +7,7 @@ import { supabase } from '@/api/supabaseClient';
 import DeleteAccountFlow from "@/components/account/DeleteAccountFlow";
 import { useTheme, useThemeBg } from "@/hooks/useTheme";
 
-const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=200";
+const DEFAULT_AVATAR = "";
 
 function SettingRow({ icon: Icon, iconBg, iconColor, label, sublabel, onClick, danger }) {
   return (

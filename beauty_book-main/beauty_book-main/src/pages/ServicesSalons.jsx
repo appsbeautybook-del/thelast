@@ -16,16 +16,16 @@ import { useLocation } from '@/contexts/LocationContext';
 
 
 // ── Images ────────────────────────────────────────────────────────────────────
-const NAIL_IMG = "https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=600";
-const SALON_IMG = "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=600";
-const SALON_IMG2 = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=600";
-const PERSON_IMG1 = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=400";
-const PERSON_IMG2 = "https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=400";
-const PERSON_IMG3 = "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=400";
-const STYLE_IMG1 = "https://images.unsplash.com/photo-1519415510236-718bdfcd89c8?q=80&w=600";
-const STYLE_IMG2 = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=600";
-const STYLE_IMG3 = "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?q=80&w=600";
-const SARAH_IMG = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=100";
+const NAIL_IMG = "";
+const SALON_IMG = "";
+const SALON_IMG2 = "";
+const PERSON_IMG1 = "";
+const PERSON_IMG2 = "";
+const PERSON_IMG3 = "";
+const STYLE_IMG1 = "";
+const STYLE_IMG2 = "";
+const STYLE_IMG3 = "";
+const SARAH_IMG = "";
 
 const salonsData = [
   { id: 1, images: [SALON_IMG2, SALON_IMG, STYLE_IMG1], title: "Studio Lumière", location: "Paris 16e", rating: 4.9, price: 55, tag: "Prestige", category: "Coiffure" },
@@ -1340,7 +1340,7 @@ function ProfilCard({ item, media, liked, onLike, onSelect, open, badge, minPric
     touchStartX.current = null;
   };
 
-  const images = media?.length > 0 ? media : ["https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=600"];
+  const images = media?.length > 0 ? media : [""];
   const specialties = item.specialites?.filter(Boolean) || [];
 
   return (
@@ -1564,7 +1564,7 @@ function SalonsTab({ activeCategory }) {
                 <div key={item.id} id={`salon-card-${item.id}`}>
                   <ProfilCard
                     item={item}
-                    media={media.length > 0 ? media : ["https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400"]}
+                    media={media.length > 0 ? media : [""]}
                     liked={liked.includes(item.id)}
                     onLike={(e) => { e.stopPropagation(); setLiked(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id]); }}
                     onSelect={() => handleCardSelect(item)}
@@ -1672,7 +1672,7 @@ function ParticuliersTab({ activeCategory }) {
               <div key={item.id} id={`part-card-${item.id}`}>
                 <ProfilCard
                   item={item}
-                  media={media.length > 0 ? media : ["https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=400"]}
+                  media={media.length > 0 ? media : [""]}
                   liked={liked.includes(item.id)}
                   onLike={(e) => { e.stopPropagation(); setLiked(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id]); }}
                   onSelect={() => handleCardSelect(item)}

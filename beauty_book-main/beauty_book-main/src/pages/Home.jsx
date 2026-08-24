@@ -20,20 +20,8 @@ function getSectionBg() {
 
 
 
-// Images
-const MASSAGE_IMAGE = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800";
-const SALON_BW = "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=800";
-const SERUM_IMAGE = "https://images.unsplash.com/photo-1570194065650-d99fb4bedf0a?q=80&w=400";
-const BARBE_IMAGE = "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=400";
-const LIFTING_IMAGE = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400";
-const MANI_IMAGE = "https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=400";
-const EXPERT_1 = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=200";
-const EXPERT_2 = "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200";
-const EXPERT_3 = "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?q=80&w=200";
-const LIVE_1 = "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400";
-const LIVE_2 = "https://images.unsplash.com/photo-1519699047748-de8e457a634e?q=80&w=400";
-const SPACE_IMAGE = "https://images.unsplash.com/photo-1604881991720-f91add269bed?q=80&w=400";
-const HERO_IMG = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800";
+// Placeholder pour images manquantes
+const PLACEHOLDER = "";
 
 // ── Hero Banner ──────────────────────────────────────────────────────────────
 function HeroSlider({ banners, user, navigate }) {
@@ -49,15 +37,15 @@ function HeroSlider({ banners, user, navigate }) {
     <div className="px-4 pt-5 pb-3">
       {/* Hero Card */}
       <div className="relative rounded-[28px] overflow-hidden h-[200px] shadow-xl shadow-primary/20">
-        <img src={banner.image || HERO_IMG} alt="Banner" className="w-full h-full object-cover" />
+        <img src={banner.image || ""} alt="Banner" className="w-full h-full object-cover" />
         {/* Overlay opacité configurable */}
         <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${banner.overlay_opacity ?? 0.55})` }} />
         <div className="absolute inset-0 p-5 flex flex-col justify-between">
           <span className="self-start bg-white/25 backdrop-blur-sm text-white text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border border-white/30">
-            ✦ Offre exclusive
+            {banner.badge || "Offre"}
           </span>
           <div>
-            <h2 className="text-white text-[24px] font-black leading-tight whitespace-pre-line drop-shadow-sm">{banner.title || "Éclat d'été :\n-20% sur tout"}</h2>
+            <h2 className="text-white text-[24px] font-black leading-tight whitespace-pre-line drop-shadow-sm">{banner.title || ""}</h2>
             {banner.subtitle && <p className="text-white/85 text-[12px] font-medium mt-1">{banner.subtitle}</p>}
             {banner.cta && (
               <button onClick={() => banner.cta_link && navigate(banner.cta_link)}
@@ -238,14 +226,11 @@ export default function Home() {
 
   const heroBanners = homeConfig.hero_banners?.length > 0
     ? homeConfig.hero_banners
-    : [{ title: "Éclat d'été :\n-20% sur les forfaits", subtitle: "Réservez avant le 30 juillet", cta: "EN PROFITER", cta_link: "/boutique", image: MASSAGE_IMAGE }];
+    : [];
 
   const servicesTendanceRaw = homeConfig.services_tendance?.length > 0
     ? homeConfig.services_tendance
-    : [
-        { id: "lifting-cils", title: "Lifting de cils", price: 45, image_url: LIFTING_IMAGE, tag: "POPULAIRE" },
-        { id: "manucure-russe", title: "Manucure Russe", price: 35, image_url: MANI_IMAGE, tag: "TOP VENTES" },
-      ];
+    : [];
   const [servicesTendance, setServicesTendance] = useState(servicesTendanceRaw);
 
   useEffect(() => {
@@ -277,10 +262,7 @@ export default function Home() {
   const merged = [...adminProduits, ...shopifyOnly];
   const produitsTendance = merged.length > 0
     ? merged.slice(0, 4)
-    : [
-        { id: "serum-vitc", name: "Sérum Vitamine C", price: 24.90, image_url: SERUM_IMAGE },
-        { id: "huile-barbe", name: "Huile Barbe Bio", price: 18.50, image_url: BARBE_IMAGE },
-      ];
+    : [];
 
   // Offre immo : toujours préférer offresImmoLive (vrai ID BDD), sinon fallback config admin
   const offresImmo = offresImmoLive || (Array.isArray(homeConfig.offres_immobilier)
@@ -330,7 +312,7 @@ export default function Home() {
         <SectionTitle title="Services Tendance" action="Voir tout" onAction={() => navigate("/services-salons")} />
         <div className="grid grid-cols-2 gap-3">
           {servicesTendance.slice(0, 4).map((s) => {
-            const serviceImage = s.image_url || (s.images && s.images[0]) || LIFTING_IMAGE;
+            const serviceImage = s.image_url || (s.images && s.images[0]) || "";
             return (
               <button key={s.id || s.title}
                 onClick={() => navigate(`/service/${s.id}`, { state: { title: s.title, price: s.price, cover: serviceImage } })}
@@ -365,7 +347,7 @@ export default function Home() {
                 className="shrink-0 w-[160px] bg-white rounded-2xl overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50"
               >
                 <div className="h-[100px] relative overflow-hidden">
-                  <img src={b.image_url || b.banner_url || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80"} alt="" className="w-full h-full object-cover" />
+                  <img src={b.image_url || b.banner_url || ""} alt="" className="w-full h-full object-cover" />
                   {b.discount_percent > 0 && (
                     <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
                   )}
@@ -402,7 +384,7 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="h-[100px] relative overflow-hidden">
-                  <img src={b.image_url || b.banner_url || "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80"} alt="" className="w-full h-full object-cover" />
+                  <img src={b.image_url || b.banner_url || ""} alt="" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   {b.discount_percent > 0 && (
                     <span className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-[#E8732A] text-[9px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
@@ -432,13 +414,13 @@ export default function Home() {
           </span>
         </div>
         <button onClick={() => navigate("/pro/vue-client", { state: { proEmail: salonDuMois?.user_email } })} className="w-full relative rounded-[24px] overflow-hidden shadow-lg active:scale-[0.99] transition-all">
-          <img src={salonDuMois?.cover_url || salonDuMois?.avatar_url || SALON_BW} alt="Salon du Mois" className="w-full h-52 object-cover" />
+          <img src={salonDuMois?.cover_url || salonDuMois?.avatar_url || ""} alt="Salon du Mois" className="w-full h-52 object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
-            <h3 className="text-white text-[22px] font-black leading-tight">{salonDuMois?.salon_name || "L'Atelier de Beauté"}</h3>
+            <h3 className="text-white text-[22px] font-black leading-tight">{salonDuMois?.salon_name || ""}</h3>
             <div className="flex items-center gap-2 mt-1">
               <MapPin className="w-3.5 h-3.5 text-white/70" />
-              <p className="text-white/70 text-[12px] font-bold">{salonDuMois?.city || "Paris 8ème"}{salonDuMois?.rating > 0 ? ` • ★ ${salonDuMois.rating}` : ""}</p>
+              <p className="text-white/70 text-[12px] font-bold">{salonDuMois?.city || ""}{salonDuMois?.rating > 0 ? ` • ★ ${salonDuMois.rating}` : ""}</p>
             </div>
           </div>
         </button>
@@ -453,7 +435,7 @@ export default function Home() {
               onClick={() => navigate(`/produit?id=${p.id}`)}
               className="bg-white rounded-[24px] overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50">
               <div className="relative h-[140px]">
-                <img src={p.image_url || SERUM_IMAGE} alt={p.name || p.title} className="w-full h-full object-cover" />
+                <img src={p.image_url || ""} alt={p.name || p.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               </div>
               <div className="p-3">
@@ -501,7 +483,7 @@ export default function Home() {
                 className="w-full bg-white rounded-[24px] overflow-hidden shadow-sm active:scale-[0.99] transition-all border border-orange-100"
               >
                 <div className="relative h-[180px]">
-                  <img src={o.image || SALON_BW} alt={o.salon_name} className="w-full h-full object-cover" />
+                  <img src={o.image || ""} alt={o.salon_name} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   {o.rating && (
                     <div className="absolute top-3 right-3 bg-white/95 rounded-full px-3 py-1.5 flex items-center gap-1 shadow">
@@ -542,14 +524,14 @@ export default function Home() {
           className="w-full bg-white rounded-[24px] p-4 border border-orange-50 shadow-sm flex items-center gap-4 active:scale-[0.99] transition-all text-left">
           <div className="relative shrink-0">
             <div className="w-[68px] h-[68px] rounded-full overflow-hidden border-[3px] border-primary">
-              <img src={expertiseDuMois?.avatar_url || EXPERT_3} alt="Expert" className="w-full h-full object-cover" />
+              <img src={expertiseDuMois?.avatar_url || ""} alt="Expert" className="w-full h-full object-cover" />
             </div>
             <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-white" />
           </div>
           <div className="flex-1">
-            <h3 className="text-[16px] font-black text-gray-900">{expertiseDuMois?.salon_name || "Expert Partenaire"}</h3>
-            <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5">{expertiseDuMois?.bio?.substring(0, 40) || "SPÉCIALISTE COLORISTE"}</p>
-            <p className="text-[12px] text-gray-500 font-medium mt-1 leading-snug">{expertiseDuMois?.city || "Expertise en balayage signature et soins profonds."}</p>
+            <h3 className="text-[16px] font-black text-gray-900">{expertiseDuMois?.salon_name || ""}</h3>
+            <p className="text-[10px] font-black text-primary uppercase tracking-widest mt-0.5">{expertiseDuMois?.bio?.substring(0, 40) || ""}</p>
+            <p className="text-[12px] text-gray-500 font-medium mt-1 leading-snug">{expertiseDuMois?.city || ""}</p>
           </div>
           <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
         </button>
@@ -576,7 +558,7 @@ export default function Home() {
               >
                 <div className="relative">
                   <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-primary/40">
-                    <img src={p.avatar_url || EXPERT_1} alt={p.salon_name} className="w-full h-full object-cover" />
+                    <img src={p.avatar_url || ""} alt={p.salon_name} className="w-full h-full object-cover" />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center border-2 border-white">
                     <span className="text-[11px]">🎓</span>
@@ -614,14 +596,11 @@ export default function Home() {
           </button>
         </div>
         <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
-          {(liveSessions.length > 0 ? liveSessions : [
-            { id: "1", thumbnail_url: LIVE_1, title: "Masterclass Contouring", host_name: "Expert Partenaire" },
-            { id: "2", thumbnail_url: LIVE_2, title: "Démo Balayage", host_name: "Skin Expert" },
-          ]).map((v) => (
+          {liveSessions.map((v) => (
             <button key={v.id} onClick={() => navigate(`/live-detail/${v.id}`)}
               className="min-w-[185px] shrink-0 active:scale-95 transition-all text-left">
               <div className="relative h-[200px] rounded-[24px] overflow-hidden">
-                <img src={v.thumbnail_url || LIVE_1} alt={v.title} className="w-full h-full object-cover" />
+                <img src={v.thumbnail_url || ""} alt={v.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-black uppercase px-2.5 py-1.5 rounded-full flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
@@ -645,7 +624,7 @@ export default function Home() {
             className="w-full bg-white rounded-[24px] p-4 shadow-sm flex gap-4 items-start active:scale-[0.99] transition-all text-left border border-orange-100"
           >
             <div className="w-[100px] h-[100px] rounded-[18px] overflow-hidden shrink-0">
-              <img src={offresImmoLive.images?.[0] || SPACE_IMAGE} alt="" className="w-full h-full object-cover" />
+              <img src={offresImmoLive.images?.[0] || ""} alt="" className="w-full h-full object-cover" />
             </div>
             <div className="flex-1">
               <div className="flex items-start gap-2">

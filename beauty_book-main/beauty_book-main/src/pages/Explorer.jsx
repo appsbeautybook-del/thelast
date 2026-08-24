@@ -19,12 +19,12 @@ const CATEGORIES = [
 ];
 
 const FALLBACK_STYLES = [
-  { id: "f1", title: "Havana Twists", category: "Coiffure", image_url: "https://images.unsplash.com/photo-1595959183082-7b570b7e1e2b?q=80&w=400" },
-  { id: "f2", title: "Spring Twists", category: "Coiffure", image_url: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?q=80&w=400" },
-  { id: "f3", title: "Passion Twists", category: "Coiffure", image_url: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=400" },
-  { id: "f4", title: "Box Braids", category: "Coiffure", image_url: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400" },
-  { id: "f5", title: "Cornrows", category: "Coiffure", image_url: "https://images.unsplash.com/photo-1596178065887-1198b6148b2b?q=80&w=400" },
-  { id: "f6", title: "Locs", category: "Coiffure", image_url: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=400" },
+  { id: "f1", title: "Havana Twists", category: "Coiffure", image_url: "" },
+  { id: "f2", title: "Spring Twists", category: "Coiffure", image_url: "" },
+  { id: "f3", title: "Passion Twists", category: "Coiffure", image_url: "" },
+  { id: "f4", title: "Box Braids", category: "Coiffure", image_url: "" },
+  { id: "f5", title: "Cornrows", category: "Coiffure", image_url: "" },
+  { id: "f6", title: "Locs", category: "Coiffure", image_url: "" },
 ];
 
 const userIcon = typeof L !== "undefined" ? L.divIcon({
@@ -319,7 +319,7 @@ export default function Explorer() {
                 >
                   <div className="w-[130px] h-[170px] rounded-2xl overflow-hidden mb-2 relative">
                     <img
-                      src={style.image_url || (style.images?.[0]) || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400"}
+                      src={style.image_url || (style.images?.[0]) || ""}
                       alt={style.title}
                       className="w-full h-full object-cover"
                       loading="lazy"
@@ -379,7 +379,7 @@ export default function Explorer() {
           ) : (
             <div className="space-y-3">
               {filtered.map((pro) => {
-                const img = pro.avatar_url || pro.cover_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400";
+                const img = pro.avatar_url || pro.cover_url || "";
                 const price = minPricesMap[pro.user_email];
                 const city = [pro.city, pro.postal_code ? String(pro.postal_code).slice(0, 2) : null].filter(Boolean).join(", ");
                 const isOpen = pro.is_open;

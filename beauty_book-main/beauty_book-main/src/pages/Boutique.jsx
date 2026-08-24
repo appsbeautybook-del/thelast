@@ -14,15 +14,15 @@ import { useCartSync } from "@/hooks/useCartSync";
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const CAT_IMAGES = {
-  tout:      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=200",
-  homme:     "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200",
-  femme:     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200",
-  enfant:    "https://images.unsplash.com/photo-1519689680058-324335c77eba?q=80&w=200",
-  beaute:    "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?q=80&w=200",
-  beauté:    "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?q=80&w=200",
-  bebe:      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=200",
-  bébé:      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=200",
-  grossiste: "https://images.unsplash.com/photo-1553877522-43269d4ea984?q=80&w=200",
+  tout:      "",
+  homme:     "",
+  femme:     "",
+  enfant:    "",
+  beaute:    "",
+  beauté:    "",
+  bebe:      "",
+  bébé:      "",
+  grossiste: "",
 };
 
 

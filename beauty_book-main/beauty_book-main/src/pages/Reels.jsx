@@ -732,7 +732,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
         {/* Author */}
         <button onClick={() => onAuthorClick?.(reel)} className="flex flex-col items-center gap-1 active:scale-95">
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-lg">
-            <img src={reel.author_avatar || "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=100"} alt={reel.author_name} className="w-full h-full object-cover" />
+            <img src={reel.author_avatar || ""} alt={reel.author_name} className="w-full h-full object-cover" />
           </div>
         </button>
         {/* Like */}
@@ -814,7 +814,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
         <div className="flex items-center gap-2.5">
           <button onClick={() => onAuthorClick?.(reel)} className="shrink-0">
             <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/80 shadow-lg">
-              <img src={reel.author_avatar || "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=100"} alt={reel.author_name} className="w-full h-full object-cover" />
+              <img src={reel.author_avatar || ""} alt={reel.author_name} className="w-full h-full object-cover" />
             </div>
           </button>
           <div className="flex-1 min-w-0">

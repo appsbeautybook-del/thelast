@@ -5,8 +5,8 @@ import { useAuth } from "@/lib/AuthContext";
 import { supabase } from '@/api/supabaseClient';
 import { useProfileMedia } from "@/hooks/useProfileMedia";
 
-const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=200";
-const DEFAULT_BANNER = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=800";
+const DEFAULT_AVATAR = "";
+const DEFAULT_BANNER = "";
 const bioMax = 160;
 
 async function uploadToSupabase(file) {

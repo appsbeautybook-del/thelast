@@ -76,7 +76,7 @@ export default function Confidentialite() {
 
         {/* Hero image */}
         <div className="relative rounded-3xl overflow-hidden h-36">
-          <img src="https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=800" alt="" className="w-full h-full object-cover" />
+          <img src="" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center px-5">
             <div>
               <p className="text-white text-[20px] font-black leading-tight">Vos données,<br />votre contrôle.</p>

@@ -67,7 +67,7 @@ export default function ParametresPro() {
         <div className="bg-[#1a2035] rounded-3xl p-5 mt-4 flex items-center gap-4 shadow-sm">
           <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-700 shrink-0 border-2 border-primary/30">
             <img
-              src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=200"
+              src=""
               alt="profil"
               className="w-full h-full object-cover"
             />

@@ -20,8 +20,8 @@ import { useVoiceAgent } from "@/lib/VoiceAgentContext";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import AuthModal from "@/components/ui/AuthModal";
 
-const SCAN_IMG = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400";
-const STYLE_IMG = "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400";
+const SCAN_IMG = "";
+const STYLE_IMG = "";
 
 // ─── Side Drawer ──────────────────────────────────────────────────────────────
 function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, onOpenSimulator, onScanCapillaire, onStylisteIA, isPro }) {
@@ -1264,7 +1264,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/ai-scaling-business")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=400" alt="ai scaling business" className="w-full h-full object-cover" />
+                  <img src="" alt="ai scaling business" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/80 to-blue-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1281,7 +1281,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/receptionniste-ia")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1556745757-8d76bdb6984b?q=80&w=400" alt="receptionniste ia" className="w-full h-full object-cover" />
+                  <img src="" alt="receptionniste ia" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/80 to-teal-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1298,7 +1298,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/social-media")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=400" alt="social media" className="w-full h-full object-cover" />
+                  <img src="" alt="social media" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-pink-500/80 to-purple-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1335,7 +1335,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => { setShowSimulator(true); }}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400" alt="ai hairstyle" className="w-full h-full object-cover" />
+                  <img src="" alt="ai hairstyle" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-rose-500/80 to-pink-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1352,7 +1352,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/sh-ai")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=400" alt="styliste ia" className="w-full h-full object-cover" />
+                  <img src="" alt="styliste ia" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">

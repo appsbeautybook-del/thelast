@@ -5,7 +5,7 @@ import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 
 const FALLBACK = {
-  images: ["https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=800"],
+  images: [""],
   badge: "PRO",
   title: "Poste de coiffure en location – Paris 8",
   location: "PARIS 8ÈME",

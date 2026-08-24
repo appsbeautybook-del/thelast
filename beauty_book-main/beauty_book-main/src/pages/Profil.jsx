@@ -11,7 +11,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useAuthGate } from "@/hooks/useAuthGate";
 import AuthModal from "@/components/ui/AuthModal";
 
-const PROFILE_IMAGE = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=200";
+const PROFILE_IMAGE = "";
 
 const quickLinks = [
   { id: "commandes", label: "COMMANDES", icon: ShoppingBag, bg: "bg-blue-100", color: "text-blue-500", path: "/mes-commandes", statKey: "commandes" },

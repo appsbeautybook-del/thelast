@@ -131,7 +131,7 @@ export default function Notifications() {
             <p className="text-[12px] text-gray-500 leading-relaxed">Activez les notifications Push pour réduire le temps de réponse. Les professionnels réactifs augmentent leurs réservations de 25%.</p>
           </div>
           <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0">
-            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200" alt="expert" className="w-full h-full object-cover" />
+            <img src="" alt="expert" className="w-full h-full object-cover" />
           </div>
         </div>
 

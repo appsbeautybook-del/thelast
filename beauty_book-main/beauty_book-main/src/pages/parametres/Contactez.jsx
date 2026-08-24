@@ -67,7 +67,7 @@ export default function Contactez() {
 
         {/* Hero */}
         <div className="relative rounded-3xl overflow-hidden h-32">
-          <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?q=80&w=800" alt="" className="w-full h-full object-cover" />
+          <img src="" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center px-5">
             <p className="text-white text-[20px] font-black leading-tight">On est là<br />pour vous 💬</p>
           </div>

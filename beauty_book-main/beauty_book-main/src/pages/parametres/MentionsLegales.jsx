@@ -101,7 +101,7 @@ export default function MentionsLegales() {
         {/* Hero */}
         <div className="relative rounded-3xl overflow-hidden h-36">
           <img
-            src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=800"
+            src=""
             alt=""
             className="w-full h-full object-cover"
           />

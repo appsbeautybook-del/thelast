@@ -59,7 +59,7 @@ function ImageGallery({ images, focusIdx = 0 }) {
   return (
     <div className="relative bg-gray-50">
       <div className="relative aspect-[3/4] overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onClick={() => setZoomed(true)}>
-        <img src={images[activeIdx]?.url || images[activeIdx] || "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?q=80&w=600"} alt="" className="w-full h-full object-cover transition-opacity duration-200" />
+        <img src={images[activeIdx]?.url || images[activeIdx] || ""} alt="" className="w-full h-full object-cover transition-opacity duration-200" />
         <button className="absolute bottom-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow">
           <ZoomIn className="w-4 h-4 text-gray-600" />
         </button>

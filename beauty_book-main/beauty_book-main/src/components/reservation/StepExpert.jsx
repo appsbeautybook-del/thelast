@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { entities } from "@/api/entities";
 import { supabase } from "@/api/supabaseClient";
 
-const PROFILE_IMG = "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=80";
+const PROFILE_IMG = "";
 
 const ANY_EXPERT = {
   id: null,

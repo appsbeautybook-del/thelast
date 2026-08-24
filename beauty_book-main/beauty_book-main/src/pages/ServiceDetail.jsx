@@ -515,7 +515,7 @@ export default function ServiceDetail() {
             className="relative overflow-hidden rounded-2xl active:scale-95 transition-all shadow-md group"
             style={{ minHeight: 100 }}
           >
-            <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&q=80" alt="" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
+            <img src="" alt="" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
             <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-800/50 to-transparent" />
             <div className="absolute top-2 left-2 z-10">
               <div className="w-7 h-7 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/20">
@@ -827,7 +827,7 @@ export default function ServiceDetail() {
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
                   <img
-                    src={proData?.avatar_url || "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=100"}
+                    src={proData?.avatar_url || ""}
                     alt={proData?.salon_name}
                     className="w-14 h-14 rounded-2xl object-cover"
                   />

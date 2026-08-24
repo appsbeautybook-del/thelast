@@ -244,7 +244,7 @@ export default function Services() {
                   onClick={() => navigate(`/style/${style.id}`, { state: { id: style.id, title: style.title, cover: style.image_url, category: style.category } })}
                   className="shrink-0 w-44 rounded-3xl overflow-hidden bg-gray-50 shadow-sm cursor-pointer active:scale-[0.98] transition-all">
                   <div className="relative h-48">
-                    <img src={style.image_url || "https://images.unsplash.com/photo-1519415510236-718bdfcd89c8?q=80&w=600"} alt={style.title} className="w-full h-full object-cover" />
+                    <img src={style.image_url || ""} alt={style.title} className="w-full h-full object-cover" />
                   </div>
                   <div className="p-3">
                     <p className="text-[13px] font-black text-gray-900">{style.title}</p>
@@ -341,7 +341,7 @@ export default function Services() {
                     onClick={() => navigate("/pro/vue-client", { state: { proEmail: salon.user_email } })}
                     className="shrink-0 w-48 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer active:scale-[0.98] transition-all">
                     <div className="relative h-36">
-                      <img src={salon.avatar_url || salon.cover_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=600"} alt={salon.salon_name} className="w-full h-full object-cover" />
+                      <img src={salon.avatar_url || salon.cover_url || ""} alt={salon.salon_name} className="w-full h-full object-cover" />
                       <div className="absolute bottom-2 right-2 bg-white/90 rounded-lg px-2 py-1 flex items-center gap-1">
                         <Star className="w-3 h-3 text-primary fill-primary" />
                         <span className="text-[11px] font-black text-gray-900">{salon.rating || "—"}</span>
@@ -383,7 +383,7 @@ export default function Services() {
                     onClick={() => navigate("/pro/vue-client", { state: { proEmail: p.user_email } })}
                     className="shrink-0 w-40 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer active:scale-[0.98] transition-all">
                     <div className="relative h-40">
-                      <img src={p.avatar_url || "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=400"} alt={p.salon_name} className="w-full h-full object-cover" />
+                      <img src={p.avatar_url || ""} alt={p.salon_name} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-3">
                       <p className="text-[13px] font-black text-gray-900 truncate">{p.salon_name}</p>

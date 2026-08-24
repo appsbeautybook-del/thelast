@@ -52,7 +52,7 @@ const SCAN_GUIDE_STEPS = [
     title: "Bonne luminosité",
     desc: "Placez-vous face à une fenêtre ou sous une lumière directe. Évitez les contre-jours et les ombres sur vos cheveux.",
     tip: "La lumière naturelle donne les meilleurs résultats.",
-    img: "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=600",
+    img: "",
     imgAlt: "Cheveux éclairés en salon de coiffure",
   },
   {
@@ -62,7 +62,7 @@ const SCAN_GUIDE_STEPS = [
     title: "Positionnez vos cheveux",
     desc: "Dégagez cou et épaules. Tenez la caméra à 40–60 cm. Incluez toute la longueur de vos cheveux dans le cadre.",
     tip: "Vue de dos ou de côté recommandée pour analyser la texture.",
-    img: "https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=600",
+    img: "",
     imgAlt: "Coiffeur travaillant sur des cheveux en gros plan",
   },
   {
@@ -72,7 +72,7 @@ const SCAN_GUIDE_STEPS = [
     title: "Restez immobile",
     desc: "Maintenez la caméra stable pour éviter le flou. Vos cheveux doivent être clairement visibles et bien éclairés.",
     tip: "Photo de profil ou de dos : idéal pour l'analyse IA.",
-    img: "https://images.unsplash.com/photo-1526045478516-99145907023c?q=80&w=600",
+    img: "",
     imgAlt: "Cheveux bouclés vus de dos pour scan capillaire",
   },
 ];

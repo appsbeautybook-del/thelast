@@ -4,9 +4,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Star, X, Maximize2 } from "lucide-react";
 
-const SALON_IMG = "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300";
-const STYLE_IMG = "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=300";
-const SPACE_IMG = "https://images.unsplash.com/photo-1631679706909-1844bbd07221?q=80&w=300";
+const SALON_IMG = "";
+const STYLE_IMG = "";
+const SPACE_IMG = "";
 
 const prestataires = [
   { id: 1, name: "L'Atelier de Beauté", location: "Paris 8e", lat: 48.874, lng: 2.305, price: 65, rating: 4.9, img: SALON_IMG, category: "Coiffure" },

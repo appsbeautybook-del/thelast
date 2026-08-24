@@ -9,10 +9,10 @@ import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
 
 const SAMPLE_IMAGES = [
-  "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400",
-  "https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=400",
-  "https://images.unsplash.com/photo-1583001931096-959e9a1a6223?q=80&w=400",
-  "https://images.unsplash.com/photo-1570194065650-d99fb4bedf0a?q=80&w=400",
+  "",
+  "",
+  "",
+  "",
 ];
 
 const HASHTAGS = ["#BEAUTÉ", "#COIFFURE", "#STYLE", "#PROFESSIONNEL", "#SALON", "#MODE", "#CHEVEUX", "#SOIN"];

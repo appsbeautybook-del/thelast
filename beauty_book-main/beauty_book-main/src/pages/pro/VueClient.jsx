@@ -31,11 +31,11 @@ function getPageBg(theme) {
 import CommandeModal from "@/components/restaurant/CommandeModal";
 import PanoViewer from "@/components/virtualtour/PanoViewer";
 
-const BANNER_IMG = "https://images.unsplash.com/photo-1519699047748-de8e457a634e?q=80&w=800";
-const PROFILE_IMG = "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=200";
-const SERVICE_1 = "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=600";
-const SERVICE_2 = "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=600";
-const VIRTUAL_IMG = "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=600";
+const BANNER_IMG = "";
+const PROFILE_IMG = "";
+const SERVICE_1 = "";
+const SERVICE_2 = "";
+const VIRTUAL_IMG = "";
 
 const TABS = [
   { id: "profil", label: "PROFIL", Icon: User },
@@ -44,11 +44,7 @@ const TABS = [
   { id: "avis", label: "AVIS", Icon: Star },
 ];
 
-const HOURS = [
-  { day: "Lun – Ven", hours: "09:00 – 20:00", closed: false },
-  { day: "Samedi", hours: "10:00 – 18:00", closed: false },
-  { day: "Dimanche", hours: "Fermé", closed: true },
-];
+const HOURS = [];
 
 // Map icônes commodités — Lucide épuré
 const COMMODITE_ICONS = {
