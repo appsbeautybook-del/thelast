@@ -235,9 +235,26 @@ const AuthenticatedApp = () => {
   }
 
   const hasOnboarded = onboarded || localStorage.getItem("bb_onboarded");
+  const splashDone = sessionStorage.getItem("bb_splash_done") === "1";
 
   // Redirect to onboarding if first time and not on a special route
   if (!hasOnboarded && !isSpecialRoute) {
+    // Splash already seen → go directly to home page
+    if (splashDone) {
+      return (
+        <>
+          <Routes>
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/connexion" element={<Connexion />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route element={<AppShell />}>
+              <Route path="*" element={<Home />} />
+            </Route>
+          </Routes>
+        </>
+      );
+    }
+    // First visit → show onboarding (splash at step 0)
     return (
       <Routes>
         <Route path="/auth/callback" element={<AuthCallback />} />

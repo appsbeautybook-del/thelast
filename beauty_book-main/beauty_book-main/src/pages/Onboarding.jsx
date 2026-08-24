@@ -48,7 +48,7 @@ function StepSplash({ onNext }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const duration = 5000;
+    const duration = 3000;
     const interval = 30;
     const step = (interval / duration) * 100;
     let current = 0;
@@ -67,28 +67,23 @@ function StepSplash({ onNext }) {
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden relative">
-      {/* Background image */}
       <div className="absolute inset-0">
         <img
           src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=1200&q=80"
-          alt="Beauty salon"
+          alt="Beauty communities"
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
       </div>
 
-      {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col px-6 pt-16 pb-10">
-        {/* Logo */}
         <div className="flex flex-col items-center gap-3 mb-12">
           <B size={52} />
           <span className="text-white/80 text-[13px] font-extrabold uppercase tracking-[0.35em]">BeautyBook</span>
         </div>
 
-        {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Title */}
         <div className="mb-10">
           <h1 className="text-[48px] font-black leading-[0.92] text-white uppercase tracking-tight mb-4">
             REVEAL<br />YOUR<br />
@@ -97,7 +92,6 @@ function StepSplash({ onNext }) {
           <p className="text-[14px] text-white/50 leading-relaxed max-w-[260px]">Rejoignez la première communauté dédiée à l'excellence esthétique.</p>
         </div>
 
-        {/* Loading bar */}
         <div className="space-y-3">
           <div className="h-[3px] w-full bg-white/10 rounded-full overflow-hidden">
             <div
@@ -567,9 +561,14 @@ export default function Onboarding() {
 
   const done = () => { localStorage.setItem("bb_onboarded", "1"); localStorage.removeItem("bb_is_pro"); sessionStorage.removeItem("bb_signup_data"); sessionStorage.removeItem("bb_social_signup_processed"); window.location.href = "/"; };
 
+  const handleSplashDone = () => {
+    sessionStorage.setItem("bb_splash_done", "1");
+    window.location.href = "/";
+  };
+
   return (
     <div className="font-display relative">
-      {step === 0 && <StepSplash onNext={() => setStep(1)} />}
+      {step === 0 && <StepSplash onNext={handleSplashDone} />}
       {step === 1 && <StepSignup onNext={() => setStep(2)} onBack={() => setStep(0)} />}
       {step === 2 && <StepVerification onNext={() => setStep(3)} onBack={() => setStep(1)} />}
       {step === 3 && <StepBeautyProfile onNext={() => setStep(4)} onBack={() => setStep(2)} />}
