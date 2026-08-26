@@ -24,12 +24,13 @@ import AdminPaiement from "@/components/admin/AdminPaiement";
 import AdminAppearance from "@/components/admin/AdminAppearance";
 import AdminMessages from "@/components/admin/AdminMessages";
 import AdminFidelite from "@/components/admin/AdminFidelite";
+import AdminAnalytics from "@/components/admin/AdminAnalytics";
 import {
   LayoutDashboard, Video, Users, Scissors, ShoppingBag,
   CalendarCheck, Megaphone, LogOut, Menu, X, PlusSquare,
   Radio, Palette, UserCheck, Bell, Star, Home, ChevronRight,
   BookOpen, Truck, Building2, Compass, Store, ShoppingBasket, CreditCard, Type, MessageSquare, Gift,
-  Search, ShieldAlert, Sparkles
+  Search, ShieldAlert, Sparkles, BarChart3
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -37,6 +38,7 @@ const NAV_GROUPS = [
     label: "Vue d'ensemble",
     items: [
       { id: "stats", label: "Tableau de bord & KPIs", icon: LayoutDashboard },
+      { id: "analytics", label: "Analytics Pros", icon: BarChart3 },
     ]
   },
   {
@@ -92,6 +94,7 @@ const ALL_TABS = NAV_GROUPS.flatMap(g => g.items);
 
 const COMPONENTS = {
   stats: AdminStats,
+  analytics: AdminAnalytics,
   home: AdminHomePage,
   styles: AdminStyles,
   publications: AdminPublications,
@@ -118,6 +121,7 @@ const COMPONENTS = {
 
 const TAB_DESCRIPTIONS = {
   stats: "Performances en temps réel, indicateurs clés et gestion des utilisateurs",
+  analytics: "Analyse détaillée de chaque pro — CA, services, publications, engagement",
   home: "Personnalisez et agencez la page d'accueil mobile",
   styles: "Gérez les styles et les catalogues de tendances",
   pros: "Validation des profils professionnels (salons & particuliers)",
