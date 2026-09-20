@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BeautyBook Vendeur</string>
+    <string name="title_activity_main">BeautyBook Vendeur</string>
+    <string name="package_name">com.appsbeautybook.seller</string>
+    <string name="custom_url_scheme">com.appsbeautybook.seller</string>
+</resources>

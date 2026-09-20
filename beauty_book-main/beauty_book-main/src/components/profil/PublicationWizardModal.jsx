@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef } from "react";
 import {
   X, SlidersHorizontal, Wand2, RotateCcw,
@@ -101,7 +102,7 @@ export default function PublicationWizardModal({ onClose, onPublish }) {
       </div>
 
       <div className="flex-1 relative mx-4 rounded-2xl overflow-hidden bg-black/40">
-        <img src={form.image_url} alt="preview" className="w-full h-full object-cover" style={getImageStyle()} />
+        <BeautyImage src={form.image_url} alt="preview" className="w-full h-full object-cover" style={getImageStyle()} />
         <div className="absolute right-3 top-4 flex flex-col gap-2.5">
           {[
             { icon: SlidersHorizontal, panel: "ajuster" },
@@ -149,7 +150,7 @@ export default function PublicationWizardModal({ onClose, onPublish }) {
             {FILTERS.map(f => (
               <button key={String(f.id)} onClick={() => { setForm(fm => ({ ...fm, filter: f.id })); setActivePanel(null); }} className="flex flex-col items-center gap-1 shrink-0">
                 <div className={`w-14 h-14 rounded-xl overflow-hidden border-2 ${form.filter === f.id ? "border-primary" : "border-transparent"}`}>
-                  <img src={form.image_url} alt="" className="w-full h-full object-cover" style={f.style} />
+                  <BeautyImage src={form.image_url} alt="" className="w-full h-full object-cover" style={f.style} />
                 </div>
                 <span className="text-[9px] font-black text-gray-300">{f.label}</span>
               </button>
@@ -211,7 +212,7 @@ export default function PublicationWizardModal({ onClose, onPublish }) {
       </div>
       <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4 space-y-5 hide-scrollbar">
         <div className="bg-gray-50 rounded-2xl p-3 flex gap-3">
-          <img src={form.image_url} className="w-14 h-14 rounded-xl object-cover shrink-0" alt="" />
+          <BeautyImage src={form.image_url} className="w-14 h-14 rounded-xl object-cover shrink-0" alt="" />
           <textarea value={form.caption} onChange={e => setForm(f => ({ ...f, caption: e.target.value }))}
             placeholder="Décrivez votre création..." rows={3}
             className="flex-1 bg-transparent text-[13px] text-gray-700 outline-none resize-none placeholder:text-gray-400 font-medium" />

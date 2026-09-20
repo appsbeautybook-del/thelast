@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -202,11 +203,17 @@ export default function Recherche() {
     });
   }, [profils, activeCategory, search]);
 
-  const allMapItems = useMemo(() => filtered.map((p) => ({
-    ...p,
-    mapLat: p.latitude || p.lat || 48.866 + (Math.random() - 0.5) * 0.08,
-    mapLng: p.longitude || p.lng || 2.333 + (Math.random() - 0.5) * 0.12,
-  })), [filtered]);
+  const allMapItems = useMemo(() => filtered.map((p, index) => {
+    // Keep demo coordinates stable between renders until a professional has saved theirs.
+    const seed = String(p.id || p.user_email || index).split('').reduce((total, char) => total + char.charCodeAt(0), 0);
+    const latOffset = ((seed % 17) - 8) * 0.0035;
+    const lngOffset = (((Math.floor(seed / 17)) % 21) - 10) * 0.004;
+    return {
+      ...p,
+      mapLat: Number(p.latitude || p.lat) || 48.866 + latOffset,
+      mapLng: Number(p.longitude || p.lng) || 2.333 + lngOffset,
+    };
+  }), [filtered]);
 
   const mapCenter = useMemo(() => {
     if (userLocation) return userLocation;
@@ -364,8 +371,12 @@ export default function Recherche() {
 
         {showMap && (
           <div className="mx-4 mb-4 rounded-3xl overflow-hidden shadow-lg relative" style={{ height: "200px", isolation: "isolate" }}>
-            <MapContainer center={mapCenter} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={false} attributionControl={false}>
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
+            <MapContainer center={mapCenter} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={false} attributionControl>
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maxZoom={19}
+                attribution="&copy; OpenStreetMap"
+              />
               <FlyToLocation center={mapCenter} />
               {userLocation && <Marker position={userLocation} icon={userIcon} />}
               {allMapItems.slice(0, 20).map(p => (
@@ -384,7 +395,7 @@ export default function Recherche() {
             </MapContainer>
             <div
               className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
-              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%)" }}
+              style={{ background: "linear-gradient(to top, rgba(18,18,18,0.42) 0%, transparent 100%)" }}
             />
           </div>
         )}
@@ -414,7 +425,7 @@ export default function Recherche() {
                   className="shrink-0 w-[130px] text-left active:scale-[0.97] transition-all"
                 >
                   <div className="w-[130px] h-[170px] rounded-2xl overflow-hidden mb-2 relative">
-                    <img
+                    <BeautyImage
                       src={style.image_url || (style.images?.[0]) || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400"}
                       alt={style.title}
                       className="w-full h-full object-cover"
@@ -485,7 +496,7 @@ export default function Recherche() {
                     style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
                   >
                     <div className="w-[100px] h-[110px] shrink-0 relative overflow-hidden">
-                      <img src={img} alt={pro.salon_name} className="w-full h-full object-cover" loading="lazy" />
+                      <BeautyImage src={img} alt={pro.salon_name} className="w-full h-full object-cover" loading="lazy" />
                       <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(0,0,0,0.1) 0%, transparent 50%)" }} />
                       {isOpen === true && (
                         <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5">
@@ -610,7 +621,7 @@ export default function Recherche() {
                         }}
                         className="w-full bg-slate-900 border border-slate-800 hover:border-orange-500/50 rounded-2xl p-3 flex items-center gap-3 active:scale-[0.99] transition-all cursor-pointer"
                       >
-                        <img
+                        <BeautyImage
                           src={pro.avatar_url || pro.cover_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400"}
                           className="w-12 h-12 rounded-xl object-cover"
                           alt=""

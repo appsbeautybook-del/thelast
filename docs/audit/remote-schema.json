@@ -1,0 +1,3034 @@
+{
+  "checkedAt": "2026-09-18T23:25:39.868Z",
+  "metadataAccess": true,
+  "tables": {
+    "profiles": [
+      "id",
+      "email",
+      "role",
+      "full_name",
+      "username",
+      "bio",
+      "avatar_url",
+      "cover_url",
+      "phone",
+      "gender",
+      "beauty_interests",
+      "latitude",
+      "longitude",
+      "camera_enabled",
+      "mic_enabled",
+      "updated_at",
+      "created_at",
+      "instagram",
+      "facebook",
+      "website",
+      "abonnement",
+      "abonnement_expires_at",
+      "stripe_customer_id"
+    ],
+    "ProfilPro": [
+      "id",
+      "user_email",
+      "salon_name",
+      "phone",
+      "address",
+      "city",
+      "zip_code",
+      "bio",
+      "siret",
+      "verified",
+      "status",
+      "created_at",
+      "updated_at",
+      "created_by_id",
+      "avatar_url",
+      "cover_url",
+      "specialites",
+      "galerie_urls",
+      "presentation_video_url",
+      "website",
+      "instagram",
+      "facebook",
+      "services_count",
+      "followers",
+      "categorie",
+      "tags",
+      "travail_nuit",
+      "horaires",
+      "jours_repos",
+      "conges",
+      "ouverture",
+      "team_emails",
+      "latitude",
+      "longitude",
+      "abonnement",
+      "abonnement_expires_at",
+      "stripe_customer_id",
+      "rating",
+      "reviews_count",
+      "commodites",
+      "seats_count",
+      "se_deplace",
+      "nom",
+      "prenom",
+      "type_activite",
+      "postal_code"
+    ],
+    "Service": [
+      "id",
+      "pro_email",
+      "name",
+      "description",
+      "price",
+      "duration",
+      "category",
+      "images",
+      "status",
+      "created_at",
+      "updated_at",
+      "created_by_id",
+      "title",
+      "style",
+      "addons",
+      "promo_price",
+      "promo_ends_at",
+      "duration_min"
+    ],
+    "Reservation": [
+      "id",
+      "service_id",
+      "pro_email",
+      "client_email",
+      "date",
+      "time",
+      "status",
+      "total_price",
+      "payment_status",
+      "created_at",
+      "updated_at",
+      "created_by_id",
+      "client_name",
+      "duration_min",
+      "client_phone",
+      "pro_name",
+      "service_price",
+      "end_time_slot",
+      "persons",
+      "addons",
+      "acompte_amount",
+      "payment_type",
+      "crg_code",
+      "salon_name",
+      "salon_address",
+      "seats_total",
+      "reminder_scheduled",
+      "reminder_sent",
+      "completed_at",
+      "review_requested",
+      "service_name",
+      "time_slot",
+      "notes",
+      "code_validated",
+      "calendar_shown"
+    ],
+    "Produit": [
+      "id",
+      "pro_email",
+      "name",
+      "description",
+      "price",
+      "stock",
+      "category",
+      "images",
+      "brand",
+      "ingredients",
+      "usage_instructions",
+      "status",
+      "created_at",
+      "updated_at",
+      "created_by_id",
+      "old_price",
+      "external_url",
+      "min_qty"
+    ],
+    "Commande": [
+      "id",
+      "client_email",
+      "client_name",
+      "pro_email",
+      "items",
+      "total",
+      "shipping_address",
+      "status",
+      "payment_status",
+      "tracking_number",
+      "created_at",
+      "updated_at",
+      "created_by_id"
+    ],
+    "Avis": [
+      "id",
+      "reservation_id",
+      "type",
+      "auteur_email",
+      "auteur_nom",
+      "cible_email",
+      "cible_nom",
+      "note",
+      "commentaire",
+      "service_nom",
+      "created_at",
+      "updated_at",
+      "created_by_id"
+    ],
+    "LiveSession": [
+      "id",
+      "host_email",
+      "host_name",
+      "host_avatar",
+      "title",
+      "description",
+      "category",
+      "status",
+      "viewers_count",
+      "viewers",
+      "mux_stream_key",
+      "mux_playback_id",
+      "thumbnail_url",
+      "started_at",
+      "ended_at",
+      "created_at",
+      "updated_at",
+      "created_by_id"
+    ],
+    "DemandeProV2": [
+      "id",
+      "user_email",
+      "username",
+      "nom",
+      "prenom",
+      "phone",
+      "address",
+      "city",
+      "specialite",
+      "experience",
+      "description",
+      "cv_url",
+      "portfolio_urls",
+      "status",
+      "admin_notes",
+      "statut",
+      "siret",
+      "salon_name",
+      "bio",
+      "type_activite",
+      "years_experience",
+      "services",
+      "categories",
+      "specialites_cheveux",
+      "salon_photo",
+      "portfolio",
+      "email_pro",
+      "doc_identite_recto",
+      "doc_identite_verso",
+      "doc_siret",
+      "doc_assurance",
+      "days",
+      "time_slots",
+      "commodites",
+      "seats_count",
+      "se_deplace",
+      "travail_nuit",
+      "visite_video_url",
+      "diplomes",
+      "has_diplome",
+      "created_at",
+      "updated_at",
+      "created_by_id"
+    ],
+    "Notification": [
+      "id",
+      "user_email",
+      "title",
+      "message",
+      "type",
+      "action_url",
+      "is_read",
+      "created_at",
+      "updated_at",
+      "created_by_id",
+      "body",
+      "data",
+      "icon",
+      "read"
+    ],
+    "Panier": [
+      "id",
+      "user_email",
+      "items",
+      "total",
+      "status",
+      "created_at",
+      "updated_at",
+      "created_by_id"
+    ],
+    "bb_admin_memberships": null,
+    "bb_seller_accounts": null
+  },
+  "columnTypes": {
+    "Service": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "name": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "duration": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "category": {
+        "type": "string",
+        "format": "text"
+      },
+      "images": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "style": {
+        "type": "string",
+        "format": "text"
+      },
+      "addons": {
+        "format": "jsonb"
+      },
+      "promo_price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "promo_ends_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "duration_min": {
+        "type": "integer",
+        "format": "integer"
+      }
+    },
+    "Reel": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "author_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "author_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "author_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "video_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "thumbnail_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "likes": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "views": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "comments_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "shares_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "category": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pub_type": {
+        "type": "string",
+        "format": "text"
+      },
+      "images": {
+        "format": "jsonb"
+      },
+      "is_sponsored": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "music_title": {
+        "type": "string",
+        "format": "text"
+      },
+      "music_artist": {
+        "type": "string",
+        "format": "text"
+      },
+      "music_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "product_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "product_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "product_img": {
+        "type": "string",
+        "format": "text"
+      },
+      "service_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "service_name": {
+        "type": "string",
+        "format": "text"
+      }
+    },
+    "Commande": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "client_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "client_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "items": {
+        "format": "jsonb"
+      },
+      "total": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "shipping_address": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "payment_status": {
+        "type": "string",
+        "format": "text"
+      },
+      "tracking_number": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "Reservation": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "service_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "client_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "date": {
+        "type": "string",
+        "format": "text"
+      },
+      "time": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "total_price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "payment_status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "client_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "duration_min": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "client_phone": {
+        "type": "string",
+        "format": "text"
+      },
+      "pro_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "service_price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "end_time_slot": {
+        "type": "string",
+        "format": "text"
+      },
+      "persons": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "addons": {
+        "format": "jsonb"
+      },
+      "acompte_amount": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "payment_type": {
+        "type": "string",
+        "format": "text"
+      },
+      "crg_code": {
+        "type": "string",
+        "format": "text"
+      },
+      "salon_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "salon_address": {
+        "type": "string",
+        "format": "text"
+      },
+      "seats_total": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "reminder_scheduled": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "reminder_sent": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "completed_at": {
+        "type": "string",
+        "format": "text"
+      },
+      "review_requested": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "service_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "time_slot": {
+        "type": "string",
+        "format": "text"
+      },
+      "notes": {
+        "type": "string",
+        "format": "text"
+      },
+      "code_validated": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "calendar_shown": {
+        "type": "boolean",
+        "format": "boolean"
+      }
+    },
+    "LiveSession": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "host_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "host_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "host_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "category": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "viewers_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "viewers": {
+        "format": "jsonb"
+      },
+      "mux_stream_key": {
+        "type": "string",
+        "format": "text"
+      },
+      "mux_playback_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "thumbnail_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "ended_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "Style": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "images": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "category": {
+        "type": "string",
+        "format": "text"
+      },
+      "likes": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "views": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "featured": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "image_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "tags": {
+        "format": "jsonb"
+      },
+      "author_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "author_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "author_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "video_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "service_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "duration_min": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "is_sponsored": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "produits_utilises": {
+        "format": "jsonb"
+      },
+      "mots_cles": {
+        "format": "jsonb"
+      },
+      "subcategory": {
+        "type": "string",
+        "format": "text"
+      },
+      "outils_utilises": {
+        "format": "jsonb"
+      },
+      "type_cheveux": {
+        "type": "string",
+        "format": "text"
+      },
+      "type_peau": {
+        "type": "string",
+        "format": "text"
+      },
+      "type_prestation": {
+        "type": "string",
+        "format": "text"
+      },
+      "temps_moyen": {
+        "type": "string",
+        "format": "text"
+      },
+      "niveau_difficulte": {
+        "type": "string",
+        "format": "text"
+      }
+    },
+    "Notification": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "message": {
+        "type": "string",
+        "format": "text"
+      },
+      "type": {
+        "type": "string",
+        "format": "text"
+      },
+      "action_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "is_read": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "body": {
+        "type": "string",
+        "format": "text"
+      },
+      "data": {
+        "format": "jsonb"
+      },
+      "icon": {
+        "type": "string",
+        "format": "text"
+      },
+      "read": {
+        "type": "boolean",
+        "format": "boolean"
+      }
+    },
+    "user_favorite": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "target_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "target_type": {
+        "type": "string",
+        "format": "text"
+      },
+      "target_title": {
+        "type": "string",
+        "format": "text"
+      },
+      "target_image": {
+        "type": "string",
+        "format": "text"
+      },
+      "target_data": {
+        "format": "jsonb"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "MariaConversation": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "messages": {
+        "format": "jsonb"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "PointsFidelite": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "points": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "points_total": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "total_earned": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "total_spent": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "points_depenses": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "level": {
+        "type": "string",
+        "format": "text"
+      },
+      "niveau": {
+        "type": "string",
+        "format": "text"
+      },
+      "history": {
+        "format": "jsonb"
+      },
+      "historique": {
+        "format": "jsonb"
+      },
+      "code_parrainage": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "Avis": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "reservation_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "type": {
+        "type": "string",
+        "format": "text"
+      },
+      "auteur_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "auteur_nom": {
+        "type": "string",
+        "format": "text"
+      },
+      "cible_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "cible_nom": {
+        "type": "string",
+        "format": "text"
+      },
+      "note": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "commentaire": {
+        "type": "string",
+        "format": "text"
+      },
+      "service_nom": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "profiles": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "email": {
+        "type": "string",
+        "format": "text"
+      },
+      "role": {
+        "type": "string",
+        "format": "text"
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "username": {
+        "type": "string",
+        "format": "text"
+      },
+      "bio": {
+        "type": "string",
+        "format": "text"
+      },
+      "avatar_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "cover_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "phone": {
+        "type": "string",
+        "format": "text"
+      },
+      "gender": {
+        "type": "string",
+        "format": "text"
+      },
+      "beauty_interests": {
+        "format": "jsonb"
+      },
+      "latitude": {
+        "type": "number",
+        "format": "double precision"
+      },
+      "longitude": {
+        "type": "number",
+        "format": "double precision"
+      },
+      "camera_enabled": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "mic_enabled": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "instagram": {
+        "type": "string",
+        "format": "text"
+      },
+      "facebook": {
+        "type": "string",
+        "format": "text"
+      },
+      "website": {
+        "type": "string",
+        "format": "text"
+      },
+      "abonnement": {
+        "type": "string",
+        "format": "text"
+      },
+      "abonnement_expires_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "stripe_customer_id": {
+        "type": "string",
+        "format": "text"
+      }
+    },
+    "CallSignal": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "call_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "caller_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "caller_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "callee_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "signal_type": {
+        "type": "string",
+        "format": "text"
+      },
+      "type": {
+        "type": "string",
+        "format": "text"
+      },
+      "signal_data": {
+        "type": "string",
+        "format": "text"
+      },
+      "payload": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "reel_comment": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "reel_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "content": {
+        "type": "string",
+        "format": "text"
+      },
+      "likes": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "parent_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "DemandefFranchise": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "full_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "email": {
+        "type": "string",
+        "format": "text"
+      },
+      "phone": {
+        "type": "string",
+        "format": "text"
+      },
+      "city": {
+        "type": "string",
+        "format": "text"
+      },
+      "budget": {
+        "type": "string",
+        "format": "text"
+      },
+      "experience": {
+        "type": "string",
+        "format": "text"
+      },
+      "message": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "social_connection": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "platform": {
+        "type": "string",
+        "format": "text"
+      },
+      "credentials": {
+        "format": "jsonb"
+      },
+      "account_info": {
+        "format": "jsonb"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "RoutineBeaute": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "name": {
+        "type": "string",
+        "format": "text"
+      },
+      "emoji": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "steps": {
+        "format": "jsonb"
+      },
+      "tasks": {
+        "format": "jsonb"
+      },
+      "frequency": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "reminders": {
+        "format": "jsonb"
+      },
+      "reminder_active": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "category": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "AppConfig": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "key": {
+        "type": "string",
+        "format": "text"
+      },
+      "value": {
+        "format": "jsonb"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "CatalogueOption": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "name": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "duration_min": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "service_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "category": {
+        "type": "string",
+        "format": "text"
+      },
+      "usage_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "MembreEquipe": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "membre_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "membre_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "membre_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "name": {
+        "type": "string",
+        "format": "text"
+      },
+      "role": {
+        "type": "string",
+        "format": "text"
+      },
+      "specialites": {
+        "format": "jsonb"
+      },
+      "specialties": {
+        "format": "jsonb"
+      },
+      "experience": {
+        "type": "string",
+        "format": "text"
+      },
+      "days": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "horaires": {
+        "format": "jsonb"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "user_like": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "target_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "target_type": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "social_interaction": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "platform": {
+        "type": "string",
+        "format": "text"
+      },
+      "external_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "author_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "author_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "content": {
+        "type": "string",
+        "format": "text"
+      },
+      "reply": {
+        "type": "string",
+        "format": "text"
+      },
+      "type": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "Client": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "name": {
+        "type": "string",
+        "format": "text"
+      },
+      "email": {
+        "type": "string",
+        "format": "text"
+      },
+      "phone": {
+        "type": "string",
+        "format": "text"
+      },
+      "notes": {
+        "type": "string",
+        "format": "text"
+      },
+      "tags": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "source": {
+        "type": "string",
+        "format": "text"
+      },
+      "total_spent": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "total_rdv": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "last_rdv_date": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "DemandeProV2": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "username": {
+        "type": "string",
+        "format": "text"
+      },
+      "nom": {
+        "type": "string",
+        "format": "text"
+      },
+      "prenom": {
+        "type": "string",
+        "format": "text"
+      },
+      "phone": {
+        "type": "string",
+        "format": "text"
+      },
+      "address": {
+        "type": "string",
+        "format": "text"
+      },
+      "city": {
+        "type": "string",
+        "format": "text"
+      },
+      "specialite": {
+        "type": "string",
+        "format": "text"
+      },
+      "experience": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "cv_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "portfolio_urls": {
+        "format": "jsonb"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "admin_notes": {
+        "type": "string",
+        "format": "text"
+      },
+      "statut": {
+        "type": "string",
+        "format": "text"
+      },
+      "siret": {
+        "type": "string",
+        "format": "text"
+      },
+      "salon_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "bio": {
+        "type": "string",
+        "format": "text"
+      },
+      "type_activite": {
+        "type": "string",
+        "format": "text"
+      },
+      "years_experience": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "services": {
+        "format": "jsonb"
+      },
+      "categories": {
+        "format": "jsonb"
+      },
+      "specialites_cheveux": {
+        "format": "jsonb"
+      },
+      "salon_photo": {
+        "type": "string",
+        "format": "text"
+      },
+      "portfolio": {
+        "format": "jsonb"
+      },
+      "email_pro": {
+        "type": "string",
+        "format": "text"
+      },
+      "doc_identite_recto": {
+        "type": "string",
+        "format": "text"
+      },
+      "doc_identite_verso": {
+        "type": "string",
+        "format": "text"
+      },
+      "doc_siret": {
+        "type": "string",
+        "format": "text"
+      },
+      "doc_assurance": {
+        "type": "string",
+        "format": "text"
+      },
+      "days": {
+        "format": "jsonb"
+      },
+      "time_slots": {
+        "format": "jsonb"
+      },
+      "commodites": {
+        "format": "jsonb"
+      },
+      "seats_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "se_deplace": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "travail_nuit": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "visite_video_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "diplomes": {
+        "format": "jsonb"
+      },
+      "has_diplome": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "ImmobilierListing": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "images": {
+        "format": "jsonb"
+      },
+      "address": {
+        "type": "string",
+        "format": "text"
+      },
+      "city": {
+        "type": "string",
+        "format": "text"
+      },
+      "type": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "bedrooms": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "bathrooms": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "area": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "features": {
+        "format": "jsonb"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "price_per_m2": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "unit": {
+        "type": "string",
+        "format": "text"
+      },
+      "floor": {
+        "type": "string",
+        "format": "text"
+      },
+      "location": {
+        "type": "string",
+        "format": "text"
+      },
+      "postal_code": {
+        "type": "string",
+        "format": "text"
+      },
+      "equip": {
+        "type": "string",
+        "format": "text"
+      },
+      "extra": {
+        "type": "string",
+        "format": "text"
+      },
+      "badge": {
+        "type": "string",
+        "format": "text"
+      },
+      "video_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "surface": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "rooms": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "salon_type": {
+        "type": "string",
+        "format": "text"
+      },
+      "price_fonds_commerce": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "tax_mode": {
+        "type": "string",
+        "format": "text"
+      }
+    },
+    "ServiceBundle": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "name": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "service_ids": {
+        "format": "jsonb"
+      },
+      "bundle_price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "discount_percent": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "image_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "is_active": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "is_group": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "min_persons": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "max_persons": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "bundle_price_per_person": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "category": {
+        "type": "string",
+        "format": "text"
+      },
+      "bonus": {
+        "type": "string",
+        "format": "text"
+      }
+    },
+    "call_signals": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "call_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "caller_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "callee_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "signal_type": {
+        "type": "string",
+        "format": "text"
+      },
+      "payload": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "Repub": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "reel_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "CommentaireStyle": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "style_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "text": {
+        "type": "string",
+        "format": "text"
+      },
+      "likes": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "Produit": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "name": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "stock": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "category": {
+        "type": "string",
+        "format": "text"
+      },
+      "images": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "brand": {
+        "type": "string",
+        "format": "text"
+      },
+      "ingredients": {
+        "type": "string",
+        "format": "text"
+      },
+      "usage_instructions": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "old_price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "external_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "min_qty": {
+        "type": "integer",
+        "format": "integer"
+      }
+    },
+    "MessageChat": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "sender_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "receiver_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "text": {
+        "type": "string",
+        "format": "text"
+      },
+      "attachment_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "read": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "conversation_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "receiver_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "receiver_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "is_read": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "sender_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "content": {
+        "type": "string",
+        "format": "text"
+      },
+      "file_url": {
+        "type": "string",
+        "format": "text"
+      }
+    },
+    "Annonce": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "description": {
+        "type": "string",
+        "format": "text"
+      },
+      "images": {
+        "format": "jsonb"
+      },
+      "type": {
+        "type": "string",
+        "format": "text"
+      },
+      "target_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "pro_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "sponsor_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "budget": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "start_date": {
+        "type": "string",
+        "format": "text"
+      },
+      "end_date": {
+        "type": "string",
+        "format": "text"
+      },
+      "impressions": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "clicks": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "image_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "sponsor_logo": {
+        "type": "string",
+        "format": "text"
+      },
+      "cta_label": {
+        "type": "string",
+        "format": "text"
+      },
+      "cta_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "pages": {
+        "format": "jsonb"
+      },
+      "video_url": {
+        "type": "string",
+        "format": "text"
+      }
+    },
+    "PointsFidelitePro": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "points_total": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "points_depenses": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "niveau": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "code_parrainage": {
+        "type": "string",
+        "format": "text"
+      },
+      "historique": {
+        "format": "jsonb"
+      }
+    },
+    "ProfilPro": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "salon_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "phone": {
+        "type": "string",
+        "format": "text"
+      },
+      "address": {
+        "type": "string",
+        "format": "text"
+      },
+      "city": {
+        "type": "string",
+        "format": "text"
+      },
+      "zip_code": {
+        "type": "string",
+        "format": "text"
+      },
+      "bio": {
+        "type": "string",
+        "format": "text"
+      },
+      "siret": {
+        "type": "string",
+        "format": "text"
+      },
+      "verified": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "avatar_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "cover_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "specialites": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "galerie_urls": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "presentation_video_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "website": {
+        "type": "string",
+        "format": "text"
+      },
+      "instagram": {
+        "type": "string",
+        "format": "text"
+      },
+      "facebook": {
+        "type": "string",
+        "format": "text"
+      },
+      "services_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "followers": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "categorie": {
+        "type": "string",
+        "format": "text"
+      },
+      "tags": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "travail_nuit": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "horaires": {
+        "format": "jsonb"
+      },
+      "jours_repos": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "conges": {
+        "format": "jsonb"
+      },
+      "ouverture": {
+        "format": "jsonb"
+      },
+      "team_emails": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "latitude": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "longitude": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "abonnement": {
+        "type": "string",
+        "format": "text"
+      },
+      "abonnement_expires_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "stripe_customer_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "rating": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "reviews_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "commodites": {
+        "type": "array",
+        "format": "text[]",
+        "items": {
+          "type": "string"
+        }
+      },
+      "seats_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "se_deplace": {
+        "type": "boolean",
+        "format": "boolean"
+      },
+      "nom": {
+        "type": "string",
+        "format": "text"
+      },
+      "prenom": {
+        "type": "string",
+        "format": "text"
+      },
+      "type_activite": {
+        "type": "string",
+        "format": "text"
+      },
+      "postal_code": {
+        "type": "string",
+        "format": "text"
+      }
+    },
+    "Panier": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "items": {
+        "format": "jsonb"
+      },
+      "total": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "LiveMessage": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "session_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "sender_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "sender_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "sender_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "content": {
+        "type": "string",
+        "format": "text"
+      },
+      "type": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "VisiteVirtuelle": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "pro_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "title": {
+        "type": "string",
+        "format": "text"
+      },
+      "scenes": {
+        "format": "jsonb"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "CallLog": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "caller_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "callee_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "started_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "ended_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "duration": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "SoldeBeautyPay": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "balance": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "solde": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "currency": {
+        "type": "string",
+        "format": "text"
+      },
+      "transactions": {
+        "format": "jsonb"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "UserSubscription": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "user_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "user_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "plan_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "plan_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "plan_price": {
+        "type": "number",
+        "format": "numeric"
+      },
+      "plan_type": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "payment_method": {
+        "type": "string",
+        "format": "text"
+      },
+      "payment_status": {
+        "type": "string",
+        "format": "text"
+      },
+      "billing_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "billing_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "billing_phone": {
+        "type": "string",
+        "format": "text"
+      },
+      "billing_address": {
+        "type": "string",
+        "format": "text"
+      },
+      "billing_city": {
+        "type": "string",
+        "format": "text"
+      },
+      "billing_postal_code": {
+        "type": "string",
+        "format": "text"
+      },
+      "starts_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "expires_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "cancelled_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "stripe_subscription_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "stripe_customer_id": {
+        "type": "string",
+        "format": "text"
+      },
+      "notes": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "user_follow": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "follower_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "follower_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "follower_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "followed_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      }
+    },
+    "Publication": {
+      "id": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "author_email": {
+        "type": "string",
+        "format": "text"
+      },
+      "author_name": {
+        "type": "string",
+        "format": "text"
+      },
+      "author_avatar": {
+        "type": "string",
+        "format": "text"
+      },
+      "content": {
+        "type": "string",
+        "format": "text"
+      },
+      "images": {
+        "format": "jsonb"
+      },
+      "video_url": {
+        "type": "string",
+        "format": "text"
+      },
+      "type": {
+        "type": "string",
+        "format": "text"
+      },
+      "status": {
+        "type": "string",
+        "format": "text"
+      },
+      "likes": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "comments_count": {
+        "type": "integer",
+        "format": "integer"
+      },
+      "tags": {
+        "format": "jsonb"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "updated_at": {
+        "type": "string",
+        "format": "timestamp with time zone"
+      },
+      "created_by_id": {
+        "type": "string",
+        "format": "uuid"
+      }
+    }
+  },
+  "storageAccessible": true,
+  "buckets": [
+    {
+      "id": "uploads",
+      "public": true
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { ArrowLeft, ChevronLeft, ChevronRight, Sun, CloudSun, Moon, Users } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths, subMonths, isSameDay, isToday, isBefore, startOfDay } from "date-fns";
@@ -365,7 +366,7 @@ export default function StepCalendar({ selectedDate, selectedTime, selectedSeat,
   };
 
   const expertAvatar = expert?.avatar
-    ? <img src={expert.avatar} alt={expert.name} className="w-full h-full object-cover rounded-full" />
+    ? <BeautyImage src={expert.avatar} alt={expert.name} className="w-full h-full object-cover rounded-full" />
     : (
       <div className="w-full h-full rounded-full flex items-center justify-center" style={{ background: "#E8732A" }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

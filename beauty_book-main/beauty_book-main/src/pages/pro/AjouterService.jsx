@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, X, Sparkles, Search, Zap, Save, Plus, Trash2, ChevronDown, Camera, GripVertical, ShoppingBag, Check } from "lucide-react";
@@ -276,7 +277,7 @@ function MediaSliderPreview({ media, onRemove }) {
           style={{ transform: `translateX(${(i - current) * 100}%)` }}>
           {isVideo(url)
             ? <video src={url} muted loop playsInline autoPlay={i === current} className="w-full h-full object-cover" />
-            : <img src={url} alt="" className="w-full h-full object-cover" />
+            : <BeautyImage src={url} alt="" className="w-full h-full object-cover" />
           }
           {isVideo(url) && (
             <div className="absolute top-3 left-3 bg-black/60 rounded-full px-2.5 py-1">
@@ -372,7 +373,7 @@ function Step2({ data, setData }) {
                           ? <div className="w-full h-full bg-gray-800 flex items-center justify-center">
                               <Camera className="w-5 h-5 text-gray-400" />
                             </div>
-                          : <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
+                          : <BeautyImage src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
                         }
                         {/* Drag handle */}
                         <div {...provided.dragHandleProps} className="absolute bottom-0 left-0 right-0 bg-black/50 flex items-center justify-center py-0.5 cursor-grab active:cursor-grabbing">
@@ -625,7 +626,7 @@ function Step3({ data, setData }) {
               <div key={prod.id || i} className="shrink-0 w-36 bg-gray-50 border border-gray-100 rounded-2xl overflow-hidden">
                 <div className="h-24 bg-gray-100">
                   {prod.image_url
-                    ? <img src={prod.image_url} alt={prod.name} className="w-full h-full object-cover" />
+                    ? <BeautyImage src={prod.image_url} alt={prod.name} className="w-full h-full object-cover" />
                     : <div className="w-full h-full flex items-center justify-center text-[28px]">🧴</div>
                   }
                 </div>

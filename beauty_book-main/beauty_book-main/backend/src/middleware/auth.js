@@ -1,67 +1,41 @@
-import { createClient } from '@supabase/supabase-js';
-import pg from 'pg';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, '../../.env') });
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-const pgClient = new pg.Client({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
-pgClient.connect().catch(() => {});
-
-export const requireAuth = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
-  }
-
-  const token = authHeader.split(' ')[1];
-
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
-    }
-
-    req.user = user;
+import { getSupabaseAdmin, userSupabase } from '../config/supabase.js';
+import { assert, asyncRoute } from '../lib/errors.js';
+export function authMiddleware(getAdmin = getSupabaseAdmin) {
+  return asyncRoute(async (req, res, next) => {
+    const match = /^Bearer ([^\s]+)$/.exec(req.headers.authorization || '');
+    assert(match, 401, 'AUTH_REQUIRED', 'Connectez-vous pour continuer.');
+    const { data, error } = await getAdmin().auth.getUser(match[1]);
+    assert(!error && data?.user && !data.user.deleted_at, 401, 'SESSION_INVALID', 'Votre session a expiré. Reconnectez-vous.');
+    req.user = data.user;
+    req.accessToken = match[1];
     next();
-  } catch (error) {
-    return res.status(500).json({ error: 'Internal server error during authentication' });
-  }
-};
-
-export const requireRole = (role) => {
-  return async (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized: User not authenticated' });
+  });
+}
+export const requireAuth = authMiddleware();
+export function adminMiddleware(permission, getAdmin = getSupabaseAdmin, env = process.env) {
+  return asyncRoute(async (req, res, next) => {
+    assert(req.user, 401, 'AUTH_REQUIRED', 'Connectez-vous pour continuer.');
+    // Never trust user_metadata or profiles.role for administrative privileges.
+    const { data: membership, error } = await getAdmin().from('bb_admin_memberships')
+      .select('role,permissions,active').eq('user_id', req.user.id).maybeSingle();
+    assert(!error, 503, 'ADMIN_CONFIGURATION_REQUIRED', 'L’administration sécurisée doit être configurée.');
+    assert(membership?.active === true, 403, 'ADMIN_FORBIDDEN', 'Accès administrateur refusé.');
+    const permissions = Array.isArray(membership.permissions) ? membership.permissions : [];
+    assert(!permission || permissions.includes(permission) || permissions.includes('*'), 403, 'PERMISSION_DENIED', 'Permission insuffisante.');
+    if (env.NODE_ENV === 'production' || env.ADMIN_REQUIRE_MFA === 'true') {
+      let claims;
+      try { claims = JSON.parse(Buffer.from(req.accessToken.split('.')[1], 'base64url').toString()); } catch { claims = {}; }
+      assert(claims.aal === 'aal2', 403, 'MFA_REQUIRED', 'Validez la double authentification administrateur.');
     }
-
-    try {
-      const { rows } = await pgClient.query(
-        'SELECT role FROM profiles WHERE id = $1',
-        [req.user.id]
-      );
-
-      const profile = rows[0];
-      if (!profile || profile.role !== role) {
-        return res.status(403).json({ error: 'Forbidden: Insufficient privileges' });
-      }
-
-      next();
-    } catch (error) {
-      return res.status(500).json({ error: 'Internal server error checking role' });
-    }
-  };
-};
+    req.admin = { role: membership.role, permissions };
+    next();
+  });
+}
+export const requirePermission = permission => adminMiddleware(permission);
+export const requireRole = role => role === 'admin' ? requirePermission() : asyncRoute(async (req, res, next) => {
+  assert(req.user, 401, 'AUTH_REQUIRED', 'Connectez-vous pour continuer.');
+  const { data, error } = await getSupabaseAdmin().from('profiles').select('role').eq('id', req.user.id).maybeSingle();
+  assert(!error && data?.role === role, 403, 'ROLE_REQUIRED', 'Ce profil ne dispose pas de cet accès.');
+  next();
+});
+export const withUserDatabase = (req, res, next) => { req.db = userSupabase(req.accessToken); next(); };

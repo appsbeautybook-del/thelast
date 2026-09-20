@@ -1,3 +1,5 @@
+import BeautyImage from '@/components/ui/BeautyImage';
+import apiClient from '@/lib/apiClient';
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, Send, Search, MessageSquare, Trash2, Phone, PhoneIncoming, PhoneMissed, PhoneOutgoing, Scissors, Clock, ChevronRight, PhoneCall, Sparkles, Zap, Image, Smile, Users } from "lucide-react";
@@ -46,50 +48,10 @@ RÈGLES:
     { role: 'user', content: `Message de ${clientName}: "${clientMessage}"` },
   ];
 
-  const OR_KEY_B64 = 'c2stb3ItdjEtOThjODllNjY1MzI5ZTdkYjg5YmQ3MmVmOGRiNzVjZTYyYjk1YWY4ZDRjMDNjOTI2YzZkZDIxOWE3NTcxMDRmZQ==';
-  const OR_KEY = atob(OR_KEY_B64);
-  const FREE_MODELS = [
-    'openrouter/free',
-    'google/gemma-4-31b-it:free',
-    'nvidia/nemotron-3-ultra-550b-a55b:free',
-    'openai/gpt-oss-20b:free',
-  ];
-
-  // Try Vercel serverless first
-  try {
-    const apiRes = await fetch('/api/ai/maria', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, temperature: 0.7, max_tokens: 256 }),
-    });
-    if (apiRes.ok) {
-      const data = await apiRes.json();
-      if (data?.choices?.[0]?.message?.content) return data.choices[0].message.content;
-    }
-  } catch {}
-
-  // Fallback: OpenRouter direct
-  for (const freeModel of FREE_MODELS) {
-    try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OR_KEY}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'BeautyBook Auto-Reply',
-        },
-        body: JSON.stringify({ model: freeModel, messages, temperature: 0.7, max_tokens: 256 }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.choices?.[0]?.message?.content) return data.choices[0].message.content;
-      }
-    } catch {}
-  }
-
-  // Final fallback: generic polite reply
-  return `Merci ${clientName} ! Je prends note de votre message. Je vous réponds très rapidement 😊`;
+  const data = await apiClient.post('/api/ai/maria', { messages });
+  const reply = data?.choices?.[0]?.message?.content;
+  if (!reply) throw new Error('Maria n’a pas pu générer de réponse.');
+  return reply;
 }
 
 function MariaAIToggle({ active, onChange }) {
@@ -170,7 +132,7 @@ function ConversationList({ conversations, loading, onSelect, onDelete }) {
             >
               <div className="relative shrink-0 w-12 h-12">
                 {conv.other_avatar ? (
-                  <img src={conv.other_avatar} alt={conv.other_name} className="w-12 h-12 rounded-full object-cover" />
+                  <BeautyImage src={conv.other_avatar} alt={conv.other_name} className="w-12 h-12 rounded-full object-cover" />
                 ) : (
                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                     <span className="text-[16px] font-black text-primary">{initials}</span>
@@ -210,7 +172,7 @@ function ServiceCard({ service, navigate }) {
     >
       {service.image_url ? (
         <div className="h-32 w-full overflow-hidden">
-          <img src={service.image_url} alt={service.title} className="w-full h-full object-cover" />
+          <BeautyImage src={service.image_url} alt={service.title} className="w-full h-full object-cover" />
         </div>
       ) : (
         <div className="h-32 w-full bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
@@ -531,7 +493,7 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
           <ArrowLeft className="w-4 h-4 text-gray-700" />
         </button>
         {conversation.other_avatar ? (
-          <img src={conversation.other_avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
+          <BeautyImage src={conversation.other_avatar} alt="" className="w-10 h-10 rounded-full object-cover" />
         ) : (
           <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
             <span className="text-[14px] font-black text-primary">{(conversation.other_name || "?")[0]}</span>
@@ -593,7 +555,7 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
                     <div className="w-56"><ServiceCard service={serviceData} navigate={navigate} /></div>
                   ) : m.type === "image" && (m.attachment_url || m.file_url) ? (
                     <div>
-                      <img src={m.attachment_url || m.file_url} alt="image" className="rounded-2xl max-w-full shadow-sm max-h-64 object-cover" loading="lazy" />
+                      <BeautyImage src={m.attachment_url || m.file_url} alt="image" className="rounded-2xl max-w-full shadow-sm max-h-64 object-cover" loading="lazy" />
                       {m.content && m.content !== "📷 Image" && (
                         <div className={`mt-1 px-3 py-2 rounded-2xl text-[13px] font-medium ${isMe ? "bg-primary text-white rounded-br-sm" : "bg-white text-gray-900 rounded-bl-sm shadow-sm"}`}>{m.content}</div>
                       )}
@@ -756,7 +718,7 @@ function CallHistory({ user }) {
           <div key={call.id} className="flex items-center gap-3 px-4 py-4">
             <div className="relative shrink-0">
               {otherAvatar ? (
-                <img src={otherAvatar} alt={otherName} className="w-12 h-12 rounded-full object-cover" />
+                <BeautyImage src={otherAvatar} alt={otherName} className="w-12 h-12 rounded-full object-cover" />
               ) : (
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                   <span className="text-[16px] font-black text-primary">{(otherName || "?")[0].toUpperCase()}</span>
@@ -965,7 +927,7 @@ function FollowersList({ user, onSelectConversation }) {
           {displayList.map((person) => (
             <div key={person.email} className="flex items-center gap-3 px-4 py-4 hover:bg-gray-50 transition-all">
               {person.avatar ? (
-                <img src={person.avatar} alt={person.name} className="w-12 h-12 rounded-full object-cover" />
+                <BeautyImage src={person.avatar} alt={person.name} className="w-12 h-12 rounded-full object-cover" />
               ) : (
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                   <span className="text-[16px] font-black text-primary">

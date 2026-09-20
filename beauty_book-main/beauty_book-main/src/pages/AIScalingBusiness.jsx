@@ -1,3 +1,4 @@
+import apiClient from '@/lib/apiClient';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -95,67 +96,9 @@ TU AIDES À:
 STYLE: Réponds en français, de manière professionnelle mais accessible. Donne des conseils concrets, chiffrés et actionnables. Utilise des listes et des étapes claires quand c'est pertinent. Ne.JAMAIS d'emojis.`;
 
     try {
-      const OR_KEY_B64 = 'c2stb3ItdjEtOThjODllNjY1MzI5ZTdkYjg5YmQ3MmVmOGRiNzVjZTYyYjk1YWY4ZDRjMDNjOTI2YzZkZDIxOWE3NTcxMDRmZQ==';
-      const OR_KEY = atob(OR_KEY_B64);
-      const FREE_MODELS = [
-        'openrouter/free',
-        'google/gemma-4-31b-it:free',
-        'nvidia/nemotron-3-ultra-550b-a55b:free',
-        'openai/gpt-oss-20b:free',
-      ];
-      let apiData = null;
-
-      // Try Vercel serverless first
-      try {
-        const apiRes = await fetch('/api/ai/maria', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
-              { role: 'user', content },
-            ],
-            temperature: 0.7,
-            max_tokens: 512,
-          }),
-        });
-        if (apiRes.ok) {
-          const vData = await apiRes.json();
-          if (vData?.choices?.[0]?.message?.content) apiData = vData;
-        }
-      } catch {}
-
-      // Fallback: OpenRouter direct with model fallback
-      if (!apiData) {
-        for (const freeModel of FREE_MODELS) {
-          try {
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OR_KEY}`,
-                'HTTP-Referer': window.location.origin,
-                'X-Title': 'BeautyBook AI Scaling Business',
-              },
-              body: JSON.stringify({
-                model: freeModel,
-                messages: [
-                  { role: 'system', content: systemPrompt },
-                  ...messages.slice(-6).map(m => ({ role: m.role, content: m.content })),
-                  { role: 'user', content },
-                ],
-                temperature: 0.7,
-                max_tokens: 512,
-              }),
-            });
-            if (res.ok) {
-              apiData = await res.json();
-              break;
-            }
-          } catch {}
-        }
-      }
+      const apiData = await apiClient.post('/api/ai/maria', {
+        messages: [...messages.slice(-6).map(m => ({ role: m.role, content: m.content })), { role: 'user', content }],
+      });
 
       if (apiData?.choices?.[0]?.message?.content) {
         setMessages(prev => [...prev, { role: "assistant", content: apiData.choices[0].message.content }]);

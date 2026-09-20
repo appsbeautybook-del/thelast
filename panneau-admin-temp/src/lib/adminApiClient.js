@@ -59,7 +59,7 @@ export const adminApi = {
     return entities.Style.update(id, { status: newStatus });
   },
   deleteStyle: (id) => entities.Style.delete(id),
-  createStyle: (data) => entities.Style.create({ ...data, likes: 0, views: 0, featured: false }),
+  createStyle: (data) => entities.Style.create({ ...data, featured: false }),
 
   // Réels
   listReels: () => entities.Reel.list("-created_at", 500),
@@ -93,11 +93,11 @@ export const adminApi = {
 
   // Réservations
   listReservations: () => entities.Reservation.list("-created_at", 500),
-  updateReservationStatus: (id, status) => entities.Reservation.update(id, { status }),
+  updateReservationStatus: async (id, status) => (await apiClient.put('/admin/reservations/'+id,{status})).reservation,
 
   // Annonces
   listAnnonces: () => entities.Annonce.list("-created_at", 200),
-  createAnnonce: (data) => entities.Annonce.create({ ...data, clicks: 0, impressions: 0 }),
+  createAnnonce: (data) => entities.Annonce.create(data),
   toggleAnnonceStatus: async (id) => {
     const annonce = await entities.Annonce.get(id);
     const newStatus = annonce.status === "actif" ? "pause" : "actif";

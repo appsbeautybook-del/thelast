@@ -1,81 +1,20 @@
-import { useState, useEffect } from "react";
-import { adminApi } from "@/lib/adminApiClient";
-import { Search } from "lucide-react";
-
-const STATUS_COLORS = {
-  en_attente: "bg-yellow-100 text-yellow-600",
-  confirme: "bg-green-100 text-green-600",
-  en_preparation: "bg-blue-100 text-blue-600",
-  expedie: "bg-purple-100 text-purple-600",
-  livre: "bg-green-100 text-green-700",
-  annule: "bg-red-100 text-red-500",
-};
-
-const STATUS_LABELS = {
-  en_attente: "En attente", confirme: "Confirmé", en_preparation: "En préparation",
-  expedie: "Expédié", livre: "Livré", annule: "Annulé"
-};
-
-export default function AdminCommandes() {
-  const [commandes, setCommandes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-
-  useEffect(() => {
-    adminApi.listCommandes().then(setCommandes).catch(() => {}).finally(() => setLoading(false));
-  }, []);
-
-  const filtered = commandes.filter(c =>
-    !search || c.client_email?.toLowerCase().includes(search.toLowerCase()) || c.client_name?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const updateStatus = async (id, status) => {
-    try {
-      await adminApi.updateCommandeStatus(id, status);
-      setCommandes(prev => prev.map(c => c.id === id ? { ...c, status } : c));
-    } catch {}
-  };
-
-  if (loading) return <div className="flex justify-center py-16"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
-        <Search className="w-4 h-4 text-gray-400 shrink-0" />
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher une commande..." className="flex-1 bg-transparent text-gray-700 text-[13px] outline-none placeholder:text-gray-400" />
-      </div>
-
-      <p className="text-gray-500 text-[12px]">{filtered.length} commande(s)</p>
-      <div className="space-y-3">
-        {filtered.map(c => (
-          <div key={c.id} className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <p className="text-gray-900 text-[13px] font-black">{c.client_name || c.client_email}</p>
-                <p className="text-gray-500 text-[11px]">{c.client_email}</p>
-                <p className="text-primary text-[14px] font-black mt-1">{(c.total || 0).toFixed(2)}€</p>
-              </div>
-              <span className={`text-[10px] font-black px-2.5 py-1 rounded-full ${STATUS_COLORS[c.status] || "bg-gray-100 text-gray-500"}`}>
-                {STATUS_LABELS[c.status] || c.status}
-              </span>
-            </div>
-            <div className="space-y-1 mb-3">
-              {(c.items || []).slice(0, 3).map((item, i) => (
-                <p key={i} className="text-gray-400 text-[11px]">• {item.name} x{item.quantity} — {item.price}€</p>
-              ))}
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {["confirme", "en_preparation", "expedie", "livre", "annule"].map(s => (
-                <button key={s} onClick={() => updateStatus(c.id, s)}
-                  className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black transition-all active:scale-95 ${c.status === s ? "bg-primary text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
-                  {STATUS_LABELS[s]}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-        {filtered.length === 0 && <p className="text-gray-400 text-center py-10 text-[13px]">Aucune commande.</p>}
-      </div>
-    </div>
-  );
+import {useEffect,useState,useCallback} from 'react';
+import {adminApi} from '@/lib/adminApiClient';
+import {apiClient} from '@/lib/apiClient';
+import {Search,RefreshCw} from 'lucide-react';
+const labels={en_attente:'Paiement en attente',confirme:'Confirmée',en_preparation:'En préparation',expedie:'Expédiée',livre:'Livrée',annule:'Annulée',rembourse:'Remboursée'};
+export default function AdminCommandes(){
+ const [orders,setOrders]=useState([]),[loading,setLoading]=useState(true),[search,setSearch]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[selected,setSelected]=useState(null),[message,setMessage]=useState('');
+ const load=useCallback(async()=>{try{setOrders(await adminApi.listCommandes());setError('');}catch(e){setError(e.message);}finally{setLoading(false);}},[]);
+ useEffect(()=>{load();const timer=setInterval(load,30000);return()=>clearInterval(timer);},[load]);
+ async function refund(){
+  setBusy(true);setMessage('');setError('');
+  try{const r=await apiClient.post('/admin/commandes/'+selected.id+'/refund',{});setMessage(r.status==='refunded'?'Le remboursement est confirmé.':'La demande de remboursement est enregistrée. Le prestataire de paiement doit encore la confirmer.');setSelected(null);await load();}catch(e){setError(e.message);}finally{setBusy(false);}
+ }
+ const filtered=orders.filter(c=>[c.id,c.client_email,c.client_name].some(v=>String(v||'').toLowerCase().includes(search.toLowerCase())));
+ return <section className="space-y-4"><div className="flex gap-3 items-center"><Search size={20}/><input aria-label="Rechercher une commande" placeholder="Client, email ou numéro de commande" value={search} onChange={e=>setSearch(e.target.value)} className="border rounded-xl p-3 flex-1"/><button className="p-3" onClick={load} aria-label="Actualiser les commandes"><RefreshCw size={20}/></button></div>
+  {error&&<p role="alert" className="p-4 bg-red-50 text-red-800 rounded-xl">{error}</p>}{message&&<p role="status" className="p-4 bg-green-50 text-green-800 rounded-xl">{message}</p>}
+  {selected&&<div className="p-5 border border-red-200 bg-white rounded-2xl"><h2 className="font-bold">Rembourser la commande #{selected.id.slice(0,8)}</h2><p className="my-3">Le montant intégral sera demandé au prestataire. L’opération est tracée dans le journal d’administration.</p><button disabled={busy} className="p-3 bg-red-700 text-white rounded-xl mr-3" onClick={refund}>{busy?'En cours…':'Confirmer le remboursement'}</button><button disabled={busy} onClick={()=>setSelected(null)} className="p-3 border rounded-xl">Fermer</button></div>}
+  {loading?<p role="status">Chargement…</p>:filtered.length===0?<p>Aucune commande à afficher.</p>:filtered.map(c=><article className="p-5 bg-white rounded-2xl border space-y-3" key={c.id}><div className="flex justify-between gap-4"><div><h2 className="font-bold">{c.client_name||c.client_email}</h2><p className="text-sm text-gray-500">{c.client_email} · #{c.id.slice(0,8)}</p></div><strong>{Number(c.total||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'})}</strong></div><p>{labels[c.status]||c.status} · Paiement : {c.payment_status}</p>{(c.items||[]).map((i,n)=><p key={n} className="text-sm text-gray-600">{i.name} × {i.quantity}</p>)}{c.payment_status==='paye'&&['confirme','en_preparation'].includes(c.status)&&<button className="border border-red-200 text-red-700 p-3 rounded-xl" onClick={()=>setSelected(c)}>Annuler et rembourser</button>}<p className="text-xs text-gray-500">Le statut d’expédition suit les actions des vendeurs et le statut de paiement suit les événements du prestataire.</p></article>)}
+ </section>;
 }

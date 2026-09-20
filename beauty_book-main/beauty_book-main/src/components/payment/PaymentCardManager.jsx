@@ -4,7 +4,8 @@ import { Elements, CardElement, useStripe, useElements } from "@stripe/react-str
 import { CreditCard, Loader2, CheckCircle, Trash2, Star, Plus, X } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || "");
+const publicKey=import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+const stripePromise=publicKey?loadStripe(publicKey):null;
 
 const CARD_STYLE = {
   style: {
@@ -36,7 +37,7 @@ function CardForm({ onSuccess, onError }) {
 
     try {
       // 1. Get SetupIntent from backend
-      const { clientSecret } = await apiClient.callFunction("createSetupIntent");
+      const { data:{clientSecret} } = await apiClient.callFunction("createSetupIntent");
 
       // 2. Confirm card setup
       const { error: stripeError, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
@@ -49,7 +50,7 @@ function CardForm({ onSuccess, onError }) {
         return;
       }
 
-      // 3. Save card reference
+      if (setupIntent?.status !== "succeeded") throw new Error("La carte n’a pas encore été confirmée par Stripe.");
       setSuccess(true);
       setLoading(false);
       setTimeout(() => {
@@ -140,13 +141,17 @@ export default function PaymentCardManager({ onCardSelected, selectedCardId }) {
   const [loading, setLoading] = useState(true);
   const [showAddCard, setShowAddCard] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [error, setError] = useState("");
 
   const loadCards = async () => {
+    if (!stripePromise) { setLoading(false); return; }
+    setLoading(true); setError("");
     try {
-      const { cards: savedCards } = await apiClient.callFunction("getPaymentMethods");
-      setCards(savedCards || []);
+      const { data:{cards:savedCards} } = await apiClient.callFunction("getPaymentMethods");
+      if (!Array.isArray(savedCards)) throw new Error("Réponse de paiement invalide.");
+      setCards(savedCards);
     } catch (err) {
-      console.error("[PaymentCardManager] Load error:", err);
+      setError(err.message || "Impossible de charger vos cartes.");
     }
     setLoading(false);
   };
@@ -162,7 +167,7 @@ export default function PaymentCardManager({ onCardSelected, selectedCardId }) {
       setCards(prev => prev.filter(c => c.id !== id));
       if (selectedCardId === id) onCardSelected?.(null);
     } catch (err) {
-      console.error("[PaymentCardManager] Delete error:", err);
+      setError(err.message || "La carte n’a pas été supprimée.");
     }
     setDeleting(null);
   };
@@ -172,7 +177,7 @@ export default function PaymentCardManager({ onCardSelected, selectedCardId }) {
       await apiClient.callFunction("setDefaultPaymentMethod", { id });
       setCards(prev => prev.map(c => ({ ...c, is_default: c.id === id })));
     } catch (err) {
-      console.error("[PaymentCardManager] SetDefault error:", err);
+      setError(err.message || "La carte par défaut n’a pas été modifiée.");
     }
   };
 
@@ -180,6 +185,8 @@ export default function PaymentCardManager({ onCardSelected, selectedCardId }) {
     setShowAddCard(false);
     loadCards();
   };
+
+  if (!stripePromise) return <p role="status" className="rounded-xl bg-orange-50 p-4 text-sm text-gray-700">L’enregistrement des cartes est temporairement indisponible.</p>;
 
   if (loading) {
     return (
@@ -191,6 +198,7 @@ export default function PaymentCardManager({ onCardSelected, selectedCardId }) {
 
   return (
     <div className="space-y-3">
+      {error && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-700">{error}<button onClick={loadCards} className="ml-3 underline">Réessayer</button></div>}
       {/* Saved Cards */}
       {cards.length > 0 && (
         <div>
@@ -225,7 +233,7 @@ export default function PaymentCardManager({ onCardSelected, selectedCardId }) {
         </div>
       ) : (
         <button
-          onClick={() => setShowAddCard(true)}
+          disabled={Boolean(error)} onClick={() => setShowAddCard(true)}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-dashed border-gray-200 text-[12px] font-black text-gray-400 uppercase tracking-widest active:scale-95 transition-all hover:border-primary/30 hover:text-primary"
         >
           <Plus className="w-4 h-4" />
@@ -233,7 +241,7 @@ export default function PaymentCardManager({ onCardSelected, selectedCardId }) {
         </button>
       )}
 
-      {cards.length === 0 && !showAddCard && (
+      {cards.length === 0 && !showAddCard && !error && (
         <p className="text-[11px] text-gray-400 font-medium text-center py-2">
           Aucune carte enregistrée. Ajoutez une carte pour payer plus vite.
         </p>

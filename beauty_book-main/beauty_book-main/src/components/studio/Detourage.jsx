@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef } from "react";
 import { X, Scan, Wand2, Check, RefreshCw, Download } from "lucide-react";
 import { entities, uploadFile } from '@/api/entities';
@@ -87,7 +88,7 @@ export default function Detourage({ onClose, onDone }) {
 
         {image ? (
           <div className="relative z-10 w-full h-full flex items-center justify-center">
-            <img
+            <BeautyImage
               src={image.localUrl}
               alt=""
               className="max-w-full max-h-full object-contain"

@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -413,7 +414,7 @@ export default function ModifierProfilPro() {
             <div className="relative">
               <div onClick={() => avatarRef.current?.click()} className="w-24 h-24 rounded-full border-4 border-[#E8732A] overflow-hidden cursor-pointer shadow-lg shadow-orange-500/20 transition-transform active:scale-95">
                 {data.avatar_url
-                  ? <img src={data.avatar_url} className="w-full h-full object-cover" />
+                  ? <BeautyImage src={data.avatar_url} className="w-full h-full object-cover" />
                   : <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center"><Camera className="w-8 h-8 text-orange-300" /></div>
                 }
               </div>
@@ -428,7 +429,7 @@ export default function ModifierProfilPro() {
           </div>
           <div onClick={() => bannerRef.current?.click()} className="relative mt-3 h-28 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 cursor-pointer hover:border-[#E8732A]/40 transition-colors">
             {data.cover_url
-              ? <img src={data.cover_url} className="w-full h-full object-cover opacity-80" />
+              ? <BeautyImage src={data.cover_url} className="w-full h-full object-cover opacity-80" />
               : <div className="w-full h-full flex flex-col items-center justify-center gap-1">
                   <Image className="w-6 h-6 text-gray-300" />
                   <span className="text-[11px] text-gray-400 font-medium">MODIFIER LA BANNIERE</span>
@@ -456,7 +457,7 @@ export default function ModifierProfilPro() {
                 <div className="flex flex-wrap gap-2 mb-3">
                   {data.galerie_urls.map((url, i) => (
                     <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden group">
-                      <img src={url} alt={`Salon ${i + 1}`} className="w-full h-full object-cover" />
+                      <BeautyImage src={url} alt={`Salon ${i + 1}`} className="w-full h-full object-cover" />
                       <button onClick={() => removeGalerieImage(i)} className="absolute top-1 right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <Trash2 className="w-3 h-3 text-white" />
                       </button>
@@ -736,7 +737,7 @@ export default function ModifierProfilPro() {
                             {uploadingMenuImg[`resto_${i}`] ? (
                               <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             ) : item.image_url ? (
-                              <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                              <BeautyImage src={item.image_url} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <Camera className="w-4 h-4 text-gray-300" />
                             )}
@@ -805,7 +806,7 @@ export default function ModifierProfilPro() {
                             {uploadingMenuImg[`bar_${i}`] ? (
                               <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             ) : item.image_url ? (
-                              <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                              <BeautyImage src={item.image_url} alt="" className="w-full h-full object-cover" />
                             ) : (
                               <Camera className="w-4 h-4 text-gray-300" />
                             )}

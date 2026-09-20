@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useNavigate } from "react-router-dom";
 import { ExternalLink, ArrowRight, ShoppingBag, X } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -38,7 +39,7 @@ function ProductMini({ product, onClick }) {
     >
       <div className="h-24 overflow-hidden bg-gray-100">
         {product.image_url
-          ? <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+          ? <BeautyImage src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
           : <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-6 h-6 text-gray-300" /></div>
         }
       </div>
@@ -62,7 +63,7 @@ function ProductDetailModal({ product, onClose }) {
       >
         <div className="relative">
           {product.image_url && (
-            <img src={product.image_url} alt={product.name} className="w-full h-52 object-cover" />
+            <BeautyImage src={product.image_url} alt={product.name} className="w-full h-52 object-cover" />
           )}
           <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 bg-black/50 rounded-full flex items-center justify-center">
             <X className="w-4 h-4 text-white" />

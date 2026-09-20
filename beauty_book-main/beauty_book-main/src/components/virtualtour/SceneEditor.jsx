@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef, useCallback, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import { X, Upload, Loader2, Trash2, HelpCircle, GripVertical, Image, CheckCircle2 } from "lucide-react";
@@ -211,7 +212,7 @@ export default function SceneEditor({ visite, theme = "dark", onSave, onClose })
 
                         {/* Thumbnail */}
                         <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-800 shrink-0 relative">
-                          <img src={scene.image_url} alt={scene.title} className="w-full h-full object-cover" />
+                          <BeautyImage src={scene.image_url} alt={scene.title} className="w-full h-full object-cover" />
                           <div className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 flex items-center justify-center">
                             <span className="text-[7px] font-black text-white">360°</span>
                           </div>

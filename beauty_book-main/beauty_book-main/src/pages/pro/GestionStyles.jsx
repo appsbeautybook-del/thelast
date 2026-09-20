@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Camera, Video, X, Upload, Edit3 } from "lucide-react";
@@ -104,7 +105,7 @@ function StyleForm({ initial, onSave, onCancel }) {
           <div className="flex gap-3 flex-wrap">
             {form.image_url ? (
               <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-gray-100 shrink-0">
-                <img src={form.image_url} alt="" className="w-full h-full object-cover" />
+                <BeautyImage src={form.image_url} alt="" className="w-full h-full object-cover" />
                 <button onClick={() => setForm(f => ({ ...f, image_url: "", images: [] }))} className="absolute top-1 right-1 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
                   <X className="w-3 h-3 text-white" />
                 </button>
@@ -381,7 +382,7 @@ export default function GestionStyles() {
             <div key={style.id} className="bg-white rounded-3xl overflow-hidden shadow-sm">
               <div className="relative aspect-square bg-gray-100">
                 {style.image_url || (style.images && style.images[0]) ? (
-                  <img src={style.image_url || style.images[0]} alt={style.title} className="w-full h-full object-cover" />
+                  <BeautyImage src={style.image_url || style.images[0]} alt={style.title} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Camera className="w-8 h-8 text-gray-300" />

@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "BeautyBook Administration",
+  "short_name": "BB Admin",
+  "start_url": "/admin",
+  "display": "standalone",
+  "lang": "fr",
+  "background_color": "#030712",
+  "theme_color": "#030712",
+  "icons": [
+    {
+      "src": "/brand-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

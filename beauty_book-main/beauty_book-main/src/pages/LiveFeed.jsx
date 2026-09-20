@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Radio, Users, RefreshCw, Volume2, VolumeX } from "lucide-react";
@@ -79,7 +80,7 @@ function LiveCard({ live, onNavigate }) {
       {hasHls ? (
         <LiveHlsVideo src={live.hls_url} muted={muted} />
       ) : live.host_avatar ? (
-        <img src={live.host_avatar} alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-sm opacity-60" />
+        <BeautyImage src={live.host_avatar} alt="" className="absolute inset-0 w-full h-full object-cover scale-110 blur-sm opacity-60" />
       ) : (
         <div className="absolute inset-0"
           style={{ background: "radial-gradient(ellipse at 30% 40%, #E8732A 0%, transparent 60%), radial-gradient(ellipse at 70% 70%, #f59540 0%, transparent 50%), #141b2b" }} />
@@ -89,7 +90,7 @@ function LiveCard({ live, onNavigate }) {
       {!hasHls && (
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
           {live.host_avatar ? (
-            <img src={live.host_avatar} alt={live.host_name} className="w-28 h-28 rounded-full border-4 border-white/50 object-cover shadow-2xl" />
+            <BeautyImage src={live.host_avatar} alt={live.host_name} className="w-28 h-28 rounded-full border-4 border-white/50 object-cover shadow-2xl" />
           ) : (
             <div className="w-28 h-28 rounded-full border-4 border-white/30 bg-white/20 flex items-center justify-center shadow-2xl">
               <span className="text-white text-[44px] font-black">{(live.host_name || "P")[0]}</span>
@@ -135,7 +136,7 @@ function LiveCard({ live, onNavigate }) {
         style={{ bottom: "calc(80px + env(safe-area-inset-bottom, 16px))" }}>
         <div className="flex items-center gap-3 mb-3">
           {live.host_avatar ? (
-            <img src={live.host_avatar} alt={live.host_name} className="w-12 h-12 rounded-full border-2 border-white object-cover shrink-0" />
+            <BeautyImage src={live.host_avatar} alt={live.host_name} className="w-12 h-12 rounded-full border-2 border-white object-cover shrink-0" />
           ) : (
             <div className="w-12 h-12 rounded-full border-2 border-white bg-white/20 flex items-center justify-center shrink-0">
               <span className="text-white font-black text-[16px]">{(live.host_name || "P")[0]}</span>

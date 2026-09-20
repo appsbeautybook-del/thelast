@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -263,7 +264,7 @@ function CommentsSheet({ reel, onClose, onCommentCountChange }) {
         <div className="flex gap-3 py-2.5">
           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0 mt-0.5">
             {c.user_avatar ? (
-              <img src={c.user_avatar} alt="" className="w-full h-full object-cover" />
+              <BeautyImage src={c.user_avatar} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400 text-[12px] font-bold bg-gray-100">
                 {(c.user_name || "U")[0].toUpperCase()}
@@ -695,7 +696,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
           )}
         </>
       ) : (
-        <img src={thumb} alt={reel.title} className="absolute inset-0 w-full h-full object-cover" />
+        <BeautyImage src={thumb} alt={reel.title} className="absolute inset-0 w-full h-full object-cover" />
       )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/30 pointer-events-none" />
@@ -732,7 +733,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
         {/* Author */}
         <button onClick={() => onAuthorClick?.(reel)} className="flex flex-col items-center gap-1 active:scale-95">
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-lg">
-            <img src={reel.author_avatar || ""} alt={reel.author_name} className="w-full h-full object-cover" />
+            <BeautyImage src={reel.author_avatar || ""} alt={reel.author_name} className="w-full h-full object-cover" />
           </div>
         </button>
         {/* Like */}
@@ -814,7 +815,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
         <div className="flex items-center gap-2.5">
           <button onClick={() => onAuthorClick?.(reel)} className="shrink-0">
             <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white/80 shadow-lg">
-              <img src={reel.author_avatar || ""} alt={reel.author_name} className="w-full h-full object-cover" />
+              <BeautyImage src={reel.author_avatar || ""} alt={reel.author_name} className="w-full h-full object-cover" />
             </div>
           </button>
           <div className="flex-1 min-w-0">

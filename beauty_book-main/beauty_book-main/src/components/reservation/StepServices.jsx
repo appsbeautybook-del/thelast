@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { ArrowLeft, Check, ChevronRight, MessageCircle, Minus, Plus, Clock, Users, Zap } from "lucide-react";
 import { entities } from '@/api/entities';
@@ -102,7 +103,7 @@ export default function StepServices({ selected, onSelect, onNext, onBack, proEm
                   <div key={svc.id} className="bg-gray-50 rounded-2xl p-4 flex items-center gap-3">
                     {svc.image_url && (
                       <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
-                        <img src={svc.image_url} alt={svc.title} className="w-full h-full object-cover" />
+                        <BeautyImage src={svc.image_url} alt={svc.title} className="w-full h-full object-cover" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
@@ -201,7 +202,7 @@ export default function StepServices({ selected, onSelect, onNext, onBack, proEm
           <div className="bg-gray-900 rounded-3xl p-5 flex items-center gap-4">
             {svc.image_url && (
               <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0">
-                <img src={svc.image_url} alt={svc.title} className="w-full h-full object-cover" />
+                <BeautyImage src={svc.image_url} alt={svc.title} className="w-full h-full object-cover" />
               </div>
             )}
             <div className="flex-1 min-w-0">
@@ -274,7 +275,7 @@ export default function StepServices({ selected, onSelect, onNext, onBack, proEm
         <div className="flex items-center gap-2">
           {proProfile?.avatar_url && (
             <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-primary shrink-0">
-              <img src={proProfile.avatar_url} alt={proProfile.salon_name} className="w-full h-full object-cover" />
+              <BeautyImage src={proProfile.avatar_url} alt={proProfile.salon_name} className="w-full h-full object-cover" />
             </div>
           )}
           <span className="text-[13px] font-black text-gray-900 uppercase tracking-widest">
@@ -333,7 +334,7 @@ export default function StepServices({ selected, onSelect, onNext, onBack, proEm
               >
                 {svc.image_url && (
                   <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
-                    <img src={svc.image_url} alt={svc.title} className="w-full h-full object-cover" />
+                    <BeautyImage src={svc.image_url} alt={svc.title} className="w-full h-full object-cover" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">

@@ -1,5 +1,5 @@
 const FAL_BASE = 'https://queue.fal.run';
-const FAL_KEY = process.env.FAL_KEY || 'de3603a5-a149-478c-934a-fce750c5c695:f5a17f75c35612bb9064a41059e49027';
+const FAL_KEY = process.env.FAL_KEY || '';
 
 export async function submitFalModel(endpoint, payload) {
   if (!FAL_KEY) throw new Error('FAL_KEY non configuré');

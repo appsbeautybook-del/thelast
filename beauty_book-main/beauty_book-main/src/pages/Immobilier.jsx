@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, SlidersHorizontal, Heart, Maximize, X, Map, RotateCcw, MapPin, Zap, Users, ArrowUpDown, Sofa, SearchX } from "lucide-react";
@@ -83,7 +84,7 @@ function ListingCard({ listing, onPress }) {
   return (
     <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 active:scale-[0.99] transition-all">
       <div className="relative h-52" onClick={() => onPress(listing)}>
-        <img
+        <BeautyImage
           src={listing.images?.[imgIdx] || ""}
           alt={listing.title}
           className="w-full h-full object-cover"

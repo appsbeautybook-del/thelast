@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState } from "react";
 import { X, Plus, Minus, Send } from "lucide-react";
 import { entities } from '@/api/entities';
@@ -49,7 +50,7 @@ export default function CommandeModal({ plat, proEmail, proName, onClose }) {
         {/* Plat */}
         <div className="flex items-center gap-3 mb-5">
           {plat.image_url ? (
-            <img src={plat.image_url} alt={plat.nom} className="w-16 h-16 rounded-2xl object-cover shrink-0" />
+            <BeautyImage src={plat.image_url} alt={plat.nom} className="w-16 h-16 rounded-2xl object-cover shrink-0" />
           ) : (
             <div className="w-16 h-16 rounded-2xl bg-orange-50 flex items-center justify-center shrink-0">
               <span className="text-[28px]">🍽️</span>

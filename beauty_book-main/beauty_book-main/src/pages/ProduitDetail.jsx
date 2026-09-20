@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { fetchShopifyProducts } from "@/api/shopifyClient";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -59,7 +60,7 @@ function ImageGallery({ images, focusIdx = 0 }) {
   return (
     <div className="relative bg-gray-50">
       <div className="relative aspect-[3/4] overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onClick={() => setZoomed(true)}>
-        <img src={images[activeIdx]?.url || images[activeIdx] || ""} alt="" className="w-full h-full object-cover transition-opacity duration-200" />
+        <BeautyImage src={images[activeIdx]?.url || images[activeIdx] || ""} alt="" className="w-full h-full object-cover transition-opacity duration-200" />
         <button className="absolute bottom-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow">
           <ZoomIn className="w-4 h-4 text-gray-600" />
         </button>
@@ -72,7 +73,7 @@ function ImageGallery({ images, focusIdx = 0 }) {
           {images.map((img, i) => (
             <button key={i} onClick={() => setActiveIdx(i)}
               className={`shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all ${i === activeIdx ? "border-primary" : "border-transparent"}`}>
-              <img src={img.url || img} alt="" className="w-full h-full object-cover" />
+              <BeautyImage src={img.url || img} alt="" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>
@@ -84,14 +85,14 @@ function ImageGallery({ images, focusIdx = 0 }) {
             <button className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center"><X className="w-5 h-5 text-white" /></button>
           </div>
           <div className="flex-1 flex items-center justify-center">
-            <img src={images[activeIdx]?.url || images[activeIdx]} alt="" className="w-full h-full object-contain" />
+            <BeautyImage src={images[activeIdx]?.url || images[activeIdx]} alt="" className="w-full h-full object-contain" />
           </div>
           {images.length > 1 && (
             <div className="flex gap-2 px-4 py-3 overflow-x-auto justify-center">
               {images.map((m, i) => (
                 <button key={i} onClick={(e) => { e.stopPropagation(); setActiveIdx(i); }}
                   className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${i === activeIdx ? "border-white scale-110" : "border-transparent opacity-50"}`}>
-                  <img src={m.url || m} alt="" className="w-full h-full object-cover" />
+                  <BeautyImage src={m.url || m} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -116,107 +117,6 @@ function ExpandableSection({ title, children, defaultOpen = false }) {
 }
 
 // ── Checkout Modal ────────────────────────────────────────────────────────────
-function CheckoutModal({ product, onClose }) {
-  const [step, setStep] = useState("form");
-  const [form, setForm] = useState({ name: "", email: "", address: "", city: "", zip: "", card: "", expiry: "", cvv: "" });
-  const [qty, setQty] = useState(1);
-  const [paying, setPaying] = useState(false);
-  const total = (product.price * qty).toFixed(2);
-
-  const handlePay = async () => {
-    if (!form.name || !form.email || !form.card) return;
-    setPaying(true);
-    setStep("processing");
-    await entities.Commande.create({
-      client_email: form.email, client_name: form.name,
-      items: [{ produit_id: product.id, name: product.name, price: product.price, quantity: qty, image_url: product.image_url }],
-      subtotal: product.price * qty, shipping: 0, total: product.price * qty,
-      shipping_address: `${form.address}, ${form.zip} ${form.city}`,
-      payment_method: "stripe", status: "en_attente",
-    }).catch(() => {});
-    setStep("success");
-    setPaying(false);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-end justify-center font-display">
-      <div className="bg-white rounded-t-3xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 flex items-center justify-between z-10">
-          <h2 className="text-[17px] font-black text-gray-900">Paiement sécurisé</h2>
-          <button onClick={onClose} className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center"><X className="w-5 h-5 text-gray-600" /></button>
-        </div>
-        {step === "success" ? (
-          <div className="flex flex-col items-center py-12 px-6 gap-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center"><Check className="w-8 h-8 text-green-600" /></div>
-            <h3 className="text-[20px] font-black text-gray-900 text-center">Commande confirmée !</h3>
-            <p className="text-[13px] text-gray-500 text-center">Vous recevrez un email de confirmation à <strong>{form.email}</strong>.</p>
-            <button onClick={onClose} className="w-full bg-primary text-white py-4 rounded-2xl font-black text-[14px] mt-2">Fermer</button>
-          </div>
-        ) : step === "processing" ? (
-          <div className="flex flex-col items-center py-16 gap-4">
-            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-[14px] font-black text-gray-700">Traitement du paiement...</p>
-          </div>
-        ) : (
-          <div className="px-5 py-4 space-y-5">
-            <div className="bg-orange-50 rounded-2xl p-4 flex items-center gap-3 border border-orange-100">
-              <img src={product.image_url} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
-              <div className="flex-1">
-                <p className="text-[13px] font-black text-gray-900 line-clamp-2">{product.name}</p>
-                <p className="text-[16px] font-black text-primary mt-0.5">{product.price}€ / unité</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <button onClick={() => setQty(q => Math.max(1, q - 1))} className="w-7 h-7 bg-white rounded-full border border-gray-200 flex items-center justify-center text-gray-600 font-black">−</button>
-                <span className="text-[14px] font-black text-gray-900 w-5 text-center">{qty}</span>
-                <button onClick={() => setQty(q => q + 1)} className="w-7 h-7 bg-primary rounded-full flex items-center justify-center text-white font-black">+</button>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Vos informations</p>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Nom complet *" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-primary" />
-              <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="Email *" type="email" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-primary" />
-              <input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Adresse de livraison" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-primary" />
-              <div className="grid grid-cols-2 gap-2">
-                <input value={form.zip} onChange={e => setForm(f => ({ ...f, zip: e.target.value }))} placeholder="Code postal" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-primary" />
-                <input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} placeholder="Ville" className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-[13px] outline-none focus:border-primary" />
-              </div>
-            </div>
-            <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-3">
-              <Lock className="w-4 h-4 text-green-600 shrink-0" />
-              <p className="text-[11px] font-bold text-green-700">Paiement sécurisé via Stripe · SSL 256-bit</p>
-            </div>
-            <div className="bg-gray-50 rounded-2xl p-4 flex items-center justify-between border border-gray-100">
-              <div>
-                <p className="text-[11px] text-gray-500 font-medium">Total ({qty} article{qty > 1 ? "s" : ""})</p>
-                <p className="text-[22px] font-black text-gray-900">{total}€</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] text-gray-400 font-medium">Livraison</p>
-                <p className="text-[13px] font-black text-green-600">Gratuite</p>
-              </div>
-            </div>
-            <button onClick={handlePay} disabled={paying || !form.name || !form.email}
-              className="w-full bg-primary text-white font-black text-[15px] uppercase tracking-widest py-4 rounded-2xl shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-40 flex items-center justify-center gap-3">
-              <CreditCard className="w-5 h-5" /> Payer {total}€
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── Color map ─────────────────────────────────────────────────────────────────
-const COLOR_MAP = {
-  blanc: "#fff", white: "#fff", beige: "#F5F0E8", crème: "#FFFDD0", creme: "#FFFDD0",
-  noir: "#111", black: "#111", gris: "#888", grey: "#888", gray: "#888",
-  rouge: "#E53E3E", red: "#E53E3E", rose: "#EC4899", pink: "#EC4899", fushia: "#D946EF",
-  orange: "#F97316", jaune: "#FBBF24", yellow: "#FBBF24", gold: "#D4AF37", doré: "#D4AF37",
-  dore: "#D4AF37", vert: "#22C55E", green: "#22C55E", kaki: "#6B7C45", olive: "#6B7C45",
-  bleu: "#3B82F6", blue: "#3B82F6", marine: "#1E3A5F", navy: "#1E3A5F", turquoise: "#06B6D4",
-  violet: "#8B5CF6", purple: "#8B5CF6", mauve: "#A78BFA", marron: "#92400E", brown: "#92400E",
-  caramel: "#B45309", bordeaux: "#7F1D1D", argent: "#CBD5E1", silver: "#CBD5E1",
-};
 function getColorHex(name) {
   if (!name) return null;
   const key = name.toLowerCase().trim();
@@ -291,14 +191,14 @@ export default function ProduitDetail() {
   const [selectedOptions, setSelectedOptions] = useState({});
   const { toggle: toggleLike, isLiked } = useLikedProducts();
   const [addedToCart, setAddedToCart] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const { addToCart } = useCartSync();
+
+  const { addToCart, error: cartError } = useCartSync();
   const [vendorProducts, setVendorProducts] = useState([]);
   const [productReviews, setProductReviews] = useState([]);
 
   useEffect(() => {
     if (!productId) { setError("Produit introuvable"); setLoading(false); return; }
-    setProduct(null); setError(null); setLoading(true); setSelectedOptions({}); setAddedToCart(false); setShowCheckout(false);
+    setProduct(null); setError(null); setLoading(true); setSelectedOptions({}); setAddedToCart(false);
 
     const isShopifyId = productId.startsWith("gid://shopify/");
     const loadShopifyProduct = (pid) => {
@@ -337,7 +237,7 @@ export default function ProduitDetail() {
   const handleOptionChange = (optionName, value) => { setSelectedOptions(prev => ({ ...prev, [optionName]: value })); };
 
   const handleBuyNow = () => {
-    if (isDbProduct) { setShowCheckout(true); return; }
+    if (isDbProduct) { navigate('/checkout?productId='+encodeURIComponent(product.id)+'&quantity='+Math.max(1,product.min_qty||1)); return; }
     const variantId = selectedVariant?.id;
     if (!variantId) return;
     navigate(`/checkout?${new URLSearchParams({ variantId, title: product.title, img: product.images?.[0]?.url || "", price: String(displayPrice), brand: product.vendor || "", variant: selectedVariant?.title || "" }).toString()}`);
@@ -345,8 +245,8 @@ export default function ProduitDetail() {
 
   const handleAddToCart = async () => {
     const img = variantImageUrl || galleryImages[0]?.url || product.image_url || "";
-    await addToCart({ id: selectedVariant?.id || product.id || productId, name: product.title || product.name, price: displayPrice, img, brand: product.vendor || "" });
-    setAddedToCart(true); setTimeout(() => setAddedToCart(false), 2000);
+    const added = await addToCart({ id: selectedVariant?.id || product.id || productId, name: product.title || product.name, price: displayPrice, img, brand: product.vendor || "" });
+    if (!added) return; setAddedToCart(true); setTimeout(() => setAddedToCart(false), 2000);
   };
 
   if (loading) return <div className="min-h-screen bg-white flex flex-col"><div className="flex items-center gap-3 px-4 py-4"><div className="w-9 h-9 bg-gray-100 rounded-full animate-pulse" /><div className="flex-1 h-5 bg-gray-100 rounded-full animate-pulse" /></div><div className="aspect-[3/4] bg-gray-100 animate-pulse" /></div>;
@@ -362,7 +262,7 @@ export default function ProduitDetail() {
   const displayGallery = variantImageUrl && variantImageIdx === -1 ? [{ url: variantImageUrl }, ...galleryImages] : galleryImages;
   const galleryFocusIdx = variantImageUrl ? (variantImageIdx >= 0 ? variantImageIdx : 0) : 0;
   const activeProductImg = variantImageUrl || galleryImages[0]?.url || product.image_url || "";
-  const deliveryDate = new Date(Date.now() + 7 * 86400000).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+  const deliveryDate = product.delivery_estimate || "Délai communiqué par la boutique";
 
   return (
     <div ref={scrollRef} className="font-display bg-white min-h-screen pb-32">
@@ -390,10 +290,7 @@ export default function ProduitDetail() {
           </div>
         )}
 
-        <div className="flex items-center gap-2 mb-3">
-          <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <Star key={i} className={`w-3.5 h-3.5 ${i <= 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`} />)}</div>
-          <span className="text-[12px] text-gray-500 font-medium">4.0</span>
-        </div>
+        {Number(product.reviews_count)>0 && <p className="text-sm text-gray-600 mb-3">{Number(product.rating).toFixed(1)} / 5 · {product.reviews_count} avis</p>}
 
         <div className="flex items-center gap-3 mb-4">
           <span className="text-[26px] font-black text-gray-900">{parseFloat(displayPrice).toFixed(2)} €</span>
@@ -423,9 +320,9 @@ export default function ProduitDetail() {
         <div className="grid grid-cols-4 gap-3">
           {[
             { icon: CreditCard, label: "Paiements sécurisés" },
-            { icon: Truck, label: "Garantie de livraison" },
-            { icon: RefreshCw, label: "Garantie de remboursement" },
-            { icon: Headphones, label: "Assistance client 24h/24, 7j/7" },
+            { icon: Truck, label: "Suivi de commande" },
+            { icon: RefreshCw, label: "Suivi des remboursements" },
+            { icon: Headphones, label: "Contacter la boutique" },
           ].map(({ icon: Icon, label }, i) => (
             <div key={i} className="flex flex-col items-center text-center gap-2">
               <div className="w-10 h-10 bg-teal-50 rounded-full flex items-center justify-center"><Icon className="w-5 h-5 text-teal-600" /></div>
@@ -456,7 +353,7 @@ export default function ProduitDetail() {
             <Package className="w-5 h-5 text-primary shrink-0" />
             <div className="flex-1">
               <p className="text-[13px] font-black text-gray-900">Politique de retour</p>
-              <p className="text-[12px] text-gray-500 font-medium leading-relaxed">{product.return_policy || "Retour gratuit sous 30 jours. Satisfait ou remboursé."}</p>
+              <p className="text-[12px] text-gray-500 font-medium leading-relaxed">{product.return_policy || "Consultez les conditions de retour de la boutique avant votre achat."}</p>
             </div>
             <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
           </button>
@@ -477,7 +374,7 @@ export default function ProduitDetail() {
               {vendorProducts.map(p => (
                 <button key={p.id} onClick={() => navigate(`/produit?id=${p.id}`)}
                   className="min-w-[140px] max-w-[140px] bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden shrink-0 active:scale-[0.98] transition-all">
-                  <div className="aspect-square bg-gray-50"><img src={p.image_url || ""} alt={p.name} className="w-full h-full object-cover" /></div>
+                  <div className="aspect-square bg-gray-50"><BeautyImage src={p.image_url || ""} alt={p.name} className="w-full h-full object-cover" /></div>
                   <div className="p-2.5">
                     <p className="text-[11px] font-bold text-gray-900 line-clamp-2 leading-tight">{p.name}</p>
                     <p className="text-[13px] font-black text-gray-900 mt-1">Dès {parseFloat(p.price).toFixed(2)} €</p>
@@ -648,7 +545,7 @@ export default function ProduitDetail() {
         </button>
       </div>
 
-      {showCheckout && <CheckoutModal product={product} onClose={() => setShowCheckout(false)} />}
+      {cartError && <div role="alert" className="fixed bottom-40 left-4 right-4 z-40 rounded-xl bg-red-50 border border-red-300 text-red-800 p-4">{cartError}</div>}
       <ScrollToTopButton />
     </div>
   );
@@ -757,7 +654,7 @@ function RecommendedProducts({ currentProductId, product, title = "PRODUITS DE L
               className="bg-white rounded-[24px] overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-gray-100">
               <div className="relative h-[140px]">
                 {p.image_url ? (
-                  <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                  <BeautyImage src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-50">
                     <ShoppingCart className="w-8 h-8 text-gray-200" />
@@ -831,7 +728,7 @@ function RelatedServices({ productId, productName }) {
             <button key={s.id} onClick={() => navigate(`/service/${s.id}`, { state: { id: s.id } })}
               className="w-full bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex items-center gap-3 p-3 active:scale-[0.98] transition-all">
               <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                {media[0] ? <img src={media[0]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Scissors className="w-6 h-6 text-gray-300" /></div>}
+                {media[0] ? <BeautyImage src={media[0]} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Scissors className="w-6 h-6 text-gray-300" /></div>}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-black text-gray-900 truncate">{s.title}</p>
@@ -913,7 +810,7 @@ function YouMayAlsoLike({ currentProductId }) {
             className="bg-white rounded-[24px] overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-gray-100">
             <div className="relative h-[140px]">
               {p.image_url ? (
-                <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                <BeautyImage src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gray-50">
                   <ShoppingCart className="w-8 h-8 text-gray-200" />

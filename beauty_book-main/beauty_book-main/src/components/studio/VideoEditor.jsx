@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 ﻿import { useState, useRef, useEffect, useCallback } from "react";
 import {
   X, Play, Pause, Volume2, VolumeX, ZoomIn, ZoomOut,
@@ -438,7 +439,7 @@ export default function VideoEditor({ videoUrl, sound, soundUrl, onClose, onDone
         )}
         {/* Image overlays */}
         {imageOverlays.map((img, i) => (
-          <img key={i} src={img.url} className="absolute z-20 pointer-events-none rounded-lg shadow-lg" style={{ left: img.x, top: img.y, width: 80 * img.scale, height: 80 * img.scale, objectFit: "cover" }} />
+          <BeautyImage key={i} src={img.url} className="absolute z-20 pointer-events-none rounded-lg shadow-lg" style={{ left: img.x, top: img.y, width: 80 * img.scale, height: 80 * img.scale, objectFit: "cover" }} />
         ))}
       </div>
 
@@ -590,7 +591,7 @@ export default function VideoEditor({ videoUrl, sound, soundUrl, onClose, onDone
             {soundResults.map((track, i) => (
               <div key={i} className="flex items-center gap-3 p-3 rounded-xl mb-2" style={{ background: cardBg, border: `1px solid ${panelBorder}` }}>
                 <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-gray-200">
-                  {track.artworkUrl100 && <img src={track.artworkUrl100} alt="" className="w-full h-full object-cover" />}
+                  {track.artworkUrl100 && <BeautyImage src={track.artworkUrl100} alt="" className="w-full h-full object-cover" />}
                   <button onClick={() => previewSound(track)} className="absolute inset-0 flex items-center justify-center bg-black/30">
                     {previewingSound === track.previewUrl ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white ml-0.5" />}
                   </button>

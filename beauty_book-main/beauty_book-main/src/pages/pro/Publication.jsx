@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { fetchShopifyProducts } from "@/api/shopifyClient";
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -66,7 +67,7 @@ function ImageSlider({ images, style = {} }) {
   );
   return (
     <div className="relative w-full h-full">
-      <img src={images[idx]} alt="" className="w-full h-full object-cover" style={style} />
+      <BeautyImage src={images[idx]} alt="" className="w-full h-full object-cover" style={style} />
       {images.length > 1 && (
         <>
           <button
@@ -871,7 +872,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
                     className="w-full flex items-center gap-3 px-4 py-2.5 transition-all text-left hover:bg-white/10 active:bg-white/20"
                   >
                     {track.artworkUrl60
-                      ? <img src={track.artworkUrl60} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                      ? <BeautyImage src={track.artworkUrl60} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
                       : <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(255,255,255,0.1)" }}><Music className="w-4 h-4 text-white/40" /></div>
                     }
                     <div className="flex-1 min-w-0">
@@ -932,7 +933,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
                   {/* Pochette + bouton play/pause */}
                   <div className="relative w-12 h-12 shrink-0">
                     {s.artwork
-                      ? <img src={s.artwork} alt={s.title} className="w-12 h-12 rounded-xl object-cover" />
+                      ? <BeautyImage src={s.artwork} alt={s.title} className="w-12 h-12 rounded-xl object-cover" />
                       : <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-400/40 to-purple-500/40 flex items-center justify-center"><Music className="w-5 h-5 text-white" /></div>
                     }
                     {s.previewUrl && (
@@ -1028,7 +1029,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
           </div>
         ) : form.images.length > 0 ? (
           <div className="relative w-full h-full">
-            <img
+            <BeautyImage
               src={form.images[activeImageIdx]}
               alt=""
               className="w-full h-full object-cover"
@@ -1354,7 +1355,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
                   form.filter === f.id ? "border-teal-400 shadow-lg shadow-teal-500/20 scale-105" : isDark ? "border-white/10" : "border-gray-200"
                 }`}>
                   {form.images[activeImageIdx] || form.images[0]
-                    ? <img src={form.images[activeImageIdx] || form.images[0]} alt="" className="w-full h-full object-cover" style={f.style} />
+                    ? <BeautyImage src={form.images[activeImageIdx] || form.images[0]} alt="" className="w-full h-full object-cover" style={f.style} />
                     : <div className={`w-full h-full flex items-center justify-center ${isDark ? "bg-white/10" : "bg-gray-100"}`}><Camera className={`w-6 h-6 ${isDark ? "text-gray-500" : "text-gray-300"}`} /></div>
                   }
                 </div>
@@ -1435,7 +1436,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
                 {allMedia[activeTrackIdx]?.type === "video" ? (
                   <video src={allMedia[activeTrackIdx].url} className="w-full h-full object-contain" autoPlay loop playsInline muted={false} />
                 ) : (
-                  <img src={allMedia[activeTrackIdx]?.url} alt="" className="w-full h-full object-contain" />
+                  <BeautyImage src={allMedia[activeTrackIdx]?.url} alt="" className="w-full h-full object-contain" />
                 )}
                 <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1">
                   <span className="text-white text-[11px] font-black">{activeTrackIdx + 1} / {allMedia.length}</span>
@@ -1469,7 +1470,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
                     {media.type === "video" ? (
                       <video src={media.url} className="w-full h-full object-cover" muted />
                     ) : (
-                      <img src={media.url} alt="" className="w-full h-full object-cover" />
+                      <BeautyImage src={media.url} alt="" className="w-full h-full object-cover" />
                     )}
                     <div className="absolute bottom-1 left-1 bg-black/60 rounded px-1.5 py-0.5">
                       <span className="text-white text-[8px] font-black">{media.type === "video" ? "🎬" : "🖼"}</span>
@@ -1856,7 +1857,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
         >
           {form.images.length > 0 ? (
             <div className="relative w-full h-full">
-              <img src={form.images[0]} alt="" className="w-full h-full object-cover" />
+              <BeautyImage src={form.images[0]} alt="" className="w-full h-full object-cover" />
               {form.images.length > 1 && (
                 <div className="absolute bottom-0 left-0 right-0 bg-black/60 flex items-center justify-center py-0.5">
                   <span className="text-white text-[8px] font-black">{form.images.length}📷</span>
@@ -1865,7 +1866,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
             </div>
           ) : videoThumb ? (
             <div className="relative w-full h-full">
-              <img src={videoThumb} alt="" className="w-full h-full object-cover" />
+              <BeautyImage src={videoThumb} alt="" className="w-full h-full object-cover" />
               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                 <Play className="w-4 h-4 text-white" />
               </div>
@@ -1972,7 +1973,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
                               setForm(f => ({ ...f, images: newImages }));
                             }}
                           >
-                            <img src={img} alt="" className="w-full h-full object-cover" />
+                            <BeautyImage src={img} alt="" className="w-full h-full object-cover" />
                             {/* Badge numéro */}
                             <div className="absolute bottom-0 left-0 right-0 bg-black/50 flex items-center justify-center py-0.5">
                               <span className="text-white text-[8px] font-black">{i + 1}</span>
@@ -2026,7 +2027,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
               className="w-full h-full" style={{ objectFit: form.objectFit || "cover", ...getImageStyle() }} />
           ) : form.images.length > 0 ? (
             <>
-              <img src={form.images[previewIdx]} alt="" className="w-full h-full object-cover" style={getImageStyle()} />
+              <BeautyImage src={form.images[previewIdx]} alt="" className="w-full h-full object-cover" style={getImageStyle()} />
               {form.images.length > 1 && (
                 <>
                   <button onClick={() => setPreviewIdx(i => Math.max(0, i - 1))}
@@ -2139,7 +2140,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
         <div className={`rounded-2xl p-3 flex gap-3 ${!form.caption.trim() ? "border border-orange-500/30" : ""}`} style={{ background: stepIsDark ? "rgba(255,255,255,0.05)" : "#f9fafb" }}>
           {form.images[0] && (
             <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0">
-              <img src={form.images[0]} alt="" className="w-full h-full object-cover" />
+              <BeautyImage src={form.images[0]} alt="" className="w-full h-full object-cover" />
             </div>
           )}
           <div className="flex-1">
@@ -2251,7 +2252,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
                 }))}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all active:scale-[0.98] ${form.product_id === p.id ? "border-primary bg-primary/10" : stepIsDark ? "border-white/10 bg-white/5" : "border-gray-100 bg-gray-50"}`}>
                   <div className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 ${stepIsDark ? "bg-white/10" : "bg-gray-200"}`}>
-                    {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />}
+                    {p.image_url && <BeautyImage src={p.image_url} alt={p.name} className="w-full h-full object-cover" />}
                   </div>
                   <div className="flex-1 text-left">
                     <p className={`text-[13px] font-black ${stepIsDark ? "text-white" : "text-gray-900"}`}>{p.name}</p>
@@ -2280,7 +2281,7 @@ function PublicationWizard({ onClose, onPublish, onDraft, editData }) {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all active:scale-[0.98] ${form.service_id === s.id ? "border-primary bg-primary/10" : stepIsDark ? "border-white/10 bg-white/5" : "border-gray-100 bg-gray-50"}`}>
                   {s.image_url ? (
                     <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
-                      <img src={s.image_url} alt={s.title} className="w-full h-full object-cover" />
+                      <BeautyImage src={s.image_url} alt={s.title} className="w-full h-full object-cover" />
                     </div>
                   ) : (
                     <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -2680,7 +2681,7 @@ export default function Publication() {
             {publications.filter(p => p.status === "publie").slice(0, 6).map(pub => (
               <div key={pub.id} className={`aspect-square rounded-2xl overflow-hidden ${isDark ? "bg-white/5" : "bg-gray-100"}`}>
                 {(pub.thumbnail_url || (pub.images && pub.images[0]))
-                  ? <img src={pub.thumbnail_url || pub.images[0]} alt="" className="w-full h-full object-cover" />
+                  ? <BeautyImage src={pub.thumbnail_url || pub.images[0]} alt="" className="w-full h-full object-cover" />
                   : <div className="w-full h-full flex items-center justify-center"><Camera className={`w-6 h-6 ${isDark ? "text-white/10" : "text-gray-300"}`} /></div>
                 }
               </div>
@@ -2862,7 +2863,7 @@ export default function Publication() {
                 <div key={pub.id} onClick={() => editPub(pub)} className={`rounded-3xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.97] transition-all ${isDark ? "bg-white/5" : "bg-white"}`}>
                   <div className={`relative aspect-square ${isDark ? "bg-white/5" : "bg-gray-100"}`}>
                     {(pub.thumbnail_url || (pub.images && pub.images[0])) ? (
-                      <img src={pub.thumbnail_url || pub.images[0]} alt={pub.title} className="w-full h-full object-cover" />
+                      <BeautyImage src={pub.thumbnail_url || pub.images[0]} alt={pub.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Camera className={`w-8 h-8 ${isDark ? "text-white/10" : "text-gray-300"}`} />

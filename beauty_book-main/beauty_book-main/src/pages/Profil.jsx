@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { entities } from '@/api/entities';
@@ -34,7 +35,7 @@ function InstagramGrid({ items, onItemClick }) {
           const thumb = item?.reel_thumbnail || item?.thumbnail_url || (item?.reel_images && item.reel_images[0]) || (item?.images && item.images[0]);
           return (
             <div onClick={onItemClick} className={`overflow-hidden bg-gray-100 cursor-pointer relative rounded-2xl active:scale-[0.98] transition-all ${className}`}>
-              {thumb ? <img src={thumb} alt={item?.title} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200 flex items-center justify-center"><Camera className="w-6 h-6 text-gray-400" /></div>}
+              {thumb ? <BeautyImage src={thumb} alt={item?.title} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gray-200 flex items-center justify-center"><Camera className="w-6 h-6 text-gray-400" /></div>}
               {item?.video_url && <div className="absolute top-1.5 right-1.5 bg-black/50 rounded-full p-1"><Video className="w-2.5 h-2.5 text-white" /></div>}
               {item?.likes > 0 && <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5"><Heart className="w-2.5 h-2.5 text-red-400 fill-red-400" /><span className="text-white text-[9px] font-black">{item.likes >= 1000 ? (item.likes/1000).toFixed(1)+"k" : item.likes}</span></div>}
             </div>
@@ -71,7 +72,7 @@ function MediaThumb({ item, isRepub = false, onClick }) {
       className="aspect-[9/16] overflow-hidden bg-gray-100 cursor-pointer relative rounded-2xl group"
     >
       {thumb ? (
-        <img src={thumb} alt={item.title || item.reel_title} className="w-full h-full object-cover transition-transform duration-300 group-active:scale-110" />
+        <BeautyImage src={thumb} alt={item.title || item.reel_title} className="w-full h-full object-cover transition-transform duration-300 group-active:scale-110" />
       ) : (
         <div className="w-full h-full bg-gray-200 flex items-center justify-center">
           <Camera className="w-8 h-8 text-gray-400" />
@@ -307,7 +308,7 @@ export default function Profil() {
       {/* Banner — cliquable pour modifier */}
       <div className="relative h-48 cursor-pointer" onClick={() => navigate("/modifier-profil-client")}>
         {user?.cover_url ? (
-          <img src={user.cover_url} alt="Bannière" className="w-full h-full object-cover" />
+          <BeautyImage src={user.cover_url} alt="Bannière" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-b from-orange-100 to-orange-50" />
         )}
@@ -333,7 +334,7 @@ export default function Profil() {
         <div className="absolute -bottom-14 left-1/2 -translate-x-1/2">
           <div className="relative">
             <div className="w-[100px] h-[100px] rounded-full border-[3px] border-primary shadow-xl overflow-hidden bg-gray-100">
-              <img src={user?.avatar_url || PROFILE_IMAGE} alt="Profil" className="w-full h-full object-cover" />
+              <BeautyImage src={user?.avatar_url || PROFILE_IMAGE} alt="Profil" className="w-full h-full object-cover" />
             </div>
             <button onClick={(e) => { e.stopPropagation(); navigate("/modifier-profil-client"); }} className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full border-2 border-white flex items-center justify-center shadow active:scale-95 transition-all">
               <Camera className="w-4 h-4 text-white" />

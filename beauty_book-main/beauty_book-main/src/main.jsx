@@ -18,25 +18,14 @@ applyTheme(localStorage.getItem("bb_theme") || "light");
 import { setGlobalLang } from "@/hooks/useLocale";
 setGlobalLang(localStorage.getItem("bb_lang") || "fr");
 
-// Enregistrer le Service Worker pour les notifications push
+// Push registration is production-only. Development must never reuse cached modules.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('[SW] Registered:', registration.scope);
-    } catch (error) {
-      console.error('[SW] Registration failed:', error);
-    }
-  });
+  if(import.meta.env.DEV){
+    navigator.serviceWorker.getRegistrations().then(registrations=>Promise.all(registrations.filter(r=>new URL(r.scope).origin===location.origin&&new URL(r.active?.scriptURL||r.waiting?.scriptURL||r.installing?.scriptURL||location.href).pathname==='/sw.js').map(r=>r.unregister()))).catch(()=>{});
+    caches.keys().then(names=>Promise.all(names.filter(name=>name.startsWith('beautybook-')).map(name=>caches.delete(name)))).catch(()=>{});
+  }else window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(()=>{});});
 }
-
-// Demander la permission pour les notifications au démarrage
-if ('Notification' in window && Notification.permission === 'default') {
-  // On attend 2 secondes avant de demander pour ne pas être intrusif
-  setTimeout(() => {
-    Notification.requestPermission();
-  }, 2000);
-}
+// Notification permission is requested only by the user's notification controls.
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />

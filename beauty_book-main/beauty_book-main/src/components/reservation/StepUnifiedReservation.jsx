@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useMemo } from "react";
 import { ArrowLeft, Calendar as CalendarIcon, Clock, User, Check, ChevronRight, ChevronLeft, Sun, Cloud, Users, Minus, Plus, Package, Sparkles, Tag, Ban } from "lucide-react";
 import { format, addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addMonths, subMonths, isSameDay, isSameMonth, isBefore, startOfDay, eachDayOfInterval } from "date-fns";
@@ -539,7 +540,7 @@ export default function StepUnifiedReservation({
               >
                 <div className="w-11 h-11 rounded-full bg-orange-100 text-[#E8732A] font-black flex items-center justify-center text-sm shrink-0 overflow-hidden">
                   {member.membre_avatar ? (
-                    <img src={member.membre_avatar} alt="" className="w-full h-full object-cover" />
+                    <BeautyImage src={member.membre_avatar} alt="" className="w-full h-full object-cover" />
                   ) : (
                     (member.membre_name || member.name || "M")[0].toUpperCase()
                   )}

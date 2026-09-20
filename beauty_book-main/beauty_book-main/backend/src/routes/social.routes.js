@@ -363,7 +363,7 @@ router.post('/whatsapp/webhook', async (req, res) => {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${process.env.OPENCODE_API_KEY || 'sk-ziv83S32mc2ZSb6g5h4faZnuIhXAZGlRYZSAOkMOX4KeqvL5FOHpmGnMeA5Jnsfw'}`,
+                  'Authorization': `Bearer ${process.env.OPENCODE_API_KEY || ''}`,
                 },
                 body: JSON.stringify({
                   model: 'mimo-v2.5-free',
@@ -492,7 +492,7 @@ router.post('/messenger/webhook', async (req, res) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${process.env.OPENCODE_API_KEY || 'sk-ziv83S32mc2ZSb6g5h4faZnuIhXAZGlRYZSAOkMOX4KeqvL5FOHpmGnMeA5Jnsfw'}`,
+              'Authorization': `Bearer ${process.env.OPENCODE_API_KEY || ''}`,
             },
             body: JSON.stringify({
               model: 'mimo-v2.5-free',

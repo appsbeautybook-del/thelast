@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { supabase } from '@/api/supabaseClient';
 
 const AuthContext = createContext();
@@ -13,68 +13,58 @@ export const AuthProvider = ({ children }) => {
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings] = useState({ id: 'beautybook', public_settings: {} });
 
+  const activeUser = useRef(null);
+  const profileRequest = useRef(0);
   const loadProfile = async (userId) => {
+    const request = ++profileRequest.current;
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-      if (error) {
-        console.error('[AuthContext] loadProfile query error:', error);
-      }
-      if (data) {
-        setProfile({ ...data, _ts: Date.now() });
-      }
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).maybeSingle();
+      if (error) throw error;
+      if (request === profileRequest.current && activeUser.current === userId) setProfile(data || null);
       return data;
-    } catch (e) {
-      console.error('[AuthContext] loadProfile error', e);
+    } catch {
+      if (request === profileRequest.current && activeUser.current === userId) setProfile(null);
       return null;
     }
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        setIsAuthenticated(true);
-        await loadProfile(session.user.id);
-      }
-      setIsLoadingAuth(false);
-      setAuthChecked(true);
+    let disposed = false;
+    let eventReceived = false;
+    // Supabase dispatches auth events under its session lock. Database calls run in a separate effect.
+    const applySession = (session) => {
+      if (disposed) return;
+      const next = session?.user || null;
+      if (activeUser.current !== next?.id) { ++profileRequest.current; setProfile(null); }
+      activeUser.current = next?.id || null;
+      setUser(next); setIsAuthenticated(Boolean(next));
+      setAuthError(null); setIsLoadingAuth(false); setAuthChecked(true);
+    };
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      eventReceived = true; applySession(session);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          setIsAuthenticated(true);
-          await loadProfile(session.user.id);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setIsAuthenticated(false);
-        }
-        setIsLoadingAuth(false);
-        setAuthChecked(true);
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (disposed || eventReceived) return;
+      if (error) throw error;
+      applySession(data?.session);
+    }).catch(() => {
+      if (!disposed && !eventReceived) {
+        applySession(null); setAuthError({ type: 'session_unavailable', message: 'Session indisponible. Reconnectez-vous.' });
       }
-    );
-
-    return () => subscription.unsubscribe();
+    });
+    return () => { disposed = true; activeUser.current = null; ++profileRequest.current; subscription.unsubscribe(); };
   }, []);
 
+  useEffect(() => { if (user?.id) void loadProfile(user.id); }, [user?.id]);
+
   const logout = async (shouldRedirect = true) => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setProfile(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem("bb_is_pro");
-    localStorage.removeItem("bb_onboarded");
-    localStorage.removeItem("pro_profile_cache");
-    sessionStorage.clear();
-    if (shouldRedirect) {
-      window.location.href = '/';
-    }
+    const { error } = await supabase.auth.signOut();
+    if (error) throw new Error('La déconnexion a échoué. Réessayez.');
+    activeUser.current = null; ++profileRequest.current;
+    setUser(null); setProfile(null); setIsAuthenticated(false);
+    for (const key of ['bb_is_pro', 'bb_onboarded', 'pro_profile_cache']) localStorage.removeItem(key);
+    for (const key of Object.keys(sessionStorage)) if (key.startsWith('bb_')) sessionStorage.removeItem(key);
+    if (shouldRedirect) window.location.href = '/';
   };
 
   const navigateToLogin = () => {
@@ -96,7 +86,7 @@ export const AuthProvider = ({ children }) => {
     full_name: profile?.full_name || user.user_metadata?.full_name || '',
     avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || '',
     cover_url: profile?.cover_url || user.user_metadata?.cover_url || '',
-    role: profile?.role || user.user_metadata?.role || 'user',
+    role: profile?.role || 'user',
     maria_name: profile?.maria_name || '',
     maria_memory: profile?.maria_memory || {},
     name: profile?.full_name || user.user_metadata?.full_name || user.email,

@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -111,7 +112,7 @@ function CardMediaSlider({ media, onCardClick }) {
               className="w-full h-full object-cover"
             />
           ) : (
-            <img src={url} alt="" className="w-full h-full object-cover" />
+            <BeautyImage src={url} alt="" className="w-full h-full object-cover" />
           )}
         </div>
       ))}
@@ -183,7 +184,7 @@ function OffreSheet({ style, onClose, navigate }) {
         <div className="flex items-center gap-3 mb-6">
           {style.img && (
             <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0">
-              <img src={style.img} alt={style.title} className="w-full h-full object-cover" />
+              <BeautyImage src={style.img} alt={style.title} className="w-full h-full object-cover" />
             </div>
           )}
           <div>
@@ -295,7 +296,7 @@ function StyleShareSheet({ style, onClose }) {
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-4" />
         {/* Preview du style */}
         <div className="flex items-center gap-3 mb-5 bg-white/5 rounded-2xl p-3">
-          {style.img && <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0"><img src={style.img} alt={style.title} className="w-full h-full object-cover" /></div>}
+          {style.img && <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0"><BeautyImage src={style.img} alt={style.title} className="w-full h-full object-cover" /></div>}
           <div className="flex-1 min-w-0">
             <p className="text-white text-[14px] font-black truncate">{style.title}</p>
             <p className="text-white/40 text-[11px] font-medium truncate">{url}</p>
@@ -578,7 +579,7 @@ function StyleCard({ style, liked, likeCount, followed, onFollow, onLike, onComm
           <video ref={i === imgIdx ? videoRef : null} src={url} autoPlay={i === imgIdx} loop muted={muted} playsInline
             className="w-full h-full object-cover" onTimeUpdate={i === imgIdx ? handleTimeUpdate : undefined} onClick={togglePlay} />
         ) : (
-          <img src={url} alt={style.title} className="w-full h-full object-cover" onClick={onDetail} />
+          <BeautyImage src={url} alt={style.title} className="w-full h-full object-cover" onClick={onDetail} />
         )}
       </div>
       ))}
@@ -911,7 +912,7 @@ function CommentsSheet({ style, onClose, onCommentCountChange }) {
         <div className="flex gap-3 py-2.5">
           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 shrink-0 mt-0.5">
             {c.user_avatar ? (
-              <img src={c.user_avatar} alt="" className="w-full h-full object-cover" />
+              <BeautyImage src={c.user_avatar} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400 text-[12px] font-bold bg-gray-100">
                 {(c.user_name || "U")[0].toUpperCase()}
@@ -1230,7 +1231,7 @@ function ServicesTab({ activeCategory }) {
                 <div className="flex items-center gap-1.5 mb-2">
                   <div className="w-5 h-5 rounded-full overflow-hidden bg-gray-100 shrink-0">
                     {pro.avatar_url
-                      ? <img src={pro.avatar_url} alt={pro.salon_name} className="w-full h-full object-cover" />
+                      ? <BeautyImage src={pro.avatar_url} alt={pro.salon_name} className="w-full h-full object-cover" />
                       : <span className="w-full h-full flex items-center justify-center text-[9px] font-black text-gray-400">{pro.salon_name[0]}</span>}
                   </div>
                   <span className="text-[12px] font-semibold text-gray-400 truncate">{pro.salon_name}</span>
@@ -1356,7 +1357,7 @@ function ProfilCard({ item, media, liked, onLike, onSelect, open, badge, minPric
       >
         {images.map((url, i) => (
           <div key={i} className="absolute inset-0 transition-transform duration-300 ease-in-out" style={{ transform: `translateX(${(i - currentSlide) * 100}%)` }}>
-            <img src={url} alt={item.salon_name} className="w-full h-full object-cover" loading="lazy" />
+            <BeautyImage src={url} alt={item.salon_name} className="w-full h-full object-cover" loading="lazy" />
           </div>
         ))}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
@@ -1407,7 +1408,7 @@ function ProfilCard({ item, media, liked, onLike, onSelect, open, badge, minPric
         <div className="flex items-center gap-2.5 mb-2">
           {item.avatar_url && (
             <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm">
-              <img src={item.avatar_url} alt="" className="w-full h-full object-cover" />
+              <BeautyImage src={item.avatar_url} alt="" className="w-full h-full object-cover" />
             </div>
           )}
           <h3 className="text-[16px] font-extrabold text-gray-900 leading-tight">{item.salon_name || "Salon"}</h3>
@@ -1506,9 +1507,12 @@ function SalonsTab({ activeCategory }) {
     return () => { cancelled = true; };
   }, []);
 
+  const navigate = useNavigate();
+
   const handleCardSelect = (item) => {
+    if (!item.user_email) return;
     setHighlightedId(item.id);
-    setSelectedProfil(item);
+    navigate("/pro/vue-client", { state: { proEmail: item.user_email } });
   };
 
   const { profils, minPricesMap } = data;
@@ -1854,7 +1858,7 @@ function BundlesTab() {
                 <div className="flex">
                   <div className="w-[120px] h-[150px] shrink-0 bg-gray-100 relative overflow-hidden rounded-l-2xl">
                     {b.image_url ? (
-                      <img src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
+                      <BeautyImage src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-3xl bg-gradient-to-br from-pink-50 to-orange-50">📦</div>
                     )}
@@ -1875,7 +1879,7 @@ function BundlesTab() {
                       </div>
                       <div className="flex items-center gap-1.5 mt-1.5">
                         {b.proProfile?.avatar_url ? (
-                          <img src={b.proProfile.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
+                          <BeautyImage src={b.proProfile.avatar_url} alt="" className="w-4 h-4 rounded-full object-cover" />
                         ) : (
                           <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[8px]">👤</div>
                         )}
@@ -2000,7 +2004,7 @@ function SearchResults({ query, onClose }) {
                   className="w-full flex items-center gap-3 px-4 py-3 active:bg-gray-50 transition-colors text-left">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
                     {(style.image_url || (style.images && style.images[0])) ? (
-                      <img src={style.image_url || style.images[0]} alt={style.title} className="w-full h-full object-cover" />
+                      <BeautyImage src={style.image_url || style.images[0]} alt={style.title} className="w-full h-full object-cover" />
                     ) : <span className="w-full h-full flex items-center justify-center text-[20px]">✂️</span>}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -2021,7 +2025,7 @@ function SearchResults({ query, onClose }) {
                   className="w-full flex items-center gap-3 px-4 py-3 active:bg-gray-50 transition-colors text-left">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 shrink-0">
                     {service.image_url ? (
-                      <img src={service.image_url} alt={service.title} className="w-full h-full object-cover" />
+                      <BeautyImage src={service.image_url} alt={service.title} className="w-full h-full object-cover" />
                     ) : <span className="w-full h-full flex items-center justify-center text-[20px]">💆</span>}
                   </div>
                   <div className="flex-1 min-w-0">

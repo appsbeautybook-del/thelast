@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -118,7 +119,7 @@ function ScanGuide({ onStart, onBack }) {
 
         {/* Image thématique */}
         <div className={`rounded-3xl overflow-hidden h-44 relative shadow-sm transition-all duration-200 ${animated ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}>
-          <img src={step.img} alt={step.imgAlt} className="w-full h-full object-cover" />
+          <BeautyImage src={step.img} alt={step.imgAlt} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
           <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-full px-3 py-1.5">
             <div className={`w-5 h-5 rounded-full flex items-center justify-center ${step.bg}`}>
@@ -209,7 +210,7 @@ function PhotoUploader({ onCapture, onBack }) {
 
         {preview ? (
           <div className="relative rounded-3xl overflow-hidden h-72 shadow-sm">
-            <img src={preview} alt="Votre photo" className="w-full h-full object-cover" />
+            <BeautyImage src={preview} alt="Votre photo" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
             <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-green-500/90 text-white rounded-full px-3 py-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -953,7 +954,7 @@ function LiveScanner({ onCapture, onBack }) {
                 {capturedSteps.map((cs, i) => (
                   cs.url ? (
                     <div key={i} className="relative">
-                      <img src={cs.url} className="w-11 h-13 rounded-xl object-cover border-2 border-green-400 shadow-lg" />
+                      <BeautyImage src={cs.url} className="w-11 h-13 rounded-xl object-cover border-2 border-green-400 shadow-lg" />
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
                         <span className="text-[8px] text-white font-black">✓</span>
                       </div>
@@ -1807,7 +1808,7 @@ Génère un diagnostic professionnel ultra-personnalisé en JSON :
         </div>
         {capturedPhoto && (
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
-            <img src={capturedPhoto} alt="scan" className="w-full h-full object-cover" />
+            <BeautyImage src={capturedPhoto} alt="scan" className="w-full h-full object-cover" />
           </div>
         )}
       </div>
@@ -1817,7 +1818,7 @@ Génère un diagnostic professionnel ultra-personnalisé en JSON :
         {/* Aperçu photo capturée */}
         {capturedPhoto && (
           <div className="relative h-48 rounded-3xl overflow-hidden shadow-sm">
-            <img src={capturedPhoto} alt="Votre scan" className="w-full h-full object-cover" />
+            <BeautyImage src={capturedPhoto} alt="Votre scan" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
             <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-green-500/90 text-white rounded-full px-3 py-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -1952,7 +1953,7 @@ Génère un diagnostic professionnel ultra-personnalisé en JSON :
 
       {capturedPhoto && (
         <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-md border-2 border-orange-100">
-          <img src={capturedPhoto} alt="scan" className="w-full h-full object-cover" />
+          <BeautyImage src={capturedPhoto} alt="scan" className="w-full h-full object-cover" />
         </div>
       )}
     </div>
@@ -1972,7 +1973,7 @@ Génère un diagnostic professionnel ultra-personnalisé en JSON :
         </div>
         {capturedPhoto && (
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/30 shrink-0">
-            <img src={capturedPhoto} alt="scan" className="w-full h-full object-cover" />
+            <BeautyImage src={capturedPhoto} alt="scan" className="w-full h-full object-cover" />
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { Toaster } from "@/components/ui/toaster"
-import React, { useEffect, useState, useRef, Component } from 'react';
+import React, { useEffect, useState, useRef, Component, lazy, Suspense } from 'react';
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -39,95 +39,93 @@ entities.AppConfig.filter({ key: "appearance_config" }, "-created_at", 50).then(
 }).catch(() => {});
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppShell from '@/components/layout/AppShell';
-import Home from '@/pages/Home';
-import Services from '@/pages/Services';
-import ServicesSalons from '@/pages/ServicesSalons';
-import Boutique from '@/pages/Boutique';
-import RendezVous from '@/pages/RendezVous';
-import Profil from '@/pages/Profil';
-import Maria from '@/pages/Maria';
-import ProfilPro from '@/pages/ProfilPro';
-import DevenirPro from '@/pages/DevenirPro';
-import BeautyPay from '@/pages/pro/BeautyPay';
-import PaiementFacturation from '@/pages/pro/PaiementFacturation';
-import CatalogueServices from '@/pages/pro/CatalogueServices';
-import AjouterService from '@/pages/pro/AjouterService';
-import BundleDetail from '@/pages/BundleDetail';
-import BundleGroupeDetail from '@/pages/BundleGroupeDetail';
-import AvisClients from '@/pages/pro/AvisClients.jsx';
-import Equipe from '@/pages/pro/Equipe';
-import NouveauMembre from '@/pages/pro/NouveauMembre';
-import PlanningMembre from '@/pages/pro/PlanningMembre';
-import Analytics from '@/pages/pro/Analytics';
-import Publication from '@/pages/pro/Publication';
-import VeoGenerator from '@/pages/pro/VeoGenerator';
-import Visite3D from '@/pages/pro/Visite3D';
-import Franchise from '@/pages/pro/Franchise';
-import LancerDirect from '@/pages/pro/LancerDirect';
-import ModifierProfilPro from '@/pages/pro/ModifierProfilPro';
-import SocialMedia from '@/pages/SocialMedia';
-import VueClient from '@/pages/pro/VueClient';
-import Abonnements from '@/pages/pro/Abonnements';
-import AbonnementsClient from '@/pages/AbonnementsClient';
-import GestionAgenda from '@/pages/pro/GestionAgenda';
-import HorairesConges from '@/pages/pro/HorairesConges';
-import LiveFeed from '@/pages/LiveFeed';
-import LiveDetail from '@/pages/LiveDetail';
-import Reels from '@/pages/Reels';
-import Immobilier from '@/pages/Immobilier';
-import ImmobilierDetail from '@/pages/ImmobilierDetail';
-import ServiceDetail from '@/pages/ServiceDetail';
-import StyleDetail from '@/pages/StyleDetail';
-import ModifierProfilClient from '@/pages/ModifierProfilClient';
-import Parametres from '@/pages/Parametres';
-import MesCommandes from '@/pages/MesCommandes';
-import CommandeDetail from '@/pages/CommandeDetail';
-import MonSolde from '@/pages/MonSolde';
-import ProgrammeFidelite from '@/pages/ProgrammeFidelite';
-import Onboarding from '@/pages/Onboarding';
-import Connexion from '@/pages/Connexion';
-import Reservation from '@/pages/Reservation';
-import Securite from '@/pages/parametres/Securite';
-import MoyensPaiement from '@/pages/parametres/MoyensPaiement';
-import Notifications from '@/pages/parametres/Notifications';
-import LangueMonnaie from '@/pages/parametres/LangueMonnaie';
-import CentreAide from '@/pages/parametres/CentreAide';
-import Confidentialite from '@/pages/parametres/Confidentialite';
-import Conditions from '@/pages/parametres/Conditions';
-import Contactez from '@/pages/parametres/Contactez';
-import APropos from '@/pages/parametres/APropos';
-import ProduitDetail from '@/pages/ProduitDetail';
-import Messages from '@/pages/Messages';
-import NotificationsPage from '@/pages/Notifications';
-import Panier from '@/pages/Panier';
-import GestionStyles from '@/pages/pro/GestionStyles';
-import ParametresPro from '@/pages/pro/ParametresPro';
-import PromoService from '@/pages/pro/PromoService';
-import ScanCapillaire from '@/pages/ScanCapillaire';
-import ReceptionnistIA from '@/pages/ReceptionnistIA';
-import AIScalingBusiness from '@/pages/AIScalingBusiness';
-import AdminLogin from '@/pages/admin/AdminLogin';
-import AdminSignup from '@/pages/admin/AdminSignup';
-import AdminVerify from '@/pages/admin/AdminVerify';
-import AdminDashboard from '@/pages/admin/AdminDashboard.jsx';
-import VendeurDashboard from '@/pages/VendeurDashboard';
-import VendeurLogin from '@/pages/VendeurLogin';
-import VendeurSignup from '@/pages/VendeurSignup';
-import OrderTracking from '@/pages/OrderTracking';
-import Checkout from '@/pages/Checkout';
-import SupprimerCompte from '@/pages/SupprimerCompte';
-import MentionsLegales from '@/pages/parametres/MentionsLegales';
-import PolitiqueConfidentialite from '@/pages/parametres/PolitiqueConfidentialite';
-import MesDonnees from '@/pages/parametres/MesDonnees';
+const Home = lazy(() => import('@/pages/Home'));
+const Services = lazy(() => import('@/pages/Services'));
+const ServicesSalons = lazy(() => import('@/pages/ServicesSalons'));
+const Boutique = lazy(() => import('@/pages/Boutique'));
+const RendezVous = lazy(() => import('@/pages/RendezVous'));
+const Profil = lazy(() => import('@/pages/Profil'));
+const Maria = lazy(() => import('@/pages/Maria'));
+const ProfilPro = lazy(() => import('@/pages/ProfilPro'));
+const DevenirPro = lazy(() => import('@/pages/DevenirPro'));
+const BeautyPay = lazy(() => import('@/pages/pro/BeautyPay'));
+const PaiementFacturation = lazy(() => import('@/pages/pro/PaiementFacturation'));
+const CatalogueServices = lazy(() => import('@/pages/pro/CatalogueServices'));
+const AjouterService = lazy(() => import('@/pages/pro/AjouterService'));
+const BundleDetail = lazy(() => import('@/pages/BundleDetail'));
+const BundleGroupeDetail = lazy(() => import('@/pages/BundleGroupeDetail'));
+const AvisClients = lazy(() => import('@/pages/pro/AvisClients.jsx'));
+const Equipe = lazy(() => import('@/pages/pro/Equipe'));
+const NouveauMembre = lazy(() => import('@/pages/pro/NouveauMembre'));
+const PlanningMembre = lazy(() => import('@/pages/pro/PlanningMembre'));
+const Analytics = lazy(() => import('@/pages/pro/Analytics'));
+const Publication = lazy(() => import('@/pages/pro/Publication'));
+const VeoGenerator = lazy(() => import('@/pages/pro/VeoGenerator'));
+const Visite3D = lazy(() => import('@/pages/pro/Visite3D'));
+const Franchise = lazy(() => import('@/pages/pro/Franchise'));
+const LancerDirect = lazy(() => import('@/pages/pro/LancerDirect'));
+const ModifierProfilPro = lazy(() => import('@/pages/pro/ModifierProfilPro'));
+const SocialMedia = lazy(() => import('@/pages/SocialMedia'));
+const VueClient = lazy(() => import('@/pages/pro/VueClient'));
+const Abonnements = lazy(() => import('@/pages/pro/Abonnements'));
+const AbonnementsClient = lazy(() => import('@/pages/AbonnementsClient'));
+const GestionAgenda = lazy(() => import('@/pages/pro/GestionAgenda'));
+const HorairesConges = lazy(() => import('@/pages/pro/HorairesConges'));
+const LiveFeed = lazy(() => import('@/pages/LiveFeed'));
+const LiveDetail = lazy(() => import('@/pages/LiveDetail'));
+const Reels = lazy(() => import('@/pages/Reels'));
+const Immobilier = lazy(() => import('@/pages/Immobilier'));
+const ImmobilierDetail = lazy(() => import('@/pages/ImmobilierDetail'));
+const ServiceDetail = lazy(() => import('@/pages/ServiceDetail'));
+const StyleDetail = lazy(() => import('@/pages/StyleDetail'));
+const ModifierProfilClient = lazy(() => import('@/pages/ModifierProfilClient'));
+const Parametres = lazy(() => import('@/pages/Parametres'));
+const MesCommandes = lazy(() => import('@/pages/MesCommandes'));
+const CommandeDetail = lazy(() => import('@/pages/CommandeDetail'));
+const MonSolde = lazy(() => import('@/pages/MonSolde'));
+const ProgrammeFidelite = lazy(() => import('@/pages/ProgrammeFidelite'));
+const Onboarding = lazy(() => import('@/pages/Onboarding'));
+const Connexion = lazy(() => import('@/pages/Connexion'));
+const Reservation = lazy(() => import('@/pages/Reservation'));
+const Securite = lazy(() => import('@/pages/parametres/Securite'));
+const MoyensPaiement = lazy(() => import('@/pages/parametres/MoyensPaiement'));
+const Notifications = lazy(() => import('@/pages/parametres/Notifications'));
+const LangueMonnaie = lazy(() => import('@/pages/parametres/LangueMonnaie'));
+const CentreAide = lazy(() => import('@/pages/parametres/CentreAide'));
+const Confidentialite = lazy(() => import('@/pages/parametres/Confidentialite'));
+const Conditions = lazy(() => import('@/pages/parametres/Conditions'));
+const Contactez = lazy(() => import('@/pages/parametres/Contactez'));
+const APropos = lazy(() => import('@/pages/parametres/APropos'));
+const ProduitDetail = lazy(() => import('@/pages/ProduitDetail'));
+const Messages = lazy(() => import('@/pages/Messages'));
+const NotificationsPage = lazy(() => import('@/pages/Notifications'));
+const Panier = lazy(() => import('@/pages/Panier'));
+const GestionStyles = lazy(() => import('@/pages/pro/GestionStyles'));
+const ParametresPro = lazy(() => import('@/pages/pro/ParametresPro'));
+const PromoService = lazy(() => import('@/pages/pro/PromoService'));
+const ScanCapillaire = lazy(() => import('@/pages/ScanCapillaire'));
+const ReceptionnistIA = lazy(() => import('@/pages/ReceptionnistIA'));
+const AIScalingBusiness = lazy(() => import('@/pages/AIScalingBusiness'));
+const OrderTracking = lazy(() => import('@/pages/OrderTracking'));
+const Checkout = lazy(() => import('@/pages/Checkout'));
+const SupprimerCompte = lazy(() => import('@/pages/SupprimerCompte'));
+const MentionsLegales = lazy(() => import('@/pages/parametres/MentionsLegales'));
+const PolitiqueConfidentialite = lazy(() => import('@/pages/parametres/PolitiqueConfidentialite'));
+const MesDonnees = lazy(() => import('@/pages/parametres/MesDonnees'));
 import CookieConsent from '@/components/CookieConsent';
-import ShAI from '@/pages/ShAI';
-import Explorer from '@/pages/Explorer';
-import Recherche from '@/pages/Recherche';
-import About from '@/pages/About';
-import Contact from '@/pages/Contact';
-import AuthCallback from '@/pages/AuthCallback';
+const ShAI = lazy(() => import('@/pages/ShAI'));
+const Explorer = lazy(() => import('@/pages/Explorer'));
+const Recherche = lazy(() => import('@/pages/Recherche'));
+const About = lazy(() => import('@/pages/About'));
+const Contact = lazy(() => import('@/pages/Contact'));
+const AuthCallback = lazy(() => import('@/pages/AuthCallback'));
 import AuthModal from '@/components/ui/AuthModal';
 
+function ExternalApplication({ kind }) {
+  const url = kind === 'admin' ? import.meta.env.VITE_ADMIN_URL : import.meta.env.VITE_SELLER_URL;
+  const target = url || (import.meta.env.DEV ? 'http://localhost:' + (kind === 'admin' ? '5174' : '5175') : '');
+  return <main className="min-h-screen grid place-items-center p-6"><div className="text-center"><h1 className="text-2xl font-bold">BeautyBook {kind === 'admin' ? 'Administration' : 'Vendeur'}</h1><p className="my-4">Votre espace dispose de son application dédiée.</p>{target ? <a className="inline-block rounded-xl bg-orange-600 px-5 py-3 text-white" href={target}>Ouvrir l’application</a> : <p>Contactez votre responsable pour obtenir l’adresse de connexion.</p>}</div></main>;
+}
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin, isAuthenticated, profile } = useAuth();
   const [onboarded, setOnboarded] = useState(() => !!localStorage.getItem("bb_onboarded"));
@@ -239,69 +237,9 @@ const AuthenticatedApp = () => {
   const hasOnboarded = onboarded || localStorage.getItem("bb_onboarded");
   const splashDone = sessionStorage.getItem("bb_splash_done") === "1";
 
-  // Redirect to onboarding if first time and not on a special route
-  if (!hasOnboarded && !isSpecialRoute) {
-    // Splash already seen → show full app (all pages work)
-    if (splashDone) {
-      return (
-        <>
-          <AuthModal
-            open={showGlobalAuthModal && !isAuthPage && !isSpecialRoute}
-            onClose={() => setShowGlobalAuthModal(false)}
-          />
-          <Routes>
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/connexion" element={<Connexion />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route element={<AppShell />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/services-salons" element={<ServicesSalons />} />
-              <Route path="/boutique" element={<Boutique />} />
-              <Route path="/rendez-vous" element={<RendezVous />} />
-              <Route path="/profil" element={<Profil />} />
-              <Route path="/maria" element={<Maria />} />
-              <Route path="/devenir-pro" element={<DevenirPro />} />
-              <Route path="/bundle/:id" element={<BundleDetail />} />
-              <Route path="/bundle-groupe/:id" element={<BundleGroupeDetail />} />
-              <Route path="/service/:id" element={<ServiceDetail />} />
-              <Route path="/modifier-profil-client" element={<ModifierProfilClient />} />
-              <Route path="/parametres" element={<Parametres />} />
-              <Route path="/parametres/securite" element={<Securite />} />
-              <Route path="/messages" element={<Messages />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/panier" element={<Panier />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/reservation" element={<Reservation />} />
-              <Route path="/recherche" element={<Recherche />} />
-              <Route path="/explorer" element={<Navigate to="/recherche" replace />} />
-              <Route path="/reels" element={<Reels />} />
-              <Route path="/live" element={<LiveFeed />} />
-              <Route path="/live-detail/:id" element={<LiveDetail />} />
-              <Route path="/abonnements" element={<AbonnementsClient />} />
-              <Route path="/mon-solde" element={<MonSolde />} />
-              <Route path="/programme-fidelite" element={<ProgrammeFidelite />} />
-              <Route path="/mes-commandes" element={<MesCommandes />} />
-              <Route path="/commande/:id" element={<CommandeDetail />} />
-              <Route path="/a-propos" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/scan-capillaire" element={<ScanCapillaire />} />
-              <Route path="/sh-ai" element={<ShAI />} />
-              <Route path="*" element={<Home />} />
-            </Route>
-          </Routes>
-        </>
-      );
-    }
-    // First visit → show onboarding (splash at step 0)
-    return (
-      <Routes>
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="/connexion" element={<Connexion />} />
-        <Route path="*" element={<Navigate to="/onboarding" replace />} />
-      </Routes>
-    );
+  // A single route tree keeps deep links available to guests and signed-in users.
+  if (!hasOnboarded && !splashDone && !isAuthenticated && location.pathname === '/') {
+    return <Navigate to="/onboarding" replace />;
   }
 
   // Render the main app
@@ -311,7 +249,7 @@ const AuthenticatedApp = () => {
         open={showGlobalAuthModal && !isAuthPage && !isSpecialRoute}
         onClose={() => setShowGlobalAuthModal(false)}
       />
-      <Routes>
+      <Suspense fallback={<div className="p-8 text-center" role="status">Chargement…</div>}><Routes>
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/connexion" element={<Connexion />} />
         <Route element={<AppShell />}>
@@ -395,16 +333,10 @@ const AuthenticatedApp = () => {
         <Route path="/contact" element={<Contact />} />
       </Route>
       <Route path="/auth/callback" element={<AuthCallback />} />
-      <Route path="/admin" element={<AdminLogin />} />
-      <Route path="/admin/signup" element={<AdminSignup />} />
-      <Route path="/admin/verify" element={<AdminVerify />} />
-      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-      <Route path="/vendeur" element={<Navigate to="/vendeur/dashboard" replace />} />
-      <Route path="/vendeur/dashboard" element={<VendeurDashboard />} />
-      <Route path="/vendeur/login" element={<VendeurLogin />} />
-      <Route path="/vendeur/signup" element={<VendeurSignup />} />
-        <Route path="*" element={<ModifierProfilPro />} />
-      </Routes>
+        <Route path="*" element={<main className="min-h-screen grid place-items-center p-6"><div className="text-center"><h1 className="text-2xl font-bold">Page introuvable</h1><p className="mt-3 text-gray-600">Ce lien n’existe plus ou a été déplacé.</p><a className="inline-block mt-6 rounded-xl bg-orange-600 px-5 py-3 text-white" href="/">Retour à l’accueil</a></div></main>} />
+      <Route path="/admin/*" element={<ExternalApplication kind="admin" />} />
+<Route path="/vendeur/*" element={<ExternalApplication kind="seller" />} />
+</Routes></Suspense>
     </>
   );
 };

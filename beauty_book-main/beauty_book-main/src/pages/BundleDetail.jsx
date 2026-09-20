@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import {
@@ -14,7 +15,7 @@ function ServiceImageSlider({ images }) {
   return (
     <div className="flex gap-2 overflow-x-auto pb-1.5 hide-scrollbar">
       {validImages.map((imgUrl, i) => (
-        <img
+        <BeautyImage
           key={i}
           src={imgUrl}
           alt=""
@@ -119,7 +120,7 @@ export default function BundleDetail() {
       {/* Hero Header */}
       <div className="relative h-[320px] overflow-hidden rounded-b-[32px]">
         {bundle.image_url ? (
-          <img src={bundle.image_url} alt={bundle.name} className="w-full h-full object-cover" />
+          <BeautyImage src={bundle.image_url} alt={bundle.name} className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-amber-100 via-orange-100 to-pink-100 flex items-center justify-center">
             <Package className="w-16 h-16 text-[#E8732A]/40" />
@@ -195,7 +196,7 @@ export default function BundleDetail() {
           >
             <div className="w-13 h-13 rounded-full overflow-hidden bg-gradient-to-br from-[#E8732A] to-[#E84466] shrink-0 flex items-center justify-center border-2 border-orange-100">
               {proProfile?.avatar_url || proProfile?.photo_url ? (
-                <img src={proProfile.avatar_url || proProfile.photo_url} alt="" className="w-full h-full object-cover" />
+                <BeautyImage src={proProfile.avatar_url || proProfile.photo_url} alt="" className="w-full h-full object-cover" />
               ) : (
                 <span className="text-white text-lg font-black">{proDisplayName[0]?.toUpperCase()}</span>
               )}
@@ -235,7 +236,7 @@ export default function BundleDetail() {
                 >
                   <div className="w-14 h-14 rounded-2xl overflow-hidden bg-gray-100 shrink-0 border border-gray-100">
                     {s.image_url || (s.images && s.images[0]) ? (
-                      <img src={s.image_url || s.images[0]} alt="" className="w-full h-full object-cover" />
+                      <BeautyImage src={s.image_url || s.images[0]} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pink-50 to-orange-50">
                         <Sparkles className="w-6 h-6 text-[#E8732A]" />
@@ -326,7 +327,7 @@ export default function BundleDetail() {
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 border border-orange-200">
                           {r.user_avatar || r.auteur_avatar ? (
-                            <img src={r.user_avatar || r.auteur_avatar} alt="" className="w-full h-full object-cover rounded-full" />
+                            <BeautyImage src={r.user_avatar || r.auteur_avatar} alt="" className="w-full h-full object-cover rounded-full" />
                           ) : (
                             <span className="text-xs font-black text-[#E8732A]">
                               {(r.user_name || r.auteur_name || r.auteur_email || "C")[0].toUpperCase()}
@@ -401,7 +402,7 @@ export default function BundleDetail() {
                 >
                   <div className="h-[105px] overflow-hidden bg-gray-100 relative">
                     {sb.image_url ? (
-                      <img src={sb.image_url} alt="" className="w-full h-full object-cover" />
+                      <BeautyImage src={sb.image_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-pink-50 to-orange-50 flex items-center justify-center">
                         <Package className="w-8 h-8 text-[#E8732A]/40" />

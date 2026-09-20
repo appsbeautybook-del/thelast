@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -248,7 +249,7 @@ function RealCallScreen({ targetName, targetAvatar, phoneNumber, onClose }) {
       <div className="flex flex-col items-center gap-4">
         <div className="relative">
           <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl">
-            <img src={targetAvatar || PROFILE_IMG} alt={targetName} className="w-full h-full object-cover" />
+            <BeautyImage src={targetAvatar || PROFILE_IMG} alt={targetName} className="w-full h-full object-cover" />
           </div>
           {/* Pulse rings */}
           <div className="absolute inset-0 rounded-full border-2 border-green-400/40 animate-ping" />
@@ -378,7 +379,7 @@ function ServiceSlider({ service, onCardClick }) {
           style={{ transform: `translateX(${(i - current) * 100}%)` }}>
           {isVideo(url)
             ? <video src={url} autoPlay={i === current} loop muted playsInline className="w-full h-full object-cover" />
-            : <img src={url} alt="" className="w-full h-full object-cover" />
+            : <BeautyImage src={url} alt="" className="w-full h-full object-cover" />
           }
         </div>
       ))}
@@ -440,7 +441,7 @@ function VisiteVirtuelle3D({ proEmail }) {
         >
           {/* Image de fond avec opacité basse */}
           {coverUrl ? (
-            <img
+            <BeautyImage
               src={coverUrl}
               alt="visite 3D"
               className="absolute inset-0 w-full h-full object-cover opacity-30"
@@ -530,7 +531,7 @@ function GalerieSection({ gallery }) {
                 </div>
               </>
             ) : (
-              <img src={url} alt={`galerie ${i + 1}`} className="w-full h-full object-cover" />
+              <BeautyImage src={url} alt={`galerie ${i + 1}`} className="w-full h-full object-cover" />
             )}
             {/* Bouton agrandir */}
             <div className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/40 rounded-full flex items-center justify-center">
@@ -592,7 +593,7 @@ function GalerieSection({ gallery }) {
                 </button>
               </div>
             ) : (
-              <img src={currentUrl} alt="" className="max-w-full max-h-[85vh] object-contain rounded-xl" />
+              <BeautyImage src={currentUrl} alt="" className="max-w-full max-h-[85vh] object-contain rounded-xl" />
             )}
           </div>
 
@@ -638,7 +639,7 @@ function MosaicGrid({ publications, navigate }) {
         onClick={() => navigate(`/reseau-social?reelId=${pub.id}`)}
       >
         {/* Image de base */}
-        {thumb && <img src={thumb} alt={pub.title} className="w-full h-full object-cover" />}
+        {thumb && <BeautyImage src={thumb} alt={pub.title} className="w-full h-full object-cover" />}
         {!thumb && <div className="w-full h-full flex items-center justify-center"><Image className="w-8 h-8 text-gray-300" /></div>}
 
         {/* Vidéo en lecture muette au survol */}
@@ -719,7 +720,8 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
   const [selectedPlat, setSelectedPlat] = useState(null);
   const [avis, setAvis] = useState([]);
 
-  const targetEmail = proEmailProp || proEmailFromState || user?.email;
+  // Priorité stricte : prop → state de navigation — JAMAIS user courant (évite d'ouvrir son propre profil)
+  const targetEmail = proEmailProp || proEmailFromState || null;
   const isOwnProfile = user?.email === targetEmail;
   const proAddress = proInfo?.address || proInfo?.city || null;
   const profileUrl = window.location.origin + "/profil-pro";
@@ -854,7 +856,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
       {/* Hero Banner */}
       <div className="relative">
         <div className="relative h-56 overflow-hidden">
-          <img src={proInfo?.cover_url || BANNER_IMG} alt="banner" className="w-full h-full object-cover" />
+          <BeautyImage src={proInfo?.cover_url || BANNER_IMG} alt="banner" className="w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: getBannerGradient(theme) }} />
         </div>
 
@@ -882,7 +884,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
         <div className="absolute -bottom-12 left-4">
           <div className="relative">
             <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-xl bg-gray-100">
-              <img src={proInfo?.avatar_url || PROFILE_IMG} alt="profil" className="w-full h-full object-cover" />
+              <BeautyImage src={proInfo?.avatar_url || PROFILE_IMG} alt="profil" className="w-full h-full object-cover" />
             </div>
             <div className="absolute bottom-1 right-1 w-6 h-6 bg-primary rounded-full border-2 border-white flex items-center justify-center">
               <CheckCircle2 className="w-3.5 h-3.5 text-white fill-white" />
@@ -1262,7 +1264,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                   <div key={i} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm flex cursor-pointer active:scale-[0.99] transition-all" onClick={() => setSelectedPlat(item)}>
                     {item.image_url ? (
                       <div className="w-24 h-24 shrink-0">
-                        <img src={item.image_url} alt={item.nom} className="w-full h-full object-cover" />
+                        <BeautyImage src={item.image_url} alt={item.nom} className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="w-24 h-24 shrink-0 bg-gray-100 flex items-center justify-center">
@@ -1289,7 +1291,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                   <div key={i} className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm flex cursor-pointer active:scale-[0.99] transition-all" onClick={() => setSelectedPlat(item)}>
                     {item.image_url ? (
                       <div className="w-24 h-24 shrink-0">
-                        <img src={item.image_url} alt={item.nom} className="w-full h-full object-cover" />
+                        <BeautyImage src={item.image_url} alt={item.nom} className="w-full h-full object-cover" />
                       </div>
                     ) : (
                       <div className="w-24 h-24 shrink-0 bg-gray-100 flex items-center justify-center">
@@ -1446,7 +1448,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                   const regularTotal = includedSvcs.reduce((sum, s) => sum + (parseFloat(s.price) || 0), 0);
                   return (
                     <div key={b.id} className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-3xl overflow-hidden border border-pink-100 shadow-sm">
-                      {b.image_url && <img src={b.image_url} alt="" className="w-full h-36 object-cover" />}
+                      {b.image_url && <BeautyImage src={b.image_url} alt="" className="w-full h-36 object-cover" />}
                       <div className="p-4">
                         <div className="flex items-center gap-2 mb-2">
                           <Zap className="w-4 h-4 text-pink-500" />

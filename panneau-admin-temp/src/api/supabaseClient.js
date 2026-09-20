@@ -13,7 +13,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey,
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      flowType: 'implicit',
+      flowType: 'pkce',
+      storageKey: 'beautybook-admin-auth',
     },
     realtime: {
       params: {

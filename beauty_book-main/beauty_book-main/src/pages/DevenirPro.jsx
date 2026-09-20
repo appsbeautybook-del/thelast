@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, X, Clock, Phone, Mail, Building2, Car, Moon, ImagePlus, CheckCircle, Store, AtSign, Plus, Trash2, AlertCircle, Camera, Upload, MapPin, Wifi, ParkingCircle, Wind, Baby, Coffee, CreditCard, Sofa, Music, UtensilsCrossed, Wine, Tv, Lightbulb, Thermometer, Star, Lock, Sun, GripVertical, Volume2, Accessibility, Shirt, ShowerHead, PawPrint, BookOpen, Sparkles, Zap } from "lucide-react";
@@ -428,7 +429,7 @@ function Step2({ data, setData }) {
                     {uploadingMenuImg[`resto_${i}`] ? (
                       <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     ) : item.image_url ? (
-                      <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                      <BeautyImage src={item.image_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <Camera className="w-4 h-4 text-gray-300" />
                     )}
@@ -500,7 +501,7 @@ function Step2({ data, setData }) {
                     {uploadingMenuImg[`bar_${i}`] ? (
                       <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                     ) : item.image_url ? (
-                      <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                      <BeautyImage src={item.image_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <Camera className="w-4 h-4 text-gray-300" />
                     )}
@@ -639,7 +640,7 @@ function Step3({ data, setData, errors }) {
           style={{ borderColor: data.cover_url ? "#E8732A" : "#e5e7eb", background: "#f9fafb" }}
         >
           {data.cover_url ? (
-            <img src={data.cover_url} alt="Bannière" className="w-full h-full object-cover" />
+            <BeautyImage src={data.cover_url} alt="Bannière" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2">
               {uploadingBanner ? <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /> : (
@@ -671,7 +672,7 @@ function Step3({ data, setData, errors }) {
               style={{ borderColor: data.avatar_url ? "#E8732A" : "#e5e7eb", background: "#f9fafb" }}
             >
               {data.avatar_url ? (
-                <img src={data.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                <BeautyImage src={data.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
               ) : uploadingAvatar ? (
                 <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               ) : (
@@ -745,7 +746,7 @@ function Step3({ data, setData, errors }) {
                                 loop
                               />
                             ) : (
-                              <img src={url} alt={`Media ${i + 1}`} className="w-full h-full object-cover" />
+                              <BeautyImage src={url} alt={`Media ${i + 1}`} className="w-full h-full object-cover" />
                             )}
                             {isVideo && (
                               <div className="absolute bottom-1 left-1 w-5 h-5 bg-black/50 rounded-full flex items-center justify-center">
@@ -832,7 +833,7 @@ function Step4({ data, setData }) {
   const uploadDoc = async (key, file) => {
     if (!file) return;
     setUploading(u => ({ ...u, [key]: true }));
-    const { file_url } = await uploadFile({ file });
+    const { file_url } = await uploadFile({ file }, 'private-documents');
     setData(d => ({ ...d, [key]: file_url }));
     setUploading(u => ({ ...u, [key]: false }));
   };
@@ -891,7 +892,7 @@ function Step4({ data, setData }) {
                     <span className="text-[9px] font-black text-red-500">PDF chargé</span>
                   </div>
                 ) : (
-                  <img src={data[key]} alt={side} className="w-full h-full object-cover" />
+                  <BeautyImage src={data[key]} alt={side} className="w-full h-full object-cover" />
                 )}
                 <div className="absolute bottom-1 left-1 bg-green-500 rounded-full px-1.5 py-0.5">
                   <span className="text-white text-[8px] font-black">✓ {side}</span>

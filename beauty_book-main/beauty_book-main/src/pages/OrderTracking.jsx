@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { entities } from '@/api/entities';
@@ -267,7 +268,7 @@ export default function OrderTracking() {
                     <div key={i} className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-50 shrink-0">
                         {item.image
-                          ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          ? <BeautyImage src={item.image} alt={item.name} className="w-full h-full object-cover" />
                           : <Package className="w-5 h-5 text-gray-300 m-auto mt-3.5" />}
                       </div>
                       <div className="flex-1 min-w-0">

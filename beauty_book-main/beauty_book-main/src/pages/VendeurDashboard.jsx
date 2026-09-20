@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { entities, uploadFile, fetchProduits } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -203,7 +204,7 @@ function ProductsTab({ vendeurEmail }) {
               <div className="flex gap-2 flex-wrap mb-2">
                 {form.images.map((url, i) => (
                   <div key={i} className="relative">
-                    <img src={url} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
+                    <BeautyImage src={url} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
                     <button type="button" onClick={() => setForm(f => ({ ...f, images: f.images.filter((_, j) => j !== i), image_url: i === 0 ? (f.images[1] || "") : f.image_url }))}
                       className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                       <X className="w-3 h-3 text-white" /></button>
@@ -234,7 +235,7 @@ function ProductsTab({ vendeurEmail }) {
             {products.map(p => (
               <div key={p.id} className="bg-white rounded-2xl p-4 border border-gray-200 flex items-center gap-4 shadow-sm">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                  {p.image_url ? <img src={p.image_url} alt="" className="w-full h-full object-cover" /> : <Package className="w-6 h-6 text-gray-300 m-4" />}
+                  {p.image_url ? <BeautyImage src={p.image_url} alt="" className="w-full h-full object-cover" /> : <Package className="w-6 h-6 text-gray-300 m-4" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-black text-gray-900 truncate">{p.name}</p>
@@ -357,7 +358,7 @@ function OrdersTab() {
                 <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={uploadDeliveryPhoto} />
                 {photo ? (
                   <div className="flex items-center gap-3 bg-green-50 rounded-xl p-3 border border-green-200">
-                    <img src={photo} alt="livraison" className="w-16 h-12 rounded-lg object-cover" />
+                    <BeautyImage src={photo} alt="livraison" className="w-16 h-12 rounded-lg object-cover" />
                     <span className="text-green-600 text-[12px] font-bold flex-1">✓ Photo ajoutée</span>
                     <button onClick={() => setPhoto("")} className="text-gray-400 text-[11px]">Retirer</button>
                   </div>
@@ -713,7 +714,7 @@ function GrossisteTab({ vendeurEmail }) {
               <div className="flex gap-2 flex-wrap mb-2">
                 {form.images.map((url, i) => (
                   <div key={i} className="relative">
-                    <img src={url} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
+                    <BeautyImage src={url} alt="" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
                     <button type="button" onClick={() => setForm(f => ({ ...f, images: f.images.filter((_, j) => j !== i), image_url: i === 0 ? (f.images[1] || "") : f.image_url }))}
                       className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                       <X className="w-3 h-3 text-white" /></button>
@@ -745,7 +746,7 @@ function GrossisteTab({ vendeurEmail }) {
             {products.map(p => (
               <div key={p.id} className="bg-white rounded-2xl p-4 border-2 border-blue-100 flex items-center gap-4 shadow-sm">
                 <div className="w-14 h-14 rounded-xl overflow-hidden bg-blue-50 shrink-0">
-                  {p.image_url ? <img src={p.image_url} alt="" className="w-full h-full object-cover" /> : <Package className="w-6 h-6 text-blue-200 m-4" />}
+                  {p.image_url ? <BeautyImage src={p.image_url} alt="" className="w-full h-full object-cover" /> : <Package className="w-6 h-6 text-blue-200 m-4" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-black text-gray-900 truncate">{p.name}</p>

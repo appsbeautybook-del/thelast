@@ -1,3 +1,5 @@
+import BeautyImage from '@/components/ui/BeautyImage';
+import PhotoAnalysis from '@/components/maria/PhotoAnalysis';
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
@@ -14,15 +16,7 @@ const GUIDE_TIPS = [
   { icon: "☀️", title: "Bonne luminosité", desc: "Évitez les ombres fortes sur le visage" },
 ];
 
-const PROGRESS_MSGS = [
-  "Téléchargement de votre photo...",
-  "Préparation des images de référence...",
-  "Connexion à Nano Banana AI...",
-  "Génération de la coiffure en cours...",
-  "Application du style sur votre visage...",
-  "Ajustement des textures et couleurs...",
-  "Finalisation du rendu réaliste...",
-];
+
 
 export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favoriteStyles = [] }) {
   const navigate = useNavigate();
@@ -127,144 +121,16 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
     analyzePhoto(file);
   };
 
-  const analyzePhoto = async (file) => {
-    setAnalyzingPhoto(true);
-    setPhotoAnalysis(null);
-    try {
-      let urlToSend = URL.createObjectURL(file);
-      try {
-        const { file_url } = await uploadFile({ file });
-        if (file_url) urlToSend = file_url;
-      } catch {}
-      const res = await apiClient.callFunction("analyzePhoto", {
-        photoUrl: urlToSend,
-        productName: "coiffure",
-      });
-      const d = res.data || {};
-      setPhotoAnalysis({
-        compatibility_score: d.compatibility_score || 85,
-        issues: d.issues || [],
-        body_type: d.body_type || "",
-        suggestion: d.suggestion || "Photo prête pour la simulation.",
-        ...d,
-      });
-    } catch {
-      setPhotoAnalysis({
-        compatibility_score: 85,
-        issues: [],
-        body_type: "",
-        suggestion: "Photo prête pour la simulation.",
-      });
-    }
-    setAnalyzingPhoto(false);
-  };
+  const analyzePhoto=async(file)=>{setAnalyzingPhoto(true);setPhotoAnalysis(null);setErrorMsg(null);try{const {file_url}=await uploadFile({file},'private-images');setUserPhotoUploadedUrl(file_url);const res=await apiClient.callFunction('analyzePhoto',{photoUrl:file_url,productName:'coiffure'});setPhotoAnalysis(res.data);}catch(e){setErrorMsg(e.message||'L’analyse de la photo a échoué.');}finally{setAnalyzingPhoto(false);}};
 
-  const startSimulation = async () => {
-    if (!userPhoto || !selectedStyle) return;
-    setStep(3);
-    setProgress(0);
-    setErrorMsg(null);
-
-    // Smooth progress animation — approaches 99%, never stuck
-    let rafId;
-    const startTime = Date.now();
-    const animateProgress = () => {
-      const elapsed = (Date.now() - startTime) / 1000;
-      const p = Math.min(99, 100 - 100 * Math.exp(-elapsed / 18));
-      setProgress(Math.round(p));
-      const idx = Math.min(PROGRESS_MSGS.length - 1, Math.floor(p / (100 / PROGRESS_MSGS.length)));
-      setProgressMsg(PROGRESS_MSGS[idx]);
-      rafId = requestAnimationFrame(animateProgress);
-    };
-    rafId = requestAnimationFrame(animateProgress);
-
-    try {
-      // 1. Uploader la photo de l'utilisateur si pas encore fait
-      let uploadedUrl = userPhotoUploadedUrl;
-      if (!uploadedUrl) {
-        setProgressMsg("Téléchargement de votre photo...");
-        const { file_url } = await uploadFile({ file: userPhoto });
-        uploadedUrl = file_url;
-        setUserPhotoUploadedUrl(file_url);
-      }
-
-      // 2. Récupérer l'image de référence du style sélectionné
-      const referenceImages = selectedStyle.allImages
-        ? selectedStyle.allImages.filter(Boolean).slice(0, 3)
-        : [selectedStyle.img].filter(Boolean);
-      const garmentPhoto = referenceImages[0] || selectedStyle.img;
-
-      setProgressMsg("Connexion à l'IA...");
-
-      // 3. Appeler shAiTryOn (même processus que l'essayage article)
-      const apiCall = apiClient.callFunction("shAiTryOn", {
-        user_photo: uploadedUrl,
-        garment_photo: garmentPhoto,
-        garment_name: `coiffure: ${selectedStyle.label}`,
-        preserve_face: true,
-        preserve_background: true,
-        mode: "hair",
-      });
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 60000));
-      const response = await Promise.race([apiCall, timeout]);
-
-      cancelAnimationFrame(rafId);
-      setProgress(100);
-      setProgressMsg("Simulation terminée ✨");
-      await new Promise(r => setTimeout(r, 600));
-
-      const data = response.data;
-
-      if (data?.error && !data?.fallback) {
-        throw new Error(data.error);
-      }
-
-      const isFallback = data?.fallback === true || !data?.result_url && !data?.generatedImageUrl;
-      const resultUrl = data?.result_url || data?.generatedImageUrl || null;
-      
-      setResult({
-        generatedImageUrl: resultUrl,
-        styleLabel: selectedStyle.label,
-        styleImg: selectedStyle.img,
-        userPhotoUrl,
-        fromReel: selectedStyle.fromReel,
-        author: selectedStyle.author,
-        fallback: isFallback,
-        fallbackMessage: data?.message || null,
-        faceShape: data?.faceShape || null,
-        compatibilityScore: data?.compatibilityScore || null,
-        message: data?.message || null,
-        recommendations: data?.recommendations || [],
-      });
-      setStep(4);
-
-    } catch (err) {
-      cancelAnimationFrame(rafId);
-      console.error("Simulation error:", err.message);
-      const isTimeout = err.message === 'timeout';
-      setErrorMsg(isTimeout ? "L'analyse prend trop de temps." : err.message);
-      setProgress(100);
-      setProgressMsg(isTimeout ? "Délai dépassé" : "Une erreur est survenue");
-      await new Promise(r => setTimeout(r, 500));
-      setResult({
-        generatedImageUrl: null,
-        error: isTimeout ? "L'analyse IA prend trop de temps. Réessayez plus tard." : err.message,
-        styleLabel: selectedStyle?.label,
-        styleImg: selectedStyle?.img,
-        userPhotoUrl,
-        fromReel: selectedStyle?.fromReel,
-        author: selectedStyle?.author,
-        fallback: false,
-      });
-      setStep(4);
-    }
-  };
+  const startSimulation=async()=>{if(!userPhoto||!selectedStyle)return;setStep(3);setProgress(50);setErrorMsg(null);setProgressMsg('Préparation de votre demande…');try{let uploadedUrl=userPhotoUploadedUrl;if(!uploadedUrl){uploadedUrl=(await uploadFile({file:userPhoto},'private-images')).file_url;setUserPhotoUploadedUrl(uploadedUrl);}const response=await apiClient.callFunction('shAiTryOn',{user_photo:uploadedUrl,garment_photo:selectedStyle.allImages?.filter(Boolean)[0]||selectedStyle.img,garment_name:'coiffure: '+selectedStyle.label,mode:'hair'},{onProgress:job=>setProgressMsg(job.status==='queued'?'Votre demande est dans la file d’attente…':'Génération de votre coiffure…')});if(!response.data?.result_url)throw new Error('Aucun résultat généré.');setResult({generatedImageUrl:response.data.result_url,styleLabel:selectedStyle.label,styleImg:selectedStyle.img,userPhotoUrl,fromReel:selectedStyle.fromReel,author:selectedStyle.author,fallback:false});setStep(4);}catch(e){setErrorMsg(e.message);setResult({error:e.message,styleLabel:selectedStyle.label,userPhotoUrl,fallback:false});setStep(4);}};
 
   const handleDownload = async () => {
-    const imgUrl = result?.generatedImageUrl || result?.styleImg;
+    const imgUrl = result?.generatedImageUrl;
     if (!imgUrl) return;
     try {
       const res = await fetch(imgUrl);
+      if(!res.ok)throw new Error('Téléchargement indisponible. Rouvrez le résultat depuis votre historique.');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -274,32 +140,10 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
       URL.revokeObjectURL(url);
       setDownloaded(true);
       setTimeout(() => setDownloaded(false), 2000);
-    } catch {
-      // fallback: ouvrir dans un onglet
-      window.open(imgUrl, "_blank");
-      setDownloaded(true);
-    }
+    } catch(e) {setErrorMsg(e.message||'Le téléchargement a échoué.');}
   };
 
-  const handleSaveToMaria = () => {
-    if (result && onResultSaved) {
-      onResultSaved({
-        styleLabel: result.styleLabel,
-        styleImg: result.generatedImageUrl || result.styleImg,
-        userPhotoUrl: result.userPhotoUrl,
-        message: `Style "${result.styleLabel}" simulé avec Nano Banana AI${result.author ? ` — par ${result.author}` : ""}`,
-        compatibilityScore: 92,
-        faceShape: "Analysé par IA",
-        recommendations: [
-          "Montrez cette simulation à votre coiffeur",
-          "Consultez les pros disponibles sur BeautyBook",
-          "Réservez une consultation pour ce style",
-        ],
-        savedAt: new Date().toISOString(),
-      });
-    }
-    setLiked(true);
-  };
+  const handleSaveToMaria=async()=>{if(!result?.generatedImageUrl||!onResultSaved)return;try{await onResultSaved({styleLabel:result.styleLabel,styleImg:result.generatedImageUrl,userPhotoUrl:result.userPhotoUrl,message:'Aperçu de coiffure généré par IA.',savedAt:new Date().toISOString()});setLiked(true);}catch(e){setErrorMsg(e.message||'Le partage a échoué.');}};
 
   const modal = (
     <div className="fixed inset-0 bg-black/70 z-[9999] flex items-end">
@@ -317,7 +161,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
             <h2 className="text-[17px] font-black text-gray-900">
               {step === 1 && "Guide Photo"}
               {step === 2 && "Choisir un Style"}
-              {step === 3 && "Nano Banana IA..."}
+              {step === 3 && "Génération IA…"}
               {step === 4 && "Votre Simulation"}
             </h2>
             <div className="flex items-center justify-center gap-1.5 mt-1">
@@ -329,7 +173,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center text-gray-400 text-[18px]">✕</button>
         </div>
 
-        <div className="flex-1 px-5 py-6">
+        <div className="flex-1 px-5 py-6">{errorMsg && <p role="alert" className="mb-4 p-3 rounded-xl bg-red-50 text-red-800 text-sm">{errorMsg}</p>}
 
           {/* ── STEP 1: Guide ── */}
           {step === 1 && (
@@ -339,11 +183,11 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                 <h3 className="text-[24px] font-black text-gray-900 mt-3">AI Hairstyle</h3>
                 <p className="text-[22px] font-black text-primary">Changer</p>
                 <p className="text-[13px] text-gray-600 mt-3 leading-relaxed">
-                  Notre IA Nano Banana génère une <strong>vraie photo de vous</strong> avec la coiffure choisie en quelques secondes.
+                  Notre IA OpenAI génère une <strong>vraie photo de vous</strong> avec la coiffure choisie en quelques secondes.
                 </p>
                 <div className="mt-3 flex items-center justify-center gap-1.5 bg-white/70 rounded-2xl px-3 py-2">
                   <Sparkles className="w-3.5 h-3.5 text-primary" />
-                  <span className="text-[11px] font-black text-primary">Propulsé par Nano Banana AI</span>
+                  <span className="text-[11px] font-black text-primary">Propulsé par OpenAI AI</span>
                 </div>
               </div>
               <div className="space-y-3">
@@ -378,7 +222,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                 >
                   {userPhotoUrl ? (
                     <div className="relative w-full h-full">
-                      <img src={userPhotoUrl} alt="Votre photo" className="w-full h-full object-cover rounded-3xl" />
+                      <BeautyImage src={userPhotoUrl} alt="Votre photo" className="w-full h-full object-cover rounded-3xl" />
                       <div className="absolute -top-2 -right-2 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center border-2 border-white z-10">
                         <Check className="w-3.5 h-3.5 text-white" />
                       </div>
@@ -409,54 +253,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                   <p className="text-[11px] font-bold text-blue-600">Analyse de la photo en cours…</p>
                 </div>
               )}
-              {userPhotoUrl && !analyzingPhoto && photoAnalysis && (
-                <div className={`rounded-xl border px-3 py-3 space-y-2 ${
-                  photoAnalysis.compatibility_score >= 70 ? "bg-green-50 border-green-100" :
-                  photoAnalysis.compatibility_score >= 40 ? "bg-yellow-50 border-yellow-100" :
-                  "bg-red-50 border-red-100"
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[15px]">
-                        {photoAnalysis.compatibility_score >= 70 ? "✅" : photoAnalysis.compatibility_score >= 40 ? "⚠️" : "❌"}
-                      </span>
-                      <p className={`text-[12px] font-black ${
-                        photoAnalysis.compatibility_score >= 70 ? "text-green-700" :
-                        photoAnalysis.compatibility_score >= 40 ? "text-yellow-700" : "text-red-600"
-                      }`}>
-                        {photoAnalysis.compatibility_score >= 70 ? "Photo compatible" :
-                         photoAnalysis.compatibility_score >= 40 ? "Compatibilité partielle" : "Photo non recommandée"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all duration-500 ${
-                            photoAnalysis.compatibility_score >= 70 ? "bg-green-500" :
-                            photoAnalysis.compatibility_score >= 40 ? "bg-yellow-400" : "bg-red-400"
-                          }`}
-                          style={{ width: `${photoAnalysis.compatibility_score}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] font-black text-gray-600">{photoAnalysis.compatibility_score}%</span>
-                    </div>
-                  </div>
-                  {photoAnalysis.issues?.length > 0 && (
-                    <div className="space-y-0.5">
-                      {photoAnalysis.issues.map((issue, i) => (
-                        <p key={i} className="text-[10px] text-gray-500 font-medium flex items-start gap-1">
-                          <span className="shrink-0 mt-0.5">•</span>{issue}
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                  {photoAnalysis.suggestion && photoAnalysis.compatibility_score < 70 && (
-                    <p className="text-[10px] font-bold text-gray-600 bg-white/70 rounded-lg px-2 py-1.5">
-                      💡 {photoAnalysis.suggestion}
-                    </p>
-                  )}
-                </div>
-              )}
+              {userPhotoUrl && !analyzingPhoto && <PhotoAnalysis analysis={photoAnalysis}/>}
 
               {/* Style selector */}
               <div>
@@ -499,7 +296,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                           className="relative flex flex-col items-center gap-1 active:scale-95 transition-all"
                         >
                           <div className={`w-full aspect-square rounded-xl overflow-hidden border-2 transition-all ${selectedStyle?.id === ref.id ? "border-primary shadow-md shadow-primary/20 scale-105" : "border-transparent"}`}>
-                            <img src={ref.img} alt={ref.label} className="w-full h-full object-cover" />
+                            <BeautyImage src={ref.img} alt={ref.label} className="w-full h-full object-cover" />
                           </div>
                           {ref.fromReel && (
                             <div className="absolute top-1 left-1 w-4 h-4 bg-primary/80 rounded-full flex items-center justify-center">
@@ -531,13 +328,13 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
 
               {selectedStyle && (
                 <div className="bg-orange-50 border border-orange-100 rounded-2xl p-3 flex items-center gap-3">
-                  <img src={selectedStyle.img} alt={selectedStyle.label} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                  <BeautyImage src={selectedStyle.img} alt={selectedStyle.label} className="w-12 h-12 rounded-xl object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-black text-gray-900">Style sélectionné : {selectedStyle.label}</p>
                     {selectedStyle.fromReel && selectedStyle.author && (
                       <p className="text-[10px] text-primary font-bold">✦ Publié par {selectedStyle.author}</p>
                     )}
-                    <p className="text-[11px] text-gray-500">Nano Banana IA va générer votre photo avec ce style</p>
+                    <p className="text-[11px] text-gray-500">OpenAI IA va générer votre photo avec ce style</p>
                   </div>
                 </div>
               )}
@@ -545,7 +342,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
               <div className="bg-blue-50 rounded-2xl p-3 flex items-start gap-2 border border-blue-100">
                 <Shield className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-blue-700 leading-relaxed">
-                  <strong>Vie privée garantie</strong> — Vos photos sont traitées de façon sécurisée par Nano Banana AI et ne sont pas stockées.
+                  <strong>Vie privée garantie</strong> — Vos photos sont traitées de façon sécurisée par OpenAI AI et ne sont pas stockées.
                 </p>
               </div>
 
@@ -569,7 +366,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
               {/* Blurred background with user photo */}
               {userPhotoUrl ? (
                 <div className="absolute inset-0">
-                  <img src={userPhotoUrl} alt="" className="w-full h-full object-cover scale-110 blur-sm" />
+                  <BeautyImage src={userPhotoUrl} alt="" className="w-full h-full object-cover scale-110 blur-sm" />
                   <div className="absolute inset-0 bg-black/40" />
                 </div>
               ) : (
@@ -586,19 +383,12 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                 {/* Title + percentage */}
                 <div className="w-full flex items-center justify-between mb-3">
                   <p className="text-white text-[18px] font-black drop-shadow-lg">{progressMsg}</p>
-                  <p className="text-primary text-[22px] font-black drop-shadow-lg">{progress}%</p>
+                  <p className="text-primary text-[22px] font-black drop-shadow-lg">En cours</p>
                 </div>
 
                 {/* Progress bar */}
                 <div className="w-full h-3 bg-white/15 rounded-full overflow-hidden border border-white/10 mb-4">
-                  <div
-                    className="h-full rounded-full transition-[width] duration-300 ease-out"
-                    style={{
-                      width: `${progress}%`,
-                      background: 'linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fdba74 100%)',
-                      boxShadow: '0 0 16px rgba(249, 115, 22, 0.7)',
-                    }}
-                  />
+                  <Loader2 className="h-8 w-8 animate-spin motion-reduce:animate-none text-primary mb-4" aria-label="Traitement en cours"/>
                 </div>
 
                 {/* Subtitle */}
@@ -611,7 +401,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                   onClick={onClose}
                   className="text-white/50 text-[13px] font-medium underline underline-offset-2 active:scale-95 transition-all"
                 >
-                  Annuler
+                  Fermer le suivi
                 </button>
               </div>
             </div>
@@ -626,7 +416,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                 <div className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 border ${result.fallback ? "bg-purple-50 border-purple-100" : "bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-100"}`}>
                   <Sparkles className={`w-3.5 h-3.5 ${result.fallback ? "text-purple-500" : "text-primary"}`} />
                   <span className={`text-[11px] font-black ${result.fallback ? "text-purple-600" : "text-primary"}`}>
-                    {result.fallback ? "Généré par IA (mode fallback)" : "Généré par Nano Banana AI"}
+                    {result.fallback ? "Généré par IA (mode fallback)" : "Généré par OpenAI AI"}
                   </span>
                 </div>
               </div>
@@ -652,14 +442,14 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                     <div className="grid grid-cols-2 gap-3">
                       {result.userPhotoUrl && (
                         <div className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-[3/4]">
-                          <img src={result.userPhotoUrl} alt="Vous" className="w-full h-full object-cover" />
+                          <BeautyImage src={result.userPhotoUrl} alt="Vous" className="w-full h-full object-cover" />
                           <div className="absolute bottom-2 left-2 bg-gray-900/80 rounded-full px-2 py-0.5">
                             <span className="text-white text-[9px] font-black uppercase">VOUS</span>
                           </div>
                         </div>
                       )}
                       <div className="relative rounded-2xl overflow-hidden bg-gray-100 aspect-[3/4]">
-                        <img src={result.styleImg} alt={result.styleLabel} className="w-full h-full object-cover" />
+                        <BeautyImage src={result.styleImg} alt={result.styleLabel} className="w-full h-full object-cover" />
                         <div className="absolute bottom-2 right-2 bg-primary/90 rounded-full px-2 py-0.5">
                           <span className="text-white text-[9px] font-black uppercase">STYLE</span>
                         </div>
@@ -667,19 +457,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                     </div>
                   </div>
                   {/* Score & analyse */}
-                  {result.compatibilityScore != null && (
-                    <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-100 rounded-2xl p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-[13px] font-black text-gray-900">Compatibilité</p>
-                        <span className="text-[22px] font-black text-primary">{result.compatibilityScore}%</span>
-                      </div>
-                      <div className="h-2.5 bg-white/60 rounded-full overflow-hidden mb-2">
-                        <div className="h-full bg-gradient-to-r from-primary to-orange-400 rounded-full" style={{ width: `${result.compatibilityScore}%` }} />
-                      </div>
-                      {result.faceShape && <p className="text-[11px] text-gray-600 mb-1">Forme du visage : <strong>{result.faceShape}</strong></p>}
-                      {result.message && <p className="text-[12px] text-gray-700 leading-relaxed mt-2">{result.message}</p>}
-                    </div>
-                  )}
+
                   {/* Recommandations */}
                   {result.recommendations?.length > 0 && (
                     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3">
@@ -708,9 +486,9 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                     onTouchEnd={() => setIsDragging(false)}
                     onTouchMove={onTouchMove}
                   >
-                    {/* APRÈS — image générée par Nano Banana */}
+                    {/* APRÈS — image générée par OpenAI */}
                     <div className="absolute inset-0">
-                      <img
+                      <BeautyImage
                         src={result.generatedImageUrl}
                         alt="Après"
                         className="w-full h-full object-cover"
@@ -725,7 +503,7 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
                       className="absolute inset-0 overflow-hidden"
                       style={{ clipPath: `inset(0 ${100 - comparePos}% 0 0)` }}
                     >
-                      <img src={result.userPhotoUrl} alt="Avant" className="w-full h-full object-cover" />
+                      <BeautyImage src={result.userPhotoUrl} alt="Avant" className="w-full h-full object-cover" />
                       <div className="absolute bottom-2 left-2 bg-gray-900/80 rounded-full px-2 py-0.5">
                         <span className="text-white text-[9px] font-black uppercase">AVANT</span>
                       </div>
@@ -751,13 +529,13 @@ export default function FiltreAIModal({ styleTitle, onClose, onResultSaved, favo
               {/* Info style */}
               <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <img src={result.styleImg} alt={result.styleLabel} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                  <BeautyImage src={result.styleImg} alt={result.styleLabel} className="w-12 h-12 rounded-xl object-cover shrink-0" />
                   <div>
                     <p className="text-[13px] font-black text-gray-900">{result.styleLabel}</p>
                     {result.fromReel && result.author && (
                       <p className="text-[11px] text-primary font-bold">✦ Style de {result.author}</p>
                     )}
-                    <p className="text-[11px] text-gray-400 font-medium">Image générée par Nano Banana AI</p>
+                    <p className="text-[11px] text-gray-400 font-medium">Image générée par OpenAI AI</p>
                   </div>
                 </div>
               </div>

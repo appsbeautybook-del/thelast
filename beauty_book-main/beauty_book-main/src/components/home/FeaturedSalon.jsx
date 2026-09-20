@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { Badge } from "@/components/ui/badge";
 import { Star, Award } from "lucide-react";
 
@@ -12,7 +13,7 @@ export default function FeaturedSalon() {
         </Badge>
       </div>
       <div className="relative rounded-2xl overflow-hidden shadow-lg cursor-pointer group">
-        <img
+        <BeautyImage
           src="https://media.base44.com/images/public/6a0ba7bd3d55dddeb85a8366/dcdf6a7f4_generated_784ab59f.png"
           alt="L'Atelier de Beauté"
           className="w-full h-52 object-cover group-hover:scale-105 transition-transform duration-500"

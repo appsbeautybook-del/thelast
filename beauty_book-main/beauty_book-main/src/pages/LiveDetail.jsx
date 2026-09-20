@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, useParams } from "react-router-dom";
@@ -59,7 +60,7 @@ function ShopSheet({ onClose, proEmail, onFeature }) {
             <div key={item.id} className="flex items-center gap-3 bg-white/5 rounded-2xl px-4 py-3">
               <div className="w-14 h-14 rounded-xl overflow-hidden bg-white/10 shrink-0">
                 {(item.image_url || item.images?.[0])
-                  ? <img src={item.image_url || item.images[0]} alt={item.name || item.title} className="w-full h-full object-cover" />
+                  ? <BeautyImage src={item.image_url || item.images[0]} alt={item.name || item.title} className="w-full h-full object-cover" />
                   : <div className="w-full h-full flex items-center justify-center"><Package className="w-6 h-6 text-white/20" /></div>}
               </div>
               <div className="flex-1 min-w-0">
@@ -90,7 +91,7 @@ function FeaturedProductOverlay({ item, onClose }) {
         </div>
         <div className="flex items-center gap-2.5">
           {(item.image_url || item.images?.[0]) && (
-            <img src={item.image_url || item.images[0]} alt={item.name || item.title} className="w-11 h-11 rounded-xl object-cover shrink-0" />
+            <BeautyImage src={item.image_url || item.images[0]} alt={item.name || item.title} className="w-11 h-11 rounded-xl object-cover shrink-0" />
           )}
           <div className="flex-1 min-w-0">
             <p className="text-white text-[11px] font-black truncate">{item.name || item.title}</p>
@@ -581,7 +582,7 @@ export default function LiveDetail() {
 
       {/* Background blur */}
       {session?.host_avatar
-        ? <img src={session.host_avatar} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.2, filter: "blur(20px)", transform: "scale(1.1)" }} />
+        ? <BeautyImage src={session.host_avatar} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.2, filter: "blur(20px)", transform: "scale(1.1)" }} />
         : <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, #f97316 0%, #000 100%)" }} />
       }
 
@@ -606,7 +607,7 @@ export default function LiveDetail() {
       {!loading && session && !isHost && connStatus !== "connected" && (
         <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none", gap: 16, zIndex: 10 }}>
           {session.host_avatar
-            ? <img src={session.host_avatar} alt={session.host_name} style={{ width: 112, height: 112, borderRadius: "50%", border: "4px solid rgba(255,255,255,0.5)", objectFit: "cover" }} />
+            ? <BeautyImage src={session.host_avatar} alt={session.host_name} style={{ width: 112, height: 112, borderRadius: "50%", border: "4px solid rgba(255,255,255,0.5)", objectFit: "cover" }} />
             : <div style={{ width: 112, height: 112, borderRadius: "50%", border: "4px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ color: "#fff", fontSize: 44, fontWeight: 900 }}>{(session.host_name || "P")[0]}</span>
               </div>
@@ -653,7 +654,7 @@ export default function LiveDetail() {
               <>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
                   {session.host_avatar
-                    ? <img src={session.host_avatar} alt={session.host_name} style={{ width: 40, height: 40, borderRadius: "50%", border: "2px solid #fff", objectFit: "cover", flexShrink: 0 }} />
+                    ? <BeautyImage src={session.host_avatar} alt={session.host_name} style={{ width: 40, height: 40, borderRadius: "50%", border: "2px solid #fff", objectFit: "cover", flexShrink: 0 }} />
                     : <div style={{ width: 40, height: 40, borderRadius: "50%", border: "2px solid #fff", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <span style={{ color: "#fff", fontWeight: 900, fontSize: 14 }}>{(session.host_name || "P")[0]}</span>
                       </div>
@@ -708,7 +709,7 @@ export default function LiveDetail() {
               return (
               <div key={c.id || i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
                 {c.sender_avatar
-                  ? <img src={c.sender_avatar} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0, marginTop: 2 }} />
+                  ? <BeautyImage src={c.sender_avatar} alt="" style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover", flexShrink: 0, marginTop: 2 }} />
                   : <div style={{ width: 24, height: 24, borderRadius: "50%", background: isHostComment ? PRIMARY : "rgba(255,255,255,0.2)", flexShrink: 0, marginTop: 2, display: "flex", alignItems: "center", justifyContent: "center" }}>
                       <span style={{ color: "#fff", fontSize: 9, fontWeight: 900 }}>{(c.sender_name || "?")[0]}</span>
                     </div>

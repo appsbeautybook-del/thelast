@@ -1,3 +1,4 @@
+import { useLiveSessions } from '@/hooks/useLiveSessions';
 import { useLocation, useNavigate } from "react-router-dom";
 import { MapPin, Radio, Search, Users, ShoppingBag, Building2, Star } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -16,6 +17,7 @@ const topTabs = [
 ];
 
 export default function MainHeader() {
+  const { sessions: liveSessions } = useLiveSessions();
   const location = useLocation();
   const navigate = useNavigate();
   const [unreadMessages, setUnreadMessages] = useState(0);
@@ -80,10 +82,11 @@ export default function MainHeader() {
   // Realtime notification badge
   useEffect(() => {
     let userEmail = null;
+    let channel = null, disposed = false;
     supabase.auth.getUser().then(({ data }) => {
       userEmail = data?.user?.email;
-      if (!userEmail) return;
-      const channel = supabase
+      if (!userEmail || disposed) return;
+      channel = supabase
         .channel("header-notif-badge")
         .on(
           "postgres_changes",
@@ -105,7 +108,7 @@ export default function MainHeader() {
         )
         .subscribe();
     });
-    return () => { supabase.removeAllChannels(); };
+    return () => { disposed = true; if (channel) void supabase.removeChannel(channel); };
   }, []);
 
   return (
@@ -169,7 +172,7 @@ export default function MainHeader() {
       {/* Row 2: Top text tabs */}
       <div className="overflow-x-auto hide-scrollbar">
         <div className="flex items-center gap-2 px-4 pb-3 min-w-max">
-          {topTabs.map((tab) => {
+          {topTabs.filter(tab => tab.id !== 'live' || liveSessions.length > 0).map((tab) => {
             const isActive = location.pathname === tab.path || location.pathname.startsWith(tab.path + "/");
             return (
               <button

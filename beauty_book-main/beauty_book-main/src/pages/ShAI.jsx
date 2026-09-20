@@ -1,3 +1,6 @@
+import BeautyImage from '@/components/ui/BeautyImage';
+import ImageJobHistory from '@/components/maria/ImageJobHistory';
+import PhotoAnalysis from '@/components/maria/PhotoAnalysis';
 import { fetchShopifyProducts } from "@/api/shopifyClient";
 import { useState, useRef, useEffect, useCallback, Component } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -17,108 +20,18 @@ import { useCartSync } from "@/hooks/useCartSync";
 // ─────────────────────────────────────────────────────────────────────────────
 // LOADING OVERLAY — smooth progress that never appears stuck
 // ─────────────────────────────────────────────────────────────────────────────
-const LOADING_MSGS = [
-  "Analyse de votre silhouette…",
-  "Détection du vêtement…",
-  "Alignement sur votre corps…",
-  "Application des textures…",
-  "Ajustement des proportions…",
-  "Préservation du visage & du décor…",
-  "Finalisation du rendu IA…",
-];
 
-function LoadingOverlay({ onCancel }) {
-  const [progress, setProgress] = useState(0);
-  const [msg, setMsg] = useState(LOADING_MSGS[0]);
-  const rafRef = useRef(null);
-  const startRef = useRef(Date.now());
 
-  useEffect(() => {
-    startRef.current = Date.now();
-    const tick = () => {
-      const elapsed = (Date.now() - startRef.current) / 1000;
-      const p = Math.min(98, 100 - 100 * Math.exp(-elapsed / 15));
-      setProgress(Math.round(p));
-      const idx = Math.min(LOADING_MSGS.length - 1, Math.floor(elapsed / 5));
-      setMsg(LOADING_MSGS[idx]);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
-
-  return (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full px-5 pb-6 pt-8 space-y-3">
-        <div className="flex justify-center mb-2">
-          <div className="w-14 h-14 rounded-2xl bg-primary/20 border-2 border-primary/40 flex items-center justify-center">
-            <Wand2 className="w-7 h-7 text-primary animate-spin" />
-          </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <p className="text-white text-[13px] font-black">{msg}</p>
-          <p className="text-primary text-[15px] font-black">{progress}%</p>
-        </div>
-        <div className="h-3 bg-white/10 rounded-full overflow-hidden border border-white/10">
-          <div
-            className="h-full rounded-full transition-[width] duration-300 ease-out"
-            style={{
-              width: `${progress}%`,
-              background: 'linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fdba74 100%)',
-              boxShadow: '0 0 12px rgba(249, 115, 22, 0.6)',
-            }}
-          />
-        </div>
-        <p className="text-white/60 text-[11px] font-medium text-center">
-          Simulation IA en cours — patientez…
-        </p>
-        <button onClick={onCancel} className="w-full text-white/40 text-[11px] underline text-center mt-1">Annuler</button>
-      </div>
-    </div>
-  );
-}
+function LoadingOverlay({onCancel}){return <div role="status" className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/70 backdrop-blur-sm p-6 text-center"><Wand2 className="h-10 w-10 text-primary animate-pulse motion-reduce:animate-none"/><p className="text-white font-bold mt-5">Votre essayage est en cours</p><p className="text-white/70 text-sm mt-2">Le traitement peut prendre quelques minutes. Le résultat apparaîtra dans votre historique privé.</p><button onClick={onCancel} className="mt-6 min-h-11 px-4 text-white underline">Fermer le suivi</button></div>;}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HISTORIQUE ESSAYAGES
 // ─────────────────────────────────────────────────────────────────────────────
-const HISTORY_KEY = "sh_ai_history";
-function loadHistory() {
-  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { return []; }
-}
-function saveToHistory(entry) {
-  const hist = loadHistory();
-  hist.unshift({ ...entry, date: new Date().toISOString() });
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(hist.slice(0, 10)));
-}
 
-function HistoryPanel({ onSelect, onClose }) {
-  const [history] = useState(loadHistory);
-  if (history.length === 0) return (
-    <div className="px-4 py-12 flex flex-col items-center gap-3">
-      <Clock className="w-10 h-10 text-gray-200" />
-      <p className="text-[13px] text-gray-400 font-medium text-center">Aucun essayage sauvegardé</p>
-    </div>
-  );
-  return (
-    <div className="px-4 py-4 space-y-3">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Derniers essayages</p>
-        <button onClick={onClose} className="text-[11px] font-black text-primary">Fermer</button>
-      </div>
-      {history.map((h, i) => (
-        <button key={i} onClick={() => onSelect(h.resultUrl)}
-          className="w-full flex items-center gap-3 bg-gray-50 rounded-2xl p-3 border border-gray-100 active:scale-98 transition-all text-left">
-          <img src={h.resultUrl} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-black text-gray-900 truncate">{h.productName || "Tenue"}</p>
-            <p className="text-[11px] text-gray-400 font-medium">{new Date(h.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</p>
-          </div>
-          <span className="text-gray-300 text-lg shrink-0">›</span>
-        </button>
-      ))}
-    </div>
-  );
-}
+
+
+
+function HistoryPanel(props){return <ImageJobHistory {...props}/>;}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RETOUCHE COMPLÈTE — synchronisée en temps réel
@@ -187,7 +100,7 @@ function RetouchePanel({ imageUrl, onRestart }) {
     <div className="space-y-3">
       {/* Image résultat — les retouches s'appliquent instantanément */}
       <div className="relative rounded-3xl overflow-hidden aspect-[3/4] shadow-xl bg-gray-100">
-        <img
+        <BeautyImage
           src={imageUrl}
           alt="Résultat"
           className="w-full h-full object-cover"
@@ -300,7 +213,7 @@ function UploadZone({ image, onUpload, onClear, label, hint, accent = true }) {
       {label && <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>}
       {image ? (
         <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-md">
-          <img src={image} alt="" className="w-full h-full object-cover" />
+          <BeautyImage src={image} alt="" className="w-full h-full object-cover" />
           <button onClick={onClear} className="absolute top-2 right-2 w-8 h-8 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center active:scale-90">
             <X className="w-4 h-4 text-white" />
           </button>
@@ -332,7 +245,7 @@ function PieceUpload({ label, emoji, image, onUpload, onClear }) {
     <div className="flex flex-col gap-1.5">
       {image ? (
         <div className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
-          <img src={image} alt={label} className="w-full h-full object-cover" />
+          <BeautyImage src={image} alt={label} className="w-full h-full object-cover" />
           <button onClick={onClear} className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
             <X className="w-3 h-3 text-white" />
           </button>
@@ -437,7 +350,7 @@ function ProductCard({ product, selected, onSelect }) {
   return (
     <button onClick={onSelect}
       className={`relative rounded-2xl overflow-hidden aspect-square border-2 transition-all active:scale-95 ${selected ? "border-primary shadow-lg shadow-primary/20" : "border-transparent"}`}>
-      <img src={product.img} alt={product.name} className="w-full h-full object-cover" />
+      <BeautyImage src={product.img} alt={product.name} className="w-full h-full object-cover" />
       {selected && (
         <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
           <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shadow-lg">
@@ -460,19 +373,7 @@ const SHAI_DRAFT_KEY = 'shai_cabine_draft';
 
 function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
   // ── Restore draft from localStorage ──
-  const loadDraft = () => {
-    try {
-      const raw = localStorage.getItem(SHAI_DRAFT_KEY);
-      if (!raw) return null;
-      const d = JSON.parse(raw);
-      // Only restore if draft is recent (24h)
-      if (!d._savedAt || Date.now() - d._savedAt > 86400000) {
-        localStorage.removeItem(SHAI_DRAFT_KEY);
-        return null;
-      }
-      return d;
-    } catch { return null; }
-  };
+  const loadDraft=()=>null;
   const draft = useRef(loadDraft()).current;
 
   const [mode, setMode] = useState(draft?.mode || "article");
@@ -499,22 +400,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
   const compareRef = useRef(null);
 
   // ── Save draft to localStorage (debounced) ──
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        const toSave = {
-          mode, userPhoto, photoAnalysis, topPhoto, bottomPhoto, shoesPhoto, result,
-          selectedProduct: selectedProduct ? {
-            id: selectedProduct.id, name: selectedProduct.name, img: selectedProduct.img,
-            price: selectedProduct.price, brand: selectedProduct.brand,
-          } : null,
-          _savedAt: Date.now(),
-        };
-        localStorage.setItem(SHAI_DRAFT_KEY, JSON.stringify(toSave));
-      } catch {}
-    }, 500);
-    return () => clearTimeout(t);
-  }, [mode, userPhoto, photoAnalysis, selectedProduct, topPhoto, bottomPhoto, shoesPhoto, result]);
+  useEffect(()=>{localStorage.removeItem(SHAI_DRAFT_KEY);localStorage.removeItem('sh_ai_history');},[]);
 
   // Pré-sélectionner le produit depuis ProduitDetail
   useEffect(() => {
@@ -563,15 +449,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
       .finally(() => setLoadingVariants(false));
   }, [selectedProduct?.id]);
 
-  const doUploadFile = async (file) => {
-    try {
-      const { file_url } = await uploadFile({ file });
-      return file_url;
-    } catch (err) {
-      console.warn('[ShAI] Upload failed, using base64 preview:', err);
-      return await fileToBase64(file);
-    }
-  };
+  const doUploadFile=async(file)=>{try{return (await uploadFile({file},'private-images')).file_url;}catch(e){setError(e.message||'La photo n’a pas été envoyée.');return null;}};
 
   const fileToBase64 = (file) => new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -580,54 +458,11 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
     reader.readAsDataURL(file);
   });
 
-  const analyzePhoto = async (photoUrl, productName, file) => {
-    setAnalyzingPhoto(true);
-    setPhotoAnalysis(null);
-    try {
-      // Try uploading to get a hosted URL, but keep base64 as fallback
-      let urlToSend = photoUrl;
-      if (photoUrl && photoUrl.startsWith('data:') && file) {
-        try {
-          const { file_url } = await uploadFile({ file });
-          if (file_url) urlToSend = file_url;
-        } catch {
-          // Keep base64 data URL — Gemini supports it directly
-        }
-      }
-
-      const res = await apiClient.callFunction("analyzePhoto", {
-        photoUrl: urlToSend,
-        productName: productName || "vêtement",
-      });
-      const d = res.data || {};
-      setPhotoAnalysis({
-        has_person: d.has_person !== undefined ? d.has_person : true,
-        body_visible: d.body_visible !== undefined ? d.body_visible : true,
-        quality_ok: d.quality_ok !== undefined ? d.quality_ok : true,
-        compatibility_score: d.compatibility_score || 85,
-        issues: d.issues || [],
-        body_type: d.body_type || "",
-        suggestion: d.suggestion || "Photo prête pour l'essayage virtuel.",
-        ...d,
-      });
-    } catch (err) {
-      console.warn('[ShAI] Analysis failed, using default:', err);
-      setPhotoAnalysis({
-        has_person: true,
-        body_visible: true,
-        quality_ok: true,
-        compatibility_score: 85,
-        issues: [],
-        body_type: "",
-        suggestion: "Photo prête pour l'essayage virtuel."
-      });
-    }
-    setAnalyzingPhoto(false);
-  };
+  const analyzePhoto=async(photoUrl,productName,file)=>{setAnalyzingPhoto(true);setPhotoAnalysis(null);try{let url=photoUrl;if(file){url=(await uploadFile({file},'private-images')).file_url;}const res=await apiClient.callFunction('analyzePhoto',{photoUrl:url,productName});setPhotoAnalysis(res.data);}catch(e){setError(e.message||'L’analyse de la photo a échoué.');}finally{setAnalyzingPhoto(false);}};
 
   const handleUserPhoto = async (e) => {
     const file = e.target.files[0]; if (!file) return;
-    const url = await doUploadFile(file);
+    const url = await doUploadFile(file); if(!url)return;
     setUserPhoto(url); setResult(null); setPhotoAnalysis(null);
     e.target.value = "";
     analyzePhoto(url, selectedProduct?.name || "", file);
@@ -635,7 +470,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
 
   const handlePiece = async (e, setter) => {
     const file = e.target.files[0]; if (!file) return;
-    const url = await doUploadFile(file);
+    const url = await doUploadFile(file); if(!url)return;
     setter(url); setResult(null); e.target.value = "";
   };
 
@@ -653,7 +488,6 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
       ? selectedProduct.name
       : `tenue (${[topPhoto && "haut", bottomPhoto && "bas", shoesPhoto && "chaussures"].filter(Boolean).join(", ")})`;
     try {
-      const startTime = Date.now();
       const apiCall = apiClient.callFunction("shAiTryOn", {
         user_photo: userPhoto,
         garment_photo: garmentPhoto,
@@ -663,17 +497,11 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
         mode: mode === "tenue" ? "outfit" : "article",
         outfit_pieces: mode === "tenue" ? { top: topPhoto, bottom: bottomPhoto, shoes: shoesPhoto } : undefined,
       }, { signal: controller.signal });
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 60000));
-      const res = await Promise.race([apiCall, timeout]);
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 5000) {
-        await new Promise(r => setTimeout(r, 5000 - elapsed));
-      }
+      const res = await apiCall;
       setLoading(false);
       if (res.data?.result_url) {
         const resultUrl = res.data.result_url;
         setResult(resultUrl);
-        saveToHistory({ resultUrl, productName: garmentName, userPhoto, garmentPhoto });
       } else {
         setError("L'essayage virtuel n'a pas pu être généré. Réessayez avec une autre photo.");
       }
@@ -682,9 +510,9 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
       if (err.message === 'timeout') {
         setError("L'analyse prend trop de temps. Réessayez avec une photo plus petite.");
       } else if (err.name === 'AbortError') {
-        setError("Essayage annulé.");
+        setError("Suivi fermé. Retrouvez le résultat dans l’historique.");
       } else {
-        setError("L'essayage virtuel sera bientôt disponible. En attendant, consultez l'analyse de compatibilité de votre photo.");
+        setError(err.message || "La génération n’a pas abouti.");
       }
     }
   };
@@ -692,7 +520,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
   const cancelTryOn = () => {
     if (abortRef.current) abortRef.current.abort();
     setLoading(false);
-    setError("Essayage annulé.");
+    setError("Suivi fermé. Retrouvez le résultat dans l’historique.");
   };
 
   const reset = () => {
@@ -741,13 +569,13 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
               onTouchMove={onCompareTouchMove}
             >
               <div className="absolute inset-0">
-                <img src={result} alt="Après" className="w-full h-full object-cover" />
+                <BeautyImage src={result} alt="Après" className="w-full h-full object-cover" />
                 <div className="absolute bottom-2 right-2 bg-primary/90 rounded-full px-2 py-0.5">
                   <span className="text-white text-[9px] font-black uppercase">APRÈS</span>
                 </div>
               </div>
               <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - comparePos}% 0 0)` }}>
-                <img src={userPhoto} alt="Avant" className="w-full h-full object-cover" />
+                <BeautyImage src={userPhoto} alt="Avant" className="w-full h-full object-cover" />
                 <div className="absolute bottom-2 left-2 bg-gray-900/80 rounded-full px-2 py-0.5">
                   <span className="text-white text-[9px] font-black uppercase">AVANT</span>
                 </div>
@@ -767,7 +595,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
 
         {mode === "article" && selectedProduct && (
           <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 flex items-center gap-3">
-            <img src={selectedProduct.img} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0 shadow-sm" />
+            <BeautyImage src={selectedProduct.img} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0 shadow-sm" />
             <div className="flex-1 min-w-0">
               <p className="text-[13px] font-black text-gray-900 truncate">{selectedProduct.name}</p>
               <p className="text-[15px] font-black text-primary mt-0.5">{selectedProduct.price}€</p>
@@ -801,7 +629,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
       {/* Pré-sélection depuis produit */}
       {preSelectedProduct && !selectedProduct && (
         <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex items-center gap-3">
-          <img src={preSelectedProduct.img} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+          <BeautyImage src={preSelectedProduct.img} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-[11px] font-black text-blue-700">Produit pré-sélectionné depuis la boutique</p>
             <p className="text-[12px] font-bold text-gray-800 truncate">{preSelectedProduct.name}</p>
@@ -837,7 +665,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
         <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-md">
           {userPhoto ? (
             <>
-              <img src={userPhoto} alt="" className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-30' : 'opacity-100'}`} />
+              <BeautyImage src={userPhoto} alt="" className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-30' : 'opacity-100'}`} />
               {loading && <LoadingOverlay onCancel={cancelTryOn} />}
               {!loading && (
                 <button onClick={() => { setUserPhoto(null); setResult(null); }}
@@ -861,69 +689,8 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
             <p className="text-[11px] font-bold text-blue-600">Analyse de la photo en cours…</p>
           </div>
         )}
-        {userPhoto && !loading && !analyzingPhoto && photoAnalysis && (
-          <div className={`mt-2 rounded-xl border px-3 py-3 space-y-2 ${
-            photoAnalysis.compatibility_score >= 70 ? "bg-green-50 border-green-100" :
-            photoAnalysis.compatibility_score >= 40 ? "bg-yellow-50 border-yellow-100" :
-            "bg-red-50 border-red-100"
-          }`}>
-            {/* Score + statut */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-[15px]">
-                  {photoAnalysis.compatibility_score >= 70 ? "✅" : photoAnalysis.compatibility_score >= 40 ? "⚠️" : "❌"}
-                </span>
-                <p className={`text-[12px] font-black ${
-                  photoAnalysis.compatibility_score >= 70 ? "text-green-700" :
-                  photoAnalysis.compatibility_score >= 40 ? "text-yellow-700" : "text-red-600"
-                }`}>
-                  {photoAnalysis.compatibility_score >= 70 ? "Photo compatible" :
-                   photoAnalysis.compatibility_score >= 40 ? "Compatibilité partielle" : "Photo non recommandée"}
-                </p>
-              </div>
-              {/* Jauge score */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      photoAnalysis.compatibility_score >= 70 ? "bg-green-500" :
-                      photoAnalysis.compatibility_score >= 40 ? "bg-yellow-400" : "bg-red-400"
-                    }`}
-                    style={{ width: `${photoAnalysis.compatibility_score}%` }}
-                  />
-                </div>
-                <span className="text-[11px] font-black text-gray-600">{photoAnalysis.compatibility_score}%</span>
-              </div>
-            </div>
-            {/* Body type */}
-            {photoAnalysis.body_type && (
-              <p className="text-[10px] font-medium text-gray-500">
-                Morphologie détectée : <span className="font-black text-gray-700">{photoAnalysis.body_type}</span>
-              </p>
-            )}
-            {/* Issues */}
-            {photoAnalysis.issues?.length > 0 && (
-              <div className="space-y-0.5">
-                {photoAnalysis.issues.map((issue, i) => (
-                  <p key={i} className="text-[10px] text-gray-500 font-medium flex items-start gap-1">
-                    <span className="shrink-0 mt-0.5">•</span>{issue}
-                  </p>
-                ))}
-              </div>
-            )}
-            {/* Suggestion si score faible */}
-            {photoAnalysis.suggestion && photoAnalysis.compatibility_score < 70 && (
-              <p className="text-[10px] font-bold text-gray-600 bg-white/70 rounded-lg px-2 py-1.5">
-                💡 {photoAnalysis.suggestion}
-              </p>
-            )}
-          </div>
-        )}
-        {userPhoto && !loading && !analyzingPhoto && !photoAnalysis && (
-          <p className="text-[10px] text-green-600 font-bold mt-2 flex items-center gap-1">
-            <Check className="w-3 h-3" /> Visage & décor préservés par l'IA
-          </p>
-        )}
+        {userPhoto && !loading && !analyzingPhoto && <PhotoAnalysis analysis={photoAnalysis}/>}
+
       </div>
 
       {/* Étape 2 */}
@@ -986,7 +753,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
 
               {selectedProduct && (
                 <div className="bg-orange-50 rounded-2xl p-3 flex items-center gap-3 border border-orange-100">
-                  <img src={selectedProduct.img} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                  <BeautyImage src={selectedProduct.img} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-black text-gray-900 truncate">{selectedProduct.name}</p>
                     {Object.keys(selectedOptions).length > 0 && (
@@ -1035,18 +802,7 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
 const SHAI_TENUES_DRAFT_KEY = 'shai_echange_draft';
 
 function EchangeTenues() {
-  const loadDraft = () => {
-    try {
-      const raw = localStorage.getItem(SHAI_TENUES_DRAFT_KEY);
-      if (!raw) return null;
-      const d = JSON.parse(raw);
-      if (!d._savedAt || Date.now() - d._savedAt > 86400000) {
-        localStorage.removeItem(SHAI_TENUES_DRAFT_KEY);
-        return null;
-      }
-      return d;
-    } catch { return null; }
-  };
+  const loadDraft=()=>null;
   const draft = useRef(loadDraft()).current;
 
   const [userPhoto, setUserPhoto] = useState(draft?.userPhoto || null);
@@ -1061,39 +817,22 @@ function EchangeTenues() {
   const [isDragging, setIsDragging] = useState(false);
   const compareRef = useRef(null);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(SHAI_TENUES_DRAFT_KEY, JSON.stringify({
-          userPhoto, referencePhoto, result, searchResults, detectedItems, _savedAt: Date.now(),
-        }));
-      } catch {}
-    }, 500);
-    return () => clearTimeout(t);
-  }, [userPhoto, referencePhoto, result, searchResults, detectedItems]);
+  useEffect(()=>{localStorage.removeItem(SHAI_TENUES_DRAFT_KEY);},[]);
 
-  const doUploadFile = async (file) => {
-    try {
-      const { file_url } = await uploadFile({ file });
-      return file_url;
-    } catch (err) {
-      console.warn('[ShAI] Upload failed, using local preview:', err);
-      return URL.createObjectURL(file);
-    }
-  };
+  const doUploadFile=async(file)=>{try{return (await uploadFile({file},'private-images')).file_url;}catch(e){setError(e.message||'La photo n’a pas été envoyée.');return null;}};
 
   const handleUserPhoto = async (e) => {
     const file = e.target.files[0]; if (!file) return;
-    const url = await doUploadFile(file);
+    const url = await doUploadFile(file); if(!url)return;
     setUserPhoto(url); setResult(null); e.target.value = "";
   };
 
   const handleReferencePhoto = async (e) => {
     const file = e.target.files[0]; if (!file) return;
-    const url = await doUploadFile(file);
+    const url = await doUploadFile(file); if(!url)return;
     setReferencePhoto(url); setResult(null); setSearchResults([]); setDetectedItems([]);
     setSearching(true);
-    const res = await apiClient.callFunction("shAiImageSearch", { image_url: url }).catch(() => null);
+    const res = await apiClient.callFunction("shAiImageSearch", { image_url: url }).catch(e => {setError(e.message);return null;});
     if (res?.data?.products) setSearchResults(res.data.products);
     if (res?.data?.detected_items) setDetectedItems(res.data.detected_items);
     setSearching(false);
@@ -1108,31 +847,24 @@ function EchangeTenues() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const startTime = Date.now();
       const apiCall = apiClient.callFunction("shAiTryOn", {
         user_photo: userPhoto, garment_photo: referencePhoto, garment_name: "tenue de référence",
         preserve_face: true, preserve_background: true, mode: "exchange",
-      });
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 60000));
-      const res = await Promise.race([apiCall, timeout]);
-      const elapsed = Date.now() - startTime;
-      if (elapsed < 5000) {
-        await new Promise(r => setTimeout(r, 5000 - elapsed));
-      }
+      }, {signal:controller.signal});
+      const res = await apiCall;
       setLoading(false);
       if (res.data?.result_url) {
         const resultUrl = res.data.result_url;
         setResult(resultUrl);
-        saveToHistory({ resultUrl, productName: "Échange de tenue", userPhoto, garmentPhoto: referencePhoto });
       } else {
         setError("L'échange de tenue n'a pas pu être généré. Réessayez.");
       }
     } catch (err) {
       setLoading(false);
       if (err.name === 'AbortError') {
-        setError("Échange annulé.");
+        setError("Suivi fermé. Retrouvez le résultat dans l’historique.");
       } else {
-        setError("L'échange de tenue n'est pas encore disponible. Réessayez plus tard.");
+        setError(err.message || "La génération n’a pas abouti.");
       }
     }
   };
@@ -1140,7 +872,7 @@ function EchangeTenues() {
   const cancelExchange = () => {
     if (abortRef.current) abortRef.current.abort();
     setLoading(false);
-    setError("Échange annulé.");
+    setError("Suivi fermé. Retrouvez le résultat dans l’historique.");
   };
 
   const reset = () => {
@@ -1179,13 +911,13 @@ function EchangeTenues() {
             onTouchMove={onCompareTouchMove}
           >
             <div className="absolute inset-0">
-              <img src={result} alt="Après" className="w-full h-full object-cover" />
+              <BeautyImage src={result} alt="Après" className="w-full h-full object-cover" />
               <div className="absolute bottom-2 right-2 bg-primary/90 rounded-full px-2 py-0.5">
                 <span className="text-white text-[9px] font-black uppercase">APRÈS</span>
               </div>
             </div>
             <div className="absolute inset-0 overflow-hidden" style={{ clipPath: `inset(0 ${100 - comparePos}% 0 0)` }}>
-              <img src={userPhoto} alt="Avant" className="w-full h-full object-cover" />
+              <BeautyImage src={userPhoto} alt="Avant" className="w-full h-full object-cover" />
               <div className="absolute bottom-2 left-2 bg-gray-900/80 rounded-full px-2 py-0.5">
                 <span className="text-white text-[9px] font-black uppercase">AVANT</span>
               </div>
@@ -1209,7 +941,7 @@ function EchangeTenues() {
           <div className="grid grid-cols-3 gap-2">
             {searchResults.slice(0, 6).map((p, i) => (
               <div key={i} className="rounded-2xl overflow-hidden border border-gray-100 bg-white shadow-sm">
-                <img src={p.img} alt={p.name} className="w-full aspect-square object-cover" />
+                <BeautyImage src={p.img} alt={p.name} className="w-full aspect-square object-cover" />
                 <div className="px-2 py-1.5"><p className="text-[10px] font-bold text-gray-700 line-clamp-1">{p.name}</p><p className="text-[10px] font-black text-primary">{p.price}€</p></div>
               </div>
             ))}
@@ -1239,7 +971,7 @@ function EchangeTenues() {
           <div className="relative rounded-2xl overflow-hidden aspect-[3/4] shadow-md max-w-[280px] mx-auto">
             {userPhoto ? (
               <>
-                <img src={userPhoto} alt="" className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-30' : 'opacity-100'}`} />
+                <BeautyImage src={userPhoto} alt="" className={`w-full h-full object-cover transition-opacity duration-300 ${loading ? 'opacity-30' : 'opacity-100'}`} />
                 {loading && <LoadingOverlay onCancel={cancelExchange} />}
                 {!loading && (
                   <button onClick={() => setUserPhoto(null)} className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full flex items-center justify-center z-10">
@@ -1262,7 +994,7 @@ function EchangeTenues() {
             <div className="relative rounded-2xl overflow-hidden aspect-[4/3] shadow-md">
               {referencePhoto ? (
                 <>
-                  <img src={referencePhoto} alt="" className="w-full h-full object-cover" />
+                  <BeautyImage src={referencePhoto} alt="" className="w-full h-full object-cover" />
                   {!loading && (
                     <button onClick={() => { setReferencePhoto(null); setSearchResults([]); setDetectedItems([]); }} className="absolute top-2 right-2 w-7 h-7 bg-black/60 rounded-full flex items-center justify-center z-10">
                       <X className="w-3.5 h-3.5 text-white" />

@@ -1,43 +1,20 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/AuthContext";
-import { setAdminToken } from "@/lib/adminApiClient";
-import { supabase } from "@/api/supabaseClient";
-
-export default function AdminGuard({ children }) {
-  const navigate = useNavigate();
-  const { user, isLoadingAuth } = useAuth();
-  const [checked, setChecked] = useState(false);
-
-  useEffect(() => {
-    if (isLoadingAuth) return;
-
-    if (user && user.role === "admin") {
-      setChecked(true);
-      return;
-    }
-
-    // If no user yet, try to get session directly from supabase
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        const role = session.user?.user_metadata?.role;
-        if (role === "admin") {
-          setAdminToken(session.access_token);
-          setChecked(true);
-        } else {
-          navigate("/admin");
-        }
-      } else {
-        navigate("/admin");
-      }
-    });
-  }, [user, isLoadingAuth, navigate]);
-
-  if (!checked) return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-950">
-      <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
-  return children;
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import apiClient from '@/lib/apiClient';
+export default function AdminGuard({children}) {
+ const [state,setState]=useState('loading');
+ const [error,setError]=useState('');
+ const navigate=useNavigate();
+ useEffect(()=>{
+   let active=true;
+   apiClient.get('/api/admin/session').then(()=>{if(active)setState('ready');}).catch(err=>{
+     if(!active)return;
+     if(err.status===401 || err.code==='MFA_REQUIRED')navigate('/admin/login',{replace:true});
+     else{setError(err.message);setState('error');}
+   });
+   return()=>{active=false;};
+ },[navigate]);
+ if(state==='loading')return <div role="status" className="p-8 text-center">Vérification des autorisations…</div>;
+ if(state==='error')return <main className="p-8"><p role="alert">{error}</p><button onClick={()=>navigate('/admin/login')} className="p-3 underline">Revenir à la connexion</button></main>;
+ return children;
 }

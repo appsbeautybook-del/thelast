@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, Share2, Heart, MapPin, Clock, Star, CheckCircle, ShoppingCart, Play, Calendar, ChevronRight, ChevronDown, Scissors, Sparkles, Wand2, X, ChevronLeft, ArrowUp, Wifi, Car, Thermometer, CreditCard, Accessibility, PawPrint, Baby, Coffee, Package } from "lucide-react";
@@ -49,7 +50,7 @@ function MediaSlider({ media, onImageClick }) {
               </div>
             </div>
           ) : (
-            <img src={item.url} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => onImageClick?.(i)} />
+            <BeautyImage src={item.url} alt="" className="w-full h-full object-cover cursor-pointer" onClick={() => onImageClick?.(i)} />
           )}
         </div>
       ))}
@@ -141,7 +142,7 @@ function ImageLightbox({ images, initialIndex, onClose }) {
         {images[idx]?.type === "video" ? (
           <video src={images[idx].url} controls autoPlay className="w-full h-full object-contain" />
         ) : (
-          <img src={images[idx]?.url} alt="" className="w-full h-full object-contain" />
+          <BeautyImage src={images[idx]?.url} alt="" className="w-full h-full object-contain" />
         )}
       </div>
 
@@ -171,7 +172,7 @@ function ImageLightbox({ images, initialIndex, onClose }) {
               className={`w-12 h-12 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${i === idx ? "border-white scale-110" : "border-transparent opacity-50"}`}>
               {m.type === "video"
                 ? <div className="w-full h-full bg-gray-800 flex items-center justify-center"><Play className="w-4 h-4 text-white" /></div>
-                : <img src={m.url} alt="" className="w-full h-full object-cover" />}
+                : <BeautyImage src={m.url} alt="" className="w-full h-full object-cover" />}
             </button>
           ))}
         </div>
@@ -483,7 +484,7 @@ export default function ServiceDetail() {
               style={{ minHeight: 100 }}
             >
               {styleRecord.image_url ? (
-                <img src={styleRecord.image_url} alt="" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
+                <BeautyImage src={styleRecord.image_url} alt="" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-pink-500" />
               )}
@@ -515,7 +516,7 @@ export default function ServiceDetail() {
             className="relative overflow-hidden rounded-2xl active:scale-95 transition-all shadow-md group"
             style={{ minHeight: 100 }}
           >
-            <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400" alt="Filtre IA" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
+            <BeautyImage src="https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=400" alt="Filtre IA" className="absolute inset-0 w-full h-full object-cover group-active:scale-105 transition-transform duration-300" />
             <div className="absolute inset-0 bg-gradient-to-t from-purple-900/90 via-purple-800/50 to-transparent" />
             <div className="absolute top-2 left-2 z-10">
               <div className="w-7 h-7 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center border border-white/20">
@@ -566,7 +567,7 @@ export default function ServiceDetail() {
                     className="w-full flex items-center gap-3 p-3 bg-gradient-to-br from-orange-50 to-white border border-orange-100 rounded-2xl active:scale-[0.98] transition-all"
                   >
                     {b.image_url ? (
-                      <img src={b.image_url} alt={b.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                      <BeautyImage src={b.image_url} alt={b.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
                     ) : (
                       <div className="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center shrink-0">
                         <Package className="w-6 h-6 text-orange-400" />
@@ -612,7 +613,7 @@ export default function ServiceDetail() {
                   <div key={p.id || i} className="shrink-0 w-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
                     <button className="relative h-28 w-full active:opacity-80 transition-all" onClick={handleProduitClick}>
                       {p.image_url
-                        ? <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
+                        ? <BeautyImage src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
                         : <div className="w-full h-full flex items-center justify-center text-3xl">🧴</div>
                       }
                       {p.price > 0 && (
@@ -647,7 +648,7 @@ export default function ServiceDetail() {
             >
               {styleRecord.image_url ? (
                 <div className="relative h-40">
-                  <img src={styleRecord.image_url} alt={styleRecord.title} className="w-full h-full object-cover" />
+                  <BeautyImage src={styleRecord.image_url} alt={styleRecord.title} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
                     <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">Style associé</span>
@@ -760,7 +761,7 @@ export default function ServiceDetail() {
                   className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex items-center gap-3 p-3 shadow-sm cursor-pointer active:scale-[0.99] transition-all"
                 >
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.nom} className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                    <BeautyImage src={item.image_url} alt={item.nom} className="w-20 h-20 rounded-xl object-cover shrink-0" />
                   ) : (
                     <div className="w-20 h-20 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
                       <span className="text-[28px]">🍽️</span>
@@ -795,7 +796,7 @@ export default function ServiceDetail() {
                   className="bg-white border border-gray-100 rounded-2xl overflow-hidden flex items-center gap-3 p-3 shadow-sm cursor-pointer active:scale-[0.99] transition-all"
                 >
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.nom} className="w-20 h-20 rounded-xl object-cover shrink-0" />
+                    <BeautyImage src={item.image_url} alt={item.nom} className="w-20 h-20 rounded-xl object-cover shrink-0" />
                   ) : (
                     <div className="w-20 h-20 rounded-xl bg-purple-50 flex items-center justify-center shrink-0">
                       <span className="text-[28px]">🍷</span>
@@ -826,7 +827,7 @@ export default function ServiceDetail() {
             >
               <div className="flex items-center gap-3 mb-3">
                 <div className="relative">
-                  <img
+                  <BeautyImage
                     src={proData?.avatar_url || ""}
                     alt={proData?.salon_name}
                     className="w-14 h-14 rounded-2xl object-cover"
@@ -879,7 +880,7 @@ export default function ServiceDetail() {
                   <div key={a.id} className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
                     <div className="flex items-center gap-3 mb-2">
                       {a.auteur_avatar ? (
-                        <img src={a.auteur_avatar} alt={a.auteur_nom} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                        <BeautyImage src={a.auteur_avatar} alt={a.auteur_nom} className="w-9 h-9 rounded-full object-cover shrink-0" />
                       ) : (
                         <div className="w-9 h-9 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
                           <span className="text-[13px] font-black text-primary">{(a.auteur_nom || "?")[0]}</span>
@@ -945,7 +946,7 @@ export default function ServiceDetail() {
                 >
                   <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-gray-200">
                     {(reel.thumbnail_url || reel.images?.[0]) && (
-                      <img src={reel.thumbnail_url || reel.images[0]} alt={reel.title} className="w-full h-full object-cover" />
+                      <BeautyImage src={reel.thumbnail_url || reel.images[0]} alt={reel.title} className="w-full h-full object-cover" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -1023,7 +1024,7 @@ export default function ServiceDetail() {
                     className="rounded-2xl overflow-hidden relative active:scale-[0.98] transition-all bg-gray-100 aspect-[3/4]"
                   >
                     {serviceImage
-                      ? <img src={serviceImage} alt={sv.title} className="w-full h-full object-cover" />
+                      ? <BeautyImage src={serviceImage} alt={sv.title} className="w-full h-full object-cover" />
                       : <div className="w-full h-full flex items-center justify-center"><Scissors className="w-8 h-8 text-gray-300" /></div>
                     }
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />

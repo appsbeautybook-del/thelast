@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -67,7 +68,7 @@ export default function ParametresPro() {
         <div className="bg-[#1a2035] rounded-3xl p-5 mt-4 flex items-center gap-4 shadow-sm">
           <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-700 shrink-0 border-2 border-primary/30">
             {user?.avatar_url ? (
-              <img src={user.avatar_url} alt={user.full_name || "profil"} className="w-full h-full object-cover" />
+              <BeautyImage src={user.avatar_url} alt={user.full_name || "profil"} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-black text-xl">
                 {(user?.full_name || "P")[0].toUpperCase()}

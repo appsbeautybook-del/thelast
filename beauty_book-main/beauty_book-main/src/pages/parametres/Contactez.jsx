@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Send, MessageCircle, Phone, Mail, CheckCircle } from "lucide-react";
@@ -67,7 +68,7 @@ export default function Contactez() {
 
         {/* Hero */}
         <div className="relative rounded-3xl overflow-hidden h-32">
-          <img src="" alt="" className="w-full h-full object-cover" />
+          <BeautyImage src="" alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent flex items-center px-5">
             <p className="text-white text-[20px] font-black leading-tight">On est là<br />pour vous 💬</p>
           </div>

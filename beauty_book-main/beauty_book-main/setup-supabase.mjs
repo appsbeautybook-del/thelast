@@ -48,7 +48,7 @@ try {
 
 // Hardcoded fallback from known .env values
 if (!SUPABASE_URL) SUPABASE_URL = 'https://grlinrqxctmiegaluupi.supabase.co';
-const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdybGlucnF4Y3RtaWVnYWx1dXBpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4Mjc3NDY0MSwiZXhwIjoyMDk4MzUwNjQxfQ.YTOLV-V8FNaa0Pol9uS6FYgUuqerOvKeGUnOO0UEZTs';
+const SERVICE_KEY = '';
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 

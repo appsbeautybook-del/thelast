@@ -1,15 +1,29 @@
 <!doctype html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+    <link rel="icon" type="image/svg+xml" href="/brand-icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#ffffff" id="theme-color-meta" />
     <title>BeautyBook</title>
+    <script>
+      // Recover development even if an old offline worker cached React itself.
+      if (['localhost','127.0.0.1','[::1]'].includes(location.hostname) &&
+          'serviceWorker' in navigator && navigator.serviceWorker.controller &&
+          !sessionStorage.getItem('bb-cache-repair-v11')) {
+        sessionStorage.setItem('bb-cache-repair-v11','1');
+        Promise.all([
+          navigator.serviceWorker.getRegistrations().then(items => Promise.all(items.filter(r =>
+            new URL(r.active?.scriptURL || location.href).pathname === '/sw.js'
+          ).map(r => r.unregister()))),
+          caches.keys().then(names => Promise.all(names.filter(n => n.startsWith('beautybook-')).map(n => caches.delete(n))))
+        ]).then(() => location.reload()).catch(() => {});
+      }
+    </script>
     <script>
     (function() {
       var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;

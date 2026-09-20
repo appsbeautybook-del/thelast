@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import { entities } from '@/api/entities';
@@ -229,7 +230,7 @@ export default function ProfilPro() {
                 <div className="relative">
                   <div className="w-[60px] h-[60px] rounded-2xl overflow-hidden bg-gradient-to-br from-primary to-pink-600 shadow-lg shadow-primary/30">
                     {proInfoCurrent?.avatar_url || clientProfile?.avatar_url ? (
-                      <img src={proInfoCurrent?.avatar_url || clientProfile?.avatar_url} alt="profil" className="w-full h-full object-cover" />
+                      <BeautyImage src={proInfoCurrent?.avatar_url || clientProfile?.avatar_url} alt="profil" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-white font-black text-xl">{nomCommerce?.[0]?.toUpperCase() || "P"}</div>
                     )}
@@ -314,7 +315,7 @@ export default function ProfilPro() {
       <div className="relative h-52">
         {proInfoCurrent?.cover_url || clientProfile?.cover_url ? (
           <>
-            <img src={proInfoCurrent?.cover_url || clientProfile?.cover_url} alt="Bannière" className="w-full h-full object-cover" />
+            <BeautyImage src={proInfoCurrent?.cover_url || clientProfile?.cover_url} alt="Bannière" className="w-full h-full object-cover" />
             <div className="absolute inset-0" style={{ background: getBannerGradient(theme) }} />
           </>
         ) : (
@@ -358,7 +359,7 @@ export default function ProfilPro() {
           <div className="relative">
             <div className="w-[100px] h-[100px] rounded-full border-4 border-white shadow-xl overflow-hidden bg-gray-100">
               {proInfoCurrent?.avatar_url || clientProfile?.avatar_url ? (
-                <img src={proInfoCurrent?.avatar_url || clientProfile?.avatar_url} alt="Profil" className="w-full h-full object-cover" />
+                <BeautyImage src={proInfoCurrent?.avatar_url || clientProfile?.avatar_url} alt="Profil" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-500 font-black text-3xl">{nomCommerce?.[0]?.toUpperCase() || "P"}</div>
               )}

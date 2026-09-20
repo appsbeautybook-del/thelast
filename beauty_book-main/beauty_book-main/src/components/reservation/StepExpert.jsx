@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { entities } from "@/api/entities";
@@ -92,7 +93,7 @@ export default function StepExpert({ selected, onSelect, onNext, onBack, proProf
         <div className="flex items-center gap-2">
           {(proProfile?.avatar_url || PROFILE_IMG) && (
             <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-primary shrink-0">
-              <img src={proProfile?.avatar_url || PROFILE_IMG} alt={proProfile?.salon_name || ""} className="w-full h-full object-cover" />
+              <BeautyImage src={proProfile?.avatar_url || PROFILE_IMG} alt={proProfile?.salon_name || ""} className="w-full h-full object-cover" />
             </div>
           )}
           <span className="text-[13px] font-black text-gray-900 uppercase tracking-widest">
@@ -139,7 +140,7 @@ export default function StepExpert({ selected, onSelect, onNext, onBack, proProf
                 ) : (
                   <div className="w-14 h-14 rounded-2xl overflow-hidden shrink-0 border-2" style={{ borderColor: isSelected ? "#E8732A" : "transparent" }}>
                     {expert.avatar ? (
-                      <img src={expert.avatar} alt={expert.name} className="w-full h-full object-cover" />
+                      <BeautyImage src={expert.avatar} alt={expert.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-14 rounded-2xl flex items-center justify-center bg-gray-100">
                         <span className="text-[18px] font-black text-gray-400">{expert.name?.[0] || "?"}</span>

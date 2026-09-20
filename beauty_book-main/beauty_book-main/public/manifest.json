@@ -7,9 +7,12 @@
   "theme_color": "#E8732A",
   "icons": [
     {
-      "src": "https://base44.com/logo_v2.svg",
+      "src": "/brand-icon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
-  ]
+  ],
+  "id": "/",
+  "lang": "fr"
 }

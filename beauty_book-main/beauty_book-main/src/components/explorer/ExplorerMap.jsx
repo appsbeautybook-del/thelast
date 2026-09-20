@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -91,7 +92,7 @@ export default function ExplorerMap() {
       {selectedPro && (
         <div className="mt-3 bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden flex gap-3 p-3 animate-in slide-in-from-bottom-2 duration-200">
           <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0 bg-gray-100">
-            <img src={selectedPro.img} alt={selectedPro.name} className="w-full h-full object-cover" />
+            <BeautyImage src={selectedPro.img} alt={selectedPro.name} className="w-full h-full object-cover" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-1">
@@ -158,7 +159,7 @@ export default function ExplorerMap() {
           {selectedPro && (
             <div className="px-4 py-4 border-t border-gray-100 bg-white flex gap-3 items-center">
               <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0">
-                <img src={selectedPro.img} alt={selectedPro.name} className="w-full h-full object-cover" />
+                <BeautyImage src={selectedPro.img} alt={selectedPro.name} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1">
                 <p className="text-[15px] font-black text-gray-900">{selectedPro.name}</p>

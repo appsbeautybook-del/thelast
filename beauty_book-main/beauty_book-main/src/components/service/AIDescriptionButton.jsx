@@ -3,9 +3,7 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { entities } from '@/api/entities';
 import { useAuth } from "@/lib/AuthContext";
 
-const OPENROUTER_KEY = atob("c2stb3ItdjEtOThjODllNjY1MzI5ZTdkYjg5YmQ3MmVmOGRiNzVjZTYyYjk1YWY4ZDRjMDNjOTI2YzZkZDIxOWE3NTcxMDRmZQ==");
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "google/gemini-2.5-flash";
+import {apiClient} from '@/lib/apiClient';
 
 export default function AIDescriptionButton({ serviceName, category, onDescription }) {
   const { user } = useAuth();
@@ -30,29 +28,8 @@ export default function AIDescriptionButton({ serviceName, category, onDescripti
     try {
       const prompt = `Tu es un expert en coiffure et beauté. Rédige une description professionnelle et attrayante pour une prestation de beauté nommée "${serviceName}" dans la catégorie "${category || 'beauté'}". La description doit faire 2 à 3 phrases, être en français, mettre en valeur l'expertise, la technique et le résultat final. Format : uniquement le texte de la description, sans guillemets ni markdown.`;
 
-      const res = await fetch(OPENROUTER_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${OPENROUTER_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "BeautyBook",
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.7,
-          max_tokens: 300,
-        }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `Erreur HTTP ${res.status}`);
-      }
-
-      const data = await res.json();
-      const content = data?.choices?.[0]?.message?.content?.trim();
+      const data = await apiClient.post('/api/ai/invoke-llm',{prompt});
+      const content = data.result?.content?.trim();
       if (content) {
         onDescription(content);
       } else {

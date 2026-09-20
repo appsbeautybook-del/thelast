@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Package, Clock, CheckCircle, XCircle, ChevronRight, ShoppingBag, Calendar, Crown, Star, Sparkles } from "lucide-react";
@@ -190,7 +191,7 @@ export default function MesCommandes() {
                 item._type === "abonnement" ? "bg-gradient-to-br from-primary/10 to-orange-50" : "bg-gray-100"
               }`}>
                 {img ? (
-                  <img src={img} alt={getTitle(item)} className="w-full h-full object-cover" />
+                  <BeautyImage src={img} alt={getTitle(item)} className="w-full h-full object-cover" />
                 ) : (
                   <TypeIcon className={`w-6 h-6 ${item._type === "abonnement" ? "text-primary" : "text-gray-300"}`} />
                 )}

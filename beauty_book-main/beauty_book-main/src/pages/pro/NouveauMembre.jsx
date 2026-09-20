@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, MoreVertical, Loader2, Camera } from "lucide-react";
@@ -81,7 +82,7 @@ export default function NouveauMembre() {
           <div className="relative" onClick={() => fileInputRef.current?.click()}>
             <div className="w-28 h-28 rounded-full bg-gray-100 border-2 border-dashed border-primary/40 flex items-center justify-center cursor-pointer overflow-hidden">
               {avatarUrl ? (
-                <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                <BeautyImage src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
               ) : uploadingPhoto ? (
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               ) : (

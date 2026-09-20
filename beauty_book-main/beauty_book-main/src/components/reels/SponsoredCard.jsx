@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ExternalLink, X, Play } from "lucide-react";
 
@@ -37,7 +38,7 @@ function VideoPlayer({ src, poster, className, style }) {
   if (failed) {
     return (
       <div className={`relative ${className}`} style={style}>
-        {poster && <img src={poster} alt="" className="w-full h-full object-cover" />}
+        {poster && <BeautyImage src={poster} alt="" className="w-full h-full object-cover" />}
         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
           <button onClick={tryPlay} className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-all">
             <Play className="w-8 h-8 text-gray-900 ml-1" fill="currentColor" />
@@ -84,7 +85,7 @@ function ReelsAd({ annonce, onClose }) {
         {isVideo ? (
           <VideoPlayer src={annonce.video_url} poster={annonce.image_url} className="w-full h-full object-cover" style={{ width: "100%", height: "100%" }} />
         ) : (
-          <img src={annonce.image_url} alt={annonce.title} className="w-full h-full object-cover" />
+          <BeautyImage src={annonce.image_url} alt={annonce.title} className="w-full h-full object-cover" />
         )}
 
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -93,7 +94,7 @@ function ReelsAd({ annonce, onClose }) {
         <div className="absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-4 pb-2 bg-gradient-to-b from-black/50 to-transparent" style={{ paddingTop: "calc(16px + env(safe-area-inset-top, 0px))" }}>
           <div className="flex items-center gap-3 flex-1 min-w-0">
             {annonce.sponsor_logo ? (
-              <img src={annonce.sponsor_logo} alt={annonce.sponsor_name} className="w-10 h-10 rounded-full object-cover border-2 border-white/30 shrink-0" />
+              <BeautyImage src={annonce.sponsor_logo} alt={annonce.sponsor_name} className="w-10 h-10 rounded-full object-cover border-2 border-white/30 shrink-0" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-primary/80 flex items-center justify-center shrink-0">
                 <span className="text-white text-[14px] font-black">{(annonce.sponsor_name || "S")[0]}</span>
@@ -153,7 +154,7 @@ function StylesAd({ annonce, onClose }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {annonce.sponsor_logo ? (
-              <img src={annonce.sponsor_logo} alt={annonce.sponsor_name} className="w-9 h-9 rounded-full object-cover border border-gray-100 shrink-0" />
+              <BeautyImage src={annonce.sponsor_logo} alt={annonce.sponsor_name} className="w-9 h-9 rounded-full object-cover border border-gray-100 shrink-0" />
             ) : (
               <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 <span className="text-primary text-[13px] font-black">{(annonce.sponsor_name || "S")[0]}</span>
@@ -185,7 +186,7 @@ function StylesAd({ annonce, onClose }) {
         {isVideo ? (
           <VideoPlayer src={annonce.video_url} poster={annonce.image_url} className="w-full h-full object-cover" style={{ width: "100%", height: "100%" }} />
         ) : (
-          <img src={annonce.image_url} alt={annonce.title} className="w-full h-full object-cover" />
+          <BeautyImage src={annonce.image_url} alt={annonce.title} className="w-full h-full object-cover" />
         )}
       </div>
 

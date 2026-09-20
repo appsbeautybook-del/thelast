@@ -1,3 +1,5 @@
+import { useLiveSessions } from '@/hooks/useLiveSessions';
+import BeautyImage from '@/components/ui/BeautyImage';
 import { fetchShopifyProducts } from "@/api/shopifyClient";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { Star, MapPin, Award, Users, Flame, ChevronRight } from "lucide-react";
@@ -21,7 +23,7 @@ function getSectionBg() {
 
 
 // Placeholder pour images manquantes
-const PLACEHOLDER = "";
+
 
 // ── Hero Banner ──────────────────────────────────────────────────────────────
 function HeroSlider({ banners, user, navigate }) {
@@ -37,7 +39,7 @@ function HeroSlider({ banners, user, navigate }) {
     <div className="px-4 pt-5 pb-3">
       {/* Hero Card */}
       <div className="relative rounded-[28px] overflow-hidden h-[200px] shadow-xl shadow-primary/20">
-        <img src={banner.image || ""} alt="Banner" className="w-full h-full object-cover" />
+        <BeautyImage src={banner.image || ""} alt="Banner" className="w-full h-full object-cover" />
         {/* Overlay opacité configurable */}
         <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${banner.overlay_opacity ?? 0.55})` }} />
         <div className="absolute inset-0 p-5 flex flex-col justify-between">
@@ -90,7 +92,7 @@ export default function Home() {
   const adminRecommandesSet = useRef(false);
   const [homeConfig, setHomeConfig] = useState({});
   const { formatPrice } = useLocale();
-  const [liveSessions, setLiveSessions] = useState([]);
+  const { sessions: liveSessions, refetch: refreshLives } = useLiveSessions();
   const [partenairesDiplomes, setPartenairesDiplomes] = useState([]);
   const [produitsTendanceLive, setProduitsTendanceLive] = useState([]);
   const [produitsRecommandes, setProduitsRecommandes] = useState([]);
@@ -104,7 +106,7 @@ export default function Home() {
     setHomeConfig({});
     setOffresSpeciales([]);
     setOffresImmoLive(null);
-    setLiveSessions([]);
+    void refreshLives();
     setPartenairesDiplomes([]);
     setProduitsTendanceLive([]);
 
@@ -139,7 +141,7 @@ export default function Home() {
       })
       .catch(() => {});
 
-    entities.LiveSession.filter({ status: "live" }, "-created_at", 5).then(setLiveSessions).catch(() => {});
+
 
     // Bundles
     entities.ServiceBundle.filter({ is_active: true, is_group: false }, "-created_at", 10)
@@ -318,7 +320,7 @@ export default function Home() {
                 onClick={() => navigate(`/service/${s.id}`, { state: { title: s.title, price: s.price, cover: serviceImage } })}
                 className="bg-white rounded-[24px] overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50">
                 <div className="relative h-[150px]">
-                  <img src={serviceImage} alt={s.title} className="w-full h-full object-cover" />
+                  <BeautyImage src={serviceImage} alt={s.title} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                   <span className="absolute top-2.5 left-2.5 bg-primary text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1">
                     <Flame className="w-2.5 h-2.5" /> {s.tag || "TENDANCE"}
@@ -347,7 +349,7 @@ export default function Home() {
                 className="shrink-0 w-[160px] bg-white rounded-2xl overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50"
               >
                 <div className="h-[100px] relative overflow-hidden">
-                  <img src={b.image_url || b.banner_url || ""} alt="" className="w-full h-full object-cover" />
+                  <BeautyImage src={b.image_url || b.banner_url || ""} alt="" className="w-full h-full object-cover" />
                   {b.discount_percent > 0 && (
                     <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
                   )}
@@ -384,7 +386,7 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="h-[100px] relative overflow-hidden">
-                  <img src={b.image_url || b.banner_url || ""} alt="" className="w-full h-full object-cover" />
+                  <BeautyImage src={b.image_url || b.banner_url || ""} alt="" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                   {b.discount_percent > 0 && (
                     <span className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm text-[#E8732A] text-[9px] font-black px-2 py-0.5 rounded-full">-{b.discount_percent}%</span>
@@ -414,7 +416,7 @@ export default function Home() {
           </span>
         </div>
         <button onClick={() => navigate("/pro/vue-client", { state: { proEmail: salonDuMois?.user_email } })} className="w-full relative rounded-[24px] overflow-hidden shadow-lg active:scale-[0.99] transition-all">
-          <img src={salonDuMois?.cover_url || salonDuMois?.avatar_url || ""} alt="Salon du Mois" className="w-full h-52 object-cover" />
+          <BeautyImage src={salonDuMois?.cover_url || salonDuMois?.avatar_url || ""} alt="Salon du Mois" className="w-full h-52 object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-4 text-left">
             <h3 className="text-white text-[22px] font-black leading-tight">{salonDuMois?.salon_name || ""}</h3>
@@ -435,7 +437,7 @@ export default function Home() {
               onClick={() => navigate(`/produit?id=${p.id}`)}
               className="bg-white rounded-[24px] overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-orange-50">
               <div className="relative h-[140px]">
-                <img src={p.image_url || ""} alt={p.name || p.title} className="w-full h-full object-cover" />
+                <BeautyImage src={p.image_url || ""} alt={p.name || p.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               </div>
               <div className="p-3">
@@ -457,7 +459,7 @@ export default function Home() {
                 onClick={() => navigate(`/produit?id=${encodeURIComponent(p.id)}`)}
                 className="min-w-[160px] max-w-[160px] bg-white rounded-[24px] overflow-hidden shadow-sm active:scale-95 transition-all text-left border border-gray-100 snap-start shrink-0">
                 <div className="relative h-[140px]">
-                  <img src={p.image_url || ""} alt={p.name} className="w-full h-full object-cover" />
+                  <BeautyImage src={p.image_url || ""} alt={p.name} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                 </div>
                 <div className="p-3">
@@ -483,7 +485,7 @@ export default function Home() {
                 className="w-full bg-white rounded-[24px] overflow-hidden shadow-sm active:scale-[0.99] transition-all border border-orange-100"
               >
                 <div className="relative h-[180px]">
-                  <img src={o.image || ""} alt={o.salon_name} className="w-full h-full object-cover" />
+                  <BeautyImage src={o.image || ""} alt={o.salon_name} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                   {o.rating && (
                     <div className="absolute top-3 right-3 bg-white/95 rounded-full px-3 py-1.5 flex items-center gap-1 shadow">
@@ -524,7 +526,7 @@ export default function Home() {
           className="w-full bg-white rounded-[24px] p-4 border border-orange-50 shadow-sm flex items-center gap-4 active:scale-[0.99] transition-all text-left">
           <div className="relative shrink-0">
             <div className="w-[68px] h-[68px] rounded-full overflow-hidden border-[3px] border-primary">
-              <img src={expertiseDuMois?.avatar_url || ""} alt="Expert" className="w-full h-full object-cover" />
+              <BeautyImage src={expertiseDuMois?.avatar_url || ""} alt="Expert" className="w-full h-full object-cover" />
             </div>
             <div className="absolute bottom-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2 border-white" />
           </div>
@@ -558,7 +560,7 @@ export default function Home() {
               >
                 <div className="relative">
                   <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-primary/40">
-                    <img src={p.avatar_url || ""} alt={p.salon_name} className="w-full h-full object-cover" />
+                    <BeautyImage src={p.avatar_url || ""} alt={p.salon_name} className="w-full h-full object-cover" />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-amber-400 rounded-full flex items-center justify-center border-2 border-white">
                     <span className="text-[11px]">🎓</span>
@@ -585,7 +587,7 @@ export default function Home() {
       )}
 
       {/* ── Directs ── */}
-      <div className="px-4 py-4">
+      {liveSessions.length > 0 && <section aria-label="Directs en cours" className="px-4 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <h2 className="text-[18px] font-black text-gray-900">Directs</h2>
@@ -600,7 +602,7 @@ export default function Home() {
             <button key={v.id} onClick={() => navigate(`/live-detail/${v.id}`)}
               className="min-w-[185px] shrink-0 active:scale-95 transition-all text-left">
               <div className="relative h-[200px] rounded-[24px] overflow-hidden">
-                <img src={v.thumbnail_url || ""} alt={v.title} className="w-full h-full object-cover" />
+                <BeautyImage src={v.thumbnail_url || ""} alt={v.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <span className="absolute top-3 left-3 bg-red-500 text-white text-[10px] font-black uppercase px-2.5 py-1.5 rounded-full flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" /> LIVE
@@ -613,7 +615,7 @@ export default function Home() {
             </button>
           ))}
         </div>
-      </div>
+      </section>}
 
       {/* ── Opportunité Business ── */}
       {offresImmoLive && (
@@ -624,7 +626,7 @@ export default function Home() {
             className="w-full bg-white rounded-[24px] p-4 shadow-sm flex gap-4 items-start active:scale-[0.99] transition-all text-left border border-orange-100"
           >
             <div className="w-[100px] h-[100px] rounded-[18px] overflow-hidden shrink-0">
-              <img src={offresImmoLive.images?.[0] || ""} alt="" className="w-full h-full object-cover" />
+              <BeautyImage src={offresImmoLive.images?.[0] || ""} alt="" className="w-full h-full object-cover" />
             </div>
             <div className="flex-1">
               <div className="flex items-start gap-2">

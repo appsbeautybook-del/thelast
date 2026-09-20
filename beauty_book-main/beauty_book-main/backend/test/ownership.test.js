@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {databaseFixture,users} from './database-fixture.js';
+import {createSellerService} from '../src/services/seller.js';
+import {createAdminOperations} from '../src/services/admin-operations.js';
+test('full schema protects messages, applications, catalog and financial records',async()=>{
+ const db=await databaseFixture();
+ try{
+  await db.as(users.client);
+  const {rows:[application]}=await db.query('INSERT INTO public."DemandeProV2"(user_email,salon_name) VALUES($1,$2) RETURNING *',[users.client.email,'Actual test salon']);
+  await assert.rejects(db.query('UPDATE public."DemandeProV2" SET statut=$1 WHERE id=$2',['approuvee',application.id]));
+  await assert.rejects(db.query('INSERT INTO public."DemandeProV2"(user_email,salon_name) VALUES($1,$2)',[users.other.email,'Impersonated']));
+  const {rows:[message]}=await db.query('INSERT INTO public."MessageChat"(sender_email,receiver_email,content) VALUES($1,$2,$3) RETURNING *',[users.client.email,users.professional.email,'Test private message']);
+  await assert.rejects(db.query('INSERT INTO public."MessageChat"(sender_email,receiver_email,content) VALUES($1,$2,$3)',[users.professional.email,users.client.email,'Spoofed sender']));
+  await db.as(users.other);
+  assert.equal((await db.query('SELECT * FROM public."MessageChat"')).rows.length,0);
+  assert.equal((await db.query('SELECT * FROM public."DemandeProV2"')).rows.length,0);
+  await assert.rejects(db.query('INSERT INTO public."Produit"(name,price) VALUES($1,$2)',['Forbidden',5]));
+  await assert.rejects(db.query('UPDATE public."SoldeBeautyPay" SET balance=10000'));
+  await db.as(users.professional);
+  assert.equal((await db.query('SELECT * FROM public."MessageChat"')).rows.length,1);
+  await db.query('UPDATE public."MessageChat" SET is_read=true WHERE id=$1',[message.id]);
+  await assert.rejects(db.query('UPDATE public."MessageChat" SET content=$1 WHERE id=$2',['Rewritten',message.id]));
+  await db.privileged();
+  const admin=createAdminOperations(db);
+  const approved=await admin.approveProfessional(users.admin,application.id,{status:'approuvee'},'test-approval');
+  assert.equal(approved.statut,'approuvee');
+  assert.equal((await db.query('SELECT role FROM profiles WHERE id=$1',[users.client.id])).rows[0].role,'vendeur');
+  assert.equal((await db.query('SELECT count(*)::int AS n FROM bb_audit_log')).rows[0].n,1);
+  await assert.rejects(admin.approveProfessional(users.admin,application.id,{status:'approuvee'},'duplicate'),{code:'APPLICATION_PROCESSED'});
+  const seller=createSellerService(db);
+  await seller.applySeller(users.client,{shop_name:'Fixture shop'});
+  await db.query("UPDATE bb_seller_accounts SET status='active' WHERE user_id=$1",[users.client.id]);
+  const product=await seller.saveProduct(users.client,{name:'Fixture image product',price:10,status:'actif',images:['https://example.invalid/image.webp'],min_qty:1});
+  assert.deepEqual(product.images,['https://example.invalid/image.webp']);
+  await db.as(users.client);
+  const {rows:[service]}=await db.query('INSERT INTO public."Service"(pro_email,name,price,duration_min) VALUES($1,$2,20,30) RETURNING *',[users.client.email,'Test service']);
+  assert.equal(service.created_by_id,users.client.id);
+  await assert.rejects(db.query('UPDATE public."ProfilPro" SET abonnement=$1 WHERE owner_id=$2',['premium',users.client.id]));
+  await assert.rejects(db.query('UPDATE public."Service" SET pro_email=$1 WHERE id=$2',[users.other.email,service.id]));
+  await db.as(users.other);
+  assert.equal((await db.query('UPDATE public."Service" SET price=1 WHERE id=$1 RETURNING id',[service.id])).rows.length,0);
+ }finally{await db.close();}
+});

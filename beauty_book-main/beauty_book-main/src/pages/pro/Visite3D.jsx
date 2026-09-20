@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -100,7 +101,7 @@ function HotspotEditor({ visite, sceneIdx: initialSceneIdx, theme = "dark", onSa
           style={{ aspectRatio: "4/3" }}
           onClick={handleImageClick}
         >
-          <img
+          <BeautyImage
             ref={imgRef}
             src={visite.scenes[sceneIdx]?.image_url}
             alt=""
@@ -370,7 +371,7 @@ export default function Visite3D() {
                   {/* Couverture */}
                   <div className="relative h-44">
                     {coverUrl ? (
-                      <img src={coverUrl} alt={v.title} className="w-full h-full object-cover" />
+                      <BeautyImage src={coverUrl} alt={v.title} className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-gray-900 flex items-center justify-center">
                         <Image className="w-10 h-10 text-gray-700" />

@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useRef, useEffect, useState, useCallback } from "react";
 import * as THREE from "three";
 import { X, ChevronLeft, ChevronRight, Loader2, Map, Layers, Share2, Bookmark, Maximize2, Move } from "lucide-react";
@@ -423,7 +424,7 @@ export default function PanoViewer({ scenes, floorplanUrl, initialScene = 0, onC
                 <span className="text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">Plan 2D</span>
               </div>
               <div className="flex-1 relative">
-                <img src={floorplanUrl} alt="Plan 2D" className="absolute inset-0 w-full h-full object-contain p-2" />
+                <BeautyImage src={floorplanUrl} alt="Plan 2D" className="absolute inset-0 w-full h-full object-contain p-2" />
                 {scenes.map((s, i) => {
                   const fx = s.floor_x ?? 50;
                   const fy = s.floor_y ?? 50;
@@ -521,7 +522,7 @@ export default function PanoViewer({ scenes, floorplanUrl, initialScene = 0, onC
                     ? "ring-1 ring-white/80 shadow-[0_0_24px_rgba(255,255,255,0.12)]"
                     : "opacity-50 ring-1 ring-white/[0.06] hover:opacity-80 hover:ring-white/[0.15]"
                 }`}>
-                  <img src={s.image_url} alt={s.title || ""} className="w-full h-full object-cover" />
+                  <BeautyImage src={s.image_url} alt={s.title || ""} className="w-full h-full object-cover" />
                   {i === currentIdx && (
                     <div className="absolute inset-0 bg-primary/10" />
                   )}

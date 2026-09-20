@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { PhoneOff, Mic, MicOff, Volume2, VolumeX, MessageSquare, Phone, Clock, User } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
@@ -180,7 +181,7 @@ export default function CallScreen({ mode, targetName, targetAvatar, onHangup, o
         <div className="relative">
           <div className="w-36 h-36 rounded-full overflow-hidden shadow-2xl" style={{ border: `4px solid ${t.avatarBorder}`, background: t.avatarBg }}>
             {targetAvatar
-              ? <img src={targetAvatar} alt={targetName} className="w-full h-full object-cover" />
+              ? <BeautyImage src={targetAvatar} alt={targetName} className="w-full h-full object-cover" />
               : <div className="w-full h-full flex items-center justify-center text-[48px] font-black" style={{ color: t.accent }}>{initials}</div>
             }
           </div>

@@ -1,8 +1,10 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Package, Clock, CheckCircle, XCircle, MapPin, CreditCard, Truck, Calendar, User, Scissors, Crown, Sparkles, Smartphone } from "lucide-react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
+import OrderTracking from '@/components/commerce/OrderTracking';
 
 // ── Statuts commande boutique ──
 const STEPS_BOUTIQUE = [
@@ -56,7 +58,11 @@ const STATUS_LABELS = {
   no_show: "No show",
 };
 
-export default function CommandeDetail() {
+export default function CommandeDetail(){
+ const type=new URLSearchParams(window.location.search).get('type')||'boutique';
+ return type==='boutique'?<OrderTracking/>:<LegacyDetail/>;
+}
+function LegacyDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const urlParams = new URLSearchParams(window.location.search);
@@ -210,7 +216,7 @@ export default function CommandeDetail() {
                   <div key={i} className="flex items-center gap-3">
                     <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
                       {art.image_url ? (
-                        <img src={art.image_url} alt={art.name} className="w-full h-full object-cover" />
+                        <BeautyImage src={art.image_url} alt={art.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <Package className="w-5 h-5 text-gray-300" />

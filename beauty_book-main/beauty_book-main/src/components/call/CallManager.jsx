@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -110,7 +111,7 @@ function PostCallScreen({ targetName, targetAvatar, onSend, onDismiss, user }) {
       <div className="flex flex-col items-center gap-4 mb-8">
         <div className="w-20 h-20 rounded-full overflow-hidden" style={{ border: "3px solid rgba(249,115,42,0.3)", background: "#312E81" }}>
           {targetAvatar
-            ? <img src={targetAvatar} alt={targetName} className="w-full h-full object-cover" />
+            ? <BeautyImage src={targetAvatar} alt={targetName} className="w-full h-full object-cover" />
             : <div className="w-full h-full flex items-center justify-center text-2xl font-black text-orange-400">{initials}</div>
           }
         </div>

@@ -1,112 +1,25 @@
-const CACHE_NAME = 'beautybook-v10';
-const PRECACHE = ['/', '/index.html'];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
-  );
+const CACHE_NAME='beautybook-static-v11';
+const development=['localhost','127.0.0.1','[::1]'].includes(self.location.hostname);
+self.addEventListener('install',event=>{event.waitUntil((development?Promise.resolve():caches.open(CACHE_NAME).then(cache=>cache.add('/index.html'))).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(names=>Promise.all(names.filter(name=>name.startsWith('beautybook-')&&(development||name!==CACHE_NAME)).map(name=>caches.delete(name)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',event=>{
+ const {request}=event,url=new URL(request.url);
+ // Never cache authentication, APIs, private media, cross-origin requests or
+ // development modules. They may contain account-specific data or stale React.
+ if(development||request.method!=='GET'||url.origin!==self.location.origin||url.pathname.startsWith('/api/')||request.headers.has('authorization'))return;
+ if(request.mode==='navigate'){
+  event.respondWith(fetch(request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.put('/index.html',copy)));}return response;}).catch(async()=>await caches.match('/index.html')||new Response('Connexion indisponible.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}})));
+ }else if(/^\/assets\/[\w.-]+-[\w-]{8,}\.(js|css|woff2|png|webp|jpg|svg)$/.test(url.pathname)&&!url.search){
+  event.respondWith(caches.match(request).then(cached=>cached||fetch(request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.put(request,copy)));}return response;})));
+ }
 });
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((names) =>
-      Promise.all(names.filter((n) => n !== CACHE_NAME).map((n) => caches.delete(n)))
-    ).then(() => self.clients.claim())
-  );
+self.addEventListener('push',event=>{
+ let payload={};try{payload=event.data?.json()||{};}catch{}
+ let destination='/';try{const url=new URL(payload.data?.url||'/',self.location.origin);if(url.origin===self.location.origin)destination=url.pathname+url.search;}catch{}
+ event.waitUntil(self.registration.showNotification(typeof payload.title==='string'?payload.title:'BeautyBook',{body:typeof payload.body==='string'?payload.body:'Vous avez une nouvelle notification',icon:'/brand-icon.svg',badge:'/brand-icon.svg',tag:typeof payload.tag==='string'?payload.tag:undefined,data:{url:destination}}));
 });
-
-// Fetch handler: SPA routing + offline support
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (request.method !== 'GET') return;
-
-  // Navigation requests → serve index.html (SPA routing)
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      caches.match('/index.html').then((cached) => {
-        const fetchPromise = fetch(request).then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put('/index.html', clone));
-          }
-          return response;
-        }).catch(() => cached);
-        return cached || fetchPromise;
-      })
-    );
-    return;
-  }
-
-  // Other requests: cache-first
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-      return fetch(request).then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-        }
-        return response;
-      });
-    })
-  );
+self.addEventListener('notificationclick',event=>{
+ event.notification.close();let url;try{url=new URL(event.notification.data?.url||'/',self.location.origin);}catch{return;}if(url.origin!==self.location.origin)return;
+ event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(async windows=>{for(const client of windows){if(new URL(client.url).origin===self.location.origin&&'focus' in client){await client.navigate(url.href);return client.focus();}}return clients.openWindow?.(url.href);}));
 });
-
-// Push notifications
-self.addEventListener('push', (event) => {
-  let data = {
-    title: 'BeautyBook',
-    body: 'Vous avez une nouvelle notification',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    vibrate: [200, 100, 200],
-    tag: 'beautybook-push',
-    data: { url: '/' },
-  };
-
-  if (event.data) {
-    try {
-      const payload = event.data.json();
-      data = { ...data, ...payload };
-    } catch (e) {
-      data.body = event.data.text();
-    }
-  }
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: data.icon,
-      badge: data.badge,
-      vibrate: data.vibrate,
-      tag: data.tag,
-      data: data.data,
-      requireInteraction: data.requireInteraction || false,
-      actions: data.actions || [],
-    })
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const urlToOpen = event.notification.data?.url || '/';
-
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (const client of windowClients) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.focus();
-          client.navigate(urlToOpen);
-          return;
-        }
-      }
-      if (clients.openWindow) return clients.openWindow(urlToOpen);
-    })
-  );
-});
-
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-});
+self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting();});

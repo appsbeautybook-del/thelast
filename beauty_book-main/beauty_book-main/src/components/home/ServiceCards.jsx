@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -26,7 +27,7 @@ export default function ServiceCards() {
           >
             <div className="aspect-square overflow-hidden bg-gray-100">
               {service.image_url ? (
-                <img src={service.image_url} alt={service.title} className="w-full h-full object-cover" />
+                <BeautyImage src={service.image_url} alt={service.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[32px]">✂️</div>
               )}

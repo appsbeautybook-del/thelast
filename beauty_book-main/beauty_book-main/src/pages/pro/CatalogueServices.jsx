@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Plus, Trash2, Tag, Scissors, Zap, Check, Pencil, Users, Gift, Sparkles, X, Clock, Star, Heart } from "lucide-react";
@@ -34,7 +35,7 @@ function ImageSlider({ images, onClick }) {
   return (
     <div className="relative w-full h-full overflow-hidden" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd} onClick={onClick}>
       {validImages.map((url, i) => (
-        <img key={url} src={url} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out"
+        <BeautyImage key={url} src={url} alt="" className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out"
           style={{ transform: `translateX(${(i - clampedCurrent) * 100}%)` }}
           onError={() => setFailed(p => ({ ...p, [url]: true }))} />
       ))}
@@ -198,7 +199,7 @@ export default function CatalogueServices() {
                       {/* Thumbnail with Badge */}
                       <div className="relative w-28 h-36 shrink-0 rounded-2xl overflow-hidden shadow-sm bg-gradient-to-br from-pink-100 to-orange-100">
                         {b.image_url ? (
-                          <img src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
+                          <BeautyImage src={b.image_url} alt={b.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-orange-50">
                             <Zap className="w-10 h-10 text-orange-400" />
@@ -227,7 +228,7 @@ export default function CatalogueServices() {
                           <div className="flex items-center gap-1.5 mt-2">
                             <div className="w-5 h-5 rounded-full bg-orange-100 overflow-hidden flex items-center justify-center shrink-0 border border-orange-200">
                               {proAvatar ? (
-                                <img src={proAvatar} alt="" className="w-full h-full object-cover" />
+                                <BeautyImage src={proAvatar} alt="" className="w-full h-full object-cover" />
                               ) : (
                                 <span className="text-[9px] font-black text-orange-600">{(proName || "P")[0]}</span>
                               )}

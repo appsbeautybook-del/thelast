@@ -1,22 +1,24 @@
+import './env.js';
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-dotenv.config({ path: join(__dirname, '../../.env') });
-
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || supabaseUrl === 'https://vimusrczrjvefsbljtmf.supabase.co' && !supabaseKey) {
-  console.error('❌ [Supabase] SUPABASE_URL est manquante ou invalide.');
+import { HttpError } from '../lib/errors.js';
+const authOptions = { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false };
+let admin;
+export function getSupabaseAdmin() {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY)
+    throw new HttpError(503, 'BACKEND_NOT_CONFIGURED', 'Le backend Supabase n’est pas configuré.');
+  admin ||= createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: authOptions });
+  return admin;
 }
-
-if (!supabaseKey || supabaseKey === 'your_service_role_key_here') {
-  console.warn('⚠️ [Supabase] SUPABASE_SERVICE_ROLE_KEY contient une valeur par défaut/placeholder.');
+// A service-role client never falls back to a public key and never handles sign-in.
+export const supabaseAdmin = new Proxy({}, { get: (_, key) => {
+  const client = getSupabaseAdmin();
+  return typeof client[key] === 'function' ? client[key].bind(client) : client[key];
+} });
+export function userSupabase(token) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY)
+    throw new HttpError(503, 'BACKEND_NOT_CONFIGURED', 'Le backend Supabase n’est pas configuré.');
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+    auth: authOptions, global: { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+  });
 }
-
-export const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 

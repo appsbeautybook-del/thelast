@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef } from "react";
 import { X, Sun, Contrast, Droplets, FlipHorizontal, RotateCw, Download, Check, ScanLine, Wand2 } from "lucide-react";
 import { entities, uploadFile } from '@/api/entities';
@@ -103,7 +104,7 @@ export default function EditeurPhotos({ onClose, onDone }) {
       {/* Preview */}
       <div className="flex-1 flex items-center justify-center bg-black mx-4 rounded-3xl overflow-hidden relative">
         {image ? (
-          <img
+          <BeautyImage
             src={image.localUrl}
             alt=""
             className="max-w-full max-h-full object-contain"
@@ -185,7 +186,7 @@ export default function EditeurPhotos({ onClose, onDone }) {
                 className="flex flex-col items-center gap-1.5 shrink-0 active:scale-95">
                 <div className={`w-16 h-16 rounded-2xl overflow-hidden border-2 ${filter === f.id ? "border-primary" : "border-transparent"}`}>
                   {image ? (
-                    <img src={image.localUrl} alt="" className="w-full h-full object-cover" style={{ filter: f.css }} />
+                    <BeautyImage src={image.localUrl} alt="" className="w-full h-full object-cover" style={{ filter: f.css }} />
                   ) : (
                     <div className="w-full h-full bg-white/10 flex items-center justify-center">
                       <ScanLine className="w-5 h-5 text-white/20" />

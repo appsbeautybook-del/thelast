@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { supabase } from '@/api/supabaseClient';
+import { Operations } from '@/components/admin/AdminManagement';
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminGuard from "@/components/admin/AdminGuard";
 import AdminReels from "@/components/admin/AdminReels";
@@ -28,7 +30,7 @@ import {
   LayoutDashboard, Video, Users, Scissors, ShoppingBag,
   CalendarCheck, Megaphone, LogOut, Menu, X, PlusSquare,
   Radio, Palette, UserCheck, Bell, Star, Home, ChevronRight,
-  BookOpen, Truck, Building2, Compass, Store, ShoppingBasket, CreditCard, Type, MessageSquare, Gift
+  BookOpen, Truck, Building2, Compass, Store, ShoppingBasket, CreditCard, Type, MessageSquare, Gift, ShieldCheck
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -81,6 +83,7 @@ const NAV_GROUPS = [
   {
     label: "Paramètres",
     items: [
+      { id: "operations", label: "État des traitements", icon: ShieldCheck },
       { id: "paiement", label: "Paiement & Abonnements", icon: CreditCard },
       { id: "appearance", label: "Police & Icônes", icon: Type },
     ]
@@ -90,6 +93,7 @@ const NAV_GROUPS = [
 const ALL_TABS = NAV_GROUPS.flatMap(g => g.items);
 
 const COMPONENTS = {
+  operations: Operations,
   stats: AdminStats,
   home: AdminHomePage,
   styles: AdminStyles,
@@ -128,8 +132,11 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("stats");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [apiError,setApiError]=useState('');
+  useEffect(()=>{const report=e=>setApiError(e.detail);window.addEventListener('bb:api-error',report);return()=>window.removeEventListener('bb:api-error',report);},[]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     sessionStorage.removeItem("bb_admin_auth");
     sessionStorage.removeItem("bb_admin_token");
     navigate("/admin");
@@ -241,7 +248,7 @@ export default function AdminDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => window.open("/", "_blank")}
+                onClick={() => window.open(import.meta.env.VITE_MAIN_APP_URL || "http://localhost:5173", "_blank", "noopener,noreferrer")}
                 className="hidden sm:flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-3 py-2 text-[12px] font-semibold text-gray-600 hover:bg-gray-50 transition-all shadow-sm"
               >
                 <BookOpen className="w-3.5 h-3.5" />
@@ -267,6 +274,7 @@ export default function AdminDashboard() {
 
           {/* Content */}
           <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-gray-50">
+            {apiError&&<div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{apiError}<button className="ml-3 underline" onClick={()=>setApiError('')}>Fermer</button></div>}
             <ActiveComponent />
           </main>
         </div>

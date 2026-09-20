@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { fetchShopifyProducts } from "@/api/shopifyClient";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -373,7 +374,7 @@ export default function Boutique() {
                 <div className={`w-[68px] h-[68px] rounded-full overflow-hidden border-[2.5px] transition-all ${
                   isActive ? "border-primary shadow-md shadow-primary/20" : "border-gray-200"
                 }`}>
-                  <img src={cat.img} alt={cat.label} className="w-full h-full object-cover" />
+                  <BeautyImage src={cat.img} alt={cat.label} className="w-full h-full object-cover" />
                 </div>
                 <span className={`text-[10px] font-black uppercase tracking-wider ${
                   isActive ? "text-primary" : "text-gray-500"
@@ -402,7 +403,7 @@ export default function Boutique() {
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
-                {subImg && <img src={subImg} alt={sub} className="w-5 h-5 rounded-full object-cover" />}
+                {subImg && <BeautyImage src={subImg} alt={sub} className="w-5 h-5 rounded-full object-cover" />}
                 {sub}
               </button>
             );
@@ -416,7 +417,7 @@ export default function Boutique() {
         {boutiqueBanners.length > 0 ? boutiqueBanners.map((banner, i) => (
           <div key={i} className="relative rounded-2xl overflow-hidden" style={{ minHeight: 80, background: "linear-gradient(135deg, #E8732A, #f59540)" }}>
             {banner.image && (
-              <img src={banner.image} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
+              <BeautyImage src={banner.image} alt={banner.title} className="absolute inset-0 w-full h-full object-cover" />
             )}
             {/* Overlay opacité configurable */}
             <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${banner.overlay_opacity ?? 0.55})` }} />
@@ -491,7 +492,7 @@ export default function Boutique() {
                     onClick={() => navigate(`/produit?id=${encodeURIComponent(p.id)}`)}
                     className="bg-white rounded-3xl border border-green-200 shadow-sm overflow-hidden active:scale-[0.98] transition-all cursor-pointer">
                     <div className="relative aspect-square bg-gray-50">
-                      <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+                      <BeautyImage src={p.img} alt={p.name} className="w-full h-full object-cover" />
                       <div className="absolute top-2.5 left-2.5 bg-green-500 rounded-full px-2 py-1 flex items-center gap-1">
                         <Sparkles className="w-2.5 h-2.5 text-white" />
                         <span className="text-white text-[9px] font-black">NOUVEAU</span>
@@ -560,7 +561,7 @@ export default function Boutique() {
                   className={`bg-white rounded-3xl border shadow-sm overflow-hidden active:scale-[0.98] transition-all cursor-pointer ${isGrossiste ? "border-blue-200" : "border-gray-100"}`}
                 >
                   <div className="relative aspect-square bg-gray-50">
-                    <img src={p.img} alt={p.name} className="w-full h-full object-cover" />
+                    <BeautyImage src={p.img} alt={p.name} className="w-full h-full object-cover" />
                     {isNewProduct(p) ? (
                       <div className="absolute top-2.5 left-2.5 bg-green-500 rounded-full px-2 py-1 flex items-center gap-1">
                         <Sparkles className="w-2.5 h-2.5 text-white" />

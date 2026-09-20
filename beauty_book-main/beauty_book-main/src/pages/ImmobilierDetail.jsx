@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, Heart, MessageSquare, Phone, MapPin, Maximize2, Armchair, Zap, TrendingUp, X, Send, CheckCircle, Box, Users, User, Sparkles, Check } from "lucide-react";
@@ -170,7 +171,7 @@ export default function ImmobilierDetail() {
 
       {/* ── Gallery ── */}
       <div className="relative h-[300px] bg-black">
-        <img src={images[imgIdx]} alt={data.title} className="w-full h-full object-cover" />
+        <BeautyImage src={images[imgIdx]} alt={data.title} className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
 
         {imgIdx > 0 && <button className="absolute left-0 top-0 w-1/3 h-full z-10" onClick={() => setImgIdx(i => i - 1)} />}
@@ -278,7 +279,7 @@ export default function ImmobilierDetail() {
             onClick={() => setShowMsgModal(true)}
             className="relative w-full h-40 rounded-2xl overflow-hidden active:scale-[0.99] transition-all"
           >
-            <img src={images[0]} alt="Visite 3D" className="w-full h-full object-cover" />
+            <BeautyImage src={images[0]} alt="Visite 3D" className="w-full h-full object-cover" />
             <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-2">
               <div className="w-12 h-12 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
                 <Box className="w-6 h-6 text-blue-600" />

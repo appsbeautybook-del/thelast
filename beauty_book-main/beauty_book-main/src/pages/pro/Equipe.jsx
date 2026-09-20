@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, Calendar, User, Loader2, Trash2 } from "lucide-react";
@@ -132,7 +133,7 @@ export default function Equipe() {
                   <div className="flex flex-col items-center text-center mb-4">
                     <div className="relative mb-3">
                       {(member.membre_avatar || member.avatar_url) ? (
-                        <img src={member.membre_avatar || member.avatar_url} alt={member.name} className="w-24 h-24 rounded-full object-cover border-2 border-gray-100" />
+                        <BeautyImage src={member.membre_avatar || member.avatar_url} alt={member.name} className="w-24 h-24 rounded-full object-cover border-2 border-gray-100" />
                       ) : (
                         <div className="w-24 h-24 rounded-full bg-primary/10 border-2 border-gray-100 flex items-center justify-center">
                           <span className="text-primary text-[28px] font-black">{initials}</span>

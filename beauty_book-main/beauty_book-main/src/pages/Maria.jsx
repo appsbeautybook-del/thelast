@@ -1,3 +1,7 @@
+import BeautyImage from '@/components/ui/BeautyImage';
+import BookingConfirmation from '@/components/maria/BookingConfirmation';
+import ActionConfirmation from '@/components/maria/ActionConfirmation';
+import apiClient from '@/lib/apiClient';
 import { useState, useRef, useEffect } from "react";
 import {
   X, Plus, Sparkles, Search,
@@ -137,7 +141,7 @@ function FilePreview({ files, onRemove }) {
       {files.map((f, i) => (
         <div key={i} className="relative shrink-0">
           {f.type.startsWith("image/") ? (
-            <img src={f.preview} alt={f.name} className="w-14 h-14 rounded-xl object-cover border border-gray-200" />
+            <BeautyImage src={f.preview} alt={f.name} className="w-14 h-14 rounded-xl object-cover border border-gray-200" />
           ) : (
             <div className="w-14 h-14 bg-gray-100 rounded-xl flex flex-col items-center justify-center border border-gray-200">
               <FileText className="w-5 h-5 text-primary" />
@@ -475,7 +479,7 @@ export default function Maria() {
     }, intervalMs);
   };
 
-  // ── Synthèse vocale via Microsoft Edge TTS (fallback: Web Speech API) ──
+  // ── Synthèse vocale via OpenAI TTS (fallback: Web Speech API) ──
   const voiceAudioRef = useRef(null);
   const microsoftTTSAbortRef = useRef(null);
 
@@ -501,7 +505,7 @@ export default function Maria() {
       return;
     }
 
-    // 2. Microsoft Edge TTS (gratuit, voix haute qualité)
+    // 2. OpenAI TTS (gratuit, voix haute qualité)
     speakMicrosoftTTS(text, msgIndex, withTyping);
   };
 
@@ -515,9 +519,9 @@ export default function Maria() {
     if (!clean) { setSpeaking(false); return; }
 
     try {
-      console.log('[Maria TTS] Requesting Microsoft Edge TTS...');
+      console.log('[Maria TTS] Requesting OpenAI TTS...');
       microsoftTTSAbortRef.current = new AbortController();
-      const res = await fetch('/api/ai/tts', {
+      const res = await apiClient.fetch('/api/ai/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: clean, voice: 'fr-FR' }),
@@ -546,9 +550,9 @@ export default function Maria() {
         speakWithWebSpeech(text, msgIndex, withTyping);
       };
       audio.play().catch(() => speakWithWebSpeech(text, msgIndex, withTyping));
-      console.log('[Maria TTS] Microsoft Edge TTS playing');
+      console.log('[Maria TTS] OpenAI TTS playing');
     } catch (err) {
-      console.log('[Maria TTS] Microsoft TTS failed:', err.message, '→ falling back to Web Speech API');
+      console.log('[Maria TTS] OpenAI TTS failed:', err.message, '→ falling back to Web Speech API');
       speakWithWebSpeech(text, msgIndex, withTyping);
     }
   };
@@ -774,109 +778,21 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
         content: m.content,
       }));
       
-      let apiData = null;
-      
-      const OR_KEY_B64 = 'c2stb3ItdjEtOThjODllNjY1MzI5ZTdkYjg5YmQ3MmVmOGRiNzVjZTYyYjk1YWY4ZDRjMDNjOTI2YzZkZDIxOWE3NTcxMDRmZQ==';
-      const OR_KEY = atob(OR_KEY_B64);
-      const FREE_MODELS = [
-        'openrouter/free',
-        'google/gemma-4-31b-it:free',
-        'nvidia/nemotron-3-ultra-550b-a55b:free',
-        'openai/gpt-oss-20b:free',
-      ];
-
-      // Essayer d'abord le serveur Vercel (si disponible)
-      try {
-        console.log('[Maria] Trying Vercel serverless...');
-        const apiRes = await fetch('/api/ai/maria', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: [
-              { role: 'system', content: MARIA_SYSTEM_PROMPT },
-              ...historyMsgs,
-              { role: 'user', content: userContent },
-            ],
-            temperature: 0.7,
-            max_tokens: 512,
-          }),
-        });
-        console.log('[Maria] Vercel response:', apiRes.status);
-        if (apiRes.ok) {
-          const vData = await apiRes.json();
-          if (vData?.choices?.[0]?.message?.content) {
-            apiData = vData;
-          }
-        }
-      } catch (e) {
-        console.log('[Maria] Vercel failed:', e.message);
-      }
-      
-      // Fallback : appeler OpenRouter directement depuis le frontend
-      if (!apiData) {
-        console.log('[Maria] Calling OpenRouter directly...');
-        for (const freeModel of FREE_MODELS) {
-          try {
-            const directRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OR_KEY}`,
-                'HTTP-Referer': window.location.origin,
-                'X-Title': 'BeautyBook Maria AI',
-              },
-              body: JSON.stringify({
-                model: freeModel,
-                messages: [
-                  { role: 'system', content: MARIA_SYSTEM_PROMPT },
-                  ...historyMsgs,
-                  { role: 'user', content: userContent },
-                ],
-                temperature: 0.7,
-                max_tokens: 512,
-              }),
-            });
-            console.log('[Maria]', freeModel, '→', directRes.status);
-            if (directRes.ok) {
-              apiData = await directRes.json();
-              break;
-            }
-          } catch (e) {
-            console.log('[Maria]', freeModel, 'error:', e.message);
-          }
-        }
-      }
-
-      if (!apiData) {
-        throw new Error('Aucune API disponible. Vérifiez votre connexion.');
-      }
+      const apiData = await apiClient.post('/api/ai/maria', {
+        messages: [...historyMsgs, { role: 'user', content: userContent }],
+      });
+      action = apiData.actions?.length>1 ? {type:'ACTION_GROUP',items:apiData.actions} : apiData.actions?.[0] || null;
 
       const rawReply = apiData.choices?.[0]?.message?.content || apiData.choices?.[0]?.message?.reasoning || '';
       reply = rawReply || reply;
 
-      // Extraire l'action JSON (avec ou sans bloc code)
-      let action = null;
-      const jsonBlockMatch = reply.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-      const jsonInlineMatch = reply.match(/(\{"type"\s*:\s*"[^"]+"\s*,\s*"path"\s*:\s*"[^"]+"\s*\})/);
-      const jsonStr = jsonBlockMatch?.[1] || jsonInlineMatch?.[1];
-      if (jsonStr) {
-        try {
-          action = JSON.parse(jsonStr);
-        } catch {}
-      }
-
-      // Nettoyer le texte : supprimer les blocs JSON affichés
-      if (action) {
-        reply = reply.replace(/```[\s\S]*?```/g, '').replace(/\{"type"\s*:.*?\}/g, '').trim();
-        if (!reply) reply = action.type === 'NAVIGATE' ? `Je t'ouvre la page !` : 'Action effectuée.';
-      }
     } catch (err2) {
       console.error("[Maria] All APIs failed:", err2);
       const errMsg = err2?.message || '';
       if (errMsg.includes('402') || errMsg.includes('credit') || errMsg.includes('balance') || errMsg.includes('insufficient')) {
-        reply = "⚠️ Crédits API épuisés. Veuillez recharger votre compte OpenRouter ou configurer une clé Gemini gratuite sur aistudio.google.com.";
+        reply = "Le service IA est momentanément indisponible. Réessayez plus tard.";
       } else if (errMsg.includes('401') || errMsg.includes('unauthorized') || errMsg.includes('Invalid')) {
-        reply = "⚠️ Clé API invalide. Veuillez vérifier la clé OpenRouter dans les variables d'environnement Vercel.";
+        reply = "Votre session a expiré ou le service est indisponible. Reconnectez-vous avant de réessayer.";
       } else if (errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError') || errMsg.includes('CORS')) {
         reply = "⚠️ Impossible de contacter l'API. Vérifiez votre connexion internet.";
       } else {
@@ -1059,7 +975,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                     <div className="flex flex-wrap gap-1.5 justify-end">
                       {msg.files.map((f, fi) => (
                         f.type.startsWith("image/") && f.preview ? (
-                          <img key={fi} src={f.preview} alt={f.name} className="w-20 h-20 rounded-xl object-cover shadow-sm" />
+                          <BeautyImage key={fi} src={f.preview} alt={f.name} className="w-20 h-20 rounded-xl object-cover shadow-sm" />
                         ) : (
                           <div key={fi} className="bg-white rounded-xl px-3 py-2 flex items-center gap-1.5 shadow-sm border border-gray-100">
                             <FileText className="w-4 h-4 text-primary" />
@@ -1155,6 +1071,8 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   {!isTypingThis && msg.action?.type === "OPEN_PRO_FORM" && (
                     <OpenProFormCard proData={msg.action.proData || proFormData} />
                   )}
+                  {!isTypingThis && msg.action?.type === "BOOKING_CONFIRMATION" && <BookingConfirmation proposal={msg.action} />}
+                  {!isTypingThis && ['ACTION_CONFIRMATION','ACTION_GROUP'].includes(msg.action?.type) && <ActionConfirmation proposal={msg.action}/>}
                   {!isTypingThis && msg.action?.type === "BOOKING_SUMMARY" && (
                     <BookingSummaryCard data={msg.action.data || {}} />
                   )}
@@ -1205,7 +1123,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   {msg.isSimulation && msg.sim && (
                     <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-orange-100">
                       <div className="flex gap-3 p-3">
-                        <img src={msg.sim.styleImg} alt={msg.sim.styleLabel} className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                        <BeautyImage src={msg.sim.styleImg} alt={msg.sim.styleLabel} className="w-16 h-16 rounded-xl object-cover shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-[11px] font-black text-primary uppercase tracking-widest">Simulation IA</p>
                           <p className="text-[13px] font-black text-gray-900">{msg.sim.styleLabel}</p>
@@ -1276,7 +1194,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/ai-scaling-business")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=400" alt="AI Scaling Business" className="w-full h-full object-cover" />
+                  <BeautyImage src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=400" alt="AI Scaling Business" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/80 to-blue-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1293,7 +1211,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/receptionniste-ia")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400" alt="Receptionniste IA" className="w-full h-full object-cover" />
+                  <BeautyImage src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400" alt="Receptionniste IA" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-600/80 to-teal-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1310,7 +1228,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/social-media")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400" alt="AI Social Media" className="w-full h-full object-cover" />
+                  <BeautyImage src="https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=400" alt="AI Social Media" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-pink-500/80 to-purple-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1330,7 +1248,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/scan-capillaire")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src={SCAN_IMG} alt="scan" className="w-full h-full object-cover" />
+                  <BeautyImage src={SCAN_IMG} alt="scan" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-sky-400/80 to-blue-600/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1347,7 +1265,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => { setShowSimulator(true); }}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=400" alt="AI Hairstyle" className="w-full h-full object-cover" />
+                  <BeautyImage src="https://images.unsplash.com/photo-1562322140-8baeececf3df?q=80&w=400" alt="AI Hairstyle" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-rose-500/80 to-pink-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">
@@ -1364,7 +1282,7 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                   onClick={() => navigate("/sh-ai")}
                   className="relative h-44 rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
                 >
-                  <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400" alt="Styliste IA" className="w-full h-full object-cover" />
+                  <BeautyImage src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=400" alt="Styliste IA" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 to-pink-700/70" />
                   <div className="absolute inset-0 p-4 flex flex-col justify-between">
                     <div className="w-9 h-9 bg-white/20 rounded-2xl flex items-center justify-center">

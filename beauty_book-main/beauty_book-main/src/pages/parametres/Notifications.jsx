@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Calendar, MessageSquare, Tag, Star, Bell, ChevronRight } from "lucide-react";
@@ -131,7 +132,7 @@ export default function Notifications() {
             <p className="text-[12px] text-gray-500 leading-relaxed">Activez les notifications Push pour réduire le temps de réponse. Les professionnels réactifs augmentent leurs réservations de 25%.</p>
           </div>
           <div className="w-20 h-20 rounded-2xl overflow-hidden shrink-0">
-            <img src="" alt="expert" className="w-full h-full object-cover" />
+            <BeautyImage src="" alt="expert" className="w-full h-full object-cover" />
           </div>
         </div>
 

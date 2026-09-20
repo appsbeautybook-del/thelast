@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef } from "react";
 import { Upload, Loader2, Trash2, Zap, X, Plus, CheckCircle, Clock, Tag, Users, FileText, Star } from "lucide-react";
 import { entities, uploadFile } from '@/api/entities';
@@ -82,7 +83,7 @@ export default function ServiceFormCard({ prefill = {}, onSuccess, onCancel }) {
       {/* Photo principale */}
       {(data.images || []).length > 0 && (
         <div className="relative h-36 overflow-hidden">
-          <img src={data.images[0]} alt="" className="w-full h-full object-cover" />
+          <BeautyImage src={data.images[0]} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         </div>
       )}
@@ -137,7 +138,7 @@ export default function ServiceFormCard({ prefill = {}, onSuccess, onCancel }) {
           {(data.images || []).length > 1 && (
             <div className="flex gap-2">
               {data.images.slice(1).map((url, i) => (
-                <img key={i} src={url} alt="" className="w-14 h-14 rounded-xl object-cover" />
+                <BeautyImage key={i} src={url} alt="" className="w-14 h-14 rounded-xl object-cover" />
               ))}
               <button onClick={() => imgRef.current?.click()} disabled={uploading}
                 className="w-14 h-14 bg-orange-50 border-2 border-dashed border-primary/40 rounded-xl flex items-center justify-center active:scale-95 shrink-0">
@@ -234,7 +235,7 @@ export default function ServiceFormCard({ prefill = {}, onSuccess, onCancel }) {
             <div className="flex gap-2 flex-wrap">
               {(data.images || []).map((url, i) => (
                 <div key={i} className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <BeautyImage src={url} alt="" className="w-full h-full object-cover" />
                   <button onClick={() => setData(d => ({ ...d, images: d.images.filter((_, j) => j !== i) }))}
                     className="absolute top-0.5 right-0.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                     <Trash2 className="w-3 h-3 text-white" />

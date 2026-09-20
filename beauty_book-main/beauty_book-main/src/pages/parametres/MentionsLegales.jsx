@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, FileText, Building, Globe, Mail, Phone, Shield, Lock, Scale, Cookie, Send } from "lucide-react";
 import { useThemeBg } from "@/hooks/useTheme";
@@ -100,7 +101,7 @@ export default function MentionsLegales() {
       <div className="px-4 pb-20 pt-5 space-y-5">
         {/* Hero */}
         <div className="relative rounded-3xl overflow-hidden h-36">
-          <img
+          <BeautyImage
             src=""
             alt=""
             className="w-full h-full object-cover"

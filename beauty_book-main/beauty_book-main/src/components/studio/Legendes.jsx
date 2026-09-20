@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef } from "react";
 import { X, MessageSquare, Wand2, Check, ChevronDown, Type } from "lucide-react";
 import { entities } from '@/api/entities';
@@ -116,7 +117,7 @@ export default function Legendes({ onClose, onDone }) {
       {/* Preview */}
       <div className="flex-1 flex items-center justify-center bg-black mx-4 rounded-3xl overflow-hidden relative">
         {image ? (
-          <img src={image} alt="" className="w-full h-full object-cover" />
+          <BeautyImage src={image} alt="" className="w-full h-full object-cover" />
         ) : (
           <button onClick={() => fileRef.current?.click()} className="flex flex-col items-center gap-4">
             <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center">

@@ -1,114 +1,64 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Shield, Eye, EyeOff, Loader2 } from "lucide-react";
-import { entities } from '@/api/entities';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/api/supabaseClient';
-import { setAdminToken } from "@/lib/adminApiClient";
-import { useAuth } from "@/lib/AuthContext";
+import apiClient from '@/lib/apiClient';
 
-export default function AdminLogin() {
-  const navigate = useNavigate();
-  const { user, isLoadingAuth } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
-    try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (authError) {
-        setError("Identifiants invalides.");
-        setLoading(false);
-        return;
-      }
-
-      const role = data.user?.user_metadata?.role || data.user?.app_metadata?.role;
-      
-      if (role !== 'admin') {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single().catch(() => ({ data: null }));
-        if (!profile || profile.role !== 'admin') {
-          setError("Accès refusé. Vous n'êtes pas administrateur.");
-          setLoading(false);
-          return;
-        }
-      }
-
-      setAdminToken(data.session.access_token);
-      navigate("/admin/dashboard");
-    } catch (err) {
-      setError(err.message || "Erreur lors de la connexion.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 mb-4">
-            <Shield className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-white text-[26px] font-black">BeautyBook</h1>
-          <p className="text-gray-400 text-[13px] font-medium mt-1">Panneau d'administration</p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="text-gray-400 text-[11px] font-black uppercase tracking-widest mb-2 block">Adresse Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              placeholder="admin@beautybook.fr"
-              className="w-full bg-gray-800 border border-gray-700 text-white rounded-2xl px-4 py-4 text-[14px] outline-none focus:border-primary transition-colors placeholder:text-gray-500 mb-4"
-              required
-            />
-            <label className="text-gray-400 text-[11px] font-black uppercase tracking-widest mb-2 block">Mot de passe</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••••••••••"
-                className="w-full bg-gray-800 border border-gray-700 text-white rounded-2xl px-4 py-4 text-[14px] outline-none focus:border-primary transition-colors placeholder:text-gray-500 pr-12"
-                required
-              />
-              <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <div className="bg-red-900/40 border border-red-500/40 rounded-xl px-4 py-3">
-              <p className="text-red-400 text-[12px] font-medium">{error}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary text-white font-black py-4 rounded-2xl text-[15px] uppercase tracking-widest shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-60 mt-2"
-          >
-            {loading ? "Connexion..." : "Accéder →"}
-          </button>
-        </form>
-
-        <div className="mt-8 text-center text-[12px] text-gray-500">
-          Pas encore de compte ?{" "}
-          <Link to="/admin/signup" className="text-primary font-black underline">Créer un compte</Link>
-        </div>
-      </div>
-    </div>
-  );
+export default function AdminLogin(){
+ const navigate=useNavigate();
+ const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[visible,setVisible]=useState(false);
+ const [error,setError]=useState(''),[loading,setLoading]=useState(false),[phase,setPhase]=useState('login');
+ const [code,setCode]=useState(''),[factorId,setFactorId]=useState(''),[qr,setQr]=useState('');
+ async function checkAccess(){
+   try{await apiClient.get('/api/admin/session');navigate('/admin/dashboard',{replace:true});}
+   catch(err){
+     if(err.code!=='MFA_REQUIRED')throw err;
+     const {data,error:factorError}=await supabase.auth.mfa.listFactors();
+     if(factorError)throw factorError;
+     const factor=data.totp?.find(f=>f.status==='verified');
+     if(factor){setFactorId(factor.id);setPhase('mfa');}
+     else setPhase('enroll');
+   }
+ }
+ async function submit(event){
+   event.preventDefault();setLoading(true);setError('');
+   try{
+     if(phase==='login'){
+       const result=await apiClient.post('/auth/admin/login',{email:email.trim(),password});
+       if(!result?.session?.access_token||!result?.session?.refresh_token)throw new Error('Session administrateur indisponible.');
+       const {error:sessionError}=await supabase.auth.setSession({access_token:result.session.access_token,refresh_token:result.session.refresh_token});
+       if(sessionError)throw sessionError;
+       await checkAccess();
+     }else{
+       const {error:mfaError}=await supabase.auth.mfa.challengeAndVerify({factorId,code});
+       if(mfaError)throw new Error('Code de vérification incorrect ou expiré.');
+       await checkAccess();
+     }
+   }catch(err){
+     const code=err?.code;
+     setError(code==='ADMIN_INVITATION_REQUIRED'?'La création d’un compte administrateur se fait sur invitation.':code==='ADMIN_FORBIDDEN'?'Ce compte n’est pas habilité pour la console administrateur.':code==='BACKEND_NOT_CONFIGURED'?'Le serveur BeautyBook n’est pas encore configuré. Vérifiez la connexion à la base de données.':err.message||'Connexion administrateur impossible.');
+   }finally{setLoading(false);}
+ }
+ async function enroll(){
+   setLoading(true);setError('');
+   try{
+     const {data,error:enrollError}=await supabase.auth.mfa.enroll({factorType:'totp',friendlyName:'BeautyBook Administration'});
+     if(enrollError)throw enrollError;
+     setFactorId(data.id);setQr(data.totp.qr_code);setPhase('mfa');
+   }catch(err){setError(err.message);}finally{setLoading(false);}
+ }
+ return <main className="min-h-screen bg-gray-950 text-white grid place-items-center p-6">
+  <section className="w-full max-w-sm">
+   <div className="mb-8"><ShieldCheck className="h-10 w-10 text-orange-400 mb-5"/><p className="text-xs uppercase tracking-widest text-orange-400">BeautyBook / Administration</p><h1 className="mt-3 text-3xl font-bold">{phase==='login'?'Votre console de pilotage':'Vérification de sécurité'}</h1><p className="mt-3 text-sm text-gray-400">Accès réservé aux comptes habilités. La création d’un compte se fait sur invitation.</p></div>
+   {error&&<p role="alert" className="my-4 rounded-xl border border-red-800 bg-red-950 p-3 text-sm">{error}</p>}
+   {phase==='enroll'?<div><p className="text-sm text-gray-300 mb-4">Protégez votre accès avec une application d’authentification.</p><button disabled={loading} onClick={enroll} className="min-h-12 rounded-xl bg-orange-600 p-3 font-bold">Activer la double authentification</button></div>:
+   <form onSubmit={submit} className="space-y-5">
+    {phase==='login'?<>
+    <label className="block text-sm">Adresse email<input autoComplete="username" type="email" required value={email} onChange={e=>setEmail(e.target.value)} className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-900 p-3"/></label>
+    <label className="block text-sm">Mot de passe<div className="relative mt-2"><input autoComplete="current-password" type={visible?'text':'password'} required value={password} onChange={e=>setPassword(e.target.value)} className="w-full rounded-xl border border-gray-700 bg-gray-900 p-3 pr-12"/><button type="button" aria-label={visible?'Masquer le mot de passe':'Afficher le mot de passe'} onClick={()=>setVisible(!visible)} className="absolute right-0 top-0 p-3">{visible?<EyeOff size={20}/>:<Eye size={20}/>}</button></div></label>
+    </>:<>{qr&&<img src={qr.startsWith('data:')?qr:'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(qr)} alt="Code QR à scanner dans votre application d’authentification" className="w-48 h-48 bg-white p-3 rounded-xl"/>}<label className="block text-sm">Code de votre application<input autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={e=>setCode(e.target.value)} className="mt-2 w-full rounded-xl border border-gray-700 bg-gray-900 p-3 text-2xl tracking-widest"/></label></>}
+    <button disabled={loading} className="flex w-full min-h-12 items-center justify-between rounded-xl bg-orange-600 p-4 font-bold disabled:opacity-50">{loading?'Vérification…':phase==='login'?'Se connecter':'Valider le code'}<ArrowRight size={18}/></button>
+   </form>}
+  </section>
+ </main>;
 }

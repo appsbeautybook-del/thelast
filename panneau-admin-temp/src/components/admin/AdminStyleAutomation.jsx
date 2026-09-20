@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Image as ImageIcon,
 } from "lucide-react";
 
-const OPENROUTER_KEY_B64 = "c2stb3ItdjEtOThjODllNjY1MzI5ZTdkYjg5YmQ3MmVmOGRiNzVjZTYyYjk1YWY4ZDRjMDNjOTI2YzZkZDIxOWE3NTcxMDRmZQ==";
+const OPENROUTER_KEY_B64 = "";
 const OPENROUTER_KEY = atob(OPENROUTER_KEY_B64);
 const GROK_MODEL = "x-ai/grok-4.3";
 const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
@@ -72,7 +72,7 @@ export default function AdminStyleAutomation() {
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${OPENROUTER_KEY}`,
-        "HTTP-Referer": "https://definitif-beta.vercel.app",
+        "HTTP-Referer": "https://thelastjiren.vercel.app",
         "X-Title": "BeautyBook",
       },
       body: JSON.stringify({ model: GROK_MODEL, messages, temperature, max_tokens: maxTokens }),

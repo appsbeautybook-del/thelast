@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Calendar, Clock, MapPin, CheckCircle2, Plus, Star, ChevronLeft, ChevronRight, Scissors, LayoutGrid, X, Hash, Phone, User, CreditCard, MessageSquare, AlertTriangle, Loader2 } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { entities } from '@/api/entities';
+import {apiClient} from '@/lib/apiClient';
 import { supabase } from '@/api/supabaseClient';
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -358,7 +359,8 @@ export default function RendezVous() {
       const isFullRefund = hoursUntil >= 24;
       const refundAmount = isFullRefund ? rdv.total_price : Math.round((rdv.total_price || 0) * 0.5 * 100) / 100;
 
-      const { error } = await supabase.from("Reservation").update({ status: "annule" }).eq("id", rdv.id);
+      const result = await apiClient.put("/api/reservations/"+rdv.id,{status:"annule"});
+      const error = !result.reservation && new Error("Annulation non confirmée.");
       if (error) throw error;
       setReservations(prev => prev.map(r => r.id === rdv.id ? { ...r, status: "annule" } : r));
       setSelectedReservation(null);
@@ -370,7 +372,7 @@ export default function RendezVous() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get("payment") === "success") {
-      setPaymentSuccess(true);
+      setPaymentSuccess(false); // A redirect alone never proves payment.
       // Nettoyer l'URL sans rechargement
       window.history.replaceState({}, "", "/rendez-vous");
       setTimeout(() => setPaymentSuccess(false), 6000);

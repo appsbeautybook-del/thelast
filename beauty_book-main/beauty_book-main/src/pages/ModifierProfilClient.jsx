@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Camera, Image, Instagram, Facebook, Globe } from "lucide-react";
@@ -203,7 +204,7 @@ export default function ModifierProfilClient() {
           <div className="flex flex-col items-center pt-6 pb-4">
             <div className="relative">
               <div className="w-24 h-24 rounded-full overflow-hidden border-[3px] border-primary shadow-lg">
-                <img src={avatarUrl || DEFAULT_AVATAR} alt="avatar" className="w-full h-full object-cover" />
+                <BeautyImage src={avatarUrl || DEFAULT_AVATAR} alt="avatar" className="w-full h-full object-cover" />
               </div>
               <button onClick={() => avatarInputRef.current?.click()} disabled={uploadingAvatar}
                 className="absolute bottom-0 right-0 w-8 h-8 bg-gray-900 rounded-full border-2 border-white flex items-center justify-center shadow active:scale-95">
@@ -218,7 +219,7 @@ export default function ModifierProfilClient() {
 
           <div onClick={() => bannerInputRef.current?.click()}
             className="relative mx-4 mb-4 h-28 rounded-2xl overflow-hidden border-2 border-dashed border-gray-200 cursor-pointer active:scale-[0.99] transition-all">
-            <img src={coverUrl || DEFAULT_BANNER} alt="bannière" className="w-full h-full object-cover opacity-60" />
+            <BeautyImage src={coverUrl || DEFAULT_BANNER} alt="bannière" className="w-full h-full object-cover opacity-60" />
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
               {uploadingCover
                 ? <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />

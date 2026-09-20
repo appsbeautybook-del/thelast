@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Star, X, Search, SlidersHorizontal, Bell, Sparkles, XCircle, Scissors, Waves, Diamond, PenTool, Droplets, Filter, ChevronRight, Flame, Zap } from "lucide-react";
@@ -318,7 +319,7 @@ export default function Explorer() {
                   className="shrink-0 w-[130px] text-left active:scale-[0.97] transition-all"
                 >
                   <div className="w-[130px] h-[170px] rounded-2xl overflow-hidden mb-2 relative">
-                    <img
+                    <BeautyImage
                       src={style.image_url || (style.images?.[0]) || ""}
                       alt={style.title}
                       className="w-full h-full object-cover"
@@ -392,7 +393,7 @@ export default function Explorer() {
                   >
                     {/* Image */}
                     <div className="w-[100px] h-[110px] shrink-0 relative overflow-hidden">
-                      <img src={img} alt={pro.salon_name} className="w-full h-full object-cover" loading="lazy" />
+                      <BeautyImage src={img} alt={pro.salon_name} className="w-full h-full object-cover" loading="lazy" />
                       <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(0,0,0,0.1) 0%, transparent 50%)" }} />
                       {isOpen === true && (
                         <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-0.5">

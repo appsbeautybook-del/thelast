@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, User, Shield, CreditCard, Bell, Globe, HelpCircle, Mail, Lock, FileText, LogOut, ChevronRight, BadgeCheck, Scissors, BarChart2, Star, RefreshCw, UserPlus, Trash2, Moon, Sun, Download } from "lucide-react";
@@ -77,7 +78,7 @@ export default function Parametres() {
         <div className="bg-white rounded-3xl p-5 mt-4 flex flex-col items-center text-center gap-2 shadow-sm">
           <div className="relative">
             <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-primary">
-              <img src={user?.avatar_url || DEFAULT_AVATAR} alt="avatar" className="w-full h-full object-cover" />
+              <BeautyImage src={user?.avatar_url || DEFAULT_AVATAR} alt="avatar" className="w-full h-full object-cover" />
             </div>
             <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full border-2 border-white flex items-center justify-center">
               <span className="text-white text-[10px] font-black">✓</span>

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { X, ShieldCheck, Loader2, CheckCircle2, XCircle, Clock, Star } from "lucide-react";
 import { entities } from '@/api/entities';
-import { supabase } from '@/api/supabaseClient';
 import { useAuth } from "@/lib/AuthContext";
 
 const PRESENCE_OPTIONS = [
@@ -64,6 +63,7 @@ export default function NoterClientModal({ reservation, onClose, onSuccess }) {
   const [note, setNote] = useState(0);
   const [commentaire, setCommentaire] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Auto-set note based on presence selection
   const handlePresence = (opt) => {
@@ -76,6 +76,7 @@ export default function NoterClientModal({ reservation, onClose, onSuccess }) {
   const handleSubmit = async () => {
     if (!presence || note === 0) return;
     setLoading(true);
+    setError('');
     try {
       await entities.Avis.create({
         reservation_id: reservation.id,
@@ -96,7 +97,7 @@ export default function NoterClientModal({ reservation, onClose, onSuccess }) {
       onSuccess?.();
       onClose();
     } catch (e) {
-      console.error(e);
+      setError(e.message || 'L’avis n’a pas été enregistré. Réessayez.');
     }
     setLoading(false);
   };
@@ -176,13 +177,15 @@ export default function NoterClientModal({ reservation, onClose, onSuccess }) {
             <textarea
               value={commentaire}
               onChange={(e) => setCommentaire(e.target.value)}
-              placeholder="Note privée optionnelle (visible uniquement par les pros)..."
+              placeholder="Commentaire partagé avec le client et les professionnels…"
+              maxLength={4000}
               rows={2}
               className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-[13px] text-gray-700 placeholder:text-gray-300 outline-none resize-none mb-5"
             />
           </>
         )}
 
+        {error && <p role="alert" className="mb-4 rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
         <button
           onClick={handleSubmit}
           disabled={!presence || note === 0 || loading}

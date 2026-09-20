@@ -1,310 +1,38 @@
 import { supabase } from '@/api/supabaseClient';
+import { apiClient } from '@/lib/apiClient';
+import { compressMedia } from '@/lib/compressMedia';
 
-/**
- * Couche d'abstraction compatible Base44.
- * Remplace entities.NomTable.filter/create/update/delete/get/list
- *
- * - Reads and writes → Supabase using the authenticated session
- */
-
-// The deployed app has no /crud/* API. Keep all entity operations on Supabase.
-const CRUD_API = '';
-
-const parseOrder = (orderBy) => {
-  if (!orderBy) return { column: 'created_at', ascending: false };
-  const desc = orderBy.startsWith('-');
-  const raw = desc ? orderBy.slice(1) : orderBy;
-  const colMap = {
-    created_date: 'created_at',
-    updated_date: 'updated_at',
-    created_at: 'created_at',
-    updated_at: 'updated_at',
-    date: 'date',
-    rating: 'rating',
-    price: 'price',
-    likes: 'likes',
-    views: 'views',
-    name: 'name',
-    title: 'title',
-  };
-  return { column: colMap[raw] || raw, ascending: !desc };
-};
-
-const KNOWN_COLUMNS = {
-  Reel: ['id','title','description','video_url','thumbnail_url','images','category','tags','status','likes','views','comments_count','author_email','author_name','author_avatar','sound','sound_preview_url','sound_duration','sound_trim_start','sound_trim_end','product_id','product_name','product_img','service_id','service_name','created_at','updated_at','created_by_id'],
-  Repub: ['id','user_email','user_name','reel_id','reel_title','reel_thumbnail','reel_images','original_author','original_author_avatar','category','created_at'],
-  Style: ['id','title','description','category','subcategory','category_id','subcategory_id','images','image_url','video_url','tags','pro_email','status','likes','views','featured','author_email','author_name','author_avatar','produits_utilises','outils_utilises','type_cheveux','type_peau','type_prestation','temps_moyen','niveau_difficulte','mots_cles','created_at','updated_at'],
-  StyleCategory: ['id','name','slug','description','icon','color','is_active','styles_count','subcategories_count','created_at','updated_at'],
-  StyleSubCategory: ['id','name','slug','category_id','description','is_active','styles_count','created_at','updated_at'],
-  Produit: ['id','name','description','price','old_price','images','category','brand','stock','status','tags','rating','reviews_count','shopify_id','source','featured','external_url','min_qty','delivery_time','free_shipping','return_policy','created_at','updated_at','created_by_id'],
-  Publication: ['id','author_email','author_name','author_avatar','content','images','video_url','type','status','likes','comments_count','tags','created_at','updated_at','created_by_id'],
-  Service: ['id','name','title','description','price','category','subcategory','style','duration','duration_min','images','pro_email','status','addons','tags','rating','reviews_count','max_persons','promo_price','promo_ends_at','created_at','updated_at','created_by_id'],
-  UserSubscription: ['id','user_email','user_name','plan_id','plan_name','plan_price','plan_type','status','payment_method','payment_status','billing_name','billing_email','billing_phone','billing_address','billing_city','billing_postal_code','starts_at','expires_at','cancelled_at','stripe_subscription_id','stripe_customer_id','notes','created_at','updated_at'],
-  VisiteVirtuelle: ['id','pro_email','title','scenes','status','created_at','updated_at','created_by_id'],
-  Notification: ['id','user_email','title','message','body','type','is_read','read','icon','action_url','data','created_at','updated_at','created_by_id'],
-  MessageChat: ['id','conversation_id','sender_email','sender_avatar','receiver_email','receiver_avatar','content','attachment_url','type','is_read','read','reservation_id','is_maria','created_at','updated_at','created_by_id'],
-  Commande: ['id','client_email','client_name','items','total_price','total','subtotal','shipping','status','payment_status','payment_method','payment_intent_id','shipping_address','tracking_number','notes','created_at','updated_at','created_by_id'],
-  PointsFidelite: ['id','user_email','points','points_total','total_earned','total_spent','points_depenses','level','niveau','history','historique','code_parrainage','created_at','updated_at','created_by_id'],
-  SoldeBeautyPay: ['id','user_email','balance','solde','currency','transactions','created_at','updated_at','created_by_id'],
-  ProPaymentMethod: ['id','user_email','card_last4','card_brand','card_holder','card_expiry','is_default','created_at','updated_at'],
-  CallSignal: ['id','call_id','caller_email','caller_name','callee_email','signal_type','type','signal_data','payload','status','created_at','updated_at','created_by_id'],
-  LiveSession: ['id','host_email','host_name','host_avatar','title','description','category','status','viewers_count','viewers','mux_stream_key','mux_playback_id','thumbnail_url','started_at','ended_at','created_at','updated_at','created_by_id'],
-  LiveMessage: ['id','session_id','user_email','user_name','user_avatar','sender_email','sender_name','sender_avatar','content','type','created_at','updated_at','created_by_id'],
-  DemandeProV2: ['id','user_email','username','nom','prenom','phone','address','city','specialite','experience','description','cv_url','portfolio_urls','status','admin_notes','statut','siret','salon_name','bio','type_activite','years_experience','services','categories','specialites_cheveux','salon_photo','portfolio','email_pro','doc_identite_recto','doc_identite_verso','doc_siret','doc_assurance','days','time_slots','commodites','seats_count','se_deplace','travail_nuit','visite_video_url','diplomes','has_diplome','created_at','updated_at','created_by_id'],
-  DemandefFranchise: ['id','user_email','user_name','full_name','email','phone','city','budget','experience','message','status','created_at','updated_at','created_by_id'],
-  MembreEquipe: ['id','pro_email','membre_email','membre_name','membre_avatar','name','role','specialites','specialties','experience','days','horaires','status','created_at','updated_at','created_by_id'],
-  CatalogueOption: ['id','name','description','price','duration_min','service_id','pro_email','category','usage_count','created_at','updated_at','created_by_id'],
-  Reservation: ['id','client_email','pro_email','pro_name','service_id','service_name','service_price','date','time','time_slot','end_time_slot','duration_min','persons','total_price','night_surcharge','transport_fee','transport_distance_km','salon_name','salon_address','seat_number','seats_total','payment_type','payment_status','crg_code','acompte_amount','notes','addons','status','reminder_scheduled','reminder_sent','completed_at','review_requested','code_validated','reliability_score','source','created_by_id','created_at','updated_at'],
-  Client: ['id','pro_email','name','email','phone','notes','tags','source','total_spent','total_rdv','last_rdv_date','created_at','updated_at','created_by_id'],
-  Annonce: ['id','title','description','type','target_url','status','pro_email','pro_name','sponsor_name','sponsor_logo','image_url','video_url','cta_label','cta_url','pages','budget','start_date','end_date','impressions','clicks','created_at','updated_at','created_by_id'],
-  ProfilPro: ['id','user_email','nom','prenom','salon_name','bio','specialites','avatar_url','cover_url','address','city','phone','status','rating','reviews_count','travail_nuit','horaires','jours_repos','conges','ouverture','team_emails','latitude','longitude','_lat','_lng','abonnement','abonnement_expires_at','stripe_customer_id','categorie','tags','galerie_urls','presentation_video_url','website','instagram','facebook','services_count','followers','commodites','seats_count','se_deplace','created_at','updated_at','created_by_id'],
-  RoutineBeaute: ['id','user_email','name','emoji','description','steps','tasks','frequency','status','reminders','reminder_active','category','created_at','updated_at','created_by_id'],
-  profiles: ['id','email','full_name','avatar_url','cover_url','role','gender','beauty_interests','maria_name','maria_memory','created_at','updated_at'],
-  user_like: ['id','user_email','user_name','user_avatar','target_id','target_type','created_at'],
-  user_favorite: ['id','user_email','target_id','target_type','target_title','target_image','target_data','created_at'],
-  reel_comment: ['id','reel_id','user_email','user_name','user_avatar','content','likes','parent_id','created_at','updated_at'],
-  user_follow: ['id','follower_email','follower_name','follower_avatar','followed_email','created_at'],
-  ImmobilierListing: ['id','title','description','price','price_fonds_commerce','price_per_m2','tax_mode','salon_type','unit','surface','rooms','floor','type','status','city','address','location','area','postal_code','equip','extra','badge','images','video_url','contact_email','contact_phone','latitude','longitude','_lat','_lng','created_at','updated_at','created_by_id'],
-  ServiceBundle: ['id','pro_email','name','description','service_ids','bundle_price','discount_percent','image_url','cover_url','banner_url','is_active','is_group','min_persons','max_persons','bundle_price_per_person','category','bonus','created_at','updated_at'],
-};
-
-const stripUnknownColumns = async (tableName, payload) => {
-  let known = KNOWN_COLUMNS[tableName];
-  if (!known) {
-    try {
-      const { data, error } = await supabase.from(tableName).select('*').limit(1);
-      if (!error && data && data[0]) known = Object.keys(data[0]);
-    } catch {}
-  }
-  if (!known || known.length === 0) return payload;
-  const cleaned = {};
-  for (const key of Object.keys(payload)) {
-    if (known.includes(key)) cleaned[key] = payload[key];
-  }
-  return cleaned;
-};
-
-const getSelectColumns = (tableName) => {
-  return '*';
-};
-
-const createEntity = (tableName) => ({
-  filter: async (filters = {}, orderBy = '-created_at', limit = 1000) => {
-    const applyFilters = (q) => {
-      if (filters && Object.keys(filters).length > 0) {
-        for (const [k, v] of Object.entries(filters)) {
-          q = q.eq(k, v);
-        }
-      }
-      return q;
-    };
-    const applyOrder = (q) => {
-      if (orderBy) {
-        const desc = orderBy.startsWith('-');
-        const raw = orderBy.startsWith('-') ? orderBy.slice(1) : orderBy;
-        const colMap = { created_date: 'created_at', updated_date: 'updated_at', created_at: 'created_at', updated_at: 'updated_at' };
-        q = q.order(colMap[raw] || raw, { ascending: !desc });
-      }
-      return q;
-    };
-    // Aller directement à Supabase si pas de backend
-    if (!CRUD_API) {
-      try {
-        let query = supabase.from(tableName).select(getSelectColumns(tableName));
-        query = applyFilters(query);
-        query = applyOrder(query);
-        query = query.limit(limit);
-        const { data, error } = await query;
-        if (error) { console.error(`[entities] ${tableName} filter error:`, error.message); return []; }
-        return data || [];
-      } catch (e) { console.error(`[entities] ${tableName} filter exception:`, e.message); return []; }
-    }
-    try {
-      const res = await fetch(`${CRUD_API}/crud/list`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table: tableName, orderBy, limit }),
-      });
-      if (!res.ok) throw new Error('List failed');
-      const { result } = await res.json();
-      let data = result || [];
-      if (filters && Object.keys(filters).length > 0) {
-        data = data.filter(row => Object.entries(filters).every(([k, v]) => row[k] === v));
-      }
-      return data;
-    } catch (e) {
-      try {
-        let query = supabase.from(tableName).select(getSelectColumns(tableName));
-        query = applyFilters(query);
-        query = applyOrder(query);
-        query = query.limit(limit);
-        const { data, error } = await query;
-        if (error) { console.error(`[entities] ${tableName} filter fallback error:`, error.message); return []; }
-        return data || [];
-      } catch (e2) { console.error(`[entities] ${tableName} filter fallback exception:`, e2.message); return []; }
-    }
+const checked = ({data,error}) => { if(error) throw error; return data; };
+const createEntity = table => ({
+  async filter(filters={},orderBy='-created_at',limit=1000){
+    let query=supabase.from(table).select('*');
+    for(const [key,value] of Object.entries(filters)) query=value===null?query.is(key,null):query.eq(key,value);
+    if(orderBy) query=query.order(orderBy.replace(/^-/,'').replace('created_date','created_at').replace('updated_date','updated_at'),{ascending:!orderBy.startsWith('-')});
+    return checked(await query.limit(Math.min(Math.max(Number(limit)||100,1),1000))) || [];
   },
-
-  list: async (orderBy = '-created_at', limit = 1000) => {
-    if (!CRUD_API) {
-      try {
-        const { column, ascending } = parseOrder(orderBy);
-        const { data, error } = await supabase.from(tableName).select(getSelectColumns(tableName)).order(column, { ascending }).limit(limit);
-        if (error) { console.error(`[entities] ${tableName} list error:`, error.message); return []; }
-        return data || [];
-      } catch (e) { console.error(`[entities] ${tableName} list exception:`, e.message); return []; }
-    }
-    try {
-      const res = await fetch(`${CRUD_API}/crud/list`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table: tableName, orderBy, limit }),
-      });
-      if (!res.ok) throw new Error('List failed');
-      const { result } = await res.json();
-      return result || [];
-    } catch (e) {
-      try {
-        const { column, ascending } = parseOrder(orderBy);
-        const { data, error } = await supabase.from(tableName).select(getSelectColumns(tableName)).order(column, { ascending }).limit(limit);
-        if (error) { console.error(`[entities] ${tableName} list fallback error:`, error.message); return []; }
-        return data || [];
-      } catch (e2) { console.error(`[entities] ${tableName} list fallback exception:`, e2.message); return []; }
-    }
+  list(orderBy,limit){return this.filter({},orderBy,limit);},
+  async get(id){return checked(await supabase.from(table).select('*').eq('id',id).maybeSingle());},
+  async create(input){
+    if(table==='Reservation')return (await apiClient.callFunction('createReservation',input)).data.reservation;
+    const {data:{session}}=await supabase.auth.getSession();
+    if(!session)throw new Error('Connectez-vous pour effectuer cette action.');
+    return checked(await supabase.from(table).insert(input).select().single());
   },
-
-  get: async (id) => {
-    if (!CRUD_API) {
-      try {
-        const { data, error } = await supabase.from(tableName).select(getSelectColumns(tableName)).eq('id', id);
-        if (error || !data || data.length === 0) return null;
-        return data[0];
-      } catch { return null; }
-    }
-    try {
-      const res = await fetch(`${CRUD_API}/crud/list`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table: tableName, orderBy: '-created_at', limit: 1 }),
-      });
-      if (!res.ok) throw new Error('Get failed');
-      const { result } = await res.json();
-      return (result || []).find(r => r.id === id) || null;
-    } catch (e) {
-      try {
-        const { data, error } = await supabase.from(tableName).select(getSelectColumns(tableName)).eq('id', id);
-        if (error || !data || data.length === 0) return null;
-        return data[0];
-      } catch { return null; }
-    }
+  async update(id,input){
+    if(table==='Reservation')return (await apiClient.put('/api/reservations/'+id,input)).reservation;
+    return checked(await supabase.from(table).update(input).eq('id',id).select().single());
   },
-
-  create: async (data) => {
-    const payload = { ...data };
-    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
-
-    if (!CRUD_API) {
-      const cleanPayload = await stripUnknownColumns(tableName, payload);
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('Vous devez être connecté pour effectuer cette action.');
-      }
-      const { data: result, error } = await supabase.from(tableName).insert(cleanPayload).select();
-      if (error) throw error;
-      return (result && result[0]) ? result[0] : cleanPayload;
-    }
-    try {
-      const res = await fetch(`${CRUD_API}/crud/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table: tableName, data: payload }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Create failed' }));
-        throw new Error(err.error || 'Create failed');
-      }
-      const { result } = await res.json();
-      return result;
-    } catch (e) {
-      const cleanPayload = await stripUnknownColumns(tableName, payload);
-      const { data: result, error } = await supabase.from(tableName).insert(cleanPayload).select();
-      if (error) throw error;
-      return (result && result[0]) ? result[0] : cleanPayload;
-    }
+  async delete(id){
+    if(table==='Reservation')throw new Error('Annulez le rendez-vous depuis son détail pour conserver son historique.');
+    checked(await supabase.from(table).delete().eq('id',id).select('id').single());
+    return true;
   },
-
-  update: async (id, data) => {
-    const payload = { ...data };
-    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
-
-    if (!CRUD_API) {
-      const cleanPayload = await stripUnknownColumns(tableName, payload);
-      const { data: result, error } = await supabase.from(tableName).update(cleanPayload).eq('id', id).select();
-      if (error) throw error;
-      const row = (result && result[0]) ? result[0] : { ...cleanPayload, id };
-      return row;
-    }
-    try {
-      const res = await fetch(`${CRUD_API}/crud/update`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table: tableName, id, data: payload }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Update failed' }));
-        throw new Error(err.error || 'Update failed');
-      }
-      const { result } = await res.json();
-      return result;
-    } catch (e) {
-      const cleanPayload = await stripUnknownColumns(tableName, payload);
-      const { data: result, error } = await supabase.from(tableName).update(cleanPayload).eq('id', id).select();
-      if (error) throw error;
-      const row = (result && result[0]) ? result[0] : { ...cleanPayload, id };
-      return { data: { [tableName.toLowerCase()]: row }, result: row };
-    }
-  },
-
-  delete: async (id) => {
-    if (!CRUD_API) {
-      const { data, error } = await supabase.from(tableName).delete().eq('id', id).select('id');
-      if (error) throw error;
-      if (!data?.length) throw new Error('Suppression refusée ou élément introuvable.');
-      return true;
-    }
-    try {
-      const res = await fetch(`${CRUD_API}/crud/delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table: tableName, id }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Delete failed' }));
-        throw new Error(err.error || 'Delete failed');
-      }
-      return true;
-    } catch (e) {
-      const { data, error } = await supabase.from(tableName).delete().eq('id', id).select('id');
-      if (error) throw error;
-      if (!data?.length) throw new Error('Suppression refusée ou élément introuvable.');
-      return true;
-    }
-  },
-  subscribe: (callback) => {
-    const channel = supabase
-      .channel(`realtime:${tableName}:${Math.random().toString(36).slice(2)}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: tableName },
-        (payload) => {
-          const type = payload.eventType === 'INSERT' ? 'create'
-                     : payload.eventType === 'UPDATE' ? 'update'
-                     : 'delete';
-          callback({ type, data: payload.new || payload.old, id: (payload.new || payload.old)?.id });
-        }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+  subscribe(callback){
+    const channel=supabase.channel('entity:'+table+':'+crypto.randomUUID()).on('postgres_changes',{event:'*',schema:'public',table},payload=>{
+      const data=payload.eventType==='DELETE'?payload.old:payload.new;
+      callback({type:payload.eventType==='INSERT'?'create':payload.eventType==='UPDATE'?'update':'delete',data,id:data?.id});
+    }).subscribe();
+    return ()=>supabase.removeChannel(channel);
   },
 });
 
@@ -355,81 +83,31 @@ export const entities = {
   ServiceBundle:      createEntity('ServiceBundle'),
 };
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || '';
 
-import { compressMedia } from '@/lib/compressMedia';
-
-export const uploadFile = async (fileOrObj, bucket = 'uploads') => {
-  const rawFile = (fileOrObj && fileOrObj.file instanceof File) ? fileOrObj.file : fileOrObj;
-  if (!rawFile || !(rawFile instanceof File)) {
-    console.error('[uploadFile] Argument invalide', fileOrObj);
-    throw new Error('uploadFile: argument invalide');
+export async function uploadFile(fileOrObj,bucket='uploads'){
+  const raw=fileOrObj?.file instanceof File?fileOrObj.file:fileOrObj;
+  if(!(raw instanceof File))throw new Error('Choisissez un fichier.');
+  if(!['uploads','private-documents','private-images'].includes(bucket))throw new Error('Destination de fichier invalide.');
+  const {data:{session},error:authError}=await supabase.auth.getSession();
+  if(authError)throw authError;
+  if(!session?.user)throw new Error('Connectez-vous pour ajouter un fichier.');
+  const allowed=bucket==='private-images'?['image/jpeg','image/png','image/webp']:bucket==='private-documents'?['image/jpeg','image/png','image/webp','application/pdf']:['image/jpeg','image/png','image/webp','image/gif','video/mp4','video/webm','audio/mpeg','audio/wav','audio/webm'];
+  if(!allowed.includes(raw.type))throw new Error('Ce type de fichier n’est pas accepté.');
+  const max=raw.type.startsWith('video/')?100*1024*1024:20*1024*1024;
+  if(raw.size>max)throw new Error('Fichier trop volumineux (20 Mo, ou 100 Mo pour une vidéo).');
+  const file=bucket==='private-documents'?raw:await compressMedia(raw);
+  const extension=({ 'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif','application/pdf':'pdf','video/mp4':'mp4','video/webm':'webm','audio/mpeg':'mp3','audio/wav':'wav','audio/webm':'webm'})[file.type];
+  if(!extension)throw new Error('Format de fichier non pris en charge.');
+  const path=session.user.id+'/'+crypto.randomUUID()+'.'+extension;
+  const {error}=await supabase.storage.from(bucket).upload(path,file,{contentType:file.type,upsert:false});
+  if(error)throw new Error('L’envoi du fichier a échoué. Réessayez.');
+  if(bucket==='private-documents')return {file_url:'storage://private-documents/'+path,path,bucket};
+  if(bucket==='private-images'){
+    const {data,error:signError}=await supabase.storage.from(bucket).createSignedUrl(path,3600);
+    if(signError||!data?.signedUrl)throw new Error('Impossible d’ouvrir votre photo privée.');
+    return {file_url:data.signedUrl,path,bucket};
   }
+  return {file_url:supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl,path,bucket};
+}
 
-  if (!supabase || !supabase.storage) {
-    console.error('[uploadFile] Client Supabase non configuré. Vérifiez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env.local');
-    throw new Error('Supabase non configuré. Ajoutez vos identifiants dans le fichier .env.local');
-  }
-
-  let file;
-  try {
-    file = await compressMedia(rawFile);
-  } catch (compressErr) {
-    console.warn('[uploadFile] Compression échouée, upload du fichier original:', compressErr);
-    file = rawFile;
-  }
-
-  // Vérifier la taille après compression (Supabase limite configurée à 500 Mo)
-  const MAX_UPLOAD = 500 * 1024 * 1024;
-  if (file.size > MAX_UPLOAD) {
-    const sizeMB = Math.round(file.size / 1024 / 1024);
-    throw new Error(`Le fichier (${sizeMB} Mo) est trop volumineux. Limite : 500 Mo.`);
-  }
-
-  const safeName = file.name
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9._-]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
-  const filePath = `${Date.now()}_${safeName}`;
-
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .upload(filePath, file, { contentType: file.type, upsert: true });
-
-  if (error) {
-    console.error('[uploadFile] Erreur Supabase:', error);
-    if (error.message?.includes('Bucket not found') || error.message?.includes('not found')) {
-      throw new Error('Le bucket "uploads" n\'existe pas dans Supabase Storage. Exécutez le script fix_storage_setup.sql dans l\'éditeur SQL Supabase.');
-    }
-    throw new Error(error.message || 'Upload failed');
-  }
-
-  const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-  return { file_url: urlData.publicUrl };
-};
-
-export const fetchProduits = async (params = {}) => {
-  try {
-    const res = await fetch(`${CRUD_API}/crud/list`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ table: 'Produit', orderBy: '-created_at', limit: params.limit || 500 }),
-    });
-    if (!res.ok) throw new Error('List failed');
-    let { result } = await res.json();
-    result = result || [];
-    if (params.status) result = result.filter(p => p.status === params.status);
-    return result;
-  } catch (e) {
-    console.warn('[fetchProduits] backend failed, trying Supabase:', e.message);
-    try {
-      let query = supabase.from('Produit').select(getSelectColumns('Produit')).order('created_at', { ascending: false });
-      if (params.status) query = query.eq('status', params.status);
-      if (params.limit) query = query.limit(params.limit);
-      const { data, error } = await query;
-      if (error) throw error;
-      return data || [];
-    } catch { return []; }
-  }
-};
+export const fetchProduits = (params={}) => entities.Produit.filter(params.status?{status:params.status}:{},'-created_at',params.limit||500);

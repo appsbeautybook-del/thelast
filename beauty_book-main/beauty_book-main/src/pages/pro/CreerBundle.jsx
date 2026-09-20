@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
 import { uploadFile } from "@/api/entities";
 import { useThemeBg } from "@/hooks/useTheme";
+import BeautyImage from "@/components/ui/BeautyImage";
 
 const BUNDLE_CATEGORIES = ["Tous", "Coiffure", "Soin", "Ongles", "Maquillage"];
 const DRAFT_KEY = "bb_bundle_draft";
@@ -371,7 +372,7 @@ export default function CreerBundle() {
               <button onClick={() => imgRef.current?.click()} disabled={uploadingImg}
                 className="w-16 h-16 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden shrink-0 bg-white">
                 {imageUrl ? (
-                  <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+                  <BeautyImage src={imageUrl} alt="" className="w-full h-full object-cover" />
                 ) : uploadingImg ? (
                   <div className="w-5 h-5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
                 ) : (
@@ -395,7 +396,7 @@ export default function CreerBundle() {
                 className="relative h-36 w-full rounded-2xl border-2 border-dashed border-gray-300 overflow-hidden bg-white flex flex-col items-center justify-center cursor-pointer hover:border-[#ff6b35] transition-all group shadow-sm">
                 {coverUrl ? (
                   <>
-                    <img src={coverUrl} alt="Bannière Bundle" className="w-full h-full object-cover" />
+                    <BeautyImage src={coverUrl} alt="Bannière Bundle" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                       <span className="text-white text-[12px] font-black uppercase tracking-wider bg-black/60 px-3 py-1.5 rounded-full">Changer la bannière</span>
                     </div>
@@ -568,7 +569,7 @@ export default function CreerBundle() {
                     <div key={b.id} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm">
                       <div className="flex items-start gap-3">
                         {b.image_url ? (
-                          <img src={b.image_url} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                          <BeautyImage src={b.image_url} alt="" className="w-16 h-16 rounded-xl object-cover shrink-0" />
                         ) : (
                           <div className="w-16 h-16 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
                             <Zap className="w-6 h-6 text-orange-300" />
@@ -666,6 +667,7 @@ export default function CreerBundle() {
             </div>
           </div>
         </div>
+      )}
       {showBannerStudio && (
         <div className="fixed inset-0 z-[600] flex items-end justify-center" onClick={() => setShowBannerStudio(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-md" />
@@ -687,7 +689,7 @@ export default function CreerBundle() {
             <div>
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Aperçu de la bannière</p>
               <div className="relative h-44 w-full rounded-2xl overflow-hidden shadow-lg border border-gray-200">
-                <img src={generateBannerSvg({ title: studioTitle || name || "PACK BEAUTÉ SUBLIME", badge: studioBadge, subtitle: studioSubtitle || description || "Profitez de nos rituels exclusifs", theme: studioTheme })} alt="Aperçu Studio" className="w-full h-full object-cover" />
+                <BeautyImage src={generateBannerSvg({ title: studioTitle || name || "PACK BEAUTÉ SUBLIME", badge: studioBadge, subtitle: studioSubtitle || description || "Profitez de nos rituels exclusifs", theme: studioTheme })} alt="Aperçu Studio" className="w-full h-full object-cover" />
               </div>
             </div>
 

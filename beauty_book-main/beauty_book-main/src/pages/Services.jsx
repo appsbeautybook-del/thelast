@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Bell, SlidersHorizontal, Star, Heart, MapPin, User } from "lucide-react";
@@ -41,7 +42,7 @@ function VideoThumb({ src, className, alt }) {
     return () => { v.removeEventListener("canplay", onCanPlay); v.removeEventListener("seeked", onSeeked); };
   }, [src]);
 
-  if (thumb) return <img src={thumb} alt={alt} className={className} />;
+  if (thumb) return <BeautyImage src={thumb} alt={alt} className={className} />;
 
   return (
     <>
@@ -244,7 +245,7 @@ export default function Services() {
                   onClick={() => navigate(`/style/${style.id}`, { state: { id: style.id, title: style.title, cover: style.image_url, category: style.category } })}
                   className="shrink-0 w-44 rounded-3xl overflow-hidden bg-gray-50 shadow-sm cursor-pointer active:scale-[0.98] transition-all">
                   <div className="relative h-48">
-                    <img src={style.image_url || ""} alt={style.title} className="w-full h-full object-cover" />
+                    <BeautyImage src={style.image_url || ""} alt={style.title} className="w-full h-full object-cover" />
                   </div>
                   <div className="p-3">
                     <p className="text-[13px] font-black text-gray-900">{style.title}</p>
@@ -297,7 +298,7 @@ export default function Services() {
                     isVideo ? (
                       <VideoThumb src={serviceImg} alt={s.title} className="w-16 h-16 rounded-xl object-cover shrink-0" />
                     ) : (
-                      <img src={serviceImg} alt={s.title} className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                      <BeautyImage src={serviceImg} alt={s.title} className="w-16 h-16 rounded-xl object-cover shrink-0" />
                     )
                   ) : (
                     <div className="w-16 h-16 rounded-xl bg-gray-100 shrink-0 flex items-center justify-center">
@@ -341,7 +342,7 @@ export default function Services() {
                     onClick={() => navigate("/pro/vue-client", { state: { proEmail: salon.user_email } })}
                     className="shrink-0 w-48 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer active:scale-[0.98] transition-all">
                     <div className="relative h-36">
-                      <img src={salon.avatar_url || salon.cover_url || ""} alt={salon.salon_name} className="w-full h-full object-cover" />
+                      <BeautyImage src={salon.avatar_url || salon.cover_url || ""} alt={salon.salon_name} className="w-full h-full object-cover" />
                       <div className="absolute bottom-2 right-2 bg-white/90 rounded-lg px-2 py-1 flex items-center gap-1">
                         <Star className="w-3 h-3 text-primary fill-primary" />
                         <span className="text-[11px] font-black text-gray-900">{salon.rating || "—"}</span>
@@ -383,7 +384,7 @@ export default function Services() {
                     onClick={() => navigate("/pro/vue-client", { state: { proEmail: p.user_email } })}
                     className="shrink-0 w-40 bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer active:scale-[0.98] transition-all">
                     <div className="relative h-40">
-                      <img src={p.avatar_url || ""} alt={p.salon_name} className="w-full h-full object-cover" />
+                      <BeautyImage src={p.avatar_url || ""} alt={p.salon_name} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-3">
                       <p className="text-[13px] font-black text-gray-900 truncate">{p.salon_name}</p>

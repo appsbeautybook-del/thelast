@@ -1,3 +1,4 @@
+import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, Share2, Heart, Clock, Star, MapPin, Sparkles, MessageSquare, Send, X, ShoppingCart, Scissors, ChevronLeft, ChevronRight, Eye, Bookmark } from "lucide-react";
@@ -56,7 +57,7 @@ function ImageLightbox({ media, initialIndex, onClose }) {
         {isVideo(media[current]) ? (
           <video src={media[current]} autoPlay loop muted playsInline className="max-w-full max-h-full object-contain rounded-xl" />
         ) : (
-          <img src={media[current]} alt="" className="max-w-full max-h-full object-contain rounded-xl select-none" draggable={false} />
+          <BeautyImage src={media[current]} alt="" className="max-w-full max-h-full object-contain rounded-xl select-none" draggable={false} />
         )}
       </div>
 
@@ -89,7 +90,7 @@ function ImageLightbox({ media, initialIndex, onClose }) {
                   <span className="text-white text-[10px] font-black">▶</span>
                 </div>
               ) : (
-                <img src={url} alt="" className="w-full h-full object-cover" />
+                <BeautyImage src={url} alt="" className="w-full h-full object-cover" />
               )}
             </button>
           ))}
@@ -131,7 +132,7 @@ function HeroSlider({ media = [], onImageClick }) {
           {isVideo(url) ? (
             <video src={url} autoPlay={i === current} loop muted playsInline className="w-full h-full object-cover" />
           ) : (
-            <img src={url} alt="" className="w-full h-full object-cover" />
+            <BeautyImage src={url} alt="" className="w-full h-full object-cover" />
           )}
         </div>
       ))}
@@ -210,7 +211,7 @@ function CommentsSheet({ styleId, onClose }) {
           ) : comments.map(c => (
             <div key={c.id} className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full overflow-hidden bg-gray-100 shrink-0 flex items-center justify-center">
-                {c.user_avatar ? <img src={c.user_avatar} alt="" className="w-full h-full object-cover" />
+                {c.user_avatar ? <BeautyImage src={c.user_avatar} alt="" className="w-full h-full object-cover" />
                   : <span className="text-[14px] font-black text-gray-400">{(c.user_name || "?")[0].toUpperCase()}</span>}
               </div>
               <div className="flex-1 bg-gray-50 rounded-2xl px-4 py-3">
@@ -330,7 +331,7 @@ function ProvidersSection({ salons, particuliers, loading }) {
                   onClick={() => navigate(`/service/${item.service_id}`)}>
                   <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-gray-200">
                     {item.avatar_url
-                      ? <img src={item.avatar_url} alt={item.salon_name} className="w-full h-full object-cover" />
+                      ? <BeautyImage src={item.avatar_url} alt={item.salon_name} className="w-full h-full object-cover" />
                       : <div className="w-full h-full flex items-center justify-center"><Scissors className="w-6 h-6 text-gray-300" /></div>
                     }
                   </div>
@@ -433,7 +434,7 @@ function ConseilsSection({ category }) {
             >
               <div className="h-52">
                 {thumb
-                  ? <img src={thumb} alt={conseil.title} className="w-full h-full object-cover opacity-90" />
+                  ? <BeautyImage src={thumb} alt={conseil.title} className="w-full h-full object-cover opacity-90" />
                   : <div className="w-full h-full flex items-center justify-center text-[40px]">💡</div>
                 }
               </div>
@@ -731,7 +732,7 @@ export default function StyleDetail() {
                   <div key={prod.id || i} className="shrink-0 w-40 bg-gray-50 rounded-2xl overflow-hidden border border-gray-100">
                     <button className="relative h-28 w-full active:opacity-80 transition-all" onClick={handleProduitClick}>
                       {prod.image_url
-                        ? <img src={prod.image_url} alt={prod.name} className="w-full h-full object-cover" />
+                        ? <BeautyImage src={prod.image_url} alt={prod.name} className="w-full h-full object-cover" />
                         : <div className="w-full h-full flex items-center justify-center text-3xl">🧴</div>
                       }
                       {prod.price > 0 && (
@@ -790,7 +791,7 @@ export default function StyleDetail() {
                     onClick={() => navigate(`/style/${item.id}`, { state: { ...item, cover: item.image_url, images: imgs } })}
                     className="shrink-0 w-40 rounded-2xl overflow-hidden relative active:scale-[0.98] transition-all bg-gray-100">
                     {imgs[0]
-                      ? <img src={imgs[0]} alt={item.title} className="w-full h-52 object-cover" />
+                      ? <BeautyImage src={imgs[0]} alt={item.title} className="w-full h-52 object-cover" />
                       : <div className="w-full h-52 flex items-center justify-center"><Scissors className="w-8 h-8 text-gray-300" /></div>
                     }
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
