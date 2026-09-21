@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster"
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/lib/AuthContext';
-import AdminLogin from '@/pages/admin/AdminLogin';
+import AdminLogin from '@/pages/admin/AdminAccess';
 import AdminDashboard from '@/pages/admin/AdminDashboard.jsx';
 
 function App() {
@@ -11,7 +11,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/signup" element={<Navigate to="/admin/login" replace />} />
+          <Route path="/admin/signup" element={<AdminLogin />} />
+          <Route path="/admin/verify" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin" element={<Navigate to="/admin/login" replace />} />
           <Route path="*" element={<Navigate to="/admin/login" replace />} />

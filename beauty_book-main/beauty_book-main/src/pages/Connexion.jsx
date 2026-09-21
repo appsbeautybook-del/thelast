@@ -274,10 +274,10 @@ export default function Connexion() {
         </div>
 
         <div className="pt-6 pb-8 space-y-4">
-          <SocialAuthButtons disabled={loading} />
           <button onClick={handleLogin} disabled={loading} className="w-full h-[52px] rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
             {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><span>Se connecter</span><ArrowRight className="w-4 h-4" /></>}
           </button>
+          <SocialAuthButtons disabled={loading} />
           <p className="text-center text-[13px] text-gray-500">
             Pas encore de compte ? <button onClick={() => { sessionStorage.removeItem("bb_signup_data"); sessionStorage.setItem("bb_from_login", "1"); navigate("/onboarding"); }} className="font-bold" style={{ color: BRAND }}>Créer un compte</button>
           </p>

@@ -20,13 +20,13 @@ export default function AuthCallback() {
         const intent = readOAuthIntent(sessionStorage);
         sessionStorage.removeItem(OAUTH_INTENT_KEY);
         let draft = readSignupDraft(sessionStorage);
-        const isSocialSignup = intent?.mode === 'signup';
-        if (isSocialSignup && (!profile.full_name || !profile.gender)) {
+        const needsProfile = Boolean(intent) && (!profile.full_name || !profile.gender);
+        if (needsProfile) {
           const parts = String(profile.full_name || '').trim().split(/\s+/);
           draft = saveSignupDraft(sessionStorage, { mode: 'email', email: user.email, prenom: parts[0] || '', nom: parts.slice(1).join(' ') });
           if (!profile.full_name) sessionStorage.setItem('bb_social_name_required', '1');
         } else if (intent) { sessionStorage.removeItem('bb_signup_data'); draft = {}; }
-        if (isSocialSignup && draft.email && draft.email.toLowerCase() === user.email?.toLowerCase()) {
+        if (draft.email && draft.email.toLowerCase() === user.email?.toLowerCase()) {
           sessionStorage.setItem('bb_social_signup', '1');
           navigate('/onboarding', { replace: true });
         } else {

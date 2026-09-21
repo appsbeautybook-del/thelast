@@ -35,3 +35,9 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--paper);c
 .transfer-history {margin-top:24px;}
 .transfer-row {display:flex;justify-content:space-between;gap:12px;padding:16px 0;border-bottom:1px solid #e6e9e1;font-size:13px;flex-wrap:wrap;}
 .transfer-row small {display:block;color:#626b63;margin-top:4px;}
+.auth-description {overflow-wrap:anywhere;line-height:1.65;}
+.confirmation-icon {display:block;color:#31533d;margin-top:24px;}
+.auth-card input.confirmation-code {font-size:24px;letter-spacing:.25em;text-align:center;}
+.auth-links button {min-height:44px;}
+.auth-links button:disabled {opacity:.5;cursor:default;}
+.product-photos .seller-image-fallback {width:100%;height:100%;}

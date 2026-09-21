@@ -4,7 +4,9 @@ export const apiClient = {
     const {data:{session}}=await supabase.auth.getSession();
     const base=(import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/,'').replace(/\/api$/,'');
     const path=endpoint.startsWith('/api/') ? endpoint : '/api'+endpoint;
-    const response=await fetch(base+path,{...options,headers:{'Content-Type':'application/json',...(session?.access_token?{Authorization:'Bearer '+session.access_token}:{}),...options.headers},signal:AbortSignal.timeout(30000)});
+    let response;
+    try { response=await fetch(base+path,{...options,headers:{'Content-Type':'application/json',...(session?.access_token?{Authorization:'Bearer '+session.access_token}:{}),...options.headers},signal:AbortSignal.timeout(30000)}); }
+    catch { throw new Error('Le serveur BeautyBook est injoignable. Vérifiez votre connexion et réessayez.'); }
     const body=await response.json().catch(()=>({error:'Réponse serveur invalide.'}));
     if(!response.ok || body.success===false || body.error) { const error=new Error(body.error || 'Opération refusée.'); error.code=body.code; error.status=response.status; window.dispatchEvent(new CustomEvent('bb:api-error',{detail:error.message})); throw error; }
     return body;

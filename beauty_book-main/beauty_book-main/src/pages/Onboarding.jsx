@@ -203,10 +203,6 @@ function StepSignup({ onNext, onBack }) {
                 J'accepte les <a href="/parametres/conditions" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="font-bold underline" style={{ color: BRAND }}>CGU</a> et la <a href="/parametres/politique-confidentialite" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="font-bold underline" style={{ color: BRAND }}>Politique de Confidentialité</a>. RGPD.
               </p>
             </div>
-            <SocialAuthButtons mode="signup" disabled={submitting} beforeStart={() => {
-              if (!consentChecked) { setError('Acceptez les conditions ci-dessus pour créer votre compte.'); return false; }
-              setError(''); return true;
-            }} />
             {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
           </div>
         </div>
@@ -215,6 +211,10 @@ function StepSignup({ onNext, onBack }) {
           <button onClick={handleSubmit} disabled={submitting} className="w-full h-[52px] rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: isValid ? BRAND : "#e5e7eb" }}>
             {submitting ? "Envoi…" : "Suivant"} <ArrowRight className="w-4 h-4" />
           </button>
+          <SocialAuthButtons mode="signup" disabled={submitting} beforeStart={() => {
+            if (!consentChecked) { setError('Acceptez les conditions ci-dessus pour créer votre compte.'); return false; }
+            setError(''); return true;
+          }} />
           <p className="text-center text-[13px] text-gray-500">Déjà un compte ? <Link to="/connexion" className="font-bold" style={{ color: BRAND }}>Se connecter</Link></p>
           <button aria-label="Retour" onClick={onBack} className="w-full text-center text-[11px] font-bold text-gray-500 uppercase tracking-[0.2em]">Retour</button>
         </div>

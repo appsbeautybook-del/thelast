@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { supabase } from '@/api/supabaseClient';
 
 const AuthContext = createContext();
@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings] = useState({ id: 'beautybook', public_settings: {} });
+  const activeUser = useRef(null);
 
   const loadProfile = async (userId) => {
     try {
@@ -23,7 +24,7 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         console.error('[AuthContext] loadProfile query error:', error);
       }
-      if (data) {
+      if (data && activeUser.current === userId) {
         setProfile({ ...data, _ts: Date.now() });
       }
       return data;
@@ -34,34 +35,39 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        setIsAuthenticated(true);
-        await loadProfile(session.user.id);
-      }
+    let alive = true;
+    let receivedEvent = false;
+    const applySession = session => {
+      if (!alive) return;
+      activeUser.current = session?.user?.id || null;
+      setUser(session?.user || null);
+      setIsAuthenticated(Boolean(session?.user));
       setIsLoadingAuth(false);
       setAuthChecked(true);
-    });
-
+    };
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser(session.user);
-          setIsAuthenticated(true);
-          await loadProfile(session.user.id);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setIsAuthenticated(false);
-        }
-        setIsLoadingAuth(false);
-        setAuthChecked(true);
+      (_event, session) => {
+        receivedEvent = true;
+        applySession(session);
       }
     );
-
-    return () => subscription.unsubscribe();
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!alive) return;
+      if (error) setAuthError(error.message);
+      if (!receivedEvent) applySession(data?.session);
+    }).catch(() => {
+      if (!alive) return;
+      setAuthError('Impossible de récupérer la session. Reconnectez-vous.');
+      if (!receivedEvent) applySession(null);
+    });
+    return () => { alive = false; activeUser.current = null; subscription.unsubscribe(); };
   }, []);
+
+  // Supabase requests must run outside its auth event callback (which holds a lock).
+  useEffect(() => {
+    setProfile(null);
+    if (user?.id) void loadProfile(user.id);
+  }, [user?.id]);
 
   const logout = async (shouldRedirect = true) => {
     await supabase.auth.signOut();
@@ -69,12 +75,12 @@ export const AuthProvider = ({ children }) => {
     setProfile(null);
     setIsAuthenticated(false);
     if (shouldRedirect) {
-      window.location.href = '/connexion';
+      window.location.href = '/admin/login';
     }
   };
 
   const navigateToLogin = () => {
-    window.location.href = '/connexion';
+    window.location.href = '/admin/login';
   };
 
   const refreshUser = async () => {
@@ -92,7 +98,7 @@ export const AuthProvider = ({ children }) => {
     full_name: profile?.full_name || user.user_metadata?.full_name || '',
     avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url || '',
     cover_url: profile?.cover_url || user.user_metadata?.cover_url || '',
-    role: profile?.role || user.user_metadata?.role || 'user',
+    role: profile?.role || 'user',
     maria_name: profile?.maria_name || '',
     maria_memory: profile?.maria_memory || {},
     name: profile?.full_name || user.user_metadata?.full_name || user.email,

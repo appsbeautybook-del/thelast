@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { Store, LayoutDashboard, Package, ShoppingBag, Boxes, Settings, ArrowUpRight, ArrowRight, Plus, Search, RefreshCw, LogOut, X, Upload, AlertCircle, Check, ChevronRight, Truck, Camera, ArrowDownToLine } from 'lucide-react';
 import { configured, supabase, api, uploadProductImage } from './api';
 import SellerCommerce from './SellerCommerce';
+import SellerAuth, { SellerPasswordReset } from './SellerAuth';
 
 const money=value=>Number(value||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
 const dates=value=>new Date(value).toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
@@ -12,24 +13,6 @@ function Brand(){return <div className="brand"><span className="brand-icon"><Sto
 function Notice({children}){return <div className="notice" role="alert"><AlertCircle size={20}/><span>{children}</span></div>;}
 function Empty({icon:Icon=Package,title,children,action}){return <div className="empty"><Icon size={36}/><h3>{title}</h3><p>{children}</p>{action}</div>;}
 
-function Auth(){
- const [mode,setMode]=useState('login'),[email,setEmail]=useState(''),[password,setPassword]=useState(''),[error,setError]=useState(''),[notice,setNotice]=useState(''),[loading,setLoading]=useState(false);
- async function submit(event){event.preventDefault();setLoading(true);setError('');setNotice('');try{
-   if(mode==='reset'){const {error}=await supabase.auth.resetPasswordForEmail(email,{redirectTo:import.meta.env.VITE_APP_URL||window.location.origin});if(error)throw error;setNotice('Si cette adresse correspond à un compte, un lien de récupération lui sera envoyé.');}
-   else if(mode==='signup'){const {error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:import.meta.env.VITE_APP_URL||window.location.origin}});if(error)throw error;setNotice('Consultez votre email pour confirmer votre compte. Vous pourrez ensuite demander l’ouverture de votre boutique.');}
-   else{const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw new Error('Email ou mot de passe incorrect.');}
- }catch(err){setError(err.message);}finally{setLoading(false);}}
- return <main className="auth-page"><section className="auth-story"><Brand/><div><p className="eyebrow">VOTRE ACTIVITÉ, À PORTÉE DE MAIN</p><h1>Votre boutique.<br/>Partout avec vous.</h1><p className="lead">Vos produits, votre stock et vos commandes dans un espace pensé pour votre quotidien.</p><div className="auth-features"><span><Package size={20}/> Un catalogue à jour</span><span><Boxes size={20}/> Chaque mouvement tracé</span><span><Truck size={20}/> Des commandes suivies</span></div></div><p className="auth-foot">L’espace des marques et des vendeurs BeautyBook.</p></section>
- <section className="auth-form"><div className="auth-card"><span className="pill">BeautyBook Vendeur</span><h2>{mode==='login'?'Heureux de vous retrouver.':mode==='signup'?'Ouvrez votre espace.':'Retrouvez votre accès.'}</h2><p>{mode==='login'?'Connectez-vous pour gérer votre activité.':mode==='signup'?'Votre boutique sera activée après validation.':'Recevez un lien de récupération par email.'}</p>
- {!configured?<Notice>Cet espace n’est pas encore configuré. Contactez le responsable BeautyBook pour activer la connexion.</Notice>:<form onSubmit={submit}>
- <label>Adresse email<input autoComplete="email" type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="vous@votreboutique.fr"/></label>
- {mode!=='reset'&&<label>Mot de passe<input type="password" autoComplete={mode==='signup'?'new-password':'current-password'} minLength={mode==='signup'?12:undefined} required value={password} onChange={e=>setPassword(e.target.value)}/>{mode==='signup'&&<small>12 caractères minimum.</small>}</label>}
- {error&&<Notice>{error}</Notice>}{notice&&<p role="status" className="success">{notice}</p>}
- <button className="button primary full" disabled={loading}>{loading?'Un instant…':mode==='login'?'Se connecter':mode==='signup'?'Créer mon compte':'Envoyer le lien'}<ArrowRight size={18}/></button>
- </form>}
- <div className="auth-links"><button onClick={()=>{setMode(mode==='login'?'signup':'login');setError('');setNotice('');}}>{mode==='login'?'Créer un compte vendeur':'Revenir à la connexion'}</button>{mode==='login'&&<button onClick={()=>setMode('reset')}>Mot de passe oublié ?</button>}</div>
- </div></section></main>;
-}
 
 function ProductDialog({product,onClose,onSaved}){
  const ref=useRef(null),fileRef=useRef(null);
@@ -92,13 +75,19 @@ function Workspace({session}){
  </>}
  </main></div>{product&&<ProductDialog product={product} onClose={()=>setProduct(null)} onSaved={refresh}/>} {stock&&<StockDialog product={stock} onClose={()=>setStock(null)} onSaved={refresh}/>}</div>;
 }
-function SellerImage({src,alt='',className=''}){const [failed,setFailed]=useState(false);if(!src||failed)return <span className={`seller-image-fallback ${className}`} aria-label={`${alt} — visuel indisponible`}><Package size={22}/></span>;return <img className={className} src={src} alt={alt} loading="lazy" onError={()=>setFailed(true)} />;}
+function SellerImage({src,alt='',className=''}){const [failedSrc,setFailedSrc]=useState(null);if(!src||failedSrc===src)return <span role="img" className={`seller-image-fallback ${className}`} aria-label={`${alt} — visuel indisponible`}><Package size={22}/></span>;return <img className={className} src={src} alt={alt} loading="lazy" onError={()=>setFailedSrc(src)} />;}
 function ProductImage({product}){const src=Array.isArray(product.images)?product.images[0]:null;return <SellerImage src={src} alt={product.name} className="product-image"/>;}
 
-export default function App(){const [session,setSession]=useState(null),[loading,setLoading]=useState(configured),[recovery,setRecovery]=useState(false),[password,setPassword]=useState(''),[error,setError]=useState('');
- useEffect(()=>{if(!supabase)return;supabase.auth.getSession().then(({data,error})=>{setSession(data.session);if(error)setError(error.message);setLoading(false);});const {data:{subscription}}=supabase.auth.onAuthStateChange((event,next)=>{setSession(next);if(event==='PASSWORD_RECOVERY')setRecovery(true);});return()=>subscription.unsubscribe();},[]);
- async function reset(e){e.preventDefault();setError('');const {error}=await supabase.auth.updateUser({password});if(error)setError(error.message);else setRecovery(false);}
+export default function App(){const [session,setSession]=useState(null),[loading,setLoading]=useState(configured),[recovery,setRecovery]=useState(new URLSearchParams(location.search).get('auth')==='recovery'),[error,setError]=useState('');
+ useEffect(()=>{
+   if(!supabase)return; let alive=true,received=false;
+   const hash=new URLSearchParams(location.hash.slice(1));
+   if(hash.has('error')||new URLSearchParams(location.search).has('error'))setError('Ce lien a expiré ou a déjà été utilisé. Demandez un nouvel email.');
+   const {data:{subscription}}=supabase.auth.onAuthStateChange((event,next)=>{if(!alive)return;received=true;setSession(next);setLoading(false);if(next?.user?.email_confirmed_at)sessionStorage.removeItem('bb-seller-confirmation');if(event==='PASSWORD_RECOVERY')setRecovery(true);});
+   supabase.auth.getSession().then(({data,error})=>{if(!alive)return;if(!received)setSession(data?.session||null);if(error)setError('Impossible de récupérer votre session. Reconnectez-vous.');setLoading(false);}).catch(()=>{if(alive){setError('Connexion impossible. Réessayez.');setLoading(false);}});
+   return()=>{alive=false;subscription.unsubscribe();};
+ },[]);
  if(loading)return <main className="loading-state" role="status"><RefreshCw className="spinning"/>Ouverture de votre espace…</main>;
- if(recovery)return <main className="auth-page single"><section className="auth-card"><Brand/><h1>Nouveau mot de passe</h1><form onSubmit={reset}><label>Mot de passe (12 caractères minimum)<input type="password" autoComplete="new-password" minLength={12} required value={password} onChange={e=>setPassword(e.target.value)}/></label>{error&&<Notice>{error}</Notice>}<button className="button primary">Enregistrer mon mot de passe</button></form></section></main>;
- return session?<Workspace session={session}/>:<Auth/>;
+ if(recovery&&session)return <SellerPasswordReset onComplete={()=>{setRecovery(false);history.replaceState(null,'',location.pathname);}}/>;
+ return session?<Workspace session={session}/>:<SellerAuth sessionError={error}/>;
 }
