@@ -33,6 +33,23 @@ function formatLocation(location) {
   return [location?.address, location?.postalCode, location?.city].filter(Boolean).join(", ");
 }
 
+function normalizeAddressPrediction(pred) {
+  const parts = pred?.structured || pred?.address || {};
+  const components = pred?.address_components || pred?.structured_formatting;
+  const address = pred?.address && typeof pred.address === "string"
+    ? pred.address
+    : [parts.house_number, parts.road].filter(Boolean).join(" ");
+  const postalCode = pred?.postalCode || parts.postcode || components?.find?.(part => part.types?.includes("postal_code"))?.long_name || "";
+  const city = pred?.city || parts.city || parts.town || parts.village || components?.find?.(part => part.types?.includes("locality"))?.long_name || "";
+  return {
+    ...pred,
+    address,
+    postalCode,
+    city,
+    description: pred?.description || formatLocation({ address, postalCode, city }),
+  };
+}
+
 // ── Visuel carte bancaire ─────────────────────────────────────────────────────
 function CardVisual({ cardNumber, cardHolder, expiry }) {
   const type = getCardType(cardNumber);
@@ -549,6 +566,9 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
           const res = await apiClient.callFunction("placesAutocomplete", { input: val });
           suggestions = res?.data?.predictions || res?.predictions || [];
         } catch {
+          suggestions = [];
+        }
+        if (suggestions.length === 0) {
           const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=fr&limit=5&q=${encodeURIComponent(val)}`);
           const results = await response.json();
           suggestions = results.map(item => ({
@@ -558,17 +578,26 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
             city: item.address?.city || item.address?.town || item.address?.village || "",
           }));
         }
-        setAddressSuggestions(suggestions);
+        if (suggestions.length === 0) {
+          suggestions = [{
+            description: `Utiliser cette adresse : ${val}`,
+            address: val,
+            postalCode: "",
+            city: "",
+            manual: true,
+          }];
+        }
+        setAddressSuggestions(suggestions.map(normalizeAddressPrediction));
       } catch { setAddressSuggestions([]); }
       finally { setLoadingAddress(false); }
     }, 400);
   };
 
   const selectSuggestion = (pred) => {
-    const structured = pred.address_components || pred.structured_formatting;
-    setCustomAddress(pred.address || pred.description || "");
-    setCustomPostalCode(pred.postalCode || structured?.find?.(part => part.types?.includes("postal_code"))?.long_name || "");
-    setCustomCity(pred.city || structured?.find?.(part => part.types?.includes("locality"))?.long_name || "");
+    const normalized = normalizeAddressPrediction(pred);
+    setCustomAddress(normalized.address || normalized.description || "");
+    setCustomPostalCode(normalized.postalCode);
+    setCustomCity(normalized.city);
     setAddressSuggestions([]);
   };
 
