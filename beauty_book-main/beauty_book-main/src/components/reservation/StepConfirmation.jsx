@@ -676,6 +676,8 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
 
   const totalPrice = basePrice + nightSurcharge + transportFee;
   const acompteAmount = Math.round(totalPrice * 0.3 * 100) / 100;
+  const isHomeService = Boolean(customAddress && formatLocation(savedLieu) &&
+    formatLocation({ address: customAddress, postalCode: customPostalCode, city: customCity }).toLowerCase().trim() !== formatLocation(savedLieu).toLowerCase().trim());
   const dateStr = booking.date ? format(booking.date, "yyyy-MM-dd") : null;
 
   const buildPayload = (pType) => {
@@ -931,7 +933,10 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
         {/* Lieu */}
         <div className="rounded-3xl p-5 text-white" style={{ background: "#111" }}>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Lieu</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Lieu</p>
+              {isHomeService && <span className="rounded-full bg-orange-500/20 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-orange-300">Prestation à domicile</span>}
+            </div>
             {!editingLieu && (
               <button
                 onClick={() => { setEditingLieu(true); setCustomName(savedLieu.name); setCustomAddress(savedLieu.address); setCustomPostalCode(savedLieu.postalCode); setCustomCity(savedLieu.city); }}
@@ -1053,6 +1058,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
         {/* ── Détail du prix ── */}
         <div className="bg-white border border-gray-100 rounded-3xl p-5">
           <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-3">Détail du prix</p>
+          {isHomeService && <div className="mb-3 rounded-xl bg-orange-50 px-3 py-2 text-[11px] font-black text-orange-600">🏠 Prestation à domicile</div>}
           <div className="space-y-2">
             <div className="flex justify-between text-[13px]">
               <span className="text-gray-500 font-medium">Services</span>
