@@ -1,7 +1,7 @@
 import { ArrowLeft, MapPin, Clock, CheckCircle2, Loader, Users, Download, CreditCard, Banknote, Share2, Pencil, X, Check, Tag, Lock, Shield, Moon, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -34,6 +34,19 @@ function formatLocation(location) {
 }
 
 function normalizeAddressPrediction(pred) {
+  const ban = pred?.properties;
+  if (ban) {
+    const coordinates = pred.geometry?.coordinates;
+    const address = [ban.housenumber, ban.street || ban.name].filter(Boolean).join(" ");
+    return {
+      ...pred,
+      address: address || ban.label || "",
+      postalCode: ban.postcode || "",
+      city: ban.city || ban.municipality || "",
+      coordinates: coordinates?.length === 2 ? { latitude: coordinates[1], longitude: coordinates[0] } : null,
+      description: ban.label || formatLocation({ address, postalCode: ban.postcode, city: ban.city }),
+    };
+  }
   const parts = pred?.structured || pred?.address || {};
   const components = pred?.address_components || pred?.structured_formatting;
   const address = pred?.address && typeof pred.address === "string"
@@ -507,16 +520,25 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
   const [customAddress, setCustomAddress] = useState("");
   const [customPostalCode, setCustomPostalCode] = useState("");
   const [customCity, setCustomCity] = useState("");
+  const [customCoordinates, setCustomCoordinates] = useState(null);
   const [customName, setCustomName] = useState("");
-  const [savedLieu, setSavedLieu] = useState({ name: "", address: "", postalCode: "", city: "" });
+  const [savedLieu, setSavedLieu] = useState({ name: "", address: "", postalCode: "", city: "", coordinates: null });
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [loadingAddress, setLoadingAddress] = useState(false);
   const addressDebounceRef = useRef(null);
+  const transportRequestRef = useRef(0);
+  const scrollRef = useRef(null);
   const [clientNotes, setClientNotes] = useState(booking.notes || "");
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-    document.scrollingElement?.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  useLayoutEffect(() => {
+    const scrollTop = () => {
+      scrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      document.scrollingElement?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    };
+    scrollTop();
+    const frame = requestAnimationFrame(scrollTop);
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   // Synchroniser le lieu avec le profil pro
@@ -528,12 +550,14 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
         address: booking.salon?.address || "",
         postalCode: booking.salon?.postal_code || booking.salon?.postalCode || "",
         city: booking.salon?.city || "",
+        coordinates: null,
       };
       setSavedLieu(fallback);
       setCustomName(fallback.name);
       setCustomAddress(fallback.address);
       setCustomPostalCode(fallback.postalCode);
       setCustomCity(fallback.city);
+      setCustomCoordinates(fallback.coordinates);
       return;
     }
     entities.ProfilPro.filter({ user_email: proEmail }, "-created_at", 1)
@@ -544,40 +568,32 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
           address: p?.address || booking.salon?.address || "",
           postalCode: p?.postal_code || booking.salon?.postal_code || booking.salon?.postalCode || "",
           city: p?.city || booking.salon?.city || "",
+          coordinates: Number.isFinite(Number(p?.latitude)) && Number.isFinite(Number(p?.longitude))
+            ? { latitude: Number(p.latitude), longitude: Number(p.longitude) }
+            : null,
         };
         setSavedLieu(lieu);
         setCustomName(lieu.name);
         setCustomAddress(lieu.address);
         setCustomPostalCode(lieu.postalCode);
         setCustomCity(lieu.city);
+        setCustomCoordinates(lieu.coordinates);
       })
       .catch(() => {});
   }, []);
 
   const handleAddressChange = (val) => {
     setCustomAddress(val);
+    setCustomCoordinates(null);
     if (addressDebounceRef.current) clearTimeout(addressDebounceRef.current);
     if (val.length < 3) { setAddressSuggestions([]); return; }
     addressDebounceRef.current = setTimeout(async () => {
       setLoadingAddress(true);
       try {
-        let suggestions = [];
-        try {
-          const res = await apiClient.callFunction("placesAutocomplete", { input: val });
-          suggestions = res?.data?.predictions || res?.predictions || [];
-        } catch {
-          suggestions = [];
-        }
-        if (suggestions.length === 0) {
-          const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(val)}&limit=5&autocomplete=1`);
-          const results = await response.json();
-          suggestions = (results.features || []).map(item => ({
-            description: item.properties?.label || val,
-            address: item.properties?.name || "",
-            postalCode: item.properties?.postcode || "",
-            city: item.properties?.city || "",
-          }));
-        }
+        const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(val)}&limit=5&autocomplete=1`);
+        if (!response.ok) throw new Error("BAN indisponible");
+        const results = await response.json();
+        let suggestions = results.features || [];
         if (suggestions.length === 0) {
           suggestions = [{
             description: `Utiliser cette adresse : ${val}`,
@@ -598,6 +614,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
     setCustomAddress(normalized.address || normalized.description || "");
     setCustomPostalCode(normalized.postalCode);
     setCustomCity(normalized.city);
+    setCustomCoordinates(normalized.coordinates || null);
     setAddressSuggestions([]);
   };
 
@@ -626,6 +643,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
   // Calculer la distance quand l'adresse change
   useEffect(() => {
     const calcTransport = async () => {
+      const requestId = ++transportRequestRef.current;
       const salonAddress = formatLocation(savedLieu);
       const destinationAddress = formatLocation({ address: customAddress, postalCode: customPostalCode, city: customCity });
       if (!salonAddress || !destinationAddress) {
@@ -641,22 +659,22 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       }
       setTransportLoading(true);
       try {
-        let geoData = [];
-        try {
-          const geoRes = await apiClient.callFunction('geocode', { addresses: [salonAddress, destinationAddress] });
-          geoData = geoRes?.data?.results || geoRes?.results || [];
-        } catch {
-          const results = await Promise.all([salonAddress, destinationAddress].map(async address => {
-            const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`);
-            const data = await response.json();
-            const coordinates = data.features?.[0]?.geometry?.coordinates || [];
-            return { lng: coordinates[0], lat: coordinates[1] };
-          }));
-          geoData = results;
-        }
-        if (geoData.length === 2 && geoData[0].lat && geoData[1].lat) {
-          const lat1 = geoData[0].lat, lng1 = geoData[0].lng;
-          const lat2 = geoData[1].lat, lng2 = geoData[1].lng;
+        const geocode = async (address, coordinates) => {
+          if (coordinates?.latitude && coordinates?.longitude) return coordinates;
+          const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`);
+          if (!response.ok) throw new Error("BAN indisponible");
+          const data = await response.json();
+          const point = data.features?.[0]?.geometry?.coordinates || [];
+          return point.length === 2 ? { latitude: point[1], longitude: point[0] } : null;
+        };
+        const [origin, destination] = await Promise.all([
+          geocode(salonAddress, savedLieu.coordinates),
+          geocode(destinationAddress, customCoordinates),
+        ]);
+        if (requestId !== transportRequestRef.current) return;
+        if (origin && destination) {
+          const lat1 = origin.latitude, lng1 = origin.longitude;
+          const lat2 = destination.latitude, lng2 = destination.longitude;
           // Haversine
           const R = 6371;
           const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -668,11 +686,15 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
         }
       } catch (e) {
         console.warn('[Transport] Geocoding error:', e);
+        if (requestId === transportRequestRef.current) {
+          setTransportDistance(0);
+          setTransportFee(0);
+        }
       }
-      setTransportLoading(false);
+      if (requestId === transportRequestRef.current) setTransportLoading(false);
     };
     calcTransport();
-  }, [customAddress, customPostalCode, customCity, savedLieu?.address, savedLieu?.postalCode, savedLieu?.city]);
+  }, [customAddress, customPostalCode, customCity, customCoordinates, savedLieu]);
 
   const totalPrice = basePrice + nightSurcharge + transportFee;
   const acompteAmount = Math.round(totalPrice * 0.3 * 100) / 100;
@@ -696,6 +718,12 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       night_surcharge: nightSurcharge,
       transport_fee: transportFee,
       transport_distance_km: transportDistance,
+      service_location: isHomeService ? "domicile" : "salon",
+      client_address: isHomeService ? customAddress : "",
+      client_postal_code: isHomeService ? customPostalCode : "",
+      client_city: isHomeService ? customCity : "",
+      client_latitude: isHomeService ? customCoordinates?.latitude || null : null,
+      client_longitude: isHomeService ? customCoordinates?.longitude || null : null,
       salon_name: savedLieu.name || "",
       salon_address: formatLocation(savedLieu),
       seat_number: booking.seat || null,
@@ -851,13 +879,13 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
           <ArrowLeft className="w-5 h-5 text-gray-900" />
         </button>
         <div className="text-center">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Étape 4 sur 4</p>
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Étape 3 sur 3</p>
           <p className="text-[17px] font-black text-gray-900">Confirmation</p>
         </div>
         <div className="w-9" />
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pt-5 pb-4 space-y-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 pt-5 pb-4 space-y-4">
 
         {/* ── Ticket récapitulatif ── */}
         <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden">
@@ -974,7 +1002,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
             </div>
             {!editingLieu && (
               <button
-                onClick={() => { setEditingLieu(true); setCustomName(savedLieu.name); setCustomAddress(savedLieu.address); setCustomPostalCode(savedLieu.postalCode); setCustomCity(savedLieu.city); }}
+                onClick={() => { setEditingLieu(true); setCustomName(savedLieu.name); setCustomAddress(savedLieu.address); setCustomPostalCode(savedLieu.postalCode); setCustomCity(savedLieu.city); setCustomCoordinates(savedLieu.coordinates || null); }}
                 className="flex items-center gap-1.5 bg-white/10 rounded-xl px-3 py-1.5 active:scale-95 transition-all border border-white/10"
               >
                 <Pencil className="w-3 h-3 text-white/60" />
@@ -1048,7 +1076,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => {
-                    setSavedLieu({ name: customName, address: customAddress, postalCode: customPostalCode, city: customCity });
+                    setSavedLieu({ name: customName, address: customAddress, postalCode: customPostalCode, city: customCity, coordinates: customCoordinates });
                     setEditingLieu(false);
                   }}
                   className="flex-1 flex items-center justify-center gap-2 bg-primary rounded-xl py-3 font-black text-[13px] text-white uppercase tracking-widest active:scale-95 transition-all"

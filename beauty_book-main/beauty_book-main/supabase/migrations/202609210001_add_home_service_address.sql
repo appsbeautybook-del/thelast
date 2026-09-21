@@ -1,0 +1,9 @@
+ALTER TABLE public."Reservation"
+  ADD COLUMN IF NOT EXISTS service_location TEXT DEFAULT 'salon',
+  ADD COLUMN IF NOT EXISTS client_address TEXT DEFAULT '',
+  ADD COLUMN IF NOT EXISTS client_postal_code TEXT DEFAULT '',
+  ADD COLUMN IF NOT EXISTS client_city TEXT DEFAULT '',
+  ADD COLUMN IF NOT EXISTS client_latitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS client_longitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS transport_fee NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS transport_distance_km NUMERIC DEFAULT 0;

@@ -83,6 +83,8 @@ export const createReservation = async (req, res) => {
       pro_email, pro_name, service_name, service_id, service_price,
       date, time_slot, duration_min, addons, total_price, notes,
       salon_name, salon_address, persons = 1,
+      service_location = "salon", client_address, client_postal_code, client_city,
+      client_latitude, client_longitude, transport_fee = 0, transport_distance_km = 0,
       payment_type = "full", // "full" | "acompte"
       crg_code
     } = req.body;
@@ -155,6 +157,14 @@ export const createReservation = async (req, res) => {
         duration_min: dur,
         persons,
         total_price,
+        service_location,
+        client_address,
+        client_postal_code,
+        client_city,
+        client_latitude,
+        client_longitude,
+        transport_fee,
+        transport_distance_km,
         salon_name,
         salon_address,
         seats_total: seatsTotal,
