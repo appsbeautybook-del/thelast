@@ -513,9 +513,22 @@ export default function AdminUsers() {
             </div>
 
             {modalAction.type === 'delete' && (
-              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-[12px] text-red-700 leading-relaxed space-y-1">
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-[12px] text-red-700 leading-relaxed space-y-2">
                 <p className="font-black flex items-center gap-1"><AlertTriangle className="w-4 h-4" /> Action irréversible !</p>
-                <p>L'utilisateur sera déconnecté immédiatement. Toutes ses données (profils, services, réservations, messages, publications) seront effacées définitivement.</p>
+                <p>L'utilisateur sera déconnecté et <strong>toutes ses données seront effacées</strong> :</p>
+                <ul className="list-none space-y-1 text-[11px] font-bold">
+                  <li>• Profil salon (ProfilPro)</li>
+                  <li>• Services & Bundles (Service, ServiceBundle)</li>
+                  <li>• Publications, Reels, Styles, Repub</li>
+                  <li>• Réservations & Commandes</li>
+                  <li>• Messages & Notifications</li>
+                  <li>• Équipe (MembreEquipe)</li>
+                  <li>• Points fidélité & Solde BeautyPay</li>
+                  <li>• Avis & Commentaires</li>
+                  <li>• Annonces & Immobilier</li>
+                  <li>• Virtual Tours & Routines beauté</li>
+                  <li>• Compte Auth Supabase supprimé</li>
+                </ul>
               </div>
             )}
 

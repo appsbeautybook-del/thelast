@@ -323,13 +323,27 @@ function SalonsTab() {
     try {
       const salon = salons.find(s => s.id === id);
       const email = salon?.user_email;
-      // Supprimer les données liées
       if (email) {
         await entities.Service.filter({ pro_email: email }).then(services => {
           services.forEach(s => entities.Service.delete(s.id));
         }).catch(() => {});
+        await entities.ServiceBundle.filter({ pro_email: email }).then(bundles => {
+          bundles.forEach(b => entities.ServiceBundle.delete(b.id));
+        }).catch(() => {});
         await entities.MembreEquipe.filter({ pro_email: email }).then(members => {
           members.forEach(m => entities.MembreEquipe.delete(m.id));
+        }).catch(() => {});
+        await entities.Style.filter({ pro_email: email }).then(items => {
+          items.forEach(i => entities.Style.delete(i.id));
+        }).catch(() => {});
+        await entities.Reel.filter({ author_email: email }).then(items => {
+          items.forEach(i => entities.Reel.delete(i.id));
+        }).catch(() => {});
+        await entities.Publication.filter({ author_email: email }).then(items => {
+          items.forEach(i => entities.Publication.delete(i.id));
+        }).catch(() => {});
+        await entities.Annonce.filter({ pro_email: email }).then(items => {
+          items.forEach(i => entities.Annonce.delete(i.id));
         }).catch(() => {});
       }
       await entities.ProfilPro.delete(id);
@@ -403,8 +417,20 @@ function ParticuliersTab() {
         await entities.Service.filter({ pro_email: email }).then(services => {
           services.forEach(s => entities.Service.delete(s.id));
         }).catch(() => {});
+        await entities.ServiceBundle.filter({ pro_email: email }).then(bundles => {
+          bundles.forEach(b => entities.ServiceBundle.delete(b.id));
+        }).catch(() => {});
         await entities.MembreEquipe.filter({ pro_email: email }).then(members => {
           members.forEach(m => entities.MembreEquipe.delete(m.id));
+        }).catch(() => {});
+        await entities.Style.filter({ pro_email: email }).then(items => {
+          items.forEach(i => entities.Style.delete(i.id));
+        }).catch(() => {});
+        await entities.Reel.filter({ author_email: email }).then(items => {
+          items.forEach(i => entities.Reel.delete(i.id));
+        }).catch(() => {});
+        await entities.Publication.filter({ author_email: email }).then(items => {
+          items.forEach(i => entities.Publication.delete(i.id));
         }).catch(() => {});
       }
       await entities.ProfilPro.delete(id);
