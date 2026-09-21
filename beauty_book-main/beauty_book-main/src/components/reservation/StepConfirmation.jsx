@@ -29,6 +29,10 @@ function getCardType(number) {
   return "generic";
 }
 
+function formatLocation(location) {
+  return [location?.address, location?.postalCode, location?.city].filter(Boolean).join(", ");
+}
+
 // ── Visuel carte bancaire ─────────────────────────────────────────────────────
 function CardVisual({ cardNumber, cardHolder, expiry }) {
   const type = getCardType(cardNumber);
@@ -484,21 +488,35 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
   const [crgCode] = useState(() => generateCRG());
   const [editingLieu, setEditingLieu] = useState(false);
   const [customAddress, setCustomAddress] = useState("");
+  const [customPostalCode, setCustomPostalCode] = useState("");
+  const [customCity, setCustomCity] = useState("");
   const [customName, setCustomName] = useState("");
-  const [savedLieu, setSavedLieu] = useState({ name: "", address: "" });
+  const [savedLieu, setSavedLieu] = useState({ name: "", address: "", postalCode: "", city: "" });
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [loadingAddress, setLoadingAddress] = useState(false);
   const addressDebounceRef = useRef(null);
   const [clientNotes, setClientNotes] = useState(booking.notes || "");
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.scrollingElement?.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, []);
+
   // Synchroniser le lieu avec le profil pro
   useEffect(() => {
     const proEmail = booking.services?.[0]?.pro_email || booking.salon?.pro_email;
     if (!proEmail) {
-      const fallback = { name: booking.salon?.name || "", address: booking.salon?.address || "" };
+      const fallback = {
+        name: booking.salon?.name || "",
+        address: booking.salon?.address || "",
+        postalCode: booking.salon?.postal_code || booking.salon?.postalCode || "",
+        city: booking.salon?.city || "",
+      };
       setSavedLieu(fallback);
       setCustomName(fallback.name);
       setCustomAddress(fallback.address);
+      setCustomPostalCode(fallback.postalCode);
+      setCustomCity(fallback.city);
       return;
     }
     entities.ProfilPro.filter({ user_email: proEmail }, "-created_at", 1)
@@ -506,11 +524,15 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
         const p = profils[0];
         const lieu = {
           name: p?.salon_name || booking.salon?.name || "",
-          address: [p?.address, p?.city, p?.postal_code].filter(Boolean).join(", ") || booking.salon?.address || "",
+          address: p?.address || booking.salon?.address || "",
+          postalCode: p?.postal_code || booking.salon?.postal_code || booking.salon?.postalCode || "",
+          city: p?.city || booking.salon?.city || "",
         };
         setSavedLieu(lieu);
         setCustomName(lieu.name);
         setCustomAddress(lieu.address);
+        setCustomPostalCode(lieu.postalCode);
+        setCustomCity(lieu.city);
       })
       .catch(() => {});
   }, []);
@@ -522,15 +544,31 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
     addressDebounceRef.current = setTimeout(async () => {
       setLoadingAddress(true);
       try {
-        const res = await /* TODO: migrate to Supabase Edge Function */ (async () => ({ data: { success: true } }))("placesAutocomplete", { input: val });
-        setAddressSuggestions(res.data?.predictions || []);
+        let suggestions = [];
+        try {
+          const res = await apiClient.callFunction("placesAutocomplete", { input: val });
+          suggestions = res?.data?.predictions || res?.predictions || [];
+        } catch {
+          const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=fr&limit=5&q=${encodeURIComponent(val)}`);
+          const results = await response.json();
+          suggestions = results.map(item => ({
+            description: item.display_name,
+            address: [item.address?.house_number, item.address?.road].filter(Boolean).join(" "),
+            postalCode: item.address?.postcode || "",
+            city: item.address?.city || item.address?.town || item.address?.village || "",
+          }));
+        }
+        setAddressSuggestions(suggestions);
       } catch { setAddressSuggestions([]); }
       finally { setLoadingAddress(false); }
     }, 400);
   };
 
   const selectSuggestion = (pred) => {
-    setCustomAddress(pred.description);
+    const structured = pred.address_components || pred.structured_formatting;
+    setCustomAddress(pred.address || pred.description || "");
+    setCustomPostalCode(pred.postalCode || structured?.find?.(part => part.types?.includes("postal_code"))?.long_name || "");
+    setCustomCity(pred.city || structured?.find?.(part => part.types?.includes("locality"))?.long_name || "");
     setAddressSuggestions([]);
   };
 
@@ -618,7 +656,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       transport_fee: transportFee,
       transport_distance_km: transportDistance,
       salon_name: savedLieu.name || "",
-      salon_address: savedLieu.address || "",
+      salon_address: formatLocation(savedLieu),
       seat_number: booking.seat || null,
       payment_type: pType,
       crg_code: crgCode,
@@ -857,7 +895,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Lieu</p>
             {!editingLieu && (
               <button
-                onClick={() => { setEditingLieu(true); setCustomName(savedLieu.name); setCustomAddress(savedLieu.address); }}
+                onClick={() => { setEditingLieu(true); setCustomName(savedLieu.name); setCustomAddress(savedLieu.address); setCustomPostalCode(savedLieu.postalCode); setCustomCity(savedLieu.city); }}
                 className="flex items-center gap-1.5 bg-white/10 rounded-xl px-3 py-1.5 active:scale-95 transition-all border border-white/10"
               >
                 <Pencil className="w-3 h-3 text-white/60" />
@@ -907,10 +945,31 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
                   </div>
                 )}
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Code postal</p>
+                  <input
+                    value={customPostalCode}
+                    onChange={e => setCustomPostalCode(e.target.value)}
+                    placeholder="91190"
+                    inputMode="numeric"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-[14px] font-medium outline-none placeholder:text-gray-500"
+                  />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Ville</p>
+                  <input
+                    value={customCity}
+                    onChange={e => setCustomCity(e.target.value)}
+                    placeholder="Gif-sur-Yvette"
+                    className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white text-[14px] font-medium outline-none placeholder:text-gray-500"
+                  />
+                </div>
+              </div>
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => {
-                    setSavedLieu({ name: customName, address: customAddress });
+                    setSavedLieu({ name: customName, address: customAddress, postalCode: customPostalCode, city: customCity });
                     setEditingLieu(false);
                   }}
                   className="flex-1 flex items-center justify-center gap-2 bg-primary rounded-xl py-3 font-black text-[13px] text-white uppercase tracking-widest active:scale-95 transition-all"
@@ -932,7 +991,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
               </div>
               <div>
                 <p className="text-[18px] font-black text-white leading-tight">{savedLieu.name}</p>
-                <p className="text-[12px] text-gray-400 font-medium mt-0.5">{savedLieu.address || "Adresse non renseignée"}</p>
+                <p className="text-[12px] text-gray-400 font-medium mt-0.5">{formatLocation(savedLieu) || "Adresse non renseignée"}</p>
               </div>
             </div>
           )}
