@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff, Camera, RotateCcw, Check, ArrowLeft, ArrowRight, User, Mail, Lock, Sparkles } from "lucide-react";
 import { uploadFile } from '@/api/entities';
-import { supabase } from '@/api/supabaseClient';
+import { authCallbackUrl, supabase } from '@/api/supabaseClient';
 import { useRateLimit } from '@/hooks/useRateLimit';
 
 const authFlows = createAuthFlows(supabase);
@@ -129,22 +129,22 @@ function StepSignup({ onNext, onBack }) {
     if (!checkLimit()) { setError("Trop de tentatives. Réessayez dans quelques minutes."); return; }
     setSubmitting(true); setError("");
     try {
-      const result = await authFlows.signup(form, sessionStorage, window.location.origin + '/auth/callback');
+       const result = await authFlows.signup(form, sessionStorage, authCallbackUrl);
       onNext(result.verified);
     } catch (error) { setError(error.message || "Inscription impossible. Réessayez."); }
     finally { setSubmitting(false); }
   };
 
-   const inp = "w-full h-[72px] bg-[#f8f9fa] border border-[#edf0f3] rounded-[18px] px-5 text-[20px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]";
-   const lbl = "text-[16px] font-extrabold text-[#617089] uppercase tracking-[0.22em] mb-3 block";
+   const inp = "w-full h-14 sm:h-[64px] bg-[#f8f9fa] border border-[#edf0f3] rounded-2xl px-4 text-[16px] sm:text-[17px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]";
+   const lbl = "text-[12px] sm:text-[13px] font-extrabold text-[#617089] uppercase tracking-[0.2em] mb-2 block";
 
   return (
     <div className="min-h-screen w-full max-w-[680px] mx-auto bg-white flex flex-col">
       <div className="relative z-10 px-[27px] pt-1 pb-8 flex flex-col flex-1">
-        <h2 className="text-[44px] font-extrabold text-[#071936] leading-[1.2] mb-1 tracking-tight">Faisons<br />connaissance</h2>
-        <p className="text-[20px] text-[#617089] mb-[38px]">Parlez-nous un peu de vous.</p>
+        <h2 className="text-[32px] sm:text-[36px] font-extrabold text-[#071936] leading-[1.12] mb-1 tracking-tight">Faisons<br />connaissance</h2>
+        <p className="text-[16px] sm:text-[17px] text-[#617089] mb-7">Parlez-nous un peu de vous.</p>
 
-        <div className="space-y-6 flex-1">
+        <div className="space-y-4 flex-1">
           <div className="grid grid-cols-2 gap-[18px]">
             <div><label className={lbl}>Prénom</label><div className="relative"><User className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" /><input className={inp + " pl-[55px]"} aria-label="Prénom" autoComplete="given-name" placeholder="Sophie" value={form.prenom} onChange={e => setForm({ ...form, prenom: e.target.value })} /></div></div>
             <div><label className={lbl}>Nom</label><input className={inp} aria-label="Nom" autoComplete="family-name" placeholder="Martin" value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} /></div>
@@ -195,7 +195,7 @@ function StepSignup({ onNext, onBack }) {
               <div className={`w-[27px] h-[27px] rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center transition-all ${consentChecked ? "bg-[#E8732A] border-[#E8732A]" : "border-[#e0e4e9] bg-white"}`}>
                 {consentChecked && <Check className="w-3 h-3 text-white" />}
               </div>
-              <p className="text-[16px] text-[#617089] leading-relaxed">
+              <p className="text-[13px] sm:text-[14px] text-[#617089] leading-relaxed">
                 J'accepte les <a href="/parametres/conditions" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="font-bold underline" style={{ color: BRAND }}>CGU</a> et la <a href="/parametres/politique-confidentialite" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="font-bold underline" style={{ color: BRAND }}>Politique de Confidentialité</a>. RGPD.
               </p>
             </div>
@@ -204,14 +204,14 @@ function StepSignup({ onNext, onBack }) {
         </div>
 
         <div className="mt-7 space-y-5 pb-4">
-          <button onClick={handleSubmit} disabled={submitting} className="w-full h-[78px] rounded-[18px] font-extrabold text-[21px] uppercase tracking-[0.12em] text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3" style={{ background: isValid ? BRAND : "#e1e4e9" }}>
+          <button onClick={handleSubmit} disabled={submitting} className="w-full h-14 sm:h-[64px] rounded-2xl font-extrabold text-[16px] uppercase tracking-[0.12em] text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3" style={{ background: isValid ? BRAND : "#e1e4e9" }}>
             {submitting ? "Envoi…" : "Suivant"} <ArrowRight className="w-4 h-4" />
           </button>
           <SocialAuthButtons mode="signup" disabled={submitting} beforeStart={() => {
             if (!consentChecked) { setError('Acceptez les conditions ci-dessus pour créer votre compte.'); return false; }
             setError(''); return true;
           }} />
-          <p className="text-center text-[18px] text-[#617089]">Déjà un compte ? <Link to="/connexion" className="font-bold" style={{ color: BRAND }}>Se connecter</Link></p>
+          <p className="text-center text-[14px] sm:text-[15px] text-[#617089]">Déjà un compte ? <Link to="/connexion" className="font-bold" style={{ color: BRAND }}>Se connecter</Link></p>
           <button aria-label="Retour" onClick={onBack} className="w-full text-center text-[11px] font-bold text-gray-500 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
@@ -252,7 +252,7 @@ function StepVerification({ onNext, onBack }) {
     if (resendTimer > 0 || resending) return;
     setResending(true); setError("");
     try {
-      await authFlows.resendSignup(readSignupDraft(sessionStorage), window.location.origin + '/auth/callback');
+       await authFlows.resendSignup(readSignupDraft(sessionStorage), authCallbackUrl);
       setResendTimer(45); clearInterval(timerRef.current);
       timerRef.current = setInterval(() => setResendTimer(p => {
         if (p <= 1) { clearInterval(timerRef.current); return 0; } return p - 1;

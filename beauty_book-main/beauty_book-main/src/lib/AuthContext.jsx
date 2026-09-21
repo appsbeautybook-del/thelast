@@ -57,6 +57,11 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => { if (user?.id) void loadProfile(user.id); }, [user?.id]);
 
+  useEffect(() => {
+    if (!user?.id || !user.email || !profile?.id || profile.email === user.email) return;
+    void supabase.from('profiles').update({ email: user.email, updated_at: new Date().toISOString() }).eq('id', user.id);
+  }, [user?.id, user?.email, profile?.id, profile?.email]);
+
   const logout = async (shouldRedirect = true) => {
     const { error } = await supabase.auth.signOut();
     if (error) throw new Error('La déconnexion a échoué. Réessayez.');

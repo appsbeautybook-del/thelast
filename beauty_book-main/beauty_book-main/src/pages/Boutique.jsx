@@ -1,5 +1,4 @@
 import BeautyImage from '@/components/ui/BeautyImage';
-import { fetchShopifyProducts } from "@/api/shopifyClient";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { entities, uploadFile } from '@/api/entities';
@@ -14,6 +13,7 @@ const DEFAULT_BOUTIQUE_CATS = [
   { id: "grossiste", label: "Grossiste", subs: ["Beauté", "Vêtements", "Accessoires", "Hygiène", "Alimentaire", "Divers"] },
 ];
 import { adminApi } from "@/lib/adminApiClient";
+import { apiClient } from "@/lib/apiClient";
 import usePullToRefresh from "@/hooks/usePullToRefresh";
 import { useLikedProducts } from "@/hooks/useLikedProducts";
 import { useCartSync } from "@/hooks/useCartSync";
@@ -90,12 +90,15 @@ const trustBadges = [
 export default function Boutique() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("homme");
+  const [activeCategory, setActiveCategory] = useState("tout");
   const [boutiqueBanners, setBoutiqueBanners] = useState([]);
   const [activeSub, setActiveSub] = useState("Tout");
-  const [mainCategories, setMainCategories] = useState(DEFAULT_BOUTIQUE_CATS.map(c => ({
-    ...c, img: CAT_IMAGES[c.id] || "", subs: ["Tout", ...c.subs],
-  })));
+  const [mainCategories, setMainCategories] = useState([
+    { id: "tout", label: "Tout", img: SUB_IMAGES.Tout, subs: ["Tout"] },
+    ...DEFAULT_BOUTIQUE_CATS.map(c => ({
+      ...c, img: CAT_IMAGES[c.id] || "", subs: ["Tout", ...c.subs],
+    })),
+  ]);
   const { liked, toggle: toggleLike, isLiked } = useLikedProducts();
   const { addToCart, adding, cartCount } = useCartSync();
   const [justAdded, setJustAdded] = useState(null);
@@ -106,7 +109,6 @@ export default function Boutique() {
   const [imageSearching, setImageSearching] = useState(false);
   const [imageSearchResults, setImageSearchResults] = useState(null);
   const imgInputRef = useRef();
-  const [shopifyCategoryMap, setShopifyCategoryMap] = useState({});
 
   const handleRefresh = useCallback(() => {
     return new Promise(resolve => setTimeout(() => { setRefreshKey(k => k + 1); resolve(); }, 800));
@@ -136,18 +138,12 @@ export default function Boutique() {
             img: CAT_IMAGES[c.id] || "",
             subs: ["Tout", ...c.subs],
           }));
-          setMainCategories(cats);
+          setMainCategories([{ id: "tout", label: "Tout", img: CAT_IMAGES.tout || SUB_IMAGES.Tout, subs: ["Tout"] }, ...cats.filter(c => c.id !== "tout")]);
         }
-      }).catch(() => {});
-
-    // Charger les mappings catégories Shopify
-    entities.AppConfig.filter({ key: "shopify_category_mappings" }, "-created_at", 50)
-      .then(rows => {
-        if (rows[0]?.value) setShopifyCategoryMap(rows[0].value);
       }).catch(() => {});
   }, []);
 
-  const CACHE_KEY = "bb_boutique_products_cache_v3";
+  const CACHE_KEY = "bb_boutique_products_cache_v4";
   const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   useEffect(() => {
@@ -161,25 +157,13 @@ export default function Boutique() {
     try {
       const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
       if (cached && Date.now() - cached.ts < CACHE_TTL && cached.products?.length > 0) {
-        // Appliquer les mappings catégories aux produits en cache
-        const withCats = cached.products.map(p => {
-          if (p._shopify) {
-            const saved = shopifyCategoryMap[p.id];
-            if (saved) return { ...p, category: saved.category || p.category, sub_category: saved.sub_category || "" };
-          }
-          return p;
-        });
-        setShopifyProducts(withCats);
+        setShopifyProducts(cached.products.filter(p => !p._shopify));
         setLoadingProducts(false);
       }
     } catch {}
 
-    // Charger en parallèle : Shopify + produits BDD (via backend service_role)
+    // Charger uniquement les produits publiés dans la base BeautyBook.
     Promise.allSettled([
-      fetchShopifyProducts({}).then(res => {
-        const products = res.data?.products || [];
-        return products;
-      }).catch(() => []),
       entities.Produit.filter({ status: "actif" }, "-created_at", 500)
         .then(items => items.map(p => ({
             id: p.id,
@@ -198,23 +182,13 @@ export default function Boutique() {
             created_date: p.created_date,
             source: "db",
           }))).catch(() => [])
-    ]).then(([shopifyResult, dbResult]) => {
-      const shopify = shopifyResult.status === "fulfilled" ? shopifyResult.value : [];
+    ]).then(([dbResult]) => {
       const db = dbResult.status === "fulfilled" ? dbResult.value : [];
-      // Appliquer les mappings catégories aux produits Shopify
-      const shopifyWithCats = shopify.map(p => {
-        const saved = shopifyCategoryMap[p.id];
-        if (saved) {
-          return { ...p, category: saved.category || p.category, sub_category: saved.sub_category || "" };
-        }
-        return p;
-      });
-      const merged = [...db, ...shopifyWithCats];
-      if (merged.length > 0) {
-        setShopifyProducts(merged);
+      if (db.length > 0) {
+        setShopifyProducts(db);
         // Mettre en cache les nouveaux produits
         try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), products: merged }));
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), products: db }));
         } catch {}
         setLoadError(null);
       } else {
@@ -226,32 +200,22 @@ export default function Boutique() {
     });
   }, [refreshKey]);
 
-  // Réappliquer les mappings catégories quand ils changent
-  useEffect(() => {
-    if (Object.keys(shopifyCategoryMap).length === 0) return;
-    setShopifyProducts(prev => prev.map(p => {
-      if (p._shopify) {
-        const saved = shopifyCategoryMap[p.id];
-        if (saved) return { ...p, category: saved.category || p.category, sub_category: saved.sub_category || "" };
-      }
-      return p;
-    }));
-  }, [shopifyCategoryMap]);
-
   const handleImageSearch = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setImageSearching(true);
     setImageSearchResults(null);
-    const { file_url } = await uploadFile({ file });
-    const res = await /* TODO: migrate to Supabase Edge Function */ (async () => ({ data: { success: true } }))("shAiImageSearch", { image_url: file_url }).catch(() => null);
-    if (res?.data?.products?.length > 0) {
-      setImageSearchResults(res.data.products);
-    } else {
+    try {
+      const { file_url } = await uploadFile({ file });
+      const res = await apiClient.callFunction("shAiImageSearch", { image_url: file_url }).catch(() => null);
+      setImageSearchResults(res?.data?.products?.length > 0 ? res.data.products : []);
+    } catch (error) {
+      setLoadError(error.message || "L’envoi de l’image a échoué.");
       setImageSearchResults([]);
+    } finally {
+      setImageSearching(false);
+      e.target.value = "";
     }
-    setImageSearching(false);
-    e.target.value = "";
   };
 
   const clearImageSearch = () => setImageSearchResults(null);

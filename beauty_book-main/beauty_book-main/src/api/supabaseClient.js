@@ -22,3 +22,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey,
     },
   }
 );
+
+// Production should provide VITE_PUBLIC_APP_URL; localhost remains a development fallback.
+export const appOrigin = (import.meta.env.VITE_PUBLIC_APP_URL || window.location.origin).replace(/\/$/, '');
+export const authCallbackUrl = `${appOrigin}/auth/callback`;

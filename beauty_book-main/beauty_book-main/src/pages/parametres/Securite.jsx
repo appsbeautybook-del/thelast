@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Key, Smartphone, Eye, EyeOff, CheckCircle } from "lucide-react";
+import { ArrowLeft, Key, Eye, EyeOff, CheckCircle, Fingerprint, ShieldCheck } from "lucide-react";
 import { useThemeBg } from "@/hooks/useTheme";
 import { useAuth } from "@/lib/AuthContext";
 import { supabase } from "@/api/supabaseClient";
@@ -9,15 +9,34 @@ export default function Securite() {
   const navigate = useNavigate();
   const themeBg = useThemeBg();
   const { user } = useAuth();
-  const [faceId, setFaceId] = useState(() => localStorage.getItem("bb_faceid") === "1");
   const [showChangePwd, setShowChangePwd] = useState(false);
-  const [pwd, setPwd] = useState({ current: "", next: "", confirm: "" });
-  const [showPwd, setShowPwd] = useState({ current: false, next: false, confirm: false });
+  const [pwd, setPwd] = useState({ next: "", confirm: "" });
+  const [showPwd, setShowPwd] = useState({ next: false, confirm: false });
   const [pwdSaved, setPwdSaved] = useState(false);
   const [pwdError, setPwdError] = useState("");
   const [pwdLoading, setPwdLoading] = useState(false);
-  const [sessions, setSessions] = useState([]);
   const [lastPwdChange, setLastPwdChange] = useState(null);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricBusy, setBiometricBusy] = useState(false);
+  const [biometricError, setBiometricError] = useState("");
+
+  const biometricKey = user?.id ? `bb_biometric_${user.id}` : null;
+
+  useEffect(() => {
+    let active = true;
+    const detectBiometric = async () => {
+      const supported = Boolean(window.PublicKeyCredential && navigator.credentials);
+      if (!supported) return;
+      const platformAvailable = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable?.().catch(() => false);
+      if (active) {
+        setBiometricSupported(Boolean(platformAvailable));
+        setBiometricEnabled(Boolean(biometricKey && localStorage.getItem(biometricKey)));
+      }
+    };
+    detectBiometric();
+    return () => { active = false; };
+  }, [biometricKey]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -28,39 +47,47 @@ export default function Securite() {
         if (data?.password_changed_at) setLastPwdChange(data.password_changed_at);
       }
 
-      // Récupérer les sessions récentes (si la table existe)
-      try {
-        const { data } = await supabase.from('user_sessions').select('*').order('created_at', { ascending: false }).limit(10);
-        if (data) setSessions(data);
-      } catch {}
     };
     loadData();
   }, [user?.id]);
 
-  const toggleFaceId = () => {
-    const val = !faceId;
-    setFaceId(val);
-    localStorage.setItem("bb_faceid", val ? "1" : "0");
+  const toggleBiometric = async () => {
+    if (!biometricKey || !biometricSupported || biometricBusy) return;
+    setBiometricError("");
+    if (biometricEnabled) {
+      localStorage.removeItem(biometricKey);
+      setBiometricEnabled(false);
+      return;
+    }
+    setBiometricBusy(true);
+    try {
+      const challenge = crypto.getRandomValues(new Uint8Array(32));
+      const userId = crypto.getRandomValues(new Uint8Array(16));
+      const credential = await navigator.credentials.create({ publicKey: {
+        challenge,
+        rp: { name: "BeautyBook", id: window.location.hostname },
+        user: { id: userId, name: user.email || "beautybook-user", displayName: user.username || user.email || "BeautyBook" },
+        pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required", residentKey: "preferred" },
+        timeout: 60000,
+        attestation: "none",
+      } });
+      if (!credential?.rawId) throw new Error("La biométrie n’a pas été enregistrée.");
+      localStorage.setItem(biometricKey, JSON.stringify(Array.from(new Uint8Array(credential.rawId))));
+      setBiometricEnabled(true);
+    } catch (error) {
+      if (error?.name !== "NotAllowedError") setBiometricError("Impossible d’activer la biométrie sur cet appareil.");
+    } finally {
+      setBiometricBusy(false);
+    }
   };
 
   const handleSavePwd = async () => {
-    if (!pwd.current || !pwd.next || pwd.next !== pwd.confirm) return;
-    if (pwd.next.length < 6) { setPwdError("Le mot de passe doit faire au moins 6 caractères."); return; }
+    if (!pwd.next || pwd.next !== pwd.confirm) return;
+    if (pwd.next.length < 8) { setPwdError("Le mot de passe doit faire au moins 8 caractères."); return; }
     setPwdError("");
     setPwdLoading(true);
     try {
-      const email = user?.email;
-      if (!email) { setPwdError("Aucun email associé au compte."); setPwdLoading(false); return; }
-
-      // Ré-authentifier avec le mot de passe actuel
-      const { error: reAuthErr } = await supabase.auth.signInWithPassword({ email, password: pwd.current });
-      if (reAuthErr) {
-        setPwdError("Mot de passe actuel incorrect.");
-        setPwdLoading(false);
-        return;
-      }
-
-      // Mettre à jour le mot de passe
       const { error } = await supabase.auth.updateUser({ password: pwd.next });
       if (error) {
         setPwdError(error.message || "Erreur lors du changement de mot de passe.");
@@ -75,7 +102,7 @@ export default function Securite() {
 
       setPwdSaved(true);
       setShowChangePwd(false);
-      setPwd({ current: "", next: "", confirm: "" });
+      setPwd({ next: "", confirm: "" });
       setLastPwdChange(new Date().toISOString());
       setPwdLoading(false);
       setTimeout(() => setPwdSaved(false), 3000);
@@ -117,7 +144,7 @@ export default function Securite() {
         <div>
           <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Accès au compte</p>
           <div className="bg-white rounded-3xl overflow-hidden">
-            <div className="px-4 py-4 border-b border-gray-50">
+             <div className="px-4 py-4 border-b border-gray-50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0">
                   <Key className="w-5 h-5 text-blue-500" />
@@ -134,8 +161,7 @@ export default function Securite() {
               {showChangePwd && (
                 <div className="mt-4 space-y-3">
                   {[
-                    { key: "current", label: "Mot de passe actuel", placeholder: "••••••••" },
-                    { key: "next", label: "Nouveau mot de passe", placeholder: "••••••••" },
+                     { key: "next", label: "Nouveau mot de passe", placeholder: "••••••••" },
                     { key: "confirm", label: "Confirmer le nouveau", placeholder: "••••••••" },
                   ].map(({ key, label, placeholder }) => (
                     <div key={key}>
@@ -153,11 +179,11 @@ export default function Securite() {
                    {pwd.next && pwd.confirm && pwd.next !== pwd.confirm && (
                     <p className="text-[11px] text-red-400 font-bold">Les mots de passe ne correspondent pas.</p>
                   )}
-                  {pwd.next && pwd.next.length < 6 && (
-                    <p className="text-[11px] text-red-400 font-bold">Minimum 6 caractères.</p>
+                   {pwd.next && pwd.next.length < 8 && (
+                     <p className="text-[11px] text-red-400 font-bold">Minimum 8 caractères.</p>
                   )}
                   {pwdError && <p className="text-[11px] text-red-400 font-bold">{pwdError}</p>}
-                  <button onClick={handleSavePwd} disabled={!pwd.current || !pwd.next || pwd.next !== pwd.confirm || pwd.next.length < 6 || pwdLoading}
+                   <button onClick={handleSavePwd} disabled={!pwd.next || !pwd.confirm || pwd.next !== pwd.confirm || pwd.next.length < 8 || pwdLoading}
                     className="w-full py-3.5 rounded-2xl font-black text-[13px] uppercase tracking-widest text-white transition-all active:scale-95 disabled:opacity-40 flex items-center justify-center gap-2"
                     style={{ background: "#E8732A" }}>
                     {pwdLoading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Vérification...</> : "Enregistrer"}
@@ -167,52 +193,24 @@ export default function Securite() {
             </div>
             <div className="px-4 py-4 flex items-center gap-3">
               <div className="w-10 h-10 bg-purple-50 rounded-2xl flex items-center justify-center shrink-0">
-                <span className="text-[20px]">🔐</span>
+                <Fingerprint className="w-5 h-5 text-purple-500" />
               </div>
               <div className="flex-1">
                 <p className="text-[15px] font-black text-gray-900">Face ID / Touch ID</p>
-                <p className="text-[11px] text-gray-400 font-medium">{faceId ? "Activé" : "Désactivé"}</p>
+                <p className="text-[11px] text-gray-400 font-medium">
+                  {!biometricSupported ? "Non disponible sur cet appareil" : biometricEnabled ? "Activé sur cet appareil" : "Déverrouillage sécurisé"}
+                </p>
+                {biometricError && <p className="text-[11px] text-red-500 font-bold mt-1">{biometricError}</p>}
               </div>
-              <div onClick={toggleFaceId}
-                className="w-12 h-6 rounded-full transition-all duration-300 flex items-center px-0.5 cursor-pointer"
-                style={{ background: faceId ? "#E8732A" : "#d1d5db" }}>
-                <div className={`w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-300 ${faceId ? "translate-x-6" : "translate-x-0"}`} />
-              </div>
+              <button type="button" onClick={toggleBiometric} disabled={!biometricSupported || biometricBusy}
+                aria-label={biometricEnabled ? "Désactiver Face ID ou Touch ID" : "Activer Face ID ou Touch ID"}
+                className="w-12 h-6 rounded-full transition-all duration-300 flex items-center px-0.5 disabled:opacity-40"
+                style={{ background: biometricEnabled ? "#E8732A" : "#d1d5db" }}>
+                <span className={`w-5 h-5 bg-white rounded-full shadow-sm transition-transform duration-300 ${biometricEnabled ? "translate-x-6" : "translate-x-0"}`} />
+              </button>
             </div>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Appareil actuel</p>
-          <div className="bg-white rounded-3xl overflow-hidden">
-            <div className="px-4 py-4 flex items-center gap-3">
-              <div className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center shrink-0">
-                <Smartphone className="w-5 h-5 text-gray-500" />
-              </div>
-              <div className="flex-1">
-                <p className="text-[15px] font-black text-gray-900">{navigator.userAgent.includes("iPhone") ? "iPhone" : navigator.userAgent.includes("Mac") ? "Mac" : navigator.userAgent.includes("Windows") ? "PC Windows" : "Appareil"} (Cet appareil)</p>
-                <p className="text-[11px] font-black" style={{ color: "#22c55e" }}>EN LIGNE</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {sessions.length > 0 && (
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 px-1">Sessions récentes</p>
-            <div className="bg-white rounded-3xl overflow-hidden divide-y divide-gray-50">
-              {sessions.map((s, i) => (
-                <div key={s.id || i} className="px-4 py-3.5 flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${i === 0 ? "bg-green-400" : "bg-gray-300"}`} />
-                  <div className="flex-1">
-                    <p className="text-[13px] font-black text-gray-900">{s.device || s.user_agent || "Appareil"}</p>
-                    <p className="text-[11px] text-gray-400 font-medium">{s.location || "Position inconnue"} · {formatTimeSince(s.created_at)}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+           </div>
+         </div>
       </div>
     </div>
   );

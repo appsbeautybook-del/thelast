@@ -352,8 +352,7 @@ export default function Profil() {
 
       {/* Identity */}
       <div className="pt-16 px-5 pb-4 flex flex-col items-center text-center gap-1">
-        <h1 className="text-[22px] font-black text-gray-900">{user?.full_name || user?.email?.split("@")[0] || "Chargement..."}</h1>
-        <p className="text-[13px] font-bold text-gray-400">@{user?.username || user?.email?.split("@")[0] || "beautybook"}</p>
+        <h1 className="text-[20px] font-black text-gray-500">@{user?.username || user?.email?.split("@")[0] || "beautybook"}</h1>
         {user?.bio && (
           <p className="text-[12px] text-gray-500 font-medium mt-1 max-w-[280px] leading-relaxed">{user.bio.length > 160 ? user.bio.slice(0, 160) + "…" : user.bio}</p>
         )}

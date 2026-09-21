@@ -1,10 +1,11 @@
 import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Image, Instagram, Facebook, Globe } from "lucide-react";
+import { ArrowLeft, Camera, Image, Mail, ShieldCheck, CheckCircle2, Pencil, X } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
-import { supabase } from '@/api/supabaseClient';
+import { authCallbackUrl, supabase } from '@/api/supabaseClient';
 import { useProfileMedia } from "@/hooks/useProfileMedia";
+import { normalizeUsername, usernameCandidates } from "@/lib/authFlows";
 
 const DEFAULT_AVATAR = "";
 const DEFAULT_BANNER = "";
@@ -35,6 +36,11 @@ export default function ModifierProfilClient() {
   const [error, setError] = useState(null);
   const [emailChanged, setEmailChanged] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
+  const [emailEditing, setEmailEditing] = useState(false);
+  const [emailUpdateRequested, setEmailUpdateRequested] = useState(false);
+  const [usernameSuggestions, setUsernameSuggestions] = useState([]);
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
 
   const pendingAvatarRef = useRef(null);
   const pendingCoverRef = useRef(null);
@@ -57,9 +63,9 @@ export default function ModifierProfilClient() {
       if (data) {
         setForm({
           fullName: data.full_name || "",
-          username: data.username || "",
+          username: user?.username || data.username || profile?.username || "",
           bio: data.bio || "",
-          email: data.email || user?.email || "",
+          email: user?.email || data.email || "",
           phone: data.phone || "",
           instagram: data.instagram || "",
           facebook: data.facebook || "",
@@ -69,6 +75,28 @@ export default function ModifierProfilClient() {
     };
     loadForm();
   }, [user?.id]);
+
+  useEffect(() => {
+    const username = normalizeUsername(form.username);
+    const currentUsername = normalizeUsername(user?.username || profile?.username);
+    if (username.length < 3 || username === currentUsername) {
+      setUsernameSuggestions([]);
+      setUsernameAvailable(username.length >= 3);
+      return undefined;
+    }
+    let active = true;
+    const timer = setTimeout(async () => {
+      setUsernameChecking(true);
+      const { data, error } = await supabase.from('profiles').select('id, username').not('username', 'is', null).limit(1000);
+      if (!active) return;
+      const used = new Set((data || []).filter(row => row.id !== user?.id).map(row => normalizeUsername(row.username)));
+      const candidates = usernameCandidates(username).filter(candidate => !used.has(candidate));
+      setUsernameAvailable(!error && !used.has(username));
+      setUsernameSuggestions(candidates.slice(0, 4));
+      setUsernameChecking(false);
+    }, 250);
+    return () => { active = false; clearTimeout(timer); };
+  }, [form.username, profile?.username, user?.id]);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -86,10 +114,33 @@ export default function ModifierProfilClient() {
     }
   };
 
-  const save = async () => {
-    setSaving(true);
+  const requestEmailChange = async () => {
+    const nextEmail = form.email.trim().toLowerCase();
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) { setError("Vous devez être connecté."); return; }
+    if (!nextEmail || !nextEmail.includes("@")) { setError("Saisissez une adresse e-mail valide."); return; }
+    if (nextEmail === authUser.email?.toLowerCase()) { setEmailEditing(false); return; }
+    setEmailLoading(true);
     setError(null);
-    setEmailChanged(false);
+    const { error: emailError } = await supabase.auth.updateUser(
+      { email: nextEmail },
+      { emailRedirectTo: authCallbackUrl },
+    );
+    setEmailLoading(false);
+    if (emailError) {
+      setError(emailError.message || "Impossible de modifier l’adresse e-mail.");
+      return;
+    }
+    setEmailChanged(true);
+    setEmailUpdateRequested(true);
+    setEmailEditing(false);
+  };
+
+  const save = async () => {
+      setSaving(true);
+      setError(null);
+      setEmailChanged(false);
+      let changingEmail = false;
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
@@ -98,24 +149,41 @@ export default function ModifierProfilClient() {
         return;
       }
 
-      // Si l'email a changé, mettre à jour via Supabase Auth
-      if (form.email && form.email !== authUser.email) {
+      const username = normalizeUsername(form.username);
+      if (username.length < 3) {
+        setError("Le nom d’utilisateur doit contenir au moins 3 caractères.");
+        setSaving(false);
+        return;
+      }
+      const { data: duplicate } = await supabase.from('profiles').select('id').ilike('username', username).neq('id', authUser.id).maybeSingle();
+      if (duplicate) {
+        setError("Ce nom d’utilisateur est déjà utilisé. Choisissez une suggestion disponible.");
+        setSaving(false);
+        return;
+      }
+
+      // Supabase demande confirmation de la nouvelle adresse avant de la rendre active.
+       if (form.email && form.email !== authUser.email && !emailUpdateRequested) {
         setEmailLoading(true);
-        const { error: emailErr } = await supabase.auth.updateUser({ email: form.email });
+         const { error: emailErr } = await supabase.auth.updateUser(
+           { email: form.email.trim().toLowerCase() },
+           { emailRedirectTo: authCallbackUrl },
+         );
         if (emailErr) {
           setError("Erreur email: " + (emailErr.message || "Impossible de modifier l'email. Vérifiez que l'adresse est valide."));
           setSaving(false);
           setEmailLoading(false);
           return;
-        }
-        setEmailChanged(true);
-        setEmailLoading(false);
+         }
+         setEmailChanged(true);
+         changingEmail = true;
+         setEmailLoading(false);
       }
 
-      const profileData = { id: authUser.id, updated_at: new Date().toISOString() };
-      if (form.fullName !== undefined) profileData.full_name = form.fullName;
-      if (form.username !== undefined) profileData.username = form.username;
-      if (form.email !== undefined) profileData.email = form.email;
+       const profileData = { id: authUser.id, updated_at: new Date().toISOString() };
+       if (form.fullName !== undefined) profileData.full_name = form.fullName;
+       profileData.username = username;
+       if (form.email !== undefined && !changingEmail && !emailUpdateRequested) profileData.email = form.email;
       if (form.phone !== undefined) profileData.phone = form.phone;
       if (form.instagram !== undefined) profileData.instagram = form.instagram;
       if (form.facebook !== undefined) profileData.facebook = form.facebook;
@@ -170,19 +238,15 @@ export default function ModifierProfilClient() {
 
       // Mettre à jour aussi user_metadata
       await supabase.auth.updateUser({
-        data: { full_name: profileData.full_name, username: profileData.username }
+         data: { full_name: profileData.full_name, username: profileData.username }
       });
 
-      setSaving(false);
-      setSaved(true);
-      if (refreshUser) await refreshUser();
-      setTimeout(() => {
-        if (emailChanged) {
-          window.location.replace('/profil?' + Date.now());
-        } else {
-          window.location.replace('/profil?' + Date.now());
-        }
-      }, 300);
+       setSaving(false);
+       setSaved(true);
+       if (refreshUser) await refreshUser();
+       if (!changingEmail) {
+         setTimeout(() => window.location.replace('/profil?' + Date.now()), 300);
+       }
     } catch (error) {
       console.error("[ModifierProfil] Error saving:", error);
       setError("Erreur: " + error.message);
@@ -234,12 +298,6 @@ export default function ModifierProfilClient() {
             <p className="text-[13px] text-red-600 font-medium">{error}</p>
           </div>
         )}
-        {emailChanged && (
-          <div className="mx-4 mb-3 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3">
-            <p className="text-[13px] text-blue-600 font-medium">Un email de confirmation a été envoyé à <strong>{form.email}</strong>. Veuillez confirmer pour finaliser le changement.</p>
-          </div>
-        )}
-
         <div className="bg-white px-5 py-5 space-y-5 mb-3">
           <div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nom complet</p>
@@ -250,16 +308,63 @@ export default function ModifierProfilClient() {
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Nom d'utilisateur</p>
             <div className="flex items-center bg-gray-100 rounded-2xl px-4 py-3.5 cursor-text" onClick={() => document.getElementById('username-input')?.focus()}>
               <span className="text-[15px] text-gray-400 font-medium mr-1 select-none">@</span>
-              <input id="username-input" value={form.username} onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-                placeholder="elena_beauté" className="flex-1 bg-transparent text-[15px] font-medium text-gray-800 outline-none" />
+              <input id="username-input" value={form.username} onChange={e => setForm(f => ({ ...f, username: normalizeUsername(e.target.value) }))}
+                placeholder="votre_nom_utilisateur" className="flex-1 bg-transparent text-[15px] font-medium text-gray-800 outline-none" />
+            </div>
+            <div className="mt-2 min-h-5">
+              {usernameChecking && <p className="text-[11px] text-gray-400">Vérification de la disponibilité…</p>}
+              {!usernameChecking && usernameAvailable === true && <p className="text-[11px] text-green-600 font-bold">Nom d’utilisateur disponible</p>}
+              {!usernameChecking && usernameAvailable === false && <p className="text-[11px] text-red-500 font-bold">Nom déjà utilisé. Suggestions :</p>}
+              {!usernameChecking && usernameSuggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {usernameSuggestions.map(suggestion => (
+                    <button type="button" key={suggestion} onClick={() => setForm(f => ({ ...f, username: suggestion }))} className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-primary">
+                      @{suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Adresse e-mail</p>
-            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              placeholder="votre@email.com" className="w-full bg-gray-100 rounded-2xl px-4 py-3.5 text-[15px] font-medium text-gray-800 outline-none" />
-            <p className="text-[10px] text-gray-400 mt-1">Un email de confirmation sera envoyé à la nouvelle adresse</p>
-          </div>
+           <div className="rounded-3xl border border-orange-100 bg-gradient-to-br from-orange-50/80 to-white p-4 shadow-sm">
+             <div className="flex items-start gap-3 mb-4">
+               <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm shrink-0">
+                 <Mail className="w-5 h-5 text-primary" />
+               </div>
+               <div className="flex-1 min-w-0">
+                 <div className="flex items-center gap-2">
+                   <p className="text-[13px] font-black text-gray-900">Adresse e-mail</p>
+                   {!emailEditing && !emailUpdateRequested && <span className="rounded-full bg-green-100 px-2 py-0.5 text-[9px] font-black uppercase text-green-700">Active</span>}
+                 </div>
+                 <p className="text-[11px] text-gray-500 mt-0.5">Utilisée pour vous connecter à BeautyBook</p>
+               </div>
+             </div>
+
+             <input type="email" value={form.email} disabled={!emailEditing || emailLoading}
+               onChange={e => { setEmailUpdateRequested(false); setEmailChanged(false); setForm(f => ({ ...f, email: e.target.value })); }}
+               placeholder="votre@email.com"
+               className="w-full bg-white border border-orange-100 disabled:bg-white/70 disabled:text-gray-600 rounded-2xl px-4 py-3.5 text-[15px] font-medium text-gray-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition" />
+
+             {emailChanged && emailUpdateRequested && !emailEditing ? (
+               <div className="mt-3 flex items-start gap-2 rounded-2xl bg-blue-50 border border-blue-100 px-3 py-2.5">
+                 <ShieldCheck className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                 <p className="text-[11px] leading-relaxed text-blue-700">Lien envoyé à <strong>{form.email}</strong>. Confirmez-le pour activer cette adresse.</p>
+               </div>
+             ) : emailEditing ? (
+               <div className="flex gap-2 mt-3">
+                 <button type="button" onClick={requestEmailChange} disabled={emailLoading} className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-[12px] font-black text-white disabled:opacity-50">
+                   <CheckCircle2 className="w-4 h-4" /> {emailLoading ? "Envoi…" : "Envoyer la confirmation"}
+                 </button>
+                 <button type="button" onClick={() => { setEmailEditing(false); setForm(f => ({ ...f, email: user?.email || f.email })); }} className="w-11 rounded-2xl border border-gray-200 bg-white flex items-center justify-center">
+                   <X className="w-4 h-4 text-gray-500" />
+                 </button>
+               </div>
+             ) : (
+               <button type="button" onClick={() => setEmailEditing(true)} disabled={emailUpdateRequested} className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl border border-primary/30 bg-white py-3 text-[12px] font-black text-primary disabled:opacity-60">
+                 <Pencil className="w-3.5 h-3.5" /> Modifier mon adresse e-mail
+               </button>
+             )}
+           </div>
           <div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Numéro de téléphone</p>
             <div className="flex items-center bg-gray-100 rounded-2xl px-4 py-3.5">
@@ -275,27 +380,6 @@ export default function ModifierProfilClient() {
             <p className="text-right text-[11px] text-gray-400 font-medium mt-1">{form.bio.length} / {bioMax}</p>
           </div>
 
-          {/* Réseaux sociaux */}
-          <div>
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Réseaux Sociaux</p>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 bg-gray-100 rounded-2xl px-4 py-3">
-                <Instagram className="w-5 h-5 text-pink-500 flex-shrink-0" />
-                <input value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))}
-                  placeholder="Nom Instagram" className="flex-1 bg-transparent text-[15px] font-medium text-gray-800 outline-none placeholder:text-gray-400" />
-              </div>
-              <div className="flex items-center gap-3 bg-gray-100 rounded-2xl px-4 py-3">
-                <Facebook className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                <input value={form.facebook} onChange={e => setForm(f => ({ ...f, facebook: e.target.value }))}
-                  placeholder="Nom Facebook" className="flex-1 bg-transparent text-[15px] font-medium text-gray-800 outline-none placeholder:text-gray-400" />
-              </div>
-              <div className="flex items-center gap-3 bg-gray-100 rounded-2xl px-4 py-3">
-                <Globe className="w-5 h-5 text-violet-500 flex-shrink-0" />
-                <input value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
-                  placeholder="Site web (optionnel)" className="flex-1 bg-transparent text-[15px] font-medium text-gray-800 outline-none placeholder:text-gray-400" />
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

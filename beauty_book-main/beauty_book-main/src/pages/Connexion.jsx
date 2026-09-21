@@ -3,7 +3,7 @@ import { createAuthFlows, strongPassword } from "@/lib/authFlows";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, ArrowLeft, CheckCircle, Mail, Lock, ArrowRight } from "lucide-react";
-import { supabase } from "@/api/supabaseClient";
+import { authCallbackUrl, supabase } from "@/api/supabaseClient";
 import { useRateLimit } from "@/hooks/useRateLimit";
 
 const BRAND = "#E8732A";
@@ -214,7 +214,7 @@ export default function Connexion() {
 
   const handleResend = async () => {
     if (!email || resending) return; setResending(true);
-    try { const { error } = await supabase.auth.resend({ email, type: "signup", options: { emailRedirectTo: window.location.origin + "/auth/callback" } }); if (error) throw error; setError("Email renvoyé."); setEmailNotConfirmed(false); } catch { setError("Le message n’a pas pu être envoyé."); }
+     try { const { error } = await supabase.auth.resend({ email, type: "signup", options: { emailRedirectTo: authCallbackUrl } }); if (error) throw error; setError("Email renvoyé."); setEmailNotConfirmed(false); } catch { setError("Le message n’a pas pu être envoyé."); }
     setResending(false);
   };
 
@@ -223,28 +223,28 @@ export default function Connexion() {
       <div className="px-[27px] pt-[43px] pb-4">
         <div className="flex items-center gap-4 mb-[108px]">
           <B size={60} />
-          <span className="text-[#617089] text-[18px] font-extrabold uppercase tracking-[0.3em]">BeautyBook</span>
+          <span className="text-[#617089] text-[16px] font-extrabold uppercase tracking-[0.3em]">BeautyBook</span>
         </div>
       </div>
 
       <div className="flex-1 px-[27px] flex flex-col">
-        <h2 className="text-[44px] font-extrabold text-[#071936] leading-[1.2] mb-1 tracking-tight">Bon retour<br />parmi nous</h2>
-        <p className="text-[20px] text-[#617089] mb-[38px]">Connectez-vous pour accéder à votre espace.</p>
+        <h2 className="text-[32px] sm:text-[36px] font-extrabold text-[#071936] leading-[1.12] mb-1 tracking-tight">Bon retour<br />parmi nous</h2>
+        <p className="text-[16px] sm:text-[17px] text-[#617089] mb-7">Connectez-vous pour accéder à votre espace.</p>
 
-        <div className="space-y-7 flex-1">
+        <div className="space-y-5 flex-1">
           <div>
-            <label className="text-[16px] font-extrabold text-[#617089] uppercase tracking-[0.22em] mb-3 block">Email</label>
+            <label className="text-[14px] font-extrabold text-[#617089] uppercase tracking-[0.22em] mb-3 block">Email</label>
             <div className="relative">
               <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" />
-              <input className="w-full h-[72px] bg-[#f8f9fa] border border-[#edf0f3] rounded-[18px] pl-[60px] pr-5 text-[20px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]" aria-label="Email" autoComplete="email" type="email" placeholder="vous@email.com" value={email} onChange={e => setEmail(e.target.value)} />
+              <input className="w-full h-14 sm:h-[64px] bg-[#f8f9fa] border border-[#edf0f3] rounded-2xl pl-12 pr-4 text-[16px] sm:text-[17px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]" aria-label="Email" autoComplete="email" type="email" placeholder="vous@email.com" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
           </div>
 
           <div>
-            <label className="text-[16px] font-extrabold text-[#617089] uppercase tracking-[0.22em] mb-3 block">Mot de passe</label>
+            <label className="text-[14px] font-extrabold text-[#617089] uppercase tracking-[0.22em] mb-3 block">Mot de passe</label>
             <div className="relative">
               <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" />
-              <input className="w-full h-[72px] bg-[#f8f9fa] border border-[#edf0f3] rounded-[18px] pl-[60px] pr-14 text-[20px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]" type={showPwd ? "text" : "password"} placeholder="••••••••" aria-label="Mot de passe" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} />
+              <input className="w-full h-14 sm:h-[64px] bg-[#f8f9fa] border border-[#edf0f3] rounded-2xl pl-12 pr-12 text-[16px] sm:text-[17px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]" type={showPwd ? "text" : "password"} placeholder="••••••••" aria-label="Mot de passe" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} />
               <button type="button" aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"} onClick={() => setShowPwd(!showPwd)} className="absolute right-5 top-1/2 -translate-y-1/2 text-[#6d788b] hover:text-[#6d788b] transition"><EyeIcon show={showPwd} /></button>
             </div>
           </div>
@@ -254,9 +254,9 @@ export default function Connexion() {
               <div className={`w-[27px] h-[27px] rounded-full border-2 flex items-center justify-center transition-all ${remember ? "border-[#E8732A] bg-[#E8732A]" : "border-[#e0e4e9] bg-white"}`}>
                 {remember && <svg width="8" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
-              <span className="text-[18px] font-semibold text-[#617089]">Mémoriser mon email</span>
+               <span className="text-[14px] sm:text-[15px] font-semibold text-[#617089]">Mémoriser mon email</span>
             </button>
-             <button onClick={() => setShowForgot(true)} className="text-[18px] font-bold" style={{ color: BRAND }}>Mot de passe oublié ?</button>
+             <button onClick={() => setShowForgot(true)} className="text-[14px] sm:text-[15px] font-bold" style={{ color: BRAND }}>Mot de passe oublié ?</button>
           </div>
 
           {error && (
@@ -268,18 +268,15 @@ export default function Connexion() {
         </div>
 
         <div className="pt-10 pb-8 space-y-5">
-          <button onClick={handleLogin} disabled={loading} className="w-full h-[78px] rounded-[18px] font-extrabold text-[21px] uppercase tracking-[0.12em] text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3" style={{ background: BRAND }}>
+          <button onClick={handleLogin} disabled={loading} className="w-full h-14 sm:h-[64px] rounded-2xl font-extrabold text-[16px] uppercase tracking-[0.12em] text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3" style={{ background: BRAND }}>
             {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><span>Se connecter</span><ArrowRight className="w-4 h-4" /></>}
           </button>
           <SocialAuthButtons disabled={loading} />
-           <p className="text-center text-[18px] text-[#617089]">
+            <p className="text-center text-[14px] sm:text-[15px] text-[#617089]">
             Pas encore de compte ? <button onClick={() => { sessionStorage.removeItem("bb_signup_data"); sessionStorage.setItem("bb_from_login", "1"); navigate("/onboarding"); }} className="font-bold" style={{ color: BRAND }}>Créer un compte</button>
           </p>
         </div>
       </div>
-      <button type="button" aria-label="Retour" onClick={() => navigate(-1)} className="fixed bottom-9 left-[27px] w-[60px] h-[60px] rounded-[18px] bg-[#f8f9fa] border border-[#edf0f3] flex items-center justify-center active:scale-95 transition z-50">
-        <ArrowLeft className="w-6 h-6 text-[#617089]" />
-      </button>
     </div>
   );
 }

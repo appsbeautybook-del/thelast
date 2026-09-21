@@ -46,7 +46,7 @@ export default function Parametres() {
   const savedAccounts = JSON.parse(localStorage.getItem("bb_saved_accounts") || "[]");
   // Sauvegarder le compte courant si pas déjà dedans
   if (user?.email && !savedAccounts.find(a => a.email === user.email)) {
-    savedAccounts.push({ email: user.email, name: user.full_name || user.email });
+    savedAccounts.push({ email: user.email, name: user.username || user.email });
     localStorage.setItem("bb_saved_accounts", JSON.stringify(savedAccounts));
   }
   const otherAccounts = savedAccounts.filter(a => a.email !== user?.email);
@@ -56,10 +56,6 @@ export default function Parametres() {
     localStorage.setItem("bb_switch_to", account.email);
     supabase.auth.signOut().then(() => window.location.href = "/");
   };
-
-  const memberSince = user?.created_date
-    ? new Date(user.created_date).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })
-    : "oct. 2023";
 
   return (
     <div className="font-display" style={{ minHeight: "100dvh", background: themeBg }}>
@@ -85,8 +81,7 @@ export default function Parametres() {
             </div>
           </div>
           <div>
-            <p className="text-[18px] font-black text-gray-900">{user?.full_name || "Utilisateur BeautyBook"}</p>
-            <p className="text-[12px] text-gray-400 font-medium">Membre Premium · {memberSince}</p>
+            <p className="text-[18px] font-black text-gray-900">@{user?.username || user?.email?.split("@")[0] || "beautybook"}</p>
           </div>
         </div>
 

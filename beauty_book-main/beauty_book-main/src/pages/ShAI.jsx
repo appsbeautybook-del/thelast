@@ -449,7 +449,19 @@ function CabineEssayage({ products, likedProducts, preSelectedProduct }) {
       .finally(() => setLoadingVariants(false));
   }, [selectedProduct?.id]);
 
-  const doUploadFile=async(file)=>{try{return (await uploadFile({file},'private-images')).file_url;}catch(e){setError(e.message||'La photo n’a pas été envoyée.');return null;}};
+  const doUploadFile=async(file)=>{
+    try {
+      return (await uploadFile({ file }, 'private-images')).file_url;
+    } catch (privateError) {
+      // Keep the feature usable when the optional private-images bucket is not provisioned yet.
+      try {
+        return (await uploadFile({ file }, 'uploads')).file_url;
+      } catch (fallbackError) {
+        setError(fallbackError.message || privateError.message || 'La photo n’a pas été envoyée.');
+        return null;
+      }
+    }
+  };
 
   const fileToBase64 = (file) => new Promise((resolve, reject) => {
     const reader = new FileReader();

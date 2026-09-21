@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT,
   full_name TEXT,
+  username TEXT,
   avatar_url TEXT,
   cover_url TEXT,
   role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user', 'vendeur')),
