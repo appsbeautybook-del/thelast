@@ -569,13 +569,13 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
           suggestions = [];
         }
         if (suggestions.length === 0) {
-          const response = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=fr&limit=5&q=${encodeURIComponent(val)}`);
+          const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(val)}&limit=5&autocomplete=1`);
           const results = await response.json();
-          suggestions = results.map(item => ({
-            description: item.display_name,
-            address: [item.address?.house_number, item.address?.road].filter(Boolean).join(" "),
-            postalCode: item.address?.postcode || "",
-            city: item.address?.city || item.address?.town || item.address?.village || "",
+          suggestions = (results.features || []).map(item => ({
+            description: item.properties?.label || val,
+            address: item.properties?.name || "",
+            postalCode: item.properties?.postcode || "",
+            city: item.properties?.city || "",
           }));
         }
         if (suggestions.length === 0) {

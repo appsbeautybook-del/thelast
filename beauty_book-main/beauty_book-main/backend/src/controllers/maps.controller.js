@@ -42,16 +42,27 @@ export const placesAutocomplete = async (req, res) => {
     if (!input || input.length < 2) return res.json({ predictions: [] });
 
     const resp = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&format=json&limit=5&addressdetails=1&countrycodes=fr,be,ch&accept-language=fr`,
-      { headers: NOMINATIM_HEADERS }
+      `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(input)}&limit=5&autocomplete=1`,
+      { headers: { "Accept-Language": "fr" } }
     );
     const data = await resp.json();
 
-    const predictions = data.map((item) => ({
-      description: item.display_name,
-      place_id: item.osm_id?.toString() || "",
-      structured: item.address || {},
-    }));
+    const predictions = (data.features || []).map((item) => {
+      const properties = item.properties || {};
+      return {
+        description: properties.label || input,
+        place_id: properties.id || "",
+        address: properties.name || "",
+        postalCode: properties.postcode || "",
+        city: properties.city || "",
+        structured: {
+          house_number: properties.housenumber || "",
+          road: properties.street || properties.name || "",
+          postcode: properties.postcode || "",
+          city: properties.city || "",
+        },
+      };
+    });
 
     return res.json({ predictions });
   } catch (error) {
