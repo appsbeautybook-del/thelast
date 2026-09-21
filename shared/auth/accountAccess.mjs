@@ -27,17 +27,39 @@ export async function createAccount(client, { email, password, redirectTo }) {
 }
 
 export async function confirmAccount(client, email, token) {
-  const clean = token.replace(/\s/g, '');
+  const clean = String(token ?? '').replace(/\s/g, '');
   if (!/^\d{6,10}$/.test(clean)) throw new Error('Saisissez les 6 à 10 chiffres du code reçu par email.');
-  const { data, error } = await client.auth.verifyOtp({ email: email.trim(), token: clean, type: 'signup' });
-  if (error) throw error;
-  if (!data?.session) throw new Error('La confirmation n’a pas ouvert de session. Reconnectez-vous.');
-  return data.session;
+
+  const attempts = [
+    { email: email.trim(), token: clean, type: 'signup' },
+    { email: email.trim(), token: clean, type: 'email' },
+  ];
+
+  let lastError = null;
+  for (const payload of attempts) {
+    const { data, error } = await client.auth.verifyOtp(payload);
+    if (!error && data?.session) return data.session;
+    lastError = error;
+  }
+
+  if (lastError) throw lastError;
+  throw new Error('La confirmation n’a pas ouvert de session. Reconnectez-vous.');
 }
 
 export async function resendConfirmation(client, email, redirectTo) {
-  const { error } = await client.auth.resend({ type: 'signup', email: email.trim(), options: { emailRedirectTo: redirectTo } });
-  if (error) throw error;
+  const attempts = [
+    { type: 'signup', email: email.trim(), options: { emailRedirectTo: redirectTo } },
+    { type: 'email', email: email.trim(), options: { emailRedirectTo: redirectTo } },
+  ];
+
+  let lastError = null;
+  for (const payload of attempts) {
+    const { error } = await client.auth.resend(payload);
+    if (!error) return;
+    lastError = error;
+  }
+
+  if (lastError) throw lastError;
 }
 
 export function savePendingEmail(storage, key, email) {
