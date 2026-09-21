@@ -219,50 +219,44 @@ export default function Connexion() {
   };
 
   return (
-    <div className="min-h-screen w-full max-w-lg mx-auto bg-white flex flex-col">
-      {/* Header orange accent */}
-      <div className="h-1 w-full" style={{ background: BRAND }} />
-
-      <div className="px-6 pt-12 pb-4">
-        <button aria-label="Retour" onClick={() => navigate(-1)} className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center active:scale-95 transition mb-10">
-          <ArrowLeft className="w-[18px] h-[18px] text-gray-500" />
-        </button>
-        <div className="flex items-center gap-3 mb-14">
-          <B size={42} />
-          <span className="text-gray-500 text-[12px] font-extrabold uppercase tracking-[0.3em]">BeautyBook</span>
+    <div className="min-h-screen w-full max-w-[680px] mx-auto bg-white flex flex-col">
+      <div className="px-[27px] pt-[43px] pb-4">
+        <div className="flex items-center gap-4 mb-[108px]">
+          <B size={60} />
+          <span className="text-[#617089] text-[18px] font-extrabold uppercase tracking-[0.3em]">BeautyBook</span>
         </div>
       </div>
 
-      <div className="flex-1 px-6 flex flex-col">
-        <h2 className="text-[30px] font-extrabold text-gray-900 leading-[1.05] mb-1.5 tracking-tight">Bon retour<br />parmi nous</h2>
-        <p className="text-[13px] text-gray-500 mb-6">Connectez-vous pour accéder à votre espace.</p>
+      <div className="flex-1 px-[27px] flex flex-col">
+        <h2 className="text-[44px] font-extrabold text-[#071936] leading-[1.2] mb-1 tracking-tight">Bon retour<br />parmi nous</h2>
+        <p className="text-[20px] text-[#617089] mb-[38px]">Connectez-vous pour accéder à votre espace.</p>
 
-        <div className="space-y-4 flex-1">
+        <div className="space-y-7 flex-1">
           <div>
-            <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-[0.18em] mb-2 block">Email</label>
+            <label className="text-[16px] font-extrabold text-[#617089] uppercase tracking-[0.22em] mb-3 block">Email</label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <input className="w-full h-12 bg-gray-50 border border-gray-100 rounded-xl pl-10 pr-4 text-[14px] font-medium text-gray-800 outline-none focus:border-orange-200 focus:bg-white transition placeholder:text-gray-400" aria-label="Email" autoComplete="email" type="email" placeholder="vous@email.com" value={email} onChange={e => setEmail(e.target.value)} />
+              <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" />
+              <input className="w-full h-[72px] bg-[#f8f9fa] border border-[#edf0f3] rounded-[18px] pl-[60px] pr-5 text-[20px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]" aria-label="Email" autoComplete="email" type="email" placeholder="vous@email.com" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
           </div>
 
           <div>
-            <label className="text-[10px] font-extrabold text-gray-500 uppercase tracking-[0.18em] mb-2 block">Mot de passe</label>
+            <label className="text-[16px] font-extrabold text-[#617089] uppercase tracking-[0.22em] mb-3 block">Mot de passe</label>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-              <input className="w-full h-12 bg-gray-50 border border-gray-100 rounded-xl pl-10 pr-11 text-[14px] font-medium text-gray-800 outline-none focus:border-orange-200 focus:bg-white transition placeholder:text-gray-400" type={showPwd ? "text" : "password"} placeholder="••••••••" aria-label="Mot de passe" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} />
-              <button aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"} onClick={() => setShowPwd(!showPwd)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-500 transition"><EyeIcon show={showPwd} /></button>
+              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" />
+              <input className="w-full h-[72px] bg-[#f8f9fa] border border-[#edf0f3] rounded-[18px] pl-[60px] pr-14 text-[20px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]" type={showPwd ? "text" : "password"} placeholder="••••••••" aria-label="Mot de passe" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} />
+              <button type="button" aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"} onClick={() => setShowPwd(!showPwd)} className="absolute right-5 top-1/2 -translate-y-1/2 text-[#6d788b] hover:text-[#6d788b] transition"><EyeIcon show={showPwd} /></button>
             </div>
           </div>
 
           <div className="flex items-center justify-between pt-0.5">
             <button role="checkbox" aria-checked={remember} onClick={() => setRemember(!remember)} className="flex items-center gap-2.5 active:scale-95 transition">
-              <div className={`w-[18px] h-[18px] rounded-md border-[1.5px] flex items-center justify-center transition-all ${remember ? "border-[#E8732A] bg-[#E8732A]" : "border-gray-200 bg-white"}`}>
+              <div className={`w-[27px] h-[27px] rounded-full border-2 flex items-center justify-center transition-all ${remember ? "border-[#E8732A] bg-[#E8732A]" : "border-[#e0e4e9] bg-white"}`}>
                 {remember && <svg width="8" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4l3 3 5-6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
-              <span className="text-[12px] font-semibold text-gray-500">Mémoriser mon email</span>
+              <span className="text-[18px] font-semibold text-[#617089]">Mémoriser mon email</span>
             </button>
-            <button onClick={() => setShowForgot(true)} className="text-[12px] font-bold" style={{ color: BRAND }}>Mot de passe oublié ?</button>
+             <button onClick={() => setShowForgot(true)} className="text-[18px] font-bold" style={{ color: BRAND }}>Mot de passe oublié ?</button>
           </div>
 
           {error && (
@@ -273,16 +267,19 @@ export default function Connexion() {
           )}
         </div>
 
-        <div className="pt-6 pb-8 space-y-4">
-          <button onClick={handleLogin} disabled={loading} className="w-full h-[52px] rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: BRAND }}>
+        <div className="pt-10 pb-8 space-y-5">
+          <button onClick={handleLogin} disabled={loading} className="w-full h-[78px] rounded-[18px] font-extrabold text-[21px] uppercase tracking-[0.12em] text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3" style={{ background: BRAND }}>
             {loading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><span>Se connecter</span><ArrowRight className="w-4 h-4" /></>}
           </button>
           <SocialAuthButtons disabled={loading} />
-          <p className="text-center text-[13px] text-gray-500">
+           <p className="text-center text-[18px] text-[#617089]">
             Pas encore de compte ? <button onClick={() => { sessionStorage.removeItem("bb_signup_data"); sessionStorage.setItem("bb_from_login", "1"); navigate("/onboarding"); }} className="font-bold" style={{ color: BRAND }}>Créer un compte</button>
           </p>
         </div>
       </div>
+      <button type="button" aria-label="Retour" onClick={() => navigate(-1)} className="fixed bottom-9 left-[27px] w-[60px] h-[60px] rounded-[18px] bg-[#f8f9fa] border border-[#edf0f3] flex items-center justify-center active:scale-95 transition z-50">
+        <ArrowLeft className="w-6 h-6 text-[#617089]" />
+      </button>
     </div>
   );
 }

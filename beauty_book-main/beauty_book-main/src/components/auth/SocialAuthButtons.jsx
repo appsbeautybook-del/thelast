@@ -28,19 +28,19 @@ export default function SocialAuthButtons({ mode = 'login', beforeStart, disable
         redirect: url => window.location.assign(url) });
     } catch (error) { setError(error.message); setBusy(''); }
   }
-  return <div className="space-y-3" aria-label="Connexion avec un compte existant">
-    <div className="flex items-center gap-3 py-2 text-xs text-gray-500"><span className="h-px flex-1 bg-gray-200" />ou continuer avec<span className="h-px flex-1 bg-gray-200" /></div>
+  return <div className="space-y-5" aria-label="Connexion avec un compte existant">
+    <div className="flex items-center gap-4 py-2 text-[18px] text-[#617089]"><span className="h-px flex-1 bg-[#d9dee5]" />ou continuer avec<span className="h-px flex-1 bg-[#d9dee5]" /></div>
     <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
       <button type="button" onClick={() => begin('google')} disabled={disabled || Boolean(busy)}
-        className="min-h-[52px] rounded-xl border border-gray-200 bg-white px-3 py-3 text-[13px] font-bold text-gray-800 flex items-center justify-center gap-2.5 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 disabled:opacity-60 transition-colors">
+        className="min-h-[78px] rounded-[18px] border border-[#dfe4eb] bg-white px-3 py-3 text-[20px] font-bold text-[#14213d] flex items-center justify-center gap-3 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 disabled:opacity-60 transition-colors">
         {busy === 'google' ? <LoaderCircle size={19} className="animate-spin" /> : <GoogleMark />}<span>Avec Google</span>
       </button>
       <button type="button" onClick={() => begin('apple')} disabled={disabled || Boolean(busy)}
-        className="min-h-[52px] rounded-xl border border-gray-900 bg-gray-900 px-3 py-3 text-[13px] font-bold text-white flex items-center justify-center gap-2.5 hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 disabled:opacity-60 transition-colors">
+        className="min-h-[78px] rounded-[18px] border border-[#111827] bg-[#111827] px-3 py-3 text-[20px] font-bold text-white flex items-center justify-center gap-3 hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-600 disabled:opacity-60 transition-colors">
         {busy === 'apple' ? <LoaderCircle size={19} className="animate-spin" /> : <AppleMark />}<span>Avec Apple</span>
       </button>
     </div>
-    {providers?.apple === false && !error && <p className="text-xs text-gray-500 text-center">Apple sera disponible prochainement.</p>}
+    {providers?.apple === false && !error && <p className="text-[18px] text-[#617089] text-center">Apple sera disponible prochainement.</p>}
     {busy && <p role="status" className="text-xs text-gray-600 text-center">Ouverture de {busy === 'google' ? 'Google' : 'Apple'}…</p>}
     {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
   </div>;

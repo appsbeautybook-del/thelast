@@ -135,33 +135,29 @@ function StepSignup({ onNext, onBack }) {
     finally { setSubmitting(false); }
   };
 
-  const inp = "w-full h-12 bg-gray-50 border border-gray-100 rounded-xl px-4 text-[14px] font-medium text-gray-800 outline-none focus:border-orange-200 focus:bg-white transition placeholder:text-gray-400";
-  const lbl = "text-[10px] font-extrabold text-gray-500 uppercase tracking-[0.18em] mb-2 block";
+   const inp = "w-full h-[72px] bg-[#f8f9fa] border border-[#edf0f3] rounded-[18px] px-5 text-[20px] font-medium text-[#14213d] outline-none focus:border-orange-300 focus:bg-white transition placeholder:text-[#9aa6b8]";
+   const lbl = "text-[16px] font-extrabold text-[#617089] uppercase tracking-[0.22em] mb-3 block";
 
   return (
-    <div className="min-h-screen w-full max-w-lg mx-auto bg-white flex flex-col">
-      <div className="h-1 w-full" style={{ background: BRAND }} />
-      <div className="relative z-10 px-6 pt-10 pb-8 flex flex-col flex-1">
-        <div className="mb-8"><ProgressBar step={1} total={4} /></div>
-        <StepLabel step={1} total={4} />
+    <div className="min-h-screen w-full max-w-[680px] mx-auto bg-white flex flex-col">
+      <div className="relative z-10 px-[27px] pt-1 pb-8 flex flex-col flex-1">
+        <h2 className="text-[44px] font-extrabold text-[#071936] leading-[1.2] mb-1 tracking-tight">Faisons<br />connaissance</h2>
+        <p className="text-[20px] text-[#617089] mb-[38px]">Parlez-nous un peu de vous.</p>
 
-        <h2 className="text-[28px] font-extrabold text-gray-900 leading-tight mb-1.5 tracking-tight">Faisons<br />connaissance</h2>
-        <p className="text-[13px] text-gray-500 mb-6">Parlez-nous un peu de vous.</p>
-
-        <div className="space-y-3.5 flex-1">
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className={lbl}>Prénom</label><div className="relative"><User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" /><input className={inp + " pl-9"} aria-label="Prénom" autoComplete="given-name" placeholder="Sophie" value={form.prenom} onChange={e => setForm({ ...form, prenom: e.target.value })} /></div></div>
+        <div className="space-y-6 flex-1">
+          <div className="grid grid-cols-2 gap-[18px]">
+            <div><label className={lbl}>Prénom</label><div className="relative"><User className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" /><input className={inp + " pl-[55px]"} aria-label="Prénom" autoComplete="given-name" placeholder="Sophie" value={form.prenom} onChange={e => setForm({ ...form, prenom: e.target.value })} /></div></div>
             <div><label className={lbl}>Nom</label><input className={inp} aria-label="Nom" autoComplete="family-name" placeholder="Martin" value={form.nom} onChange={e => setForm({ ...form, nom: e.target.value })} /></div>
           </div>
 
-          <div><label className={lbl}>Email</label><div className="relative"><Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" /><input className={inp + " pl-9"} aria-label="Email" autoComplete="email" type="email" placeholder="vous@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div></div>
+          <div><label className={lbl}>Email</label><div className="relative"><Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" /><input className={inp + " pl-[55px]"} aria-label="Email" autoComplete="email" type="email" placeholder="vous@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div></div>
 
           <div>
             <label className={lbl}>Mot de passe</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" />
               <input className={inp + " pl-9 pr-10"} type={showPwd ? "text" : "password"} placeholder="••••••••" aria-label="Mot de passe" autoComplete="new-password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-              <button aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"} onClick={() => setShowPwd(!showPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-500 transition"><EyeIcon show={showPwd} /></button>
+              <button type="button" aria-label={showPwd ? "Masquer le mot de passe" : "Afficher le mot de passe"} onClick={() => setShowPwd(!showPwd)} className="absolute right-5 top-1/2 -translate-y-1/2 text-[#6d788b] hover:text-[#6d788b] transition"><EyeIcon show={showPwd} /></button>
             </div>
             {form.password.length > 0 && (
               <div className="mt-2.5">
@@ -178,9 +174,9 @@ function StepSignup({ onNext, onBack }) {
           <div>
             <label className={lbl}>Confirmer</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-[23px] h-[23px] text-[#6d788b]" />
               <input className={inp + " pl-9 pr-10"} type={showConfirm ? "text" : "password"} placeholder="••••••••" aria-label="Confirmer le mot de passe" autoComplete="new-password" value={form.confirm} onChange={e => setForm({ ...form, confirm: e.target.value })} />
-              <button aria-label={showConfirm ? "Masquer la confirmation" : "Afficher la confirmation"} onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-500 transition"><EyeIcon show={showConfirm} /></button>
+              <button type="button" aria-label={showConfirm ? "Masquer la confirmation" : "Afficher la confirmation"} onClick={() => setShowConfirm(!showConfirm)} className="absolute right-5 top-1/2 -translate-y-1/2 text-[#6d788b] hover:text-[#6d788b] transition"><EyeIcon show={showConfirm} /></button>
             </div>
           </div>
 
@@ -196,10 +192,10 @@ function StepSignup({ onNext, onBack }) {
 
           <div className="pt-2 space-y-4">
             <div role="checkbox" tabIndex={0} aria-checked={consentChecked} aria-label="Accepter les conditions et la politique de confidentialité" onKeyDown={e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); setConsentChecked(!consentChecked); } }} onClick={() => setConsentChecked(!consentChecked)} className="bg-gray-50 border border-gray-100 rounded-xl p-3.5 flex items-start gap-3 cursor-pointer active:scale-[0.99] transition">
-              <div className={`w-[18px] h-[18px] rounded-md border-[1.5px] shrink-0 mt-0.5 flex items-center justify-center transition-all ${consentChecked ? "bg-[#E8732A] border-[#E8732A]" : "border-gray-200 bg-white"}`}>
+              <div className={`w-[27px] h-[27px] rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center transition-all ${consentChecked ? "bg-[#E8732A] border-[#E8732A]" : "border-[#e0e4e9] bg-white"}`}>
                 {consentChecked && <Check className="w-3 h-3 text-white" />}
               </div>
-              <p className="text-[11px] text-gray-500 leading-relaxed">
+              <p className="text-[16px] text-[#617089] leading-relaxed">
                 J'accepte les <a href="/parametres/conditions" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="font-bold underline" style={{ color: BRAND }}>CGU</a> et la <a href="/parametres/politique-confidentialite" target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="font-bold underline" style={{ color: BRAND }}>Politique de Confidentialité</a>. RGPD.
               </p>
             </div>
@@ -207,15 +203,15 @@ function StepSignup({ onNext, onBack }) {
           </div>
         </div>
 
-        <div className="mt-5 space-y-3 pb-4">
-          <button onClick={handleSubmit} disabled={submitting} className="w-full h-[52px] rounded-xl font-extrabold text-[13px] uppercase tracking-[0.12em] text-white active:scale-[0.97] transition-all flex items-center justify-center gap-2" style={{ background: isValid ? BRAND : "#e5e7eb" }}>
+        <div className="mt-7 space-y-5 pb-4">
+          <button onClick={handleSubmit} disabled={submitting} className="w-full h-[78px] rounded-[18px] font-extrabold text-[21px] uppercase tracking-[0.12em] text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3" style={{ background: isValid ? BRAND : "#e1e4e9" }}>
             {submitting ? "Envoi…" : "Suivant"} <ArrowRight className="w-4 h-4" />
           </button>
           <SocialAuthButtons mode="signup" disabled={submitting} beforeStart={() => {
             if (!consentChecked) { setError('Acceptez les conditions ci-dessus pour créer votre compte.'); return false; }
             setError(''); return true;
           }} />
-          <p className="text-center text-[13px] text-gray-500">Déjà un compte ? <Link to="/connexion" className="font-bold" style={{ color: BRAND }}>Se connecter</Link></p>
+          <p className="text-center text-[18px] text-[#617089]">Déjà un compte ? <Link to="/connexion" className="font-bold" style={{ color: BRAND }}>Se connecter</Link></p>
           <button aria-label="Retour" onClick={onBack} className="w-full text-center text-[11px] font-bold text-gray-500 uppercase tracking-[0.2em]">Retour</button>
         </div>
       </div>
