@@ -626,24 +626,34 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
   // Calculer la distance quand l'adresse change
   useEffect(() => {
     const calcTransport = async () => {
-      if (!customAddress || !savedLieu?.address) {
+      const salonAddress = formatLocation(savedLieu);
+      const destinationAddress = formatLocation({ address: customAddress, postalCode: customPostalCode, city: customCity });
+      if (!salonAddress || !destinationAddress) {
         setTransportFee(0);
         setTransportDistance(0);
         return;
       }
       // Si l'adresse est la même que le salon, pas de frais
-      if (customAddress.toLowerCase().trim() === savedLieu.address?.toLowerCase().trim()) {
+      if (destinationAddress.toLowerCase().trim() === salonAddress.toLowerCase().trim()) {
         setTransportFee(0);
         setTransportDistance(0);
         return;
       }
       setTransportLoading(true);
       try {
-        // Géocoder les deux adresses via le backend proxy
-        const geoRes = await apiClient.callFunction('geocode', {
-          addresses: [savedLieu.address, customAddress]
-        });
-        const geoData = geoRes?.data?.results || geoRes?.results || [];
+        let geoData = [];
+        try {
+          const geoRes = await apiClient.callFunction('geocode', { addresses: [salonAddress, destinationAddress] });
+          geoData = geoRes?.data?.results || geoRes?.results || [];
+        } catch {
+          const results = await Promise.all([salonAddress, destinationAddress].map(async address => {
+            const response = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(address)}&limit=1`);
+            const data = await response.json();
+            const coordinates = data.features?.[0]?.geometry?.coordinates || [];
+            return { lng: coordinates[0], lat: coordinates[1] };
+          }));
+          geoData = results;
+        }
         if (geoData.length === 2 && geoData[0].lat && geoData[1].lat) {
           const lat1 = geoData[0].lat, lng1 = geoData[0].lng;
           const lat2 = geoData[1].lat, lng2 = geoData[1].lng;
@@ -662,7 +672,7 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
       setTransportLoading(false);
     };
     calcTransport();
-  }, [customAddress, savedLieu?.address]);
+  }, [customAddress, customPostalCode, customCity, savedLieu?.address, savedLieu?.postalCode, savedLieu?.city]);
 
   const totalPrice = basePrice + nightSurcharge + transportFee;
   const acompteAmount = Math.round(totalPrice * 0.3 * 100) / 100;
@@ -1058,6 +1068,12 @@ export default function StepConfirmation({ booking, onConfirm, onBack }) {
               <div className="flex justify-between text-[13px]">
                 <span className="text-gray-500 font-medium">Transport ({transportDistance} km)</span>
                 <span className="font-bold text-orange-500">+{transportFee}€</span>
+              </div>
+            )}
+            {transportLoading && (
+              <div className="flex justify-between text-[12px] text-gray-400">
+                <span>Calcul des frais de déplacement…</span>
+                <span className="animate-pulse">En cours</span>
               </div>
             )}
             <div className="border-t border-gray-100 pt-2 mt-2 flex justify-between">
