@@ -454,12 +454,12 @@ export default function AdminAnalytics() {
         return {
           id: email,
           email,
-          name: profile.salon_name || userAccount.full_name || email.split("@")[0],
-          avatar_url: profile.avatar_url || userAccount.avatar_url || "",
-          city: profile.city || "",
-          role: profile.abonnement || "Gratuit",
-          rating: profile.rating || 0,
-          abonnement: profile.abonnement || "",
+          name: profile?.salon_name || userAccount?.full_name || email.split("@")[0],
+          avatar_url: profile?.avatar_url || userAccount?.avatar_url || "",
+          city: profile?.city || "",
+          role: profile?.abonnement || "Gratuit",
+          rating: profile?.rating || 0,
+          abonnement: profile?.abonnement || "",
           rank: 0,
           revenue: reservationRevenue + commandesRevenue,
           reservation_revenue: reservationRevenue,
@@ -482,7 +482,7 @@ export default function AdminAnalytics() {
           views_by_month: viewsByMonth,
           services: servicesWithStats,
           publications: pubs,
-          created_at: profile.created_at || userAccount.created_at,
+          created_at: profile?.created_at || userAccount?.created_at,
         };
       });
 

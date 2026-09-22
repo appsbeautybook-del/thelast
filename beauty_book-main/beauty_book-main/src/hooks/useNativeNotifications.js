@@ -25,7 +25,7 @@ export function useNativeNotifications(userEmail) {
     }
 
     if (Notification.permission === 'denied') {
-      console.warn('[Notifications] Permission refusée');
+      console.info('[Notifications] Permission non accordée par le navigateur');
       return false;
     }
 
