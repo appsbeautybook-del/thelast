@@ -68,7 +68,7 @@ export default function SocialMedia() {
   const isDark = theme === "dark" || theme === "night";
 
   const [activeTab, setActiveTab] = useState("platforms");
-  const [expandedId, setExpandedId] = useState(null);
+  const [expandedId, setExpandedId] = useState("instagram");
   const [validating, setValidating] = useState(null);
   const [platforms, setPlatforms] = useState(
     PLATFORMS.map(p => ({ ...p, connected: false, keys: {}, showKeys: {}, validKeys: {} }))
