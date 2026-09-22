@@ -1,6 +1,5 @@
 const SHOPIFY_DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN || 'hwqnwb-hi.myshopify.com';
 const SHOPIFY_TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN || '46a6de1eb3a2686abcae91039944762d';
-const SHOPIFY_API = `https://${SHOPIFY_DOMAIN}/api/2024-10/graphql.json`;
 
 const shopifyHeaders = {
   'Content-Type': 'application/json',
@@ -8,15 +7,35 @@ const shopifyHeaders = {
 };
 
 async function shopifyQuery(query, variables = {}) {
-  const res = await fetch(SHOPIFY_API, {
-    method: 'POST',
-    headers: shopifyHeaders,
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!res.ok) throw new Error(`Shopify API ${res.status}`);
-  const json = await res.json();
-  if (json.errors) throw new Error(json.errors[0]?.message || 'Shopify GraphQL error');
-  return json.data;
+  const isVercel = typeof window !== 'undefined' && window.location.hostname.includes('vercel.app');
+  const primaryUrl = isVercel ? '/shopify-graphql' : `https://${SHOPIFY_DOMAIN}/api/2024-10/graphql.json`;
+
+  try {
+    let res = await fetch(primaryUrl, {
+      method: 'POST',
+      headers: shopifyHeaders,
+      body: JSON.stringify({ query, variables }),
+    });
+
+    if (!res || !res.ok) {
+      if (isVercel) {
+        // Fallback to direct URL if proxy endpoint returns error
+        res = await fetch(`https://${SHOPIFY_DOMAIN}/api/2024-10/graphql.json`, {
+          method: 'POST',
+          headers: shopifyHeaders,
+          body: JSON.stringify({ query, variables }),
+        });
+      }
+    }
+
+    if (!res || !res.ok) throw new Error(`Shopify API status ${res?.status || 500}`);
+    const json = await res.json();
+    if (json.errors) throw new Error(json.errors[0]?.message || 'Shopify GraphQL error');
+    return json.data;
+  } catch (err) {
+    console.warn('[Shopify] Query fallback:', err.message);
+    return null;
+  }
 }
 
 const SINGLE_PRODUCT_FIELDS = `
@@ -35,6 +54,7 @@ const SINGLE_PRODUCT_FIELDS = `
 `;
 
 function mapShopifyProduct(node) {
+  if (!node) return null;
   const variant = node.variants?.edges?.[0]?.node;
   const image = node.images?.edges?.[0]?.node;
   return {
@@ -80,7 +100,7 @@ export const fetchShopifyProducts = async (options = {}) => {
           }
         }
       `, { id: options.productId });
-      return { data: { success: true, product: data.product ? mapShopifyProduct(data.product) : null } };
+      return { data: { success: true, product: data?.product ? mapShopifyProduct(data.product) : null } };
     }
 
     const first = options.first || 50;
@@ -103,10 +123,10 @@ export const fetchShopifyProducts = async (options = {}) => {
       }
     `, { first });
 
-    const products = (data.products?.edges || []).map(e => mapShopifyProduct(e.node));
+    const products = (data?.products?.edges || []).map(e => mapShopifyProduct(e.node)).filter(Boolean);
     return { data: { success: true, products } };
   } catch (err) {
-    console.error('[Shopify] Fetch error:', err.message);
+    console.warn('[Shopify] Fetch error:', err.message);
     return { data: { success: true, products: [] } };
   }
 };
