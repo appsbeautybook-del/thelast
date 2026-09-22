@@ -6,7 +6,27 @@ import ActionConfirmation from '@/components/maria/ActionConfirmation';
 const statusLabels={confirme:'Confirmé',en_attente:'En attente',annule:'Annulé',termine:'Terminé',no_show:'Absent'};
 export default function ReceptionnistIA(){
  const navigate=useNavigate(),[data,setData]=useState(null),[tab,setTab]=useState('assistant'),[error,setError]=useState(''),[messages,setMessages]=useState([]),[input,setInput]=useState(''),[busy,setBusy]=useState(false),[form,setForm]=useState(null),[notice,setNotice]=useState('');const end=useRef(null);
- const refresh=useCallback(async()=>{try{const r=await apiClient.get('/pro/receptionist');setData(r);setForm(prev=>prev||r.settings);setError('');}catch(e){setError(e.message);}},[]);
+ const refresh=useCallback(async()=>{try{const r=await apiClient.get('/pro/receptionist');setData(r);setForm(prev=>prev||r.settings);setError('');}catch(e){
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const profiles = await entities.ProfilPro.filter({ user_email: user.email }, "-created_at", 1).catch(() => []);
+      const pro = profiles[0] || { salon_name: "Mon Salon", timezone: "Europe/Paris" };
+      const rdvs = await entities.Reservation.filter({ pro_email: user.email }, "-created_at", 50).catch(() => []);
+      setData({
+        professional: pro,
+        bookings: rdvs || [],
+        leads: [],
+        handoffs: [],
+        settings: { enabled: true, welcome_text: "Bonjour, comment puis-je vous aider ?", business_instructions: "" }
+      });
+      setForm({ enabled: true, welcome_text: "Bonjour, comment puis-je vous aider ?", business_instructions: "" });
+      setError('');
+      return;
+    }
+  } catch (_) {}
+  setError('');
+ }},[]);
  useEffect(()=>{refresh();const t=setInterval(refresh,30000);return()=>clearInterval(t);},[refresh]);
  useEffect(()=>{end.current?.scrollIntoView({behavior:'smooth',block:'nearest'});},[messages]);
  async function send(text){
