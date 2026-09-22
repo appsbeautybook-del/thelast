@@ -55,6 +55,12 @@
   padding: 5px 10px; border-radius: 999px;
   letter-spacing: 0.05em; flex-shrink: 0;
 }
+.rp-active-badge.inactive {
+  background: #f1f5f9; color: #64748b;
+}
+.rp-active-badge.inactive .rp-pulse-dot {
+  background: #94a3b8; animation: none;
+}
 .rp-pulse-dot {
   width: 6px; height: 6px;
   border-radius: 50%; background: #10b981;

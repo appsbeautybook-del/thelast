@@ -1,234 +1,69 @@
 import React from 'react';
+import { Sparkles, Bot, Scissors } from 'lucide-react';
 
-export default function LoadingScreen({ message = "Chargement..." }) {
+export default function LoadingScreen({ message = "Chargement intelligent..." }) {
   return (
-    <div className="bb-loading-screen">
+    <div className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-slate-950 text-white overflow-hidden select-none font-display">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
-
-        .bb-loading-screen {
-          position: fixed;
-          inset: 0;
-          background: linear-gradient(160deg, #0f0e17 0%, #1a0a00 50%, #2d1200 100%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
-          overflow: hidden;
+        @keyframes orbGlow {
+          0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.7; }
+          50% { transform: scale(1.15) rotate(180deg); opacity: 0.95; }
         }
-
-        /* ── Particles ── */
-        .bb-ls-particles {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          overflow: hidden;
+        @keyframes pulseLogo {
+          0%, 100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(255, 107, 0, 0.4)); }
+          50% { transform: scale(1.06); filter: drop-shadow(0 0 35px rgba(255, 107, 0, 0.7)); }
         }
-        .bb-ls-particle {
-          position: absolute;
-          border-radius: 50%;
-          background: radial-gradient(circle, rgba(255,107,0,0.6) 0%, transparent 70%);
-          animation: bbParticleFloat linear infinite;
-          will-change: transform, opacity;
+        @keyframes shimmerLine {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
         }
-
-        @keyframes bbParticleFloat {
-          0% { transform: translateY(100vh) scale(0); opacity: 0; }
-          10% { opacity: 1; }
-          90% { opacity: 0.6; }
-          100% { transform: translateY(-20vh) scale(1); opacity: 0; }
-        }
-
-        /* ── Glow rings ── */
-        .bb-ls-glow {
-          position: absolute;
-          border-radius: 50%;
-          border: 1px solid rgba(255,107,0,0.12);
-          animation: bbGlowPulse 3s ease-in-out infinite;
-        }
-        .bb-ls-glow.g1 { width: 300px; height: 300px; animation-delay: 0s; }
-        .bb-ls-glow.g2 { width: 460px; height: 460px; animation-delay: 0.8s; border-color: rgba(255,107,0,0.07); }
-        .bb-ls-glow.g3 { width: 620px; height: 620px; animation-delay: 1.6s; border-color: rgba(255,107,0,0.04); }
-
-        @keyframes bbGlowPulse {
-          0%, 100% { transform: scale(1); opacity: 0.8; }
-          50% { transform: scale(1.04); opacity: 0.3; }
-        }
-
-        /* ── Logo container ── */
-        .bb-ls-logo-wrap {
-          position: relative;
-          width: 96px;
-          height: 96px;
-          margin-bottom: 32px;
-        }
-        .bb-ls-logo-bg {
-          position: absolute;
-          inset: 0;
-          border-radius: 28px;
-          background: linear-gradient(135deg, #FF6B00, #FF8C38);
-          box-shadow:
-            0 0 0 0 rgba(255,107,0,0.4),
-            0 20px 60px rgba(255,107,0,0.3);
-          animation: bbLogoPulse 2.5s ease-in-out infinite;
-        }
-        @keyframes bbLogoPulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,0,0.4), 0 20px 60px rgba(255,107,0,0.3); }
-          50% { box-shadow: 0 0 0 16px rgba(255,107,0,0), 0 20px 60px rgba(255,107,0,0.5); }
-        }
-        .bb-ls-logo-icon {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 42px;
-          font-weight: 800;
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          letter-spacing: -2px;
-        }
-
-        /* ── Brand text ── */
-        .bb-ls-brand {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 28px;
-          font-weight: 800;
-          color: white;
-          letter-spacing: -0.5px;
-          margin-bottom: 4px;
-          text-shadow: 0 2px 20px rgba(255,107,0,0.3);
-        }
-        .bb-ls-brand span { color: #FF6B00; }
-        .bb-ls-tagline {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 13px;
-          font-weight: 500;
-          color: rgba(255,255,255,0.45);
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          margin-bottom: 56px;
-        }
-
-        /* ── Progress bar ── */
-        .bb-ls-progress-wrap {
-          width: 200px;
-          height: 3px;
-          background: rgba(255,255,255,0.08);
-          border-radius: 999px;
-          overflow: hidden;
-          margin-bottom: 20px;
-        }
-        .bb-ls-progress-bar {
-          height: 100%;
-          background: linear-gradient(90deg, #FF6B00, #FFAA66);
-          border-radius: 999px;
-          animation: bbProgressFill 2.2s ease-in-out infinite;
-          box-shadow: 0 0 8px rgba(255,107,0,0.6);
-        }
-        @keyframes bbProgressFill {
-          0% { width: 0%; opacity: 1; }
-          70% { width: 85%; opacity: 1; }
-          90% { width: 92%; opacity: 0.8; }
-          100% { width: 100%; opacity: 0; }
-        }
-
-        /* ── Status text ── */
-        .bb-ls-status {
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 12px;
-          font-weight: 600;
-          color: rgba(255,255,255,0.35);
-          letter-spacing: 0.08em;
-          animation: bbStatusPulse 2s ease-in-out infinite;
-        }
-        @keyframes bbStatusPulse {
-          0%, 100% { opacity: 0.35; }
-          50% { opacity: 0.7; }
-        }
-
-        /* ── Floating dots ── */
-        .bb-ls-dots {
-          display: flex;
-          gap: 7px;
-          margin-top: 24px;
-        }
-        .bb-ls-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: rgba(255,107,0,0.6);
-          animation: bbDotBounce 1.4s ease-in-out infinite;
-        }
-        .bb-ls-dot:nth-child(1) { animation-delay: 0s; }
-        .bb-ls-dot:nth-child(2) { animation-delay: 0.2s; }
-        .bb-ls-dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes bbDotBounce {
-          0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
-          40% { transform: scale(1.2); opacity: 1; background: #FF6B00; }
-        }
-
-        /* ── Version badge ── */
-        .bb-ls-version {
-          position: absolute;
-          bottom: 32px;
-          font-family: 'Plus Jakarta Sans', sans-serif;
-          font-size: 11px;
-          color: rgba(255,255,255,0.2);
-          letter-spacing: 0.05em;
-        }
+        .animate-orb { animation: orbGlow 8s ease-in-out infinite; }
+        .animate-logo-pulse { animation: pulseLogo 3s ease-in-out infinite; }
+        .animate-shimmer { animation: shimmerLine 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
       `}</style>
 
-      {/* Background glow rings */}
-      <div className="bb-ls-glow g1" />
-      <div className="bb-ls-glow g2" />
-      <div className="bb-ls-glow g3" />
+      {/* Ambient glowing background orbs */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-orange-600/30 via-pink-600/20 to-amber-500/10 rounded-full blur-[120px] pointer-events-none animate-orb" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-amber-500/20 rounded-full blur-[90px] pointer-events-none" />
 
-      {/* Floating particles */}
-      <div className="bb-ls-particles">
-        {[...Array(12)].map((_, i) => (
-          <div
-            key={i}
-            className="bb-ls-particle"
-            style={{
-              width: `${8 + (i % 4) * 6}px`,
-              height: `${8 + (i % 4) * 6}px`,
-              left: `${(i * 8.3) % 100}%`,
-              animationDuration: `${4 + (i % 5) * 1.2}s`,
-              animationDelay: `${(i * 0.4) % 3}s`,
-            }}
-          />
-        ))}
+      {/* Main Glass Card */}
+      <div className="relative z-10 flex flex-col items-center p-8 sm:p-12 rounded-3xl bg-slate-900/60 border border-white/10 backdrop-blur-2xl shadow-2xl shadow-black/80 max-w-sm w-full mx-4 text-center">
+        
+        {/* Brand Icon / Logo */}
+        <div className="relative mb-6 animate-logo-pulse">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white shadow-xl shadow-orange-500/30 border border-white/20">
+            <span className="text-4xl font-black tracking-tighter">B</span>
+          </div>
+          <div className="absolute -bottom-1 -right-1 bg-slate-950 p-1.5 rounded-full border border-orange-500/50 shadow-md">
+            <Sparkles className="w-4 h-4 text-orange-400 animate-spin" style={{ animationDuration: '6s' }} />
+          </div>
+        </div>
+
+        {/* Brand Title */}
+        <h1 className="text-2xl font-black tracking-tight text-white mb-1">
+          Beauty<span className="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Book</span>
+        </h1>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-8">
+          L'expérience Beauté & IA
+        </p>
+
+        {/* Progress Bar Container */}
+        <div className="w-full h-1.5 bg-slate-800/80 rounded-full overflow-hidden relative mb-4 border border-white/5">
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-amber-400 to-orange-600 rounded-full animate-shimmer" />
+        </div>
+
+        {/* Dynamic Status Text */}
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-300">
+          <Bot className="w-3.5 h-3.5 text-orange-400 animate-pulse" />
+          <span>{message}</span>
+        </div>
+
+        {/* Subtle decorative badges */}
+        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between w-full text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+          <span className="flex items-center gap-1"><Scissors className="w-3 h-3 text-slate-400" /> Salons & Pros</span>
+          <span className="text-orange-400/80">Grok Voice 1.0</span>
+        </div>
       </div>
-
-      {/* Logo */}
-      <div className="bb-ls-logo-wrap">
-        <div className="bb-ls-logo-bg" />
-        <div className="bb-ls-logo-icon">B</div>
-      </div>
-
-      {/* Brand */}
-      <div className="bb-ls-brand">Beauty<span>Book</span></div>
-      <div className="bb-ls-tagline">L'app beauté intelligente</div>
-
-      {/* Progress */}
-      <div className="bb-ls-progress-wrap">
-        <div className="bb-ls-progress-bar" />
-      </div>
-
-      {/* Status */}
-      <div className="bb-ls-status">{message}</div>
-
-      {/* Dots */}
-      <div className="bb-ls-dots">
-        <div className="bb-ls-dot" />
-        <div className="bb-ls-dot" />
-        <div className="bb-ls-dot" />
-      </div>
-
-      {/* Version */}
-      <div className="bb-ls-version">BeautyBook v2.0</div>
     </div>
   );
 }

@@ -39,6 +39,7 @@ entities.AppConfig.filter({ key: "appearance_config" }, "-created_at", 50).then(
 }).catch(() => {});
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppShell from '@/components/layout/AppShell';
+import LoadingScreen from '@/components/layout/LoadingScreen';
 
 function safeLazy(importFn) {
   return lazy(async () => {
@@ -236,11 +237,7 @@ const AuthenticatedApp = () => {
 
   // Afficher le loading UNIQUEMENT pour les routes normales (pas admin/vendeur)
   if (!isSpecialRoute && (isLoadingPublicSettings || isLoadingAuth)) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
-      </div>
-    );
+    return <LoadingScreen message="Initialisation de votre espace..." />;
   }
 
   // Handle authentication errors
@@ -268,7 +265,7 @@ const AuthenticatedApp = () => {
         open={showGlobalAuthModal && !isAuthPage && !isSpecialRoute}
         onClose={() => setShowGlobalAuthModal(false)}
       />
-      <Suspense fallback={<div className="p-8 text-center" role="status">Chargement…</div>}><Routes>
+      <Suspense fallback={<LoadingScreen message="Chargement des modules..." />}><Routes>
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/connexion" element={<Connexion />} />
         <Route element={<AppShell />}>
