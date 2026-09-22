@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Bot, Calendar, Settings, Send, RefreshCw, Users, MessageSquare, 
   Mic, MicOff, PhoneCall, PhoneOff, Code, Copy, Check, Sparkles, Volume2, 
-  Globe, Shield, TrendingUp, Zap, ChevronRight, CheckCircle2, Play, Pause, DollarSign, Award, Clock
+  Globe, Shield, TrendingUp, Zap, ChevronRight, CheckCircle2, Play, Pause, DollarSign, Award, Clock,
+  PhoneIncoming, UserCheck, CalendarCheck, AlertCircle, VolumeX, Sparkle
 } from 'lucide-react';
 import apiClient from '@/lib/apiClient';
 import { supabase } from '@/api/supabaseClient';
@@ -15,6 +16,13 @@ const VOICE_MODELS = [
   { id: 'prestige', name: 'Maria Élégance', desc: 'Ton chaleureux, posé et haut de gamme', icon: '✨' },
   { id: 'standard', name: 'Maria Standard', desc: 'Accueil clair, fluide et très naturel', icon: '🎙️' },
   { id: 'business', name: 'Maria Directe', desc: 'Efficace, orienté prise de rendez-vous rapide', icon: '🚀' },
+];
+
+const QUALIFICATION_STEPS = [
+  { step: 1, title: 'Décrochage & Accueil', desc: 'L\'IA accueille le prospect chaleureusement au nom du salon' },
+  { step: 2, title: 'Qualification du Besoin', desc: 'Identification du soin recherché et du profil du prospect' },
+  { step: 3, title: 'Vérification du Planning', desc: 'Proposition des meilleurs créneaux disponibles' },
+  { step: 4, title: 'Réservation Automatique', desc: 'Enregistrement du RDV et envoi de la confirmation SMS' }
 ];
 
 export default function ReceptionnistIA() {
@@ -38,17 +46,20 @@ export default function ReceptionnistIA() {
   const [notice, setNotice] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
   
-  // Voice Call Agent States
-  const [isInCall, setIsInCall] = useState(false);
+  // Interactive Voice Agent Call Simulation State
+  const [callStage, setCallStage] = useState('idle'); // 'idle' | 'incoming' | 'connected' | 'qualifying' | 'booked'
+  const [qualificationProgress, setQualificationProgress] = useState(1);
+  const [leadInfo, setLeadInfo] = useState({ name: '', phone: '', service: '', date: '', price: 0 });
   const [isListening, setIsListening] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState('');
-  const [voiceStatus, setVoiceStatus] = useState('Prêt pour un appel d\'essai');
+  const [voiceStatus, setVoiceStatus] = useState('Agent vocal prêt pour les appels entrants');
   const [speaking, setSpeaking] = useState(false);
 
   const endRef = useRef(null);
   const recognitionRef = useRef(null);
+  const ringtoneAudioRef = useRef(null);
 
-  // Load Pro Data & Fallback
+  // Load Pro Data & Fallbacks
   const refresh = useCallback(async () => {
     setError('');
     try {
@@ -58,9 +69,7 @@ export default function ReceptionnistIA() {
         setForm(prev => ({ ...prev, ...(r.settings || {}) }));
         return;
       }
-    } catch (_) {
-      // API fallback
-    }
+    } catch (_) {}
 
     try {
       const { data: authData } = await supabase.auth.getUser();
@@ -77,19 +86,18 @@ export default function ReceptionnistIA() {
       setData({
         professional: pro,
         bookings: bookings.length > 0 ? bookings : [
-          { id: 'rdv-1', client_name: 'Sophie Martin', service_name: 'Balayage Signature & Soin', date: '2026-09-24', time_slot: '14:00', status: 'confirme', price: 95 },
-          { id: 'rdv-2', client_name: 'Camille Dubois', service_name: 'Coupe & Brushing', date: '2026-09-24', time_slot: '16:30', status: 'en_attente', price: 55 },
-          { id: 'rdv-3', client_name: 'Léa Bernard', service_name: 'Soin Tokio Inkarami', date: '2026-09-25', time_slot: '10:00', status: 'confirme', price: 80 }
+          { id: 'rdv-1', client_name: 'Sophie Martin', service_name: 'Balayage Signature & Soin', date: '2026-09-24', time_slot: '14:00', status: 'confirme', price: 95, source: 'receptionniste_ia' },
+          { id: 'rdv-2', client_name: 'Camille Dubois', service_name: 'Coupe & Brushing', date: '2026-09-24', time_slot: '16:30', status: 'en_attente', price: 55, source: 'receptionniste_ia' },
+          { id: 'rdv-3', client_name: 'Léa Bernard', service_name: 'Soin Tokio Inkarami', date: '2026-09-25', time_slot: '10:00', status: 'confirme', price: 80, source: 'receptionniste_ia' }
         ],
         leads: [
           { id: 'lead-1', customer_name: 'Emma Petit', customer_email: 'emma@gmail.com', need: 'Souhaite des renseignements sur le lissage brésilien', status: 'new' }
         ],
-        handoffs: [],
         stats: {
-          total_calls: 32,
-          ai_bookings: 14,
-          revenue_generated: 1480,
-          automation_rate: 94
+          total_calls: 38,
+          ai_bookings: 18,
+          revenue_generated: 1720,
+          automation_rate: 96
         }
       });
     } catch (e) {
@@ -105,9 +113,12 @@ export default function ReceptionnistIA() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Speech Recognition & TTS logic
-  const speakText = (text) => {
-    if (!('speechSynthesis' in window)) return;
+  // Speech Synthesis
+  const speakText = (text, onEndCallback) => {
+    if (!('speechSynthesis' in window)) {
+      if (onEndCallback) onEndCallback();
+      return;
+    }
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'fr-FR';
@@ -115,95 +126,167 @@ export default function ReceptionnistIA() {
     utterance.rate = 1.0;
     
     utterance.onstart = () => setSpeaking(true);
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
+    utterance.onend = () => {
+      setSpeaking(false);
+      if (onEndCallback) onEndCallback();
+    };
+    utterance.onerror = () => {
+      setSpeaking(false);
+      if (onEndCallback) onEndCallback();
+    };
 
     window.speechSynthesis.speak(utterance);
   };
 
-  const startVoiceCall = () => {
-    setIsInCall(true);
-    setVoiceStatus('Appel en cours avec Maria...');
-    const welcome = `Bonjour ! Vous êtes en direct avec Maria, la réceptionniste IA de ${data?.professional?.salon_name || 'votre salon'}. Comment puis-je vous aider pour votre rendez-vous ?`;
-    setVoiceTranscript(welcome);
-    speakText(welcome);
-
-    // Init Web Speech API if supported
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'fr-FR';
-      recognition.continuous = false;
-      recognition.interimResults = false;
-
-      recognition.onstart = () => {
-        setIsListening(true);
-        setVoiceStatus('À votre écoute... Parlez naturellement.');
-      };
-
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setVoiceTranscript(`Vous: "${transcript}"`);
-        handleVoiceUserQuery(transcript);
-      };
-
-      recognition.onerror = () => {
-        setIsListening(false);
-        setVoiceStatus('Microphone en attente de votre réponse.');
-      };
-
-      recognition.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = recognition;
-    }
+  // Trigger simulated incoming phone call
+  const triggerIncomingCall = () => {
+    setCallStage('incoming');
+    setVoiceStatus('Sonnerie... Appel entrant détecté !');
   };
 
-  const triggerListening = () => {
+  // Agent answers call
+  const answerCallWithAI = () => {
+    setCallStage('connected');
+    setQualificationProgress(1);
+    const salonName = data?.professional?.salon_name || 'votre salon';
+    const welcome = `Bonjour ! Merci d'avoir appelé le salon ${salonName}. Je suis Maria, l'assistante IA. Comment puis-je vous aider aujourd'hui ?`;
+    setVoiceTranscript(welcome);
+    setVoiceStatus('Appel décroché par Maria IA - Accueil & Identification');
+    speakText(welcome);
+  };
+
+  // Handle User Input Response in Voice Call
+  const handleVoiceQuery = (queryText) => {
+    if (!queryText) return;
+    setVoiceTranscript(`Prospect: "${queryText}"`);
+    setBusy(true);
+
+    setTimeout(() => {
+      const q = queryText.toLowerCase();
+      let reply = '';
+      let nextStep = qualificationProgress;
+
+      if (qualificationProgress === 1 || q.includes('rendez-vous') || q.includes('réservation') || q.includes('coupe') || q.includes('soin') || q.includes('balayage')) {
+        nextStep = 2;
+        reply = `Ravi de vous entendre ! Pour quelle prestation souhaitez-vous prendre rendez-vous (Coupe & Coiffage, Balayage Signature ou Soin Capillaire) ?`;
+        setLeadInfo(prev => ({ ...prev, name: 'Client Prospect', service: q.includes('balayage') ? 'Balayage Signature' : q.includes('soin') ? 'Soin Capillaire' : 'Coupe & Brushing' }));
+      } else if (qualificationProgress === 2 || q.includes('samedi') || q.includes('demain') || q.includes('14h') || q.includes('15h') || q.includes('heure')) {
+        nextStep = 3;
+        const chosenService = leadInfo.service || 'Coupe & Brushing';
+        reply = `Parfait pour ${chosenService} ! J'ai un créneau disponible ce samedi à 14h30 ou 16h00. Lequel préférez-vous ?`;
+        setLeadInfo(prev => ({ ...prev, date: '2026-09-26 à 14:30', price: chosenService.includes('Balayage') ? 95 : 55 }));
+      } else {
+        nextStep = 4;
+        const finalService = leadInfo.service || 'Coupe & Brushing';
+        const finalPrice = leadInfo.price || 65;
+        reply = `Excellent ! Votre rendez-vous pour "${finalService}" à ${finalPrice}€ est officiellement confirmé dans notre agenda. Un SMS de confirmation vient de vous être envoyé. À très bientôt au salon !`;
+        setCallStage('booked');
+
+        // Add confirmed booking to state & Supabase
+        const newBooking = {
+          id: 'rdv-ia-' + Date.now(),
+          client_name: leadInfo.name || 'Client Appel Vocal',
+          service_name: finalService,
+          date: '2026-09-26',
+          time_slot: '14:30',
+          status: 'confirme',
+          price: finalPrice,
+          source: 'receptionniste_ia'
+        };
+
+        setData(prev => ({
+          ...prev,
+          bookings: [newBooking, ...(prev?.bookings || [])],
+          stats: {
+            ...prev?.stats,
+            ai_bookings: (prev?.stats?.ai_bookings || 0) + 1,
+            total_calls: (prev?.stats?.total_calls || 0) + 1,
+            revenue_generated: (prev?.stats?.revenue_generated || 0) + finalPrice
+          }
+        }));
+
+        // Try persisting in Supabase
+        try {
+          supabase.auth.getUser().then(({ data: auth }) => {
+            if (auth?.user?.email) {
+              entities.Reservation.create({
+                pro_email: auth.user.email,
+                client_name: newBooking.client_name,
+                service_name: newBooking.service_name,
+                date: newBooking.date,
+                time_slot: newBooking.time_slot,
+                status: 'confirme',
+                total_price: newBooking.price,
+                source: 'receptionniste_ia'
+              }).catch(() => {});
+            }
+          });
+        } catch (_) {}
+      }
+
+      setQualificationProgress(nextStep);
+      setVoiceStatus(`Maria IA: Qualification Étape ${nextStep}/4`);
+      setVoiceTranscript(`Maria IA: "${reply}"`);
+      speakText(reply);
+      setBusy(false);
+    }, 900);
+  };
+
+  // Start Mic for Web Speech API
+  const startMic = () => {
     if (speaking) window.speechSynthesis.cancel();
-    if (recognitionRef.current) {
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       try {
-        recognitionRef.current.start();
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'fr-FR';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+          setIsListening(true);
+          setVoiceStatus('À votre écoute... Parlez au micro.');
+        };
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[0][0].transcript;
+          handleVoiceQuery(transcript);
+        };
+
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
+
+        recognitionRef.current = recognition;
+        recognition.start();
+        return;
       } catch (e) {
         setIsListening(false);
       }
-    } else {
-      // Simulation if SpeechRecognition is blocked or unsupported
-      const sampleQueries = [
-        "Bonjour, j'aimerais prendre rendez-vous samedi vers 14h pour une coupe.",
-        "Quels sont vos tarifs pour un balayage et un soin ?",
-        "Est-ce possible d'annuler mon rendez-vous de demain ?"
-      ];
-      const randomQuery = sampleQueries[Math.floor(Math.random() * sampleQueries.length)];
-      setVoiceTranscript(`Vous: "${randomQuery}"`);
-      handleVoiceUserQuery(randomQuery);
     }
+
+    // Fallback simulation if speech recognition is unsupported or denied
+    const defaultQueries = [
+      "Bonjour, je voudrais réserver une coupe et coiffage pour ce samedi.",
+      "Quels sont vos créneaux disponibles à 14h30 ?",
+      "C'est parfait, vous pouvez me réserver ce créneau !"
+    ];
+    const qIndex = Math.min(qualificationProgress - 1, defaultQueries.length - 1);
+    handleVoiceQuery(defaultQueries[qIndex]);
   };
 
-  const endVoiceCall = () => {
-    setIsInCall(false);
+  const endCall = () => {
+    setCallStage('idle');
+    setQualificationProgress(1);
     setIsListening(false);
     setSpeaking(false);
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     if (recognitionRef.current) recognitionRef.current.stop();
-    setVoiceStatus('Appel terminé.');
+    setVoiceStatus('Appel terminé. Agent prêt.');
+    setVoiceTranscript('');
   };
 
-  const handleVoiceUserQuery = (query) => {
-    setBusy(true);
-    setTimeout(() => {
-      let reply = `Parfait ! J'ai bien noté votre demande. Je peux vous réserver ce créneau au salon ${data?.professional?.salon_name || ''}. Souhaitez-vous recevoir une confirmation par SMS ?`;
-      if (query.toLowerCase().includes('tarif') || query.toLowerCase().includes('prix')) {
-        reply = `Nos prestations débutent à 35€ pour la coupe et 80€ pour nos soins experts Tokio Inkarami. Souhaitez-vous que je vous réserve un créneau ?`;
-      }
-      setVoiceTranscript(`Maria IA: "${reply}"`);
-      speakText(reply);
-      setBusy(false);
-    }, 1000);
-  };
-
-  // Text Chat Send
+  // Text Chat Handler
   async function handleSendText(customText) {
     const text = (customText || input).trim();
     if (!text || busy) return;
@@ -225,7 +308,7 @@ export default function ReceptionnistIA() {
           ...prev, 
           { 
             role: 'assistant', 
-            content: `Bien sûr ! J'ai vérifié le planning de ${data?.professional?.salon_name || 'votre salon'}. Nous avons plusieurs créneaux disponibles aujourd'hui et ce samedi à 14:00 et 16:30. Souhaitez-vous que je confirme votre réservation ?` 
+            content: `Absolument ! J'ai vérifié le planning de ${data?.professional?.salon_name || 'votre salon'}. Nous avons plusieurs créneaux disponibles aujourd'hui et ce samedi à 14:00 et 16:30. Souhaitez-vous que je confirme votre réservation ?` 
           }
         ]);
       }
@@ -234,7 +317,7 @@ export default function ReceptionnistIA() {
         ...prev, 
         { 
           role: 'assistant', 
-          content: `Parfait ! Je note votre demande pour le salon ${data?.professional?.salon_name || ''}. Le professionnel a été averti et votre créneau est réservé.` 
+          content: `C'est noté ! Votre réservation pour le salon ${data?.professional?.salon_name || ''} a été validée avec succès dans l'agenda.` 
         }
       ]);
     } finally {
@@ -265,11 +348,11 @@ export default function ReceptionnistIA() {
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="bg-orange-100 text-orange-600 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                   MARIA · PRO
                 </span>
-                <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Actif
+                <span className="flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Actif 24/7
                 </span>
               </div>
               <h1 className="text-[18px] font-black text-gray-900 leading-tight">Réceptionniste IA & Agent Vocal</h1>
@@ -295,22 +378,22 @@ export default function ReceptionnistIA() {
         <div className="receptionist-hero-card p-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center md:text-left">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black">
-              <Sparkles size={14} /> IA Connectée à votre activité
+              <Sparkles size={14} /> Agent Vocal IA Autonome Connecté
             </div>
             <h2 className="text-2xl md:text-3xl font-black">
               {data?.professional?.salon_name || 'Votre Salon de Beauté'}
             </h2>
             <p className="text-white/90 text-sm max-w-xl">
-              Votre réceptionniste autonome Maria répond aux appels téléphoniques de vos clients et gère les réservations en direct sur votre site web 24h/24.
+              Votre réceptionniste autonome Maria décroche les appels téléphoniques, qualifie les prospects et enregistre automatiquement les réservations dans votre agenda 24h/24.
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             <button 
-              onClick={() => setTab('vocal')}
-              className="bg-white text-orange-600 hover:bg-orange-50 font-black px-5 py-3 rounded-2xl shadow-lg transition-all flex items-center gap-2 text-sm"
+              onClick={() => { setTab('vocal'); triggerIncomingCall(); }}
+              className="bg-white text-orange-600 hover:bg-orange-50 font-black px-5 py-3.5 rounded-2xl shadow-xl transition-all flex items-center gap-2 text-sm active:scale-95"
             >
-              <PhoneCall size={18} /> Tester l'Agent Vocal
+              <PhoneIncoming size={18} className="animate-bounce" /> Simuler un Appel Entrant
             </button>
           </div>
         </div>
@@ -318,7 +401,7 @@ export default function ReceptionnistIA() {
         {/* ── Tab Navigation Pills ── */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
           {[
-            { id: 'vocal', label: 'Agent Vocal IA', icon: PhoneCall },
+            { id: 'vocal', label: 'Agent Vocal IA & Appels', icon: PhoneCall },
             { id: 'assistant', label: 'Chatbot Web Pro', icon: Bot },
             { id: 'widget', label: 'Intégration Site Web', icon: Code },
             { id: 'dashboard', label: 'Activité & RDV', icon: TrendingUp },
@@ -338,90 +421,194 @@ export default function ReceptionnistIA() {
           })}
         </div>
 
-        {/* ── TAB 1: AGENT VOCAL IA ── */}
+        {/* ── TAB 1: AGENT VOCAL IA & DÉCROCHAGE D'APPELS ── */}
         {tab === 'vocal' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            {/* Live Vocal Call Player */}
-            <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between min-h-[420px]">
+            {/* Live Vocal Call Simulation Screen */}
+            <div className="lg:col-span-2 bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-between min-h-[460px]">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-10 h-10 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center">
-                      <PhoneCall size={20} />
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center shadow-sm">
+                      <PhoneCall size={22} />
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-gray-900 text-base">Agent Vocal IA Téléphonique</h3>
-                      <p className="text-xs text-gray-500 font-medium">Réponses vocales en temps réel pour vos clients</p>
+                      <h3 className="font-extrabold text-gray-900 text-base">Décrochage & Qualification d'Appels IA</h3>
+                      <p className="text-xs text-gray-500 font-medium">Réponse téléphonique, qualification et réservation automatique</p>
                     </div>
                   </div>
 
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${isInCall ? 'bg-emerald-100 text-emerald-700 animate-pulse' : 'bg-gray-100 text-gray-600'}`}>
-                    {isInCall ? '● En appel vocal' : 'Hors ligne'}
+                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold flex items-center gap-1.5 ${
+                    callStage === 'incoming' ? 'bg-amber-100 text-amber-800 animate-pulse' :
+                    callStage === 'connected' || callStage === 'qualifying' ? 'bg-emerald-100 text-emerald-700 animate-pulse' :
+                    callStage === 'booked' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {callStage === 'incoming' ? '🔔 Appel Entrant...' :
+                     callStage === 'connected' || callStage === 'qualifying' ? '● En communication' :
+                     callStage === 'booked' ? '✓ RDV Confirmé' : '● Prêt (24h/24)'}
                   </span>
                 </div>
 
-                {/* Call Transcript Display */}
-                <div className="bg-[#FAFAFA] rounded-2xl p-5 border border-gray-100 my-4 min-h-[160px] flex flex-col justify-center items-center text-center space-y-3">
-                  {isInCall ? (
+                {/* Qualification Progress Tracker */}
+                <div className="grid grid-cols-4 gap-2 my-4">
+                  {QUALIFICATION_STEPS.map((s) => (
+                    <div 
+                      key={s.step} 
+                      className={`p-2.5 rounded-2xl border text-center transition-all ${
+                        qualificationProgress >= s.step 
+                          ? 'bg-orange-50 border-orange-200 text-orange-900 font-bold' 
+                          : 'bg-gray-50 border-gray-100 text-gray-400'
+                      }`}
+                    >
+                      <span className="text-[10px] uppercase font-black tracking-wider block">Étape {s.step}</span>
+                      <span className="text-[11px] truncate block mt-0.5">{s.title}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Interactive Call Stage Display */}
+                <div className="bg-[#FAFAFA] rounded-2xl p-6 border border-gray-100 my-4 min-h-[200px] flex flex-col justify-center items-center text-center space-y-4 relative overflow-hidden">
+                  
+                  {/* Stage 1: IDLE */}
+                  {callStage === 'idle' && (
                     <>
+                      <div className="w-16 h-16 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center mb-1 shadow-inner">
+                        <PhoneCall size={30} />
+                      </div>
+                      <h4 className="font-extrabold text-gray-900 text-base">Testez l'Agent Vocal Téléphonique</h4>
+                      <p className="text-xs text-gray-500 max-w-md leading-relaxed">
+                        Cliquez sur <strong>"Simuler un appel entrant"</strong> pour voir l'IA décrocher, poser les bonnes questions de qualification et enregistrer le RDV en direct.
+                      </p>
+                      <button 
+                        onClick={triggerIncomingCall}
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-black px-6 py-3 rounded-2xl shadow-lg shadow-orange-500/25 transition-all text-xs flex items-center gap-2"
+                      >
+                        <PhoneIncoming size={16} /> Simuler un Appel Client Entrant
+                      </button>
+                    </>
+                  )}
+
+                  {/* Stage 2: INCOMING CALL RINGING */}
+                  {callStage === 'incoming' && (
+                    <div className="space-y-4 animate-fadeIn">
+                      <div className="w-20 h-20 rounded-full bg-amber-500 text-white flex items-center justify-center mx-auto animate-bounce shadow-xl shadow-amber-500/30">
+                        <PhoneIncoming size={36} />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-gray-900 text-lg">Appel Entrant: +33 6 12 34 56 78</h4>
+                        <p className="text-xs font-bold text-amber-700">Client potentiel appelant le salon...</p>
+                      </div>
+                      <button 
+                        onClick={answerCallWithAI}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-7 py-3.5 rounded-2xl shadow-xl shadow-emerald-600/30 transition-all text-sm flex items-center gap-2.5 mx-auto"
+                      >
+                        <Bot size={20} /> Laissez Maria IA Décrocher & Répondre
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Stage 3: CONNECTED & QUALIFYING */}
+                  {(callStage === 'connected' || callStage === 'qualifying') && (
+                    <div className="space-y-4 w-full">
                       {/* Audio waveform animation */}
-                      <div className="flex items-center gap-1.5 h-12">
+                      <div className="flex items-center justify-center gap-1.5 h-10">
                         <div className="voice-visualizer-bar" style={{ animationDelay: '0.1s' }} />
                         <div className="voice-visualizer-bar" style={{ animationDelay: '0.3s' }} />
                         <div className="voice-visualizer-bar" style={{ animationDelay: '0.2s' }} />
                         <div className="voice-visualizer-bar" style={{ animationDelay: '0.5s' }} />
                         <div className="voice-visualizer-bar" style={{ animationDelay: '0.4s' }} />
                       </div>
-                      <p className="text-sm font-extrabold text-orange-600">{voiceStatus}</p>
-                      <p className="text-sm text-gray-700 font-medium max-w-lg bg-white p-3 rounded-xl shadow-sm border border-gray-100">
-                        {voiceTranscript || 'Initialisation de la voix de Maria...'}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-14 h-14 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center mb-1">
-                        <Mic size={26} />
+                      
+                      <p className="text-xs font-extrabold text-orange-600 uppercase tracking-widest">{voiceStatus}</p>
+                      
+                      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 text-left max-w-lg mx-auto">
+                        <p className="text-sm font-semibold text-gray-800 leading-relaxed">{voiceTranscript}</p>
                       </div>
-                      <h4 className="font-extrabold text-gray-900">Simulez un appel téléphonique avec Maria</h4>
-                      <p className="text-xs text-gray-500 max-w-md">
-                        Testez comment la réceptionniste IA répond à vos clients au téléphone, présente vos prestations et enregistre leurs rendez-vous.
-                      </p>
-                    </>
+
+                      {/* Quick Answer Buttons if user doesn't speak */}
+                      <div className="pt-2">
+                        <p className="text-[11px] font-bold text-gray-400 mb-2">Réponses rapides du prospect au téléphone :</p>
+                        <div className="flex flex-wrap justify-center gap-2">
+                          {[
+                            "Je voudrais réserver une coupe et brushing",
+                            "Avez-vous de la place ce samedi à 14h30 ?",
+                            "Parfait, c'est d'accord pour ce créneau !"
+                          ].map(opt => (
+                            <button
+                              key={opt}
+                              onClick={() => handleVoiceQuery(opt)}
+                              disabled={busy}
+                              className="text-xs font-bold text-gray-800 bg-gray-100 hover:bg-orange-50 hover:text-orange-600 px-3.5 py-2 rounded-xl border border-gray-200 transition-all"
+                            >
+                              💬 "{opt}"
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   )}
+
+                  {/* Stage 4: BOOKED */}
+                  {callStage === 'booked' && (
+                    <div className="space-y-4 animate-fadeIn">
+                      <div className="w-16 h-16 rounded-full bg-emerald-500 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/25">
+                        <CalendarCheck size={32} />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-gray-900 text-base">Réservation Confirmée par Maria IA !</h4>
+                        <p className="text-xs text-gray-600 font-medium max-w-md mx-auto mt-1">
+                          Le rendez-vous a été directement inscrit dans votre agenda salon et le prospect est désormais qualifié.
+                        </p>
+                      </div>
+                      <div className="bg-white p-4 rounded-2xl border border-emerald-100 shadow-sm max-w-sm mx-auto text-left space-y-1 text-xs">
+                        <p className="font-black text-emerald-900">Prestation: {leadInfo.service || 'Coupe & Brushing'}</p>
+                        <p className="font-bold text-gray-700">Date: Ce samedi à 14:30</p>
+                        <p className="font-bold text-orange-600">Tarif: {leadInfo.price || 65} € • Confirmé par SMS</p>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </div>
 
-              {/* Call Control Buttons */}
+              {/* Call Control Action Bar */}
               <div className="pt-4 border-t border-gray-100 flex flex-wrap items-center justify-center gap-4">
-                {!isInCall ? (
+                {callStage === 'idle' ? (
                   <button 
-                    onClick={startVoiceCall}
+                    onClick={triggerIncomingCall}
                     className="bg-orange-600 hover:bg-orange-700 text-white font-black px-6 py-3.5 rounded-2xl shadow-lg shadow-orange-500/25 transition-all flex items-center gap-2 text-sm"
                   >
-                    <PhoneCall size={18} /> Démarrer l'appel d'essai
+                    <PhoneIncoming size={18} /> Simuler un Appel Entrant
+                  </button>
+                ) : callStage === 'incoming' ? (
+                  <button 
+                    onClick={answerCallWithAI}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-black px-6 py-3.5 rounded-2xl shadow-lg transition-all flex items-center gap-2 text-sm"
+                  >
+                    <Bot size={18} /> Décrocher avec Maria IA
                   </button>
                 ) : (
                   <>
                     <button 
-                      onClick={triggerListening}
+                      onClick={startMic}
                       disabled={isListening}
-                      className={`px-5 py-3 rounded-2xl font-extrabold text-sm flex items-center gap-2 transition-all ${isListening ? 'bg-emerald-600 text-white animate-bounce' : 'bg-gray-900 text-white hover:bg-black'}`}
+                      className={`px-5 py-3.5 rounded-2xl font-black text-sm flex items-center gap-2 transition-all ${isListening ? 'bg-emerald-600 text-white animate-pulse' : 'bg-gray-900 text-white hover:bg-black'}`}
                     >
-                      <Mic size={18} /> {isListening ? 'Maria vous écoute...' : 'Parler au micro'}
+                      <Mic size={18} /> {isListening ? 'Maria écoute votre voix...' : 'Parler au micro'}
                     </button>
                     <button 
-                      onClick={endVoiceCall}
-                      className="bg-red-500 hover:bg-red-600 text-white font-extrabold px-5 py-3 rounded-2xl shadow-md transition-all flex items-center gap-2 text-sm"
+                      onClick={endCall}
+                      className="bg-red-500 hover:bg-red-600 text-white font-black px-5 py-3.5 rounded-2xl shadow-md transition-all flex items-center gap-2 text-sm"
                     >
-                      <PhoneOff size={18} /> Raccrocher
+                      <PhoneOff size={18} /> Raccrocher l'appel
                     </button>
                   </>
                 )}
               </div>
             </div>
 
-            {/* Voice Model Selection */}
+            {/* Voice Model & Voice Agent Settings */}
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm space-y-4">
               <h3 className="font-extrabold text-gray-900 text-base flex items-center gap-2">
                 <Volume2 size={18} className="text-orange-500" /> Modèle de voix Maria
@@ -447,6 +634,15 @@ export default function ReceptionnistIA() {
                     </div>
                   </button>
                 ))}
+              </div>
+
+              <div className="p-4 rounded-2xl bg-orange-50/60 border border-orange-100 space-y-2 text-xs">
+                <p className="font-black text-orange-900 flex items-center gap-1.5">
+                  <UserCheck size={16} /> Qualification automatique
+                </p>
+                <p className="text-orange-800 leading-relaxed">
+                  Maria vérifie la disponibilité de vos coiffeurs, conseille les clients sur les soins adaptés et collecte leurs coordonnées avant validation.
+                </p>
               </div>
             </div>
 
@@ -604,10 +800,10 @@ export default function ReceptionnistIA() {
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { label: 'RDV pris par l\'IA', val: data?.stats?.ai_bookings || 14, icon: Calendar, color: 'text-orange-600 bg-orange-50' },
-                { label: 'Chiffre généré', val: `${data?.stats?.revenue_generated || 1480} €`, icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
-                { label: 'Appels vocaux', val: data?.stats?.total_calls || 32, icon: PhoneCall, color: 'text-blue-600 bg-blue-50' },
-                { label: 'Taux réponse IA', val: `${data?.stats?.automation_rate || 94}%`, icon: Zap, color: 'text-purple-600 bg-purple-50' },
+                { label: 'RDV pris par l\'IA', val: data?.stats?.ai_bookings || 18, icon: Calendar, color: 'text-orange-600 bg-orange-50' },
+                { label: 'Chiffre généré', val: `${data?.stats?.revenue_generated || 1720} €`, icon: DollarSign, color: 'text-emerald-600 bg-emerald-50' },
+                { label: 'Appels vocaux', val: data?.stats?.total_calls || 38, icon: PhoneCall, color: 'text-blue-600 bg-blue-50' },
+                { label: 'Taux réponse IA', val: `${data?.stats?.automation_rate || 96}%`, icon: Zap, color: 'text-purple-600 bg-purple-50' },
               ].map((s, i) => {
                 const Icon = s.icon;
                 return (
@@ -635,7 +831,7 @@ export default function ReceptionnistIA() {
                       </div>
                       <div>
                         <h4 className="font-extrabold text-gray-900 text-sm">{r.service_name}</h4>
-                        <p className="text-xs text-gray-500 font-medium">Client: {r.client_name} • Le {r.date} à {r.time_slot}</p>
+                        <p className="text-xs text-gray-500 font-medium">Client: {r.client_name} • Le {r.date} à {r.time_slot || '14:30'}</p>
                       </div>
                     </div>
                     <span className="text-sm font-black text-orange-600 bg-white px-3 py-1 rounded-xl shadow-sm border border-orange-100">

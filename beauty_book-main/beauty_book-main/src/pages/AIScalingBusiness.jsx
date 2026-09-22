@@ -136,36 +136,36 @@ STYLE: Réponds en français, de manière professionnelle mais accessible. Donne
           <div className="px-5 pt-5 pb-4 space-y-5">
 
             {/* Hero Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-400 p-5 text-white shadow-xl shadow-blue-500/20">
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-orange-500 via-amber-500 to-orange-600 p-5 text-white shadow-xl shadow-orange-500/25">
               <div className="absolute -top-8 -right-8 w-28 h-28 bg-white/10 rounded-full blur-xl" />
               <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-white/10 rounded-full blur-lg" />
               <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                    <Rocket className="w-6 h-6" />
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20">
+                    <Rocket className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <p className="text-[17px] font-black leading-tight">Poussez votre business</p>
-                    <p className="text-[11px] text-white/70 font-medium">IA dédiée à la croissance</p>
+                    <p className="text-[18px] font-black leading-tight">Poussez votre business</p>
+                    <p className="text-[12px] text-white/90 font-medium">IA dédiée à la croissance & réservations</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Receptionist IA CTA Banner */}
-            <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-3xl p-5 text-white shadow-lg shadow-orange-500/20 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+            <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 rounded-3xl p-5 text-white shadow-lg shadow-orange-500/20 flex items-center justify-between gap-4 border border-orange-400/30">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20 shadow-inner">
                   <Bot className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <h3 className="font-extrabold text-sm">Réceptionniste IA & Agent Vocal</h3>
-                  <p className="text-xs text-white/80 font-medium">Assistant vocal 24h/24 et widget chatbot pour votre site web</p>
+                  <p className="text-xs text-white/90 font-medium">Assistant vocal 24h/24 & qualification d'appels automatique</p>
                 </div>
               </div>
               <button 
                 onClick={() => navigate('/receptionniste-ia')} 
-                className="bg-white text-orange-600 font-black px-4 py-2.5 rounded-2xl text-xs shrink-0 shadow-md hover:bg-orange-50 transition-all flex items-center gap-1"
+                className="bg-white text-orange-600 font-black px-4 py-2.5 rounded-2xl text-xs shrink-0 shadow-md hover:bg-orange-50 active:scale-95 transition-all flex items-center gap-1"
               >
                 Ouvrir <ChevronRight className="w-4 h-4" />
               </button>

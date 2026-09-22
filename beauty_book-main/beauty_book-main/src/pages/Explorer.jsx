@@ -7,6 +7,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { entities } from '@/api/entities';
 import { useLocation } from '@/contexts/LocationContext';
+import MapWithPricePins from '@/components/map/MapWithPricePins';
 
 const CATEGORIES = [
   { id: "Tous", label: "Tout", icon: "all", emoji: "✨" },
@@ -267,29 +268,18 @@ export default function Explorer() {
         </div>
 
         {showMap && (
-          <div className="mx-4 mb-4 rounded-3xl overflow-hidden shadow-lg relative" style={{ height: "200px", isolation: "isolate" }}>
-            <MapContainer center={mapCenter} zoom={12} style={{ width: "100%", height: "100%" }} zoomControl={false} attributionControl={false}>
-              <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" maxZoom={19} />
-              <FlyToLocation center={mapCenter} />
-              {userLocation && <Marker position={userLocation} icon={userIcon} />}
-              {allMapItems.slice(0, 20).map(p => (
-                <Marker
-                  key={p.id}
-                  position={[p.mapLat, p.mapLng]}
-                  icon={L.divIcon({
-                    className: "",
-                    iconSize: [0, 0],
-                    iconAnchor: [14, 14],
-                    html: `<div style="width:14px;height:14px;background:#E8732A;border-radius:50%;border:2.5px solid white;box-shadow:0 0 0 3px rgba(232,115,42,0.35),0 2px 8px rgba(0,0,0,0.4);cursor:pointer"></div>`,
-                  })}
-                  eventHandlers={{ click: () => handleSelectMarker(p.id) }}
-                />
-              ))}
-            </MapContainer>
-            {/* Overlay gradient bottom */}
-            <div
-              className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
-              style={{ background: "linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 100%)" }}
+          <div className="mx-4 mb-4 rounded-3xl overflow-hidden shadow-lg relative">
+            <MapWithPricePins
+              items={allMapItems.map(p => ({
+                id: p.id,
+                title: p.salon_name || p.name || 'Salon',
+                lat: p.mapLat || p.latitude || 48.8566,
+                lng: p.mapLng || p.longitude || 2.3522,
+                minPrice: p.minPrice || p.price || 0,
+                city: p.city || 'Paris'
+              }))}
+              height="h-56"
+              onSelectItem={(item) => handleSelectMarker(item.id)}
             />
           </div>
         )}
