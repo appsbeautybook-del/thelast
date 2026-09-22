@@ -344,7 +344,10 @@ const AuthenticatedApp = () => {
         <Route path="/supprimer-compte" element={<SupprimerCompte />} />
         <Route path="/sh-ai" element={<ShAI />} />
         <Route path="/receptionniste-ia" element={<ReceptionnistIA />} />
+        <Route path="/pro/receptionniste-ia" element={<ReceptionnistIA />} />
         <Route path="/ai-scaling-business" element={<AIScalingBusiness />} />
+        <Route path="/pro/ai-scaling-business" element={<AIScalingBusiness />} />
+        <Route path="/pro/scaling-business" element={<AIScalingBusiness />} />
         <Route path="/recherche" element={<Recherche />} />
         <Route path="/explorer" element={<Navigate to="/recherche" replace />} />
         <Route path="/recherche-approfondie" element={<Recherche />} />

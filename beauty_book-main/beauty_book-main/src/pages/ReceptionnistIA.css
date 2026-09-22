@@ -1,0 +1,98 @@
+/* Stitch Design System - Réceptionniste IA */
+.receptionist-page {
+  --primary-orange: #FF6B00;
+  --orange-hover: #E56000;
+  --orange-light: #FFF5F0;
+  --orange-glow: rgba(255, 107, 0, 0.22);
+  --dark-ink: #111827;
+  --muted-gray: #6B7280;
+  --card-border: #F3F4F6;
+  --canvas-bg: #FAFAFA;
+}
+
+.receptionist-hero-card {
+  background: linear-gradient(135deg, #FF6B00 0%, #FF8533 100%);
+  color: white;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px var(--orange-glow);
+}
+
+.receptionist-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1.5px solid #E5E7EB;
+  background: #FFFFFF;
+  color: #4B5563;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.receptionist-tab-btn:hover {
+  border-color: var(--primary-orange);
+  color: var(--primary-orange);
+  background: var(--orange-light);
+}
+
+.receptionist-tab-btn.active {
+  background: var(--primary-orange);
+  border-color: var(--primary-orange);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px var(--orange-glow);
+}
+
+.voice-visualizer-bar {
+  width: 6px;
+  background: var(--primary-orange);
+  border-radius: 9999px;
+  animation: voicePulse 1.2s infinite ease-in-out alternate;
+}
+
+@keyframes voicePulse {
+  0% { height: 12px; opacity: 0.4; }
+  100% { height: 48px; opacity: 1; }
+}
+
+.code-snippet-box {
+  background: #1E293B;
+  color: #E2E8F0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  padding: 16px;
+  border-radius: 16px;
+  overflow-x: auto;
+}
+
+.widget-preview-frame {
+  position: relative;
+  background: #FFFFFF;
+  border: 2px solid #E5E7EB;
+  border-radius: 24px;
+  overflow: hidden;
+  height: 420px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.06);
+}
+
+.widget-floating-launcher {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--primary-orange);
+  color: white;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 20px var(--orange-glow);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.widget-floating-launcher:hover {
+  transform: scale(1.08);
+}
