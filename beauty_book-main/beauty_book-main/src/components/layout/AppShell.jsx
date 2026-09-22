@@ -22,7 +22,7 @@ const FOOTER_HIDDEN_PATHS = [
   "/pro/", "/devenir-pro", "/modifier-profil",
   "/modifier-profil-client",
   "/programme-fidelite", "/messages", "/notifications",
-  "/produit", "/service/", "/style/", "/immobilier/",
+  "/produit", "/service/", "/immobilier/",
   "/live-detail/", "/panier", "/checkout", "/order-tracking",
   "/abonnements", "/scan-capillaire", "/sh-ai", "/supprimer-compte",
   "/connexion", "/onboarding", "/vendeur", "/admin",

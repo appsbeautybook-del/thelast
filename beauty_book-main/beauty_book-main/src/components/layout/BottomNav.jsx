@@ -17,7 +17,7 @@ const HIDDEN_PATHS = [
   "/pro/gestion-styles", "/pro/promo-service",
   "/devenir-pro", "/modifier-profil",
   "/modifier-profil-client", "/programme-fidelite", "/messages", "/notifications",
-  "/produit", "/style/", "/immobilier/",
+  "/produit", "/immobilier/",
   "/live-detail/",
 ];
 
