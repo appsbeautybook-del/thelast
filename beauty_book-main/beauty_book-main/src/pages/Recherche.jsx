@@ -3,11 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Search, SlidersHorizontal, MapPin, Star, X, ArrowUpRight, ArrowRight, Sparkles, 
   Scissors, Waves, Gem, Footprints, Paintbrush, Droplets, Hand, LayoutGrid, Map as MapIcon, 
-  RotateCcw, Building2, UserCheck, Package, Palette, CheckCircle2, Car, Tag, Clock
+  RotateCcw, Building2, UserCheck, Package, Palette, CheckCircle2, Car, Tag, Clock, Check
 } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import MapWithPricePins from '@/components/map/MapWithPricePins';
 import BeautyImage from '@/components/ui/BeautyImage';
 import { supabase } from '@/api/supabaseClient';
 import { entities } from '@/api/entities';
@@ -30,8 +28,7 @@ const categories = [
 ];
 
 const money = value => Number(value).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
-const pin = L.divIcon({ className: 'discovery-pin', html: '<span></span>', iconSize: [32, 32], iconAnchor: [16, 16] });
-const emptyFilters = { city: '', maxPrice: '', minRating: '' };
+const emptyFilters = { city: '', maxPrice: '', minRating: '', estDomicile: false, enSalon: false, promoOnly: false };
 
 async function activeRows(table, signal) {
   const rows = [];
@@ -43,56 +40,172 @@ async function activeRows(table, signal) {
       if (!data || data.length < 500) return rows;
     }
   } catch (e) {
-    // fallback if status column is not present
     const { data } = await supabase.from(table).select('*').limit(200);
     return data || [];
   }
   return rows;
 }
 
-function FitResults({ points }) {
-  const map = useMap();
-  useEffect(() => {
-    if (points.length) map.fitBounds(L.latLngBounds(points), { padding: [38, 38], maxZoom: 14, animate: false });
-  }, [map, points]);
-  return null;
-}
-
-function FilterDialog({ filters, cities, servicesAvailable, onClose, onApply }) {
+function FilterDialog({ filters, cities, servicesAvailable, onClose, onApply, resultCount = 0 }) {
   const ref = useRef(null);
   const [draft, setDraft] = useState(filters);
-  useEffect(() => { const dialog = ref.current; dialog.showModal(); return () => dialog.close(); }, []);
+  useEffect(() => { 
+    const dialog = ref.current; 
+    if (dialog && !dialog.open) dialog.showModal(); 
+    return () => dialog?.close(); 
+  }, []);
+
   const update = (key, value) => setDraft(old => ({ ...old, [key]: value }));
-  return <dialog ref={ref} className="discovery-dialog" onCancel={onClose} onClick={event => { if (event.target === event.currentTarget) onClose(); }} aria-labelledby="filter-title">
-    <form onSubmit={event => { event.preventDefault(); onApply(draft); }}>
-      <div className="discovery-dialog-head">
-        <div>
-          <p className="discovery-eyebrow"><Sparkles size={14} /> À VOTRE MESURE</p>
-          <h2 id="filter-title">Affinez votre recherche</h2>
+
+  return (
+    <dialog 
+      ref={ref} 
+      className="discovery-dialog" 
+      onCancel={onClose} 
+      onClick={event => { if (event.target === event.currentTarget) onClose(); }} 
+      aria-labelledby="filter-title"
+    >
+      <form className="discovery-dialog-form" onSubmit={event => { event.preventDefault(); onApply(draft); }}>
+        <div className="discovery-dialog-head">
+          <div>
+            <p className="discovery-eyebrow"><Sparkles size={14} /> RECHERCHE APPROFONDIE</p>
+            <h2 id="filter-title">Filtres de recherche sur-mesure</h2>
+          </div>
+          <button type="button" className="discovery-icon-button" onClick={onClose} aria-label="Fermer les filtres">
+            <X size={21} />
+          </button>
         </div>
-        <button type="button" className="discovery-icon-button" onClick={onClose} aria-label="Fermer les filtres"><X size={21} /></button>
-      </div>
-      <label>Ville ou code postal
-        <input list="discovery-cities" autoComplete="address-level2" value={draft.city} onChange={e => update('city', e.target.value)} placeholder="Ex. Paris, Cergy, Lyon..." />
-      </label>
-      <datalist id="discovery-cities">{cities.map(city => <option key={city} value={city} />)}</datalist>
-      <label>Tarif de départ maximal (€)
-        <input type="number" min="0" step="1" disabled={!servicesAvailable} value={draft.maxPrice} onChange={e => update('maxPrice', e.target.value)} placeholder="Sans limite" />
-        <small>Au moins une prestation de la sélection doit respecter ce budget.</small>
-      </label>
-      <label>Note minimale
-        <select value={draft.minRating} onChange={e => update('minRating', e.target.value)}>
-          <option value="">Toutes les notes</option>
-          <option value="4">4 étoiles et plus (★ 4.0+)</option>
-          <option value="4.5">4,5 étoiles et plus (★ 4.5+)</option>
-        </select>
-      </label>
-      <div className="discovery-dialog-actions">
-        <button type="button" className="discovery-secondary" onClick={() => setDraft(emptyFilters)}>Réinitialiser</button>
-        <button className="discovery-primary">Voir les résultats <ArrowRight size={18} /></button>
-      </div>
-    </form>
-  </dialog>;
+
+        <div className="discovery-dialog-body">
+          {/* Localisation */}
+          <div className="discovery-filter-group">
+            <label htmlFor="filter-city">Ville ou code postal</label>
+            <div className="filter-input-wrapper">
+              <MapPin size={18} className="filter-input-icon" />
+              <input 
+                id="filter-city"
+                list="discovery-cities" 
+                autoComplete="address-level2" 
+                value={draft.city} 
+                onChange={e => update('city', e.target.value)} 
+                placeholder="Ex. Paris, Cergy, Lyon..." 
+              />
+              {draft.city && (
+                <button type="button" className="filter-clear-btn" onClick={() => update('city', '')}>
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <datalist id="discovery-cities">{cities.map(city => <option key={city} value={city} />)}</datalist>
+          </div>
+
+          {/* Tarif Maximale */}
+          <div className="discovery-filter-group">
+            <div className="filter-label-header">
+              <label htmlFor="filter-price">Tarif de départ maximal (€)</label>
+              <span className="filter-badge-value">
+                {draft.maxPrice ? `${draft.maxPrice} € max` : 'Sans limite'}
+              </span>
+            </div>
+            <input 
+              id="filter-price"
+              type="number" 
+              min="0" 
+              step="5" 
+              disabled={!servicesAvailable} 
+              value={draft.maxPrice} 
+              onChange={e => update('maxPrice', e.target.value)} 
+              placeholder="Budget max..." 
+            />
+            <div className="filter-pills-row">
+              {['30', '50', '80', '120', '150'].map(price => (
+                <button
+                  type="button"
+                  key={price}
+                  className={`filter-pill-btn ${draft.maxPrice === price ? 'active' : ''}`}
+                  onClick={() => update('maxPrice', draft.maxPrice === price ? '' : price)}
+                >
+                  {price} €
+                </button>
+              ))}
+              <button
+                type="button"
+                className={`filter-pill-btn ${draft.maxPrice === '' ? 'active' : ''}`}
+                onClick={() => update('maxPrice', '')}
+              >
+                Illimité
+              </button>
+            </div>
+            <small className="filter-help-text">Au moins une prestation de la sélection doit respecter ce budget.</small>
+          </div>
+
+          {/* Note minimale */}
+          <div className="discovery-filter-group">
+            <label>Note minimale des avis clients</label>
+            <div className="filter-rating-grid">
+              {[
+                { val: '', label: 'Toutes les notes' },
+                { val: '4', label: '★ 4.0 +' },
+                { val: '4.5', label: '★ 4.5 +' },
+                { val: '5', label: '★ 5.0 (Parfait)' }
+              ].map(opt => (
+                <button
+                  type="button"
+                  key={opt.val}
+                  className={`filter-rating-pill ${draft.minRating === opt.val ? 'active' : ''}`}
+                  onClick={() => update('minRating', opt.val)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Modalités & Préférences */}
+          <div className="discovery-filter-group">
+            <label className="mb-2">Modalités & Type de prestation</label>
+            <div className="filter-checkboxes-stack">
+              <label className="filter-checkbox-item">
+                <input 
+                  type="checkbox" 
+                  checked={Boolean(draft.estDomicile)} 
+                  onChange={e => update('estDomicile', e.target.checked)} 
+                />
+                <span>Prestataires se déplaçant à domicile</span>
+              </label>
+
+              <label className="filter-checkbox-item">
+                <input 
+                  type="checkbox" 
+                  checked={Boolean(draft.enSalon)} 
+                  onChange={e => update('enSalon', e.target.checked)} 
+                />
+                <span>Salons & Établissements physiques</span>
+              </label>
+
+              <label className="filter-checkbox-item">
+                <input 
+                  type="checkbox" 
+                  checked={Boolean(draft.promoOnly)} 
+                  onChange={e => update('promoOnly', e.target.checked)} 
+                />
+                <span>Packs & Formules avantageuses</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="discovery-dialog-actions">
+          <button type="button" className="discovery-secondary" onClick={() => setDraft(emptyFilters)}>
+            Réinitialiser
+          </button>
+          <button type="submit" className="discovery-primary flex-1 justify-center">
+            Voir les résultats ({resultCount}) <ArrowRight size={18} />
+          </button>
+        </div>
+      </form>
+    </dialog>
+  );
 }
 
 export default function Recherche() {
@@ -427,24 +540,14 @@ export default function Recherche() {
                 <div className="discovery-map-panel">
                   {mapped.length ? (
                     <>
-                      <div className="discovery-map">
-                        <MapContainer center={points[0]} zoom={12} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
-                          <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' eventHandlers={{ tileerror: () => setMapError(true) }} />
-                          <FitResults points={points} />
-                          {mapped.map(pro => (
-                            <Marker key={pro.id} position={pro.coordinates} icon={pin}>
-                              <Popup>
-                                <strong>{pro.salon_name || 'Professionnel BeautyBook'}</strong>
-                                <p>{pro.city}</p>
-                                <button className="discovery-map-link" onClick={() => openPro(pro)}>Découvrir la fiche →</button>
-                              </Popup>
-                            </Marker>
-                          ))}
-                        </MapContainer>
-                      </div>
+                      <MapWithPricePins 
+                        items={mapped} 
+                        onSelectItem={pro => openPro(pro)} 
+                        height="h-[380px]" 
+                      />
                       <p className="discovery-map-caption">
                         <MapPin size={15} />
-                        {mapped.length} adresse(s) localisée(s) sur la carte.
+                        {mapped.length} adresse(s) localisée(s) sur Apple Maps. Cliquez sur une épingle de tarif pour voir les détails.
                       </p>
                     </>
                   ) : (
@@ -657,6 +760,7 @@ export default function Recherche() {
           filters={filters} 
           cities={cities} 
           servicesAvailable={servicesAvailable} 
+          resultCount={activeItems.length}
           onClose={() => setShowFilters(false)} 
           onApply={next => { updateParams(next); setShowFilters(false); }} 
         />
