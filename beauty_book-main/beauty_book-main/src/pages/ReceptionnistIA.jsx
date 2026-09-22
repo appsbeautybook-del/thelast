@@ -202,7 +202,8 @@ export default function ReceptionnistIA() {
       messages: updatedHistory,
       proSettings: { ...settings, active_services_list: activeServicesList },
       qualStep,
-      currentLead: leadInfo
+      currentLead: leadInfo,
+      userEmail
     });
 
     const newLeadInfo = {
@@ -217,31 +218,21 @@ export default function ReceptionnistIA() {
 
     setTranscript(prev => prev + '\n\nMaria (Grok IA) : ' + grokRes.speech_text);
     setVoiceHistory(prev => [...prev, { role: 'assistant', content: grokRes.speech_text }]);
-    speak(grokRes.speech_text);
+    
+    speak(grokRes.speech_text, () => {
+      if (grokRes.should_end_call) {
+        setTimeout(() => {
+          setCallStage('booked');
+          refresh();
+        }, 1000);
+      }
+    });
 
     // Si la réservation est confirmée ou qu'on est à l'étape finale
     if (grokRes.is_confirmed || grokRes.next_qual_step >= 4) {
       setTimeout(async () => {
         setCallStage('booked');
-        // Sauvegarde réelle dans Supabase BDD
-        try {
-          const { data: auth } = await supabase.auth.getUser();
-          if (auth && auth.user && auth.user.email) {
-            await entities.Reservation.create({
-              pro_email: auth.user.email,
-              client_name: newLeadInfo.name,
-              service_name: newLeadInfo.service,
-              date: new Date().toISOString().split('T')[0],
-              time_slot: newLeadInfo.date.includes('16') ? '16:00' : '14:30',
-              status: 'confirme',
-              total_price: newLeadInfo.price,
-              source: 'receptionniste_ia'
-            }).catch(() => {});
-            refresh();
-          }
-        } catch (err) {
-          console.warn('[Réceptionniste IA] Order save warning:', err);
-        }
+        refresh();
       }, 2000);
     }
 
