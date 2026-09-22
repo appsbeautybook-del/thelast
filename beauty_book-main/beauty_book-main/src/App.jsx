@@ -39,86 +39,105 @@ entities.AppConfig.filter({ key: "appearance_config" }, "-created_at", 50).then(
 }).catch(() => {});
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppShell from '@/components/layout/AppShell';
-const Home = lazy(() => import('@/pages/Home'));
-const Services = lazy(() => import('@/pages/Services'));
-const ServicesSalons = lazy(() => import('@/pages/ServicesSalons'));
-const Boutique = lazy(() => import('@/pages/Boutique'));
-const RendezVous = lazy(() => import('@/pages/RendezVous'));
-const Profil = lazy(() => import('@/pages/Profil'));
-const Maria = lazy(() => import('@/pages/Maria'));
-const ProfilPro = lazy(() => import('@/pages/ProfilPro'));
-const DevenirPro = lazy(() => import('@/pages/DevenirPro'));
-const BeautyPay = lazy(() => import('@/pages/pro/BeautyPay'));
-const PaiementFacturation = lazy(() => import('@/pages/pro/PaiementFacturation'));
-const CatalogueServices = lazy(() => import('@/pages/pro/CatalogueServices'));
-const AjouterService = lazy(() => import('@/pages/pro/AjouterService'));
-const BundleDetail = lazy(() => import('@/pages/BundleDetail'));
-const BundleGroupeDetail = lazy(() => import('@/pages/BundleGroupeDetail'));
-const AvisClients = lazy(() => import('@/pages/pro/AvisClients.jsx'));
-const Equipe = lazy(() => import('@/pages/pro/Equipe'));
-const NouveauMembre = lazy(() => import('@/pages/pro/NouveauMembre'));
-const PlanningMembre = lazy(() => import('@/pages/pro/PlanningMembre'));
-const Analytics = lazy(() => import('@/pages/pro/Analytics'));
-const Publication = lazy(() => import('@/pages/pro/Publication'));
-const VeoGenerator = lazy(() => import('@/pages/pro/VeoGenerator'));
-const Visite3D = lazy(() => import('@/pages/pro/Visite3D'));
-const Franchise = lazy(() => import('@/pages/pro/Franchise'));
-const LancerDirect = lazy(() => import('@/pages/pro/LancerDirect'));
-const ModifierProfilPro = lazy(() => import('@/pages/pro/ModifierProfilPro'));
-const SocialMedia = lazy(() => import('@/pages/SocialMedia'));
-const VueClient = lazy(() => import('@/pages/pro/VueClient'));
-const Abonnements = lazy(() => import('@/pages/pro/Abonnements'));
-const AbonnementsClient = lazy(() => import('@/pages/AbonnementsClient'));
-const GestionAgenda = lazy(() => import('@/pages/pro/GestionAgenda'));
-const HorairesConges = lazy(() => import('@/pages/pro/HorairesConges'));
-const LiveFeed = lazy(() => import('@/pages/LiveFeed'));
-const LiveDetail = lazy(() => import('@/pages/LiveDetail'));
-const Reels = lazy(() => import('@/pages/Reels'));
-const Immobilier = lazy(() => import('@/pages/Immobilier'));
-const ImmobilierDetail = lazy(() => import('@/pages/ImmobilierDetail'));
-const ServiceDetail = lazy(() => import('@/pages/ServiceDetail'));
-const StyleDetail = lazy(() => import('@/pages/StyleDetail'));
-const ModifierProfilClient = lazy(() => import('@/pages/ModifierProfilClient'));
-const Parametres = lazy(() => import('@/pages/Parametres'));
-const MesCommandes = lazy(() => import('@/pages/MesCommandes'));
-const CommandeDetail = lazy(() => import('@/pages/CommandeDetail'));
-const MonSolde = lazy(() => import('@/pages/MonSolde'));
-const ProgrammeFidelite = lazy(() => import('@/pages/ProgrammeFidelite'));
-const Onboarding = lazy(() => import('@/pages/Onboarding'));
-const Connexion = lazy(() => import('@/pages/Connexion'));
-const Reservation = lazy(() => import('@/pages/Reservation'));
-const Securite = lazy(() => import('@/pages/parametres/Securite'));
-const MoyensPaiement = lazy(() => import('@/pages/parametres/MoyensPaiement'));
-const Notifications = lazy(() => import('@/pages/parametres/Notifications'));
-const LangueMonnaie = lazy(() => import('@/pages/parametres/LangueMonnaie'));
-const CentreAide = lazy(() => import('@/pages/parametres/CentreAide'));
-const Confidentialite = lazy(() => import('@/pages/parametres/Confidentialite'));
-const Conditions = lazy(() => import('@/pages/parametres/Conditions'));
-const Contactez = lazy(() => import('@/pages/parametres/Contactez'));
-const APropos = lazy(() => import('@/pages/parametres/APropos'));
-const ProduitDetail = lazy(() => import('@/pages/ProduitDetail'));
-const Messages = lazy(() => import('@/pages/Messages'));
-const NotificationsPage = lazy(() => import('@/pages/Notifications'));
-const Panier = lazy(() => import('@/pages/Panier'));
-const GestionStyles = lazy(() => import('@/pages/pro/GestionStyles'));
-const ParametresPro = lazy(() => import('@/pages/pro/ParametresPro'));
-const PromoService = lazy(() => import('@/pages/pro/PromoService'));
-const ScanCapillaire = lazy(() => import('@/pages/ScanCapillaire'));
-const ReceptionnistIA = lazy(() => import('@/pages/ReceptionnistIA'));
-const AIScalingBusiness = lazy(() => import('@/pages/AIScalingBusiness'));
-const OrderTracking = lazy(() => import('@/pages/OrderTracking'));
-const Checkout = lazy(() => import('@/pages/Checkout'));
-const SupprimerCompte = lazy(() => import('@/pages/SupprimerCompte'));
-const MentionsLegales = lazy(() => import('@/pages/parametres/MentionsLegales'));
-const PolitiqueConfidentialite = lazy(() => import('@/pages/parametres/PolitiqueConfidentialite'));
-const MesDonnees = lazy(() => import('@/pages/parametres/MesDonnees'));
+
+function safeLazy(importFn) {
+  return lazy(async () => {
+    try {
+      return await importFn();
+    } catch (err) {
+      if (err?.message?.includes('dynamically imported module') || err?.message?.includes('Loading chunk') || err?.name === 'TypeError') {
+        const key = 'chunk_reload_' + window.location.pathname;
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          window.location.reload();
+          return new Promise(() => {});
+        }
+      }
+      throw err;
+    }
+  });
+}
+
+const Home = safeLazy(() => import('@/pages/Home'));
+const Services = safeLazy(() => import('@/pages/Services'));
+const ServicesSalons = safeLazy(() => import('@/pages/ServicesSalons'));
+const Boutique = safeLazy(() => import('@/pages/Boutique'));
+const RendezVous = safeLazy(() => import('@/pages/RendezVous'));
+const Profil = safeLazy(() => import('@/pages/Profil'));
+const Maria = safeLazy(() => import('@/pages/Maria'));
+const ProfilPro = safeLazy(() => import('@/pages/ProfilPro'));
+const DevenirPro = safeLazy(() => import('@/pages/DevenirPro'));
+const BeautyPay = safeLazy(() => import('@/pages/pro/BeautyPay'));
+const PaiementFacturation = safeLazy(() => import('@/pages/pro/PaiementFacturation'));
+const CatalogueServices = safeLazy(() => import('@/pages/pro/CatalogueServices'));
+const AjouterService = safeLazy(() => import('@/pages/pro/AjouterService'));
+const BundleDetail = safeLazy(() => import('@/pages/BundleDetail'));
+const BundleGroupeDetail = safeLazy(() => import('@/pages/BundleGroupeDetail'));
+const AvisClients = safeLazy(() => import('@/pages/pro/AvisClients.jsx'));
+const Equipe = safeLazy(() => import('@/pages/pro/Equipe'));
+const NouveauMembre = safeLazy(() => import('@/pages/pro/NouveauMembre'));
+const PlanningMembre = safeLazy(() => import('@/pages/pro/PlanningMembre'));
+const Analytics = safeLazy(() => import('@/pages/pro/Analytics'));
+const Publication = safeLazy(() => import('@/pages/pro/Publication'));
+const VeoGenerator = safeLazy(() => import('@/pages/pro/VeoGenerator'));
+const Visite3D = safeLazy(() => import('@/pages/pro/Visite3D'));
+const Franchise = safeLazy(() => import('@/pages/pro/Franchise'));
+const LancerDirect = safeLazy(() => import('@/pages/pro/LancerDirect'));
+const ModifierProfilPro = safeLazy(() => import('@/pages/pro/ModifierProfilPro'));
+const SocialMedia = safeLazy(() => import('@/pages/SocialMedia'));
+const VueClient = safeLazy(() => import('@/pages/pro/VueClient'));
+const Abonnements = safeLazy(() => import('@/pages/pro/Abonnements'));
+const AbonnementsClient = safeLazy(() => import('@/pages/AbonnementsClient'));
+const GestionAgenda = safeLazy(() => import('@/pages/pro/GestionAgenda'));
+const HorairesConges = safeLazy(() => import('@/pages/pro/HorairesConges'));
+const LiveFeed = safeLazy(() => import('@/pages/LiveFeed'));
+const LiveDetail = safeLazy(() => import('@/pages/LiveDetail'));
+const Reels = safeLazy(() => import('@/pages/Reels'));
+const Immobilier = safeLazy(() => import('@/pages/Immobilier'));
+const ImmobilierDetail = safeLazy(() => import('@/pages/ImmobilierDetail'));
+const ServiceDetail = safeLazy(() => import('@/pages/ServiceDetail'));
+const StyleDetail = safeLazy(() => import('@/pages/StyleDetail'));
+const ModifierProfilClient = safeLazy(() => import('@/pages/ModifierProfilClient'));
+const Parametres = safeLazy(() => import('@/pages/Parametres'));
+const MesCommandes = safeLazy(() => import('@/pages/MesCommandes'));
+const CommandeDetail = safeLazy(() => import('@/pages/CommandeDetail'));
+const MonSolde = safeLazy(() => import('@/pages/MonSolde'));
+const ProgrammeFidelite = safeLazy(() => import('@/pages/ProgrammeFidelite'));
+const Onboarding = safeLazy(() => import('@/pages/Onboarding'));
+const Connexion = safeLazy(() => import('@/pages/Connexion'));
+const Reservation = safeLazy(() => import('@/pages/Reservation'));
+const Securite = safeLazy(() => import('@/pages/parametres/Securite'));
+const MoyensPaiement = safeLazy(() => import('@/pages/parametres/MoyensPaiement'));
+const Notifications = safeLazy(() => import('@/pages/parametres/Notifications'));
+const LangueMonnaie = safeLazy(() => import('@/pages/parametres/LangueMonnaie'));
+const CentreAide = safeLazy(() => import('@/pages/parametres/CentreAide'));
+const Confidentialite = safeLazy(() => import('@/pages/parametres/Confidentialite'));
+const Conditions = safeLazy(() => import('@/pages/parametres/Conditions'));
+const Contactez = safeLazy(() => import('@/pages/parametres/Contactez'));
+const APropos = safeLazy(() => import('@/pages/parametres/APropos'));
+const ProduitDetail = safeLazy(() => import('@/pages/ProduitDetail'));
+const Messages = safeLazy(() => import('@/pages/Messages'));
+const NotificationsPage = safeLazy(() => import('@/pages/Notifications'));
+const Panier = safeLazy(() => import('@/pages/Panier'));
+const GestionStyles = safeLazy(() => import('@/pages/pro/GestionStyles'));
+const ParametresPro = safeLazy(() => import('@/pages/pro/ParametresPro'));
+const PromoService = safeLazy(() => import('@/pages/pro/PromoService'));
+const ScanCapillaire = safeLazy(() => import('@/pages/ScanCapillaire'));
+const ReceptionnistIA = safeLazy(() => import('@/pages/ReceptionnistIA'));
+const AIScalingBusiness = safeLazy(() => import('@/pages/AIScalingBusiness'));
+const OrderTracking = safeLazy(() => import('@/pages/OrderTracking'));
+const Checkout = safeLazy(() => import('@/pages/Checkout'));
+const SupprimerCompte = safeLazy(() => import('@/pages/SupprimerCompte'));
+const MentionsLegales = safeLazy(() => import('@/pages/parametres/MentionsLegales'));
+const PolitiqueConfidentialite = safeLazy(() => import('@/pages/parametres/PolitiqueConfidentialite'));
+const MesDonnees = safeLazy(() => import('@/pages/parametres/MesDonnees'));
 import CookieConsent from '@/components/CookieConsent';
-const ShAI = lazy(() => import('@/pages/ShAI'));
-const Explorer = lazy(() => import('@/pages/Explorer'));
-const Recherche = lazy(() => import('@/pages/Recherche'));
-const About = lazy(() => import('@/pages/About'));
-const Contact = lazy(() => import('@/pages/Contact'));
-const AuthCallback = lazy(() => import('@/pages/AuthCallback'));
+const ShAI = safeLazy(() => import('@/pages/ShAI'));
+const Explorer = safeLazy(() => import('@/pages/Explorer'));
+const Recherche = safeLazy(() => import('@/pages/Recherche'));
+const About = safeLazy(() => import('@/pages/About'));
+const Contact = safeLazy(() => import('@/pages/Contact'));
+const AuthCallback = safeLazy(() => import('@/pages/AuthCallback'));
 import AuthModal from '@/components/ui/AuthModal';
 
 function ExternalApplication({ kind }) {
@@ -370,15 +389,31 @@ function App() {
 class AppErrorBoundary extends Component {
   state = { error: null };
   static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error) {
+    const msg = error?.message || '';
+    if (msg.includes('dynamically imported module') || msg.includes('Loading chunk')) {
+      const key = 'chunk_err_reload';
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+      }
+    }
+  }
   render() {
     if (this.state.error) {
+      const msg = this.state.error.message || '';
+      const isChunkError = msg.includes('dynamically imported module') || msg.includes('Loading chunk');
       return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 24, textAlign: 'center', fontFamily: 'system-ui' }}>
-          <p style={{ fontSize: 40, marginBottom: 16 }}>😅</p>
-          <p style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>Une erreur est survenue</p>
-          <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>{this.state.error.message || 'Erreur inconnue'}</p>
-          <button onClick={() => window.location.reload()} style={{ background: '#E8732A', color: '#fff', fontSize: 14, fontWeight: 800, padding: '12px 32px', borderRadius: 16, border: 'none', cursor: 'pointer' }}>
-            Réessayer
+          <p style={{ fontSize: 40, marginBottom: 16 }}>✨</p>
+          <p style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>
+            {isChunkError ? "Mise à jour disponible" : "Une erreur est survenue"}
+          </p>
+          <p style={{ fontSize: 13, color: '#888', marginBottom: 24 }}>
+            {isChunkError ? "Une nouvelle version de BeautyBook est disponible." : (msg || 'Erreur inconnue')}
+          </p>
+          <button onClick={() => { sessionStorage.clear(); window.location.reload(); }} style={{ background: '#FF6B00', color: '#fff', fontSize: 14, fontWeight: 800, padding: '12px 32px', borderRadius: 16, border: 'none', cursor: 'pointer' }}>
+            {isChunkError ? "Mettre à jour maintenant" : "Réessayer"}
           </button>
         </div>
       );
