@@ -172,26 +172,32 @@ export default function MainHeader() {
       {/* Row 2: Top text tabs */}
       <div className="overflow-x-auto hide-scrollbar">
         <div className="flex items-center gap-2 px-4 pb-3 min-w-max">
-          {topTabs.filter(tab => tab.id !== 'live' || liveSessions.length > 0).map((tab) => {
+          {topTabs.map((tab) => {
             const isActive = location.pathname === tab.path || location.pathname.startsWith(tab.path + "/");
+            const isLive = tab.id === "live";
             return (
               <button
                 key={tab.id}
                 onClick={() => navigate(tab.path)}
                 className={`relative shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full border transition-all active:scale-95 text-[12px] font-black ${
                   isActive
-                    ? "bg-gray-900 border-gray-900 text-white"
+                    ? "bg-gray-900 border-gray-900 text-white shadow-sm"
+                    : isLive
+                    ? "bg-red-50 border-red-200 text-red-600"
                     : "bg-white border-gray-200 text-gray-700"
                 }`}
               >
                 <tab.Icon
-                  className="w-3.5 h-3.5 shrink-0"
+                  className={`w-3.5 h-3.5 shrink-0 ${isLive && !isActive ? "animate-pulse" : ""}`}
                   style={{ color: isActive ? "white" : tab.color }}
                   strokeWidth={2}
                 />
                 {tab.label}
-                {tab.badge && !isActive && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-white animate-pulse" />
+                {isLive && (
+                  <span className="relative flex h-2 w-2 ml-0.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                  </span>
                 )}
               </button>
             );

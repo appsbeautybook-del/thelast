@@ -120,7 +120,7 @@ export default function CityPickerModal({ currentCity, onSelect, onClose }) {
             dragging={true}
             scrollWheelZoom={true}
           >
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} />
             <Marker position={markerPos} icon={customIcon} />
             <MapFlyTo center={markerPos} />
           </MapContainer>

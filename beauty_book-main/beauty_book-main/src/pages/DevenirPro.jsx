@@ -1647,9 +1647,16 @@ export default function DevenirPro() {
         };
 
         // Sauvegarde dans DemandeProV2 sans planter
-        await supabase.from('DemandeProV2').insert(demandeData).catch(async () => {
-          await supabase.from('DemandeProV2').upsert(demandeData, { onConflict: 'user_email' }).catch(() => {});
-        });
+        try {
+          const { error: insErr } = await supabase.from('DemandeProV2').insert(demandeData);
+          if (insErr) {
+            await supabase.from('DemandeProV2').upsert(demandeData, { onConflict: 'user_email' });
+          }
+        } catch {
+          try {
+            await supabase.from('DemandeProV2').upsert(demandeData, { onConflict: 'user_email' });
+          } catch {}
+        }
 
         // Enregistrement / Activation directe dans ProfilPro
         if (user?.email) {
@@ -1669,9 +1676,16 @@ export default function DevenirPro() {
             updated_at: new Date().toISOString(),
           };
 
-          await supabase.from('ProfilPro').upsert(profilProPayload, { onConflict: 'user_email' }).catch(async () => {
-            await supabase.from('ProfilPro').insert(profilProPayload).catch(() => {});
-          });
+          try {
+            const { error: upsErr } = await supabase.from('ProfilPro').upsert(profilProPayload, { onConflict: 'user_email' });
+            if (upsErr) {
+              await supabase.from('ProfilPro').insert(profilProPayload);
+            }
+          } catch {
+            try {
+              await supabase.from('ProfilPro').insert(profilProPayload);
+            } catch {}
+          }
 
           localStorage.setItem('pro_profile_cache', JSON.stringify(profilProPayload));
         }

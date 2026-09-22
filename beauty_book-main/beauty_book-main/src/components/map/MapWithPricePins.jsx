@@ -1,162 +1,144 @@
-import { useState, useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { MapPin } from "lucide-react";
 
-const priceIcon = (price, isSelected) => L.divIcon({
-  className: "",
-  iconSize: [0, 0],
-  iconAnchor: [0, 0],
-  html: `<div style="
-    background: ${isSelected ? "#222222" : "white"};
-    color: ${isSelected ? "white" : "#222222"};
-    border-radius: 24px;
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1);
-    transform: ${isSelected ? "scale(1.1) translateY(-2px)" : "scale(1)"};
-    transition: all 0.2s ease;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid ${isSelected ? "#222222" : "#e0e0e0"};
-    letter-spacing: -0.2px;
-  ">${price > 0 ? price + "€" : "Pro"}</div>`,
-});
+const APPLE_MAPS_TOKEN = "eyJraWQiOiI2SDkyNDI0WDJEIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJHNFpYTkszVTJWIiwiaWF0IjoxNzkwMDM2NDQ3LCJzY29wZSI6ImVtYmVkX2FwaSIsImV4cCI6MTc5MDY2NTE5OX0.FibCotF_o2NCM5DvdhZK_btdTrruc2mdQw1V4lTTORjzQeBZls9n4c5dK06sGqxfjxDSwVkoIkOSntTte3Zx9Q";
 
-const userIcon = L.divIcon({
-  className: "",
-  iconSize: [28, 36],
-  iconAnchor: [14, 32],
-  html: `<div style="position: relative; width: 28px; height: 36px;">
-    <div style="
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: #4285F4;
-      border: 3px solid white;
-      box-shadow: 0 0 0 3px rgba(66,133,244,0.3), 0 2px 8px rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    ">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L4 20L12 16L20 20L12 2Z" fill="white" stroke="white" stroke-width="1" stroke-linejoin="round"/>
-      </svg>
-    </div>
-    <div style="
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-top: 8px solid #4285F4;
-    "></div>
-  </div>`,
-});
+let mapkitLoaded = false;
+let mapkitLoading = false;
+const mapkitCallbacks = [];
 
-function FlyToLocation({ center }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) {
-      map.flyTo(center, map.getZoom(), { duration: 0.5 });
-    }
-  }, [center, map]);
-  return null;
+function loadMapKit(cb) {
+  if (mapkitLoaded) { cb(); return; }
+  mapkitCallbacks.push(cb);
+  if (mapkitLoading) return;
+  mapkitLoading = true;
+  const script = document.createElement("script");
+  script.src = "https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js";
+  script.async = true;
+  script.onload = () => {
+    window.mapkit.init({
+      authorizationCallback: (done) => done(APPLE_MAPS_TOKEN),
+      language: "fr",
+    });
+    mapkitLoaded = true;
+    mapkitCallbacks.forEach(fn => fn());
+  };
+  document.head.appendChild(script);
 }
 
 export default function MapWithPricePins({ items = [], onSelectItem, height = "h-52" }) {
+  const mapRef = useRef(null);
+  const mapInstanceRef = useRef(null);
   const [selected, setSelected] = useState(null);
-  const [userLocation, setUserLocation] = useState(null);
-  const [mapReady, setMapReady] = useState(false);
+  const [ready, setReady] = useState(false);
 
-  const resolvedItems = useMemo(() => {
-    return items
-      .filter(item => item.lat && item.lng && !isNaN(item.lat) && !isNaN(item.lng))
-      .map(item => ({ ...item, _lat: parseFloat(item.lat), _lng: parseFloat(item.lng) }));
-  }, [items]);
-
-  useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => setUserLocation(null),
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    }
-  }, []);
+  const resolvedItems = useMemo(() =>
+    items.filter(it => it.lat && it.lng && !isNaN(it.lat) && !isNaN(it.lng))
+      .map(it => ({ ...it, _lat: parseFloat(it.lat), _lng: parseFloat(it.lng) })),
+    [items]);
 
   const center = useMemo(() => {
-    if (userLocation) return userLocation;
-    if (resolvedItems.length === 1) {
-      return { lat: resolvedItems[0]._lat, lng: resolvedItems[0]._lng };
-    }
-    if (resolvedItems.length > 1) {
-      return {
-        lat: resolvedItems.reduce((s, it) => s + it._lat, 0) / resolvedItems.length,
-        lng: resolvedItems.reduce((s, it) => s + it._lng, 0) / resolvedItems.length,
-      };
-    }
-    return { lat: 48.8566, lng: 2.3522 };
-  }, [userLocation, resolvedItems]);
+    if (resolvedItems.length === 0) return { lat: 48.8566, lng: 2.3522 };
+    const lat = resolvedItems.reduce((s, it) => s + it._lat, 0) / resolvedItems.length;
+    const lng = resolvedItems.reduce((s, it) => s + it._lng, 0) / resolvedItems.length;
+    return { lat, lng };
+  }, [resolvedItems]);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    loadMapKit(() => {
+      if (!mapRef.current || mapInstanceRef.current) return;
+      try {
+        const map = new window.mapkit.Map(mapRef.current, {
+          center: new window.mapkit.Coordinate(center.lat, center.lng),
+          cameraDistance: resolvedItems.length > 0 ? 10000 : 15000,
+          mapType: window.mapkit.Map.MapTypes.Standard,
+          showsCompass: window.mapkit.FeatureVisibility.Hidden,
+          showsUserLocationControl: true,
+          showsZoomControl: false,
+        });
+
+        // Add annotations with price bubbles
+        const annotations = resolvedItems.slice(0, 30).map(item => {
+          const ann = new window.mapkit.MarkerAnnotation(
+            new window.mapkit.Coordinate(item._lat, item._lng),
+            {
+              title: item.title || item.name || "",
+              subtitle: item.price > 0 ? `Dès ${item.price}€` : "",
+              color: "#FF6B00",
+              glyphText: item.price > 0 ? `${item.price}€` : "•",
+            }
+          );
+          ann.addEventListener("select", () => {
+            setSelected(item.id);
+            onSelectItem?.(item);
+          });
+          ann.addEventListener("deselect", () => setSelected(null));
+          ann._item = item;
+          return ann;
+        });
+
+        if (annotations.length > 0) {
+          map.addAnnotations(annotations);
+          if (annotations.length > 1) {
+            map.showItems(annotations, { animate: false, padding: new window.mapkit.Padding(40, 40, 40, 40) });
+          }
+        }
+
+        // Show user location
+        map.showsUserLocation = true;
+        mapInstanceRef.current = map;
+        setReady(true);
+      } catch (e) {
+        console.warn("[MapWithPricePins] Apple Maps init error:", e);
+        setReady(false);
+      }
+    });
+
+    return () => {
+      if (mapInstanceRef.current) {
+        try { mapInstanceRef.current.destroy(); } catch {}
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []); // only init once
+
+  const selectedItem = selected ? resolvedItems.find(it => it.id === selected) : null;
 
   return (
-    <div className={`relative ${height} rounded-3xl overflow-hidden border border-gray-200 shadow-md bg-gray-100`}>
-      <MapContainer
-        center={center}
-        zoom={userLocation ? 14 : 12}
-        style={{ width: "100%", height: "100%" }}
-        zoomControl={false}
-        attributionControl={false}
-        whenReady={() => setMapReady(true)}
-      >
-        <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>' maxZoom={19} />
-        {mapReady && <FlyToLocation center={center} />}
-        {userLocation && (
-          <Marker position={userLocation} icon={userIcon} />
-        )}
-        {resolvedItems.map((item) => (
-          <Marker
-            key={item.id}
-            position={[item._lat, item._lng]}
-            icon={priceIcon(item.price, selected === item.id)}
-            eventHandlers={{
-              click: () => {
-                setSelected(prev => prev === item.id ? null : item.id);
-                onSelectItem?.(item);
-              },
-            }}
-          />
-        ))}
-      </MapContainer>
+    <div className={`relative ${height} overflow-hidden bg-gray-100`}>
+      {/* Apple Maps container */}
+      <div ref={mapRef} style={{ width: "100%", height: "100%" }} />
 
-      {selected && (() => {
-        const item = resolvedItems.find(it => it.id === selected);
-        if (!item) return null;
-        return (
-          <div className="absolute bottom-3 left-3 right-3 bg-white rounded-2xl shadow-lg px-4 py-3 z-[1000] flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#E8732A]/10 rounded-xl flex items-center justify-center shrink-0">
-              <span className="text-[#E8732A] text-[16px]">📍</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-black text-gray-900 truncate">{item.title || item.name}</p>
-              <p className="text-[11px] text-gray-400 font-medium truncate">{item.address || item.city || item.location}</p>
-            </div>
-            {item.price > 0 && <span className="text-[15px] font-black text-[#E8732A] shrink-0">{item.price}€</span>}
+      {/* Loading placeholder */}
+      {!ready && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3"
+          style={{ background: "linear-gradient(135deg, #FFF5F0 0%, #FFE8D6 100%)" }}>
+          <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: "#FF6B00" }}>
+            <MapPin className="w-5 h-5 text-white" />
           </div>
-        );
-      })()}
+          <p className="text-[12px] font-bold" style={{ color: "#FF6B00" }}>Chargement de la carte...</p>
+        </div>
+      )}
+
+      {/* Selected item popup */}
+      {selectedItem && (
+        <div className="absolute bottom-3 left-3 right-3 bg-white rounded-2xl shadow-xl px-4 py-3 z-[1000] flex items-center gap-3 border border-orange-100"
+          style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(255,107,0,0.12)" }}>
+            <MapPin className="w-4 h-4" style={{ color: "#FF6B00" }} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-black text-gray-900 truncate">{selectedItem.title || selectedItem.name}</p>
+            <p className="text-[11px] text-gray-400 font-medium truncate">{selectedItem.address || selectedItem.city}</p>
+          </div>
+          {selectedItem.price > 0 && (
+            <span className="text-[15px] font-black shrink-0" style={{ color: "#FF6B00" }}>
+              Dès {selectedItem.price}€
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }
