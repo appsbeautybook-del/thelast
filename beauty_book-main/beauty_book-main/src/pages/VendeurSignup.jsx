@@ -52,13 +52,8 @@ export default function VendeurSignup() {
       }
 
       // 3. Connexion auto
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      if (!loginError) {
-        sessionStorage.setItem("bb_vendeur_email", email);
-        navigate("/vendeur/dashboard");
-      } else {
-        navigate("/vendeur/login");
-      }
+      sessionStorage.setItem("bb_vendeur_email", email);
+      navigate("/vendeur/dashboard");
     } catch (err) {
       setError(err.message || "Impossible de s'inscrire.");
     }

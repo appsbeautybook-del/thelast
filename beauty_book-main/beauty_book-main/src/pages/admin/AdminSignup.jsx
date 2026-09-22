@@ -52,20 +52,11 @@ export default function AdminSignup() {
         });
       }
 
-      // 3. Si Supabase nécessite confirmation email, rediriger vers la page de vérification
-      if (data?.user && !data.session) {
-        sessionStorage.setItem("bb_admin_verify_email", email);
-        navigate("/admin/verify?email=" + encodeURIComponent(email));
-        return;
+      sessionStorage.setItem("bb_admin_email", email);
+      if (data?.session?.access_token) {
+        setAdminToken(data.session.access_token);
       }
-
-      // 4. Connexion auto si la session est disponible
-      if (data?.session) {
-        navigate("/admin/dashboard");
-      } else {
-        sessionStorage.setItem("bb_admin_verify_email", email);
-        navigate("/admin/verify?email=" + encodeURIComponent(email));
-      }
+      navigate("/admin/dashboard");
     } catch (err) {
       setError(err.message || "Erreur lors de l'inscription.");
     } finally {

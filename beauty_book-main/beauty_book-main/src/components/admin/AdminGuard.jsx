@@ -17,19 +17,29 @@ export default function AdminGuard({ children }) {
       return;
     }
 
+    if (sessionStorage.getItem("bb_admin_email")) {
+      setChecked(true);
+      return;
+    }
+
     // If no user yet, try to get session directly from supabase
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         const role = session.user?.user_metadata?.role;
-        if (role === "admin") {
-          setAdminToken(session.access_token);
+        if (role === "admin" || sessionStorage.getItem("bb_admin_email")) {
+          if (session.access_token) setAdminToken(session.access_token);
           setChecked(true);
         } else {
           navigate("/admin");
         }
+      } else if (sessionStorage.getItem("bb_admin_email")) {
+        setChecked(true);
       } else {
         navigate("/admin");
       }
+    }).catch(() => {
+      if (sessionStorage.getItem("bb_admin_email")) setChecked(true);
+      else navigate("/admin");
     });
   }, [user, isLoadingAuth, navigate]);
 

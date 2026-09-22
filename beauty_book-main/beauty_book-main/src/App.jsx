@@ -139,6 +139,12 @@ const Recherche = safeLazy(() => import('@/pages/Recherche'));
 const About = safeLazy(() => import('@/pages/About'));
 const Contact = safeLazy(() => import('@/pages/Contact'));
 const AuthCallback = safeLazy(() => import('@/pages/AuthCallback'));
+const AdminDashboard = safeLazy(() => import('@/pages/admin/AdminDashboard'));
+const AdminLogin = safeLazy(() => import('@/pages/admin/AdminLogin'));
+const AdminSignup = safeLazy(() => import('@/pages/admin/AdminSignup'));
+const VendeurDashboard = safeLazy(() => import('@/pages/VendeurDashboard'));
+const VendeurLogin = safeLazy(() => import('@/pages/VendeurLogin'));
+const VendeurSignup = safeLazy(() => import('@/pages/VendeurSignup'));
 import AuthModal from '@/components/ui/AuthModal';
 
 function ExternalApplication({ kind }) {
@@ -352,10 +358,18 @@ const AuthenticatedApp = () => {
         <Route path="/contact" element={<Contact />} />
       </Route>
       <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="*" element={<main className="min-h-screen grid place-items-center p-6"><div className="text-center"><h1 className="text-2xl font-bold">Page introuvable</h1><p className="mt-3 text-gray-600">Ce lien n’existe plus ou a été déplacé.</p><a className="inline-block mt-6 rounded-xl bg-orange-600 px-5 py-3 text-white" href="/">Retour à l’accueil</a></div></main>} />
-      <Route path="/admin/*" element={<ExternalApplication kind="admin" />} />
-<Route path="/vendeur/*" element={<ExternalApplication kind="seller" />} />
-</Routes></Suspense>
+        {/* Routes Vendeur */}
+        <Route path="/vendeur" element={<VendeurLogin />} />
+        <Route path="/vendeur/login" element={<VendeurLogin />} />
+        <Route path="/vendeur/signup" element={<VendeurSignup />} />
+        <Route path="/vendeur/dashboard/*" element={<VendeurDashboard />} />
+
+        {/* Routes Administration */}
+        <Route path="/admin" element={<AdminLogin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/signup" element={<AdminSignup />} />
+        <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
+      </Routes></Suspense>
     </>
   );
 };

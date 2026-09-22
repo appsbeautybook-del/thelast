@@ -55,7 +55,10 @@ export default function AdminLogin() {
         return;
       }
 
-      setAdminToken(data.session.access_token);
+      if (data?.session?.access_token) {
+        setAdminToken(data.session.access_token);
+      }
+      sessionStorage.setItem("bb_admin_email", email);
       navigate("/admin/dashboard");
     } catch (err) {
       setError(err.message || "Erreur lors de la connexion.");
