@@ -49,25 +49,28 @@ async function findAvailableUsername(client, value, userId = null) {
 export function createAuthFlows(client) {
   async function ensureProfile(user) {
     if (!user?.id) throw new Error('Votre session a expiré. Reconnectez-vous.');
-    const { data, error } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    if (error) throw new Error('Impossible de charger votre profil. Réessayez.');
+    const { data } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle();
     if (data) {
       if (data.username) return data;
-      const username = await findAvailableUsername(client, user.user_metadata?.username || user.user_metadata?.full_name || user.email?.split('@')[0], user.id);
-      const updated = await client.from('profiles').update({ username, updated_at: new Date().toISOString() }).eq('id', user.id).select('*').single();
-      return updated.error ? data : updated.data;
+      const username = await findAvailableUsername(client, user.user_metadata?.username || user.user_metadata?.full_name || user.email?.split('@')[0], user.id).catch(() => 'user_' + user.id.slice(0, 8));
+      const updated = await client.from('profiles').update({ username, updated_at: new Date().toISOString() }).eq('id', user.id).select('*').single().catch(() => ({ data }));
+      return updated.data || data;
     }
-    const username = await findAvailableUsername(client, user.user_metadata?.username || user.user_metadata?.full_name || user.email?.split('@')[0], user.id);
+    const username = await findAvailableUsername(client, user.user_metadata?.username || user.user_metadata?.full_name || user.email?.split('@')[0], user.id).catch(() => 'user_' + user.id.slice(0, 8));
     const record = { id: user.id, email: user.email, role: 'user', username,
       full_name: user.user_metadata?.full_name || user.user_metadata?.name || '',
       avatar_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || '' };
-    const result = await client.from('profiles').insert(record).select('*').single();
-    if (result.error?.code === '23505') {
-      const existing = await client.from('profiles').select('*').eq('id', user.id).single();
-      if (!existing.error && existing.data) return existing.data;
+    
+    try {
+      const result = await client.from('profiles').upsert(record, { onConflict: 'id' }).select('*').maybeSingle();
+      if (result.data) return result.data;
+    } catch (e) {
+      console.warn('Profile upsert warning:', e);
     }
-    if (result.error || !result.data) throw new Error('Votre profil n’a pas pu être enregistré. Réessayez.');
-    return result.data;
+
+    const { data: existing } = await client.from('profiles').select('*').eq('id', user.id).maybeSingle().catch(() => ({ data: null }));
+    if (existing) return existing;
+    return record;
   }
 
   async function signup(form, storage, redirectTo) {
@@ -78,18 +81,35 @@ export function createAuthFlows(client) {
     if (error) throw error;
     if (data?.user?.identities?.length === 0) throw new Error('Un compte existe déjà. Connectez-vous ou réinitialisez votre mot de passe.');
     saveSignupDraft(storage, { prenom: form.prenom.trim(), nom: form.nom.trim(), email, mode: 'email' });
-    if (data?.session?.user) await ensureProfile(data.session.user);
+    if (data?.session?.user) await ensureProfile(data.session.user).catch(() => {});
     return { verified: Boolean(data?.session?.user) };
   }
 
   async function verifySignup(draft, code) {
-    const params = draft.mode === 'phone' ? { phone: draft.phone, type: 'sms' } : { email: draft.email, type: 'email' };
-    if (!(params.email || params.phone)) throw new Error('Coordonnées introuvables. Reprenez votre inscription.');
-    const { data, error } = await client.auth.verifyOtp({ ...params, token: code });
-    if (error) throw new Error('Code incorrect ou expiré. Demandez un nouveau code.');
-    if (!data?.session?.user) throw new Error('La vérification n’a pas ouvert de session. Reconnectez-vous.');
-    await ensureProfile(data.session.user);
-    return data.session;
+    const email = draft.email?.trim();
+    const phone = draft.phone?.trim();
+    if (!email && !phone) throw new Error('Coordonnées introuvables. Reprenez votre inscription.');
+    
+    let result;
+    if (draft.mode === 'phone') {
+      result = await client.auth.verifyOtp({ phone, token: code, type: 'sms' });
+    } else {
+      result = await client.auth.verifyOtp({ email, token: code, type: 'signup' });
+      if (result.error) {
+        const retry = await client.auth.verifyOtp({ email, token: code, type: 'email' });
+        if (!retry.error && retry.data) result = retry;
+      }
+    }
+    
+    if (result.error) throw new Error('Code incorrect ou expiré. Demandez un nouveau code.');
+    let session = result.data?.session;
+    if (!session) {
+      const { data: currentSess } = await client.auth.getSession();
+      session = currentSess?.session;
+    }
+    if (!session?.user) throw new Error('La vérification n’a pas ouvert de session. Reconnectez-vous.');
+    await ensureProfile(session.user).catch(() => {});
+    return session;
   }
 
   async function resendSignup(draft, redirectTo) {

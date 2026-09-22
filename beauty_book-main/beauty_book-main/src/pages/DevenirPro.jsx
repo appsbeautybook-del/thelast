@@ -11,7 +11,7 @@ import { supabase } from '@/api/supabaseClient';
 const TOTAL_STEPS = 5;
 const DRAFT_KEY = "bb_devenir_pro_draft";
 
-// ─── Autocomplete adresse Google Maps ────────────────────────────────────────
+// ─── Autocomplete adresse via Base Adresse Nationale (BAN) ─────────────────
 function AddressAutocomplete({ value, onChange, onSelect }) {
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
@@ -19,13 +19,18 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
   const timerRef = useRef(null);
 
   const fetchSuggestions = async (input) => {
-    if (input.length < 3) { setSuggestions([]); return; }
+    if (!input || input.trim().length < 3) { setSuggestions([]); setOpen(false); return; }
     setLoading(true);
     try {
-      const res = await apiClient.callFunction('placesAutocomplete', { input });
-      const data = res?.data?.predictions || res?.predictions || [];
-      setSuggestions(data);
-      setOpen(data.length > 0);
+      const res = await fetch(`https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(input)}&limit=6`);
+      if (res.ok) {
+        const json = await res.json();
+        const features = json.features || [];
+        setSuggestions(features);
+        setOpen(features.length > 0);
+      } else {
+        setSuggestions([]);
+      }
     } catch { setSuggestions([]); }
     setLoading(false);
   };
@@ -35,24 +40,32 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
     onChange(val);
     setOpen(false);
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => fetchSuggestions(val), 400);
+    timerRef.current = setTimeout(() => fetchSuggestions(val), 300);
   };
 
-  const selectPlace = (place) => {
+  const selectPlace = (item) => {
     setOpen(false);
     setSuggestions([]);
-    const addr = place.address || {};
-    const street = [addr.house_number, addr.road].filter(Boolean).join(' ');
-    const city = addr.city || addr.town || addr.village || addr.municipality || '';
-    const postalCode = addr.postcode || '';
-    const address = street || place.display_name?.split(',')[0] || '';
-    onChange(address);
-    onSelect({ address, city, postalCode });
+    const props = item.properties || {};
+    const label = props.label || props.name || '';
+    const city = props.city || '';
+    const postalCode = props.postcode || '';
+    const address = props.name || label;
+
+    onChange(label);
+    if (onSelect) {
+      onSelect({
+        address,
+        fullAddress: label,
+        city,
+        postalCode,
+      });
+    }
   };
 
   return (
     <div className="relative">
-      <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center gap-3">
+      <div className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center gap-3 focus-within:border-primary transition-colors">
         <MapPin className="w-5 h-5 text-gray-300 shrink-0" />
         <input
           placeholder="Ex : 12 rue de la Paix, 75001 Paris"
@@ -65,12 +78,19 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
         {loading && <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />}
       </div>
       {open && suggestions.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden max-h-56 overflow-y-auto">
-          {suggestions.map((s, i) => (
-            <button key={s.place_id || i} onMouseDown={() => selectPlace(s)}
-              className="w-full text-left px-4 py-3 text-[13px] text-gray-700 flex items-start gap-2 border-b border-gray-100 last:border-0 active:bg-gray-50">
-              <MapPin className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-              <span className="leading-snug">{s.display_name}</span>
+        <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
+          {suggestions.map((item, i) => (
+            <button
+              key={item.properties?.id || i}
+              type="button"
+              onMouseDown={() => selectPlace(item)}
+              className="w-full text-left px-4 py-3 text-[13px] text-gray-700 flex items-start gap-2.5 border-b border-gray-100 last:border-0 hover:bg-orange-50 active:bg-orange-100 transition-colors"
+            >
+              <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-gray-800 leading-snug">{item.properties?.label || item.properties?.name}</p>
+                <p className="text-[11px] text-gray-400">{item.properties?.postcode} {item.properties?.city} {item.properties?.context ? `(${item.properties.context})` : ''}</p>
+              </div>
             </button>
           ))}
         </div>
@@ -78,6 +98,7 @@ function AddressAutocomplete({ value, onChange, onSelect }) {
     </div>
   );
 }
+
 
 // ─── Tambour sélecteur de sièges ─────────────────────────────────────────────
 function SeatsDrumPicker({ value, onChange }) {
@@ -1038,93 +1059,447 @@ function Step4({ data, setData }) {
   );
 }
 
-// ─── Step 5: Disponibilités avec créneaux éditables ──────────────────────────
+// ─── Step 5: Disponibilités & Pauses ──────────────────────────────────────────
 function Step5({ data, setData }) {
-  const days = ["L", "M", "M", "J", "V", "S", "D"];
   const dayKeys = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"];
-  const defaultActive = ["mar", "mer", "jeu", "ven", "sam"];
-  const commodites = ["Wifi", "Parking", "Climatisation", "Paiement CB", "Café / Thé", "Accessibilité PMR"];
-  const toggle = (arr, val) => arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val];
-  const activeDays = data.days || defaultActive;
+  const dayLabels = { lun: "Lundi", mar: "Mardi", mer: "Mercredi", jeu: "Jeudi", ven: "Vendredi", sam: "Samedi", dim: "Dimanche" };
+  const dayShorts = { lun: "L", mar: "M", mer: "M", jeu: "J", ven: "V", sam: "S", dim: "D" };
 
-  // Créneaux horaires éditables
-  const defaultSlots = [{ start: "09:00", end: "12:00" }, { start: "13:00", end: "19:00" }];
-  const slots = data.time_slots || defaultSlots;
+  // Tous les jours doivent être sélectionnés par défaut
+  const activeDays = data.days ?? dayKeys;
+  const toggleDay = (key) => {
+    const updated = activeDays.includes(key)
+      ? activeDays.filter(k => k !== key)
+      : [...activeDays, key];
+    setData(d => ({ ...d, days: updated }));
+  };
+
+  // Mode de configuration : "general" ou "par_jour"
+  const [mode, setMode] = useState("general");
+  const [selectedDayTab, setSelectedDayTab] = useState("lun");
+
+  // Créneaux & Pauses généraux (non pré-remplis)
+  const slots = data.time_slots || [];
+  const pauses = data.pauses || [];
 
   const addSlot = () => {
-    setData(d => ({ ...d, time_slots: [...slots, { start: "09:00", end: "17:00" }] }));
-  };
-  const removeSlot = (i) => {
-    setData(d => ({ ...d, time_slots: slots.filter((_, idx) => idx !== i) }));
+    setData(d => ({ ...d, time_slots: [...(d.time_slots || []), { start: "", end: "" }] }));
   };
   const updateSlot = (i, field, val) => {
-    const updated = slots.map((s, idx) => idx === i ? { ...s, [field]: val } : s);
+    const updated = (data.time_slots || []).map((s, idx) => idx === i ? { ...s, [field]: val } : s);
     setData(d => ({ ...d, time_slots: updated }));
+  };
+  const removeSlot = (i) => {
+    setData(d => ({ ...d, time_slots: (data.time_slots || []).filter((_, idx) => idx !== i) }));
+  };
+
+  const addPause = () => {
+    setData(d => ({ ...d, pauses: [...(d.pauses || []), { start: "", end: "", label: "Pause déjeuner" }] }));
+  };
+  const updatePause = (i, field, val) => {
+    const updated = (data.pauses || []).map((p, idx) => idx === i ? { ...p, [field]: val } : p);
+    setData(d => ({ ...d, pauses: updated }));
+  };
+  const removePause = (i) => {
+    setData(d => ({ ...d, pauses: (data.pauses || []).filter((_, idx) => idx !== i) }));
+  };
+
+  // Gestion des horaires spécifiques par jour
+  const daySchedules = data.day_schedules || {};
+
+  const getDaySchedule = (day) => {
+    return daySchedules[day] || { custom: false, slots: [], pauses: [] };
+  };
+
+  const setDaySchedule = (day, updater) => {
+    const current = getDaySchedule(day);
+    const next = updater(current);
+    setData(d => ({
+      ...d,
+      day_schedules: {
+        ...(d.day_schedules || {}),
+        [day]: next
+      }
+    }));
   };
 
   return (
     <div className="space-y-6">
+      {/* Jours de disponibilité (Tous sélectionnés par défaut) */}
       <div>
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Jours de disponibilité</p>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Jours de disponibilité</p>
+          <span className="text-[11px] font-bold text-primary">{activeDays.length}/7 jours sélectionnés</span>
+        </div>
         <div className="flex gap-2 justify-between">
-          {days.map((d, i) => {
-            const key = dayKeys[i];
+          {dayKeys.map((key) => {
             const active = activeDays.includes(key);
             return (
-              <button key={i} onClick={() => setData(dd => ({ ...dd, days: toggle(activeDays, key) }))}
-                className={`w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-black transition-all ${active ? "bg-primary text-white shadow-md shadow-primary/30" : "bg-gray-100 text-gray-400"}`}>
-                {d}
+              <button
+                key={key}
+                type="button"
+                onClick={() => toggleDay(key)}
+                className={`w-10 h-10 rounded-full flex items-center justify-center text-[13px] font-black transition-all ${
+                  active ? "bg-primary text-white shadow-md shadow-primary/30 scale-105" : "bg-gray-100 text-gray-400"
+                }`}
+              >
+                {dayShorts[key]}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Créneaux horaires */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Créneaux horaires</p>
-          <button onClick={addSlot} className="flex items-center gap-1.5 bg-primary/10 rounded-full px-3 py-1.5 active:scale-95 transition-all">
-            <Plus className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[11px] font-black text-primary">Ajouter</span>
-          </button>
-        </div>
-        <div className="space-y-2">
-          {slots.map((slot, i) => (
-            <div key={i} className="bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3">
-              <Clock className="w-4 h-4 text-gray-300 shrink-0" />
-              <div className="flex-1 flex items-center gap-2">
-                <div>
-                  <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-0.5">Début</p>
-                  <input type="time" value={slot.start}
-                    onChange={e => updateSlot(i, "start", e.target.value)}
-                    className="text-[16px] font-black text-gray-900 bg-transparent outline-none w-24" />
-                </div>
-                <span className="text-gray-300 font-black">→</span>
-                <div>
-                  <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-0.5">Fin</p>
-                  <input type="time" value={slot.end}
-                    onChange={e => updateSlot(i, "end", e.target.value)}
-                    className="text-[16px] font-black text-gray-900 bg-transparent outline-none w-24" />
-                </div>
-              </div>
-              {slots.length > 1 && (
-                <button onClick={() => removeSlot(i)} className="w-8 h-8 bg-red-50 rounded-full flex items-center justify-center active:scale-95 transition-all">
-                  <Trash2 className="w-4 h-4 text-red-400" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+      {/* Selecteur mode : Horaires généraux vs Personnalisés par jour */}
+      <div className="bg-gray-100 p-1 rounded-2xl flex">
+        <button
+          type="button"
+          onClick={() => setMode("general")}
+          className={`flex-1 py-2.5 rounded-xl text-[12px] font-black transition-all ${
+            mode === "general" ? "bg-white text-gray-900 shadow" : "text-gray-500"
+          }`}
+        >
+          Horaires généraux
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("par_jour")}
+          className={`flex-1 py-2.5 rounded-xl text-[12px] font-black transition-all ${
+            mode === "par_jour" ? "bg-white text-primary shadow" : "text-gray-500"
+          }`}
+        >
+          Par jour spécifique
+        </button>
       </div>
 
+      {/* Mode Général */}
+      {mode === "general" && (
+        <>
+          {/* Créneaux horaires */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Créneaux d'ouverture</p>
+                <p className="text-[11px] text-gray-400 font-medium">Définissez vos heures d'ouverture générales</p>
+              </div>
+              <button
+                type="button"
+                onClick={addSlot}
+                className="flex items-center gap-1.5 bg-primary/10 rounded-full px-3 py-1.5 active:scale-95 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[11px] font-black text-primary">Ajouter</span>
+              </button>
+            </div>
+
+            {slots.length === 0 ? (
+              <div className="border-2 border-dashed border-gray-200 rounded-2xl p-5 text-center bg-gray-50">
+                <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-[13px] font-bold text-gray-600 mb-1">Aucun créneau renseigné</p>
+                <p className="text-[11px] text-gray-400 mb-3">Saisissez vos heures de début et fin.</p>
+                <button
+                  type="button"
+                  onClick={addSlot}
+                  className="bg-primary text-white text-[12px] font-black px-4 py-2 rounded-full inline-flex items-center gap-1.5 active:scale-95 transition-all shadow"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Définir un créneau
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {slots.map((slot, i) => (
+                  <div key={i} className="bg-white border border-gray-200 rounded-2xl px-4 py-3 flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-primary shrink-0" />
+                    <div className="flex-1 flex items-center gap-2">
+                      <div>
+                        <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-0.5">Début</p>
+                        <input
+                          type="time"
+                          value={slot.start || ""}
+                          onChange={e => updateSlot(i, "start", e.target.value)}
+                          className="text-[15px] font-black text-gray-900 bg-gray-50 rounded-xl px-2 py-1 outline-none w-24 border border-gray-100"
+                        />
+                      </div>
+                      <span className="text-gray-300 font-black">→</span>
+                      <div>
+                        <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-0.5">Fin</p>
+                        <input
+                          type="time"
+                          value={slot.end || ""}
+                          onChange={e => updateSlot(i, "end", e.target.value)}
+                          className="text-[15px] font-black text-gray-900 bg-gray-50 rounded-xl px-2 py-1 outline-none w-24 border border-gray-100"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSlot(i)}
+                      className="w-8 h-8 bg-red-50 rounded-full flex items-center justify-center active:scale-95 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Section Pause */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pauses & Pause Déjeuner</p>
+                <p className="text-[11px] text-gray-400 font-medium">Créneaux d'indisponibilité pendant la journée</p>
+              </div>
+              <button
+                type="button"
+                onClick={addPause}
+                className="flex items-center gap-1.5 bg-orange-100 rounded-full px-3 py-1.5 active:scale-95 transition-all"
+              >
+                <Plus className="w-3.5 h-3.5 text-primary" />
+                <span className="text-[11px] font-black text-primary">Ajouter pause</span>
+              </button>
+            </div>
+
+            {pauses.length === 0 ? (
+              <div className="border border-dashed border-gray-200 rounded-2xl p-4 text-center bg-gray-50">
+                <p className="text-[12px] font-semibold text-gray-500">Aucune pause configurée</p>
+                <button
+                  type="button"
+                  onClick={addPause}
+                  className="text-[11px] font-bold text-primary underline mt-1"
+                >
+                  + Ajouter une pause (ex: 12:00 - 13:00)
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {pauses.map((pause, i) => (
+                  <div key={i} className="bg-orange-50/50 border border-orange-100 rounded-2xl px-4 py-3 flex items-center gap-3">
+                    <Sun className="w-4 h-4 text-primary shrink-0" />
+                    <div className="flex-1 flex flex-col gap-1.5">
+                      <input
+                        type="text"
+                        placeholder="Intitulé (ex: Pause déjeuner)"
+                        value={pause.label || ""}
+                        onChange={e => updatePause(i, "label", e.target.value)}
+                        className="text-[12px] font-bold text-gray-800 bg-transparent outline-none"
+                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="time"
+                          value={pause.start || ""}
+                          onChange={e => updatePause(i, "start", e.target.value)}
+                          className="text-[14px] font-black text-gray-900 bg-white rounded-lg px-2 py-1 outline-none border border-gray-200 w-24"
+                        />
+                        <span className="text-gray-400 font-bold">→</span>
+                        <input
+                          type="time"
+                          value={pause.end || ""}
+                          onChange={e => updatePause(i, "end", e.target.value)}
+                          className="text-[14px] font-black text-gray-900 bg-white rounded-lg px-2 py-1 outline-none border border-gray-200 w-24"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removePause(i)}
+                      className="w-8 h-8 bg-red-50 rounded-full flex items-center justify-center active:scale-95 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-400" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Mode Par Jour Spécifique */}
+      {mode === "par_jour" && (
+        <div className="space-y-4">
+          <p className="text-[11px] text-gray-500">
+            Sélectionnez un jour pour lui assigner des horaires et pauses spécifiques.
+          </p>
+
+          {/* Onglets des jours */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+            {dayKeys.map(key => {
+              const isActive = activeDays.includes(key);
+              const isSelected = selectedDayTab === key;
+              const hasCustom = daySchedules[key]?.custom;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setSelectedDayTab(key)}
+                  className={`px-3 py-2 rounded-xl text-[12px] font-black shrink-0 flex items-center gap-1 transition-all ${
+                    isSelected
+                      ? "bg-primary text-white shadow-md shadow-primary/20"
+                      : isActive
+                      ? "bg-gray-100 text-gray-700"
+                      : "bg-gray-50 text-gray-300"
+                  }`}
+                >
+                  {dayLabels[key]}
+                  {hasCustom && <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Card d'édition pour le jour sélectionné */}
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+              <span className="text-[14px] font-black text-gray-900">{dayLabels[selectedDayTab]}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setDaySchedule(selectedDayTab, c => ({ ...c, custom: !c.custom }));
+                }}
+                className={`text-[11px] font-black px-3 py-1 rounded-full transition-colors ${
+                  getDaySchedule(selectedDayTab).custom
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                {getDaySchedule(selectedDayTab).custom ? "Horaires spécifiques activés" : "Utilise horaires généraux"}
+              </button>
+            </div>
+
+            {getDaySchedule(selectedDayTab).custom ? (
+              <div className="space-y-4">
+                {/* Slots jour spécifique */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Créneaux du {dayLabels[selectedDayTab]}</p>
+                    <button
+                      type="button"
+                      onClick={() => setDaySchedule(selectedDayTab, c => ({ ...c, slots: [...(c.slots || []), { start: "", end: "" }] }))}
+                      className="text-[11px] font-black text-primary"
+                    >
+                      + Créneau
+                    </button>
+                  </div>
+                  {(getDaySchedule(selectedDayTab).slots || []).map((s, idx) => (
+                    <div key={idx} className="flex items-center gap-2 mb-2">
+                      <input
+                        type="time"
+                        value={s.start || ""}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDaySchedule(selectedDayTab, c => {
+                            const arr = [...(c.slots || [])];
+                            arr[idx] = { ...arr[idx], start: val };
+                            return { ...c, slots: arr };
+                          });
+                        }}
+                        className="text-[14px] font-bold bg-white border border-gray-200 rounded-xl px-2 py-1.5"
+                      />
+                      <span className="text-gray-400">→</span>
+                      <input
+                        type="time"
+                        value={s.end || ""}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDaySchedule(selectedDayTab, c => {
+                            const arr = [...(c.slots || [])];
+                            arr[idx] = { ...arr[idx], end: val };
+                            return { ...c, slots: arr };
+                          });
+                        }}
+                        className="text-[14px] font-bold bg-white border border-gray-200 rounded-xl px-2 py-1.5"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setDaySchedule(selectedDayTab, c => ({ ...c, slots: c.slots.filter((_, i) => i !== idx) }))}
+                        className="text-red-400 font-bold px-2"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  {(getDaySchedule(selectedDayTab).slots || []).length === 0 && (
+                    <p className="text-[11px] text-gray-400 italic">Aucun créneau spécifique défini pour ce jour.</p>
+                  )}
+                </div>
+
+                {/* Pauses jour spécifique */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pauses du {dayLabels[selectedDayTab]}</p>
+                    <button
+                      type="button"
+                      onClick={() => setDaySchedule(selectedDayTab, c => ({ ...c, pauses: [...(c.pauses || []), { start: "", end: "", label: "Pause" }] }))}
+                      className="text-[11px] font-black text-primary"
+                    >
+                      + Pause
+                    </button>
+                  </div>
+                  {(getDaySchedule(selectedDayTab).pauses || []).map((p, idx) => (
+                    <div key={idx} className="flex items-center gap-2 mb-2">
+                      <input
+                        type="time"
+                        value={p.start || ""}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDaySchedule(selectedDayTab, c => {
+                            const arr = [...(c.pauses || [])];
+                            arr[idx] = { ...arr[idx], start: val };
+                            return { ...c, pauses: arr };
+                          });
+                        }}
+                        className="text-[14px] font-bold bg-white border border-gray-200 rounded-xl px-2 py-1.5"
+                      />
+                      <span className="text-gray-400">→</span>
+                      <input
+                        type="time"
+                        value={p.end || ""}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDaySchedule(selectedDayTab, c => {
+                            const arr = [...(c.pauses || [])];
+                            arr[idx] = { ...arr[idx], end: val };
+                            return { ...c, pauses: arr };
+                          });
+                        }}
+                        className="text-[14px] font-bold bg-white border border-gray-200 rounded-xl px-2 py-1.5"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setDaySchedule(selectedDayTab, c => ({ ...c, pauses: c.pauses.filter((_, i) => i !== idx) }))}
+                        className="text-red-400 font-bold px-2"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                  {(getDaySchedule(selectedDayTab).pauses || []).length === 0 && (
+                    <p className="text-[11px] text-gray-400 italic">Aucune pause spécifique pour ce jour.</p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p className="text-[12px] text-gray-500 italic">
+                Ce jour utilise les horaires et pauses configurés dans l'onglet "Horaires généraux".
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Conditions supplémentaires */}
       <div className="space-y-3">
-        {[{ key: "deplace", label: "Je me déplace", Icon: Car }, { key: "nuit", label: "Travail de nuit", Icon: Moon }].map(({ key, label, Icon }) => (
+        {[{ key: "deplace", label: "Je me déplace chez les clients", Icon: Car }, { key: "nuit", label: "Prestations de nuit", Icon: Moon }].map(({ key, label, Icon }) => (
           <div key={key} className="bg-white border border-gray-200 rounded-2xl px-4 py-4 flex items-center gap-3">
             <Icon className="w-5 h-5 text-gray-400 shrink-0" />
             <span className="flex-1 text-[14px] font-bold text-gray-800">{label}</span>
-            <button onClick={() => setData(d => ({ ...d, [key]: !d[key] }))}
-              className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${data[key] ? "bg-primary" : "bg-gray-200"}`}>
+            <button
+              type="button"
+              onClick={() => setData(d => ({ ...d, [key]: !d[key] }))}
+              className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${data[key] ? "bg-primary" : "bg-gray-200"}`}
+            >
               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${data[key] ? "translate-x-7" : "translate-x-1"}`} />
             </button>
           </div>
@@ -1236,10 +1611,11 @@ export default function DevenirPro() {
       try {
         const user = await supabase.auth.getUser().then(({ data }) => data?.user).catch(() => null);
 
+        // Payload assaini pour DemandeProV2 (exclut menu_bar & menu_restaurant qui ne sont pas des colonnes de table)
         const demandeData = {
-          user_email: user?.email || "pro@beautybook.fr",
-          salon_name: data.salon_name,
-          bio: data.bio,
+          user_email: user?.email || data.email_pro || "pro@beautybook.fr",
+          salon_name: data.salon_name || "",
+          bio: data.bio || "",
           type_activite: data.type || "Salon",
           years_experience: data.years || 0,
           services: data.services || [],
@@ -1255,8 +1631,8 @@ export default function DevenirPro() {
           doc_identite_verso: data.doc_identite_verso || "",
           doc_siret: data.doc_siret || "",
           doc_assurance: data.doc_assurance || "",
-          days: data.days || ["mar", "mer", "jeu", "ven", "sam"],
-          time_slots: data.time_slots || [{ start: "09:00", end: "19:00" }],
+          days: data.days || ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"],
+          time_slots: data.time_slots || [],
           commodites: data.commodites || [],
           seats_count: data.seats_count || 1,
           se_deplace: data.deplace || false,
@@ -1266,34 +1642,47 @@ export default function DevenirPro() {
           has_diplome: (data.diplomes || []).length > 0,
           address: data.address || "",
           city: data.city || "",
-          menu_restaurant: data.menu_restaurant || [],
-          menu_bar: data.menu_bar || [],
           statut: "en_attente",
+          updated_at: new Date().toISOString(),
         };
 
-        const existing = user?.email
-          ? await entities.DemandeProV2.filter({ user_email: user.email }, "-created_at", 1).catch(() => [])
-          : [];
+        // Sauvegarde dans DemandeProV2 sans planter
+        await supabase.from('DemandeProV2').insert(demandeData).catch(async () => {
+          await supabase.from('DemandeProV2').upsert(demandeData, { onConflict: 'user_email' }).catch(() => {});
+        });
 
-        // Upsert direct dans Supabase
-        const { error: upsertError } = await supabase.from('DemandeProV2').upsert({
-          ...demandeData,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'id' });
+        // Enregistrement / Activation directe dans ProfilPro
+        if (user?.email) {
+          const profilProPayload = {
+            user_email: user.email,
+            salon_name: data.salon_name || "",
+            phone: data.phone || "",
+            address: data.address || "",
+            city: data.city || "",
+            bio: data.bio || "",
+            avatar_url: data.avatar_url || (data.gallery || [])[0] || "",
+            cover_url: data.cover_url || "",
+            status: "actif",
+            type_activite: data.type || "Salon",
+            travail_nuit: data.nuit || false,
+            galerie_urls: data.gallery || [],
+            updated_at: new Date().toISOString(),
+          };
 
-        if (upsertError) {
-          // Si pas de colonne id, essayer insert
-          const { error: insertError } = await supabase.from('DemandeProV2').insert(demandeData);
-          if (insertError) throw new Error(insertError.message || 'Erreur sauvegarde');
+          await supabase.from('ProfilPro').upsert(profilProPayload, { onConflict: 'user_email' }).catch(async () => {
+            await supabase.from('ProfilPro').insert(profilProPayload).catch(() => {});
+          });
+
+          localStorage.setItem('pro_profile_cache', JSON.stringify(profilProPayload));
         }
 
-        // Nettoyer le brouillon après soumission réussie
+        // Effacer le brouillon et rediriger
         localStorage.removeItem(DRAFT_KEY);
         localStorage.removeItem(DRAFT_KEY + "_step");
         localStorage.setItem("bb_is_pro", "true");
         navigate("/profil-pro");
       } catch (err) {
-        alert("Erreur lors de la soumission : " + err.message);
+        alert("Erreur lors de la soumission : " + (err.message || err));
       }
       setSaving(false);
     }
