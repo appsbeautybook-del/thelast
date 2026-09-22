@@ -287,32 +287,6 @@ export default function Home() {
         <HeroSlider banners={heroBanners} user={user} navigate={navigate} />
       </div>
 
-      {/* ── Quick Action Bar: Direct + Recherche ── */}
-      <div className="px-4 pt-3 pb-1 flex gap-3">
-        {/* Direct / Live */}
-        <button
-          onClick={() => navigate("/live")}
-          className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 active:scale-95 transition-all shadow-sm"
-          style={{ background: "linear-gradient(135deg, #FF6B00 0%, #F48C25 100%)", borderColor: "transparent", boxShadow: "0 4px 16px rgba(255,107,0,0.30)" }}
-        >
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
-          </span>
-          <Radio className="w-4 h-4 text-white" strokeWidth={2} />
-          <span className="text-[13px] font-black text-white uppercase tracking-wide">Direct</span>
-        </button>
-
-        {/* Recherche */}
-        <button
-          onClick={() => navigate("/recherche")}
-          className="flex-[1.6] flex items-center gap-2.5 py-3.5 px-4 rounded-2xl border border-gray-200 bg-white active:scale-95 transition-all"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
-        >
-          <Search className="w-4 h-4 shrink-0" style={{ color: "#FF6B00" }} strokeWidth={2.5} />
-          <span className="text-[13px] font-medium text-gray-400 truncate">Services, salons, styles...</span>
-        </button>
-      </div>
 
       {/* ── Catégories — fond nude ── */}
       <div data-tour="categories" className="mx-4 rounded-3xl px-4 py-5 mb-2" style={{ background: sectionBg }}>
