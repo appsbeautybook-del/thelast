@@ -15,10 +15,25 @@ export default function AdminAccess() {
   const savedEmail = pendingEmail(sessionStorage, PENDING);
   const [phase, setPhase] = useState(() => location.pathname.endsWith('/signup') ? 'signup' : location.pathname.endsWith('/verify') && savedEmail ? 'verify' : 'login');
   const [email, setEmail] = useState(savedEmail), [password, setPassword] = useState(''), [confirmation, setConfirmation] = useState('');
-  const [error, setError] = useState(''), [notice, setNotice] = useState(''), [loading, setLoading] = useState(false);
+  const [error, setError] = useState(''), [notice, setNotice] = useState(''), [loading, setLoading] = useState(false), [googleLoading, setGoogleLoading] = useState(false);
   const [code, setCode] = useState(''), [cooldown, setCooldown] = useState(0), [factorId, setFactorId] = useState(''), [qr, setQr] = useState('');
   const alive = useRef(true);
   const redirectTo = `${window.location.origin}/admin/login?auth=confirmed`;
+  async function signInWithGoogle() {
+    if (!supabase || googleLoading) return;
+    setGoogleLoading(true); setError(''); setNotice('');
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/admin/login` }
+      });
+      if (error) throw error;
+    } catch (err) {
+      setError(authMessage(err));
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
   async function checkAccess() {
     try { await apiClient.get('/api/admin/session'); if (alive.current) navigate('/admin/dashboard', { replace: true }); }
     catch (err) {
@@ -116,6 +131,12 @@ export default function AdminAccess() {
       {['verify', 'mfa'].includes(phase) && <>{qr && phase === 'mfa' && <img src={qr.startsWith('data:') ? qr : 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(qr)} alt="Code QR à scanner dans votre application d’authentification" className="w-48 h-48 bg-white p-3 rounded-xl" />}<label className="block text-sm">{phase === 'verify' ? 'Code reçu par email' : 'Code de sécurité'}<input autoComplete="one-time-code" inputMode="numeric" pattern={phase === 'verify' ? '[0-9]{6,10}' : '[0-9]{6}'} maxLength={phase === 'verify' ? 10 : 6} required value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} className={`${inputClass} text-2xl tracking-widest`} /></label></>}
       <button disabled={loading} className={buttonClass}>{loading ? 'Un instant…' : ({ login: 'Se connecter', signup: 'Créer mon compte', verify: 'Confirmer et continuer', reset: 'Envoyer le lien', password: 'Enregistrer', access: 'Vérifier mon accès', mfa: 'Valider le code' })[phase]}{loading ? <LoaderCircle size={18} className="animate-spin" /> : <ArrowRight size={18} />}</button>
     </form>}
+    {['login', 'signup', 'reset'].includes(phase) && (
+      <button type="button" disabled={googleLoading || loading} onClick={signInWithGoogle} className="mt-4 flex w-full min-h-12 items-center justify-between gap-3 rounded-xl border border-gray-700 bg-gray-900 p-4 font-bold text-white disabled:opacity-50">
+        {googleLoading ? 'Connexion Google…' : 'Continuer avec Google'}
+        <ArrowRight size={18} />
+      </button>
+    )}
     <div className="mt-6 flex flex-col gap-2 text-sm text-gray-300">
       {phase === 'verify' && <><button disabled={loading || cooldown > 0} onClick={resend} className="min-h-11 text-orange-300 disabled:opacity-50">{cooldown ? `Renvoyer dans ${cooldown} s` : 'Renvoyer l’email de confirmation'}</button><button disabled={loading} onClick={() => { sessionStorage.removeItem(PENDING); changePhase('signup'); }} className="min-h-11">Corriger mon adresse email</button></>}
       {phase === 'login' && <><button disabled={loading} onClick={() => changePhase('signup')} className="min-h-11 text-orange-300">Créer un compte</button><button disabled={loading} onClick={() => changePhase('reset')} className="min-h-11">Mot de passe oublié ?</button></>}

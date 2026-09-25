@@ -2,9 +2,6 @@ import BeautyImage from '@/components/ui/BeautyImage';
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Star, X, Search, SlidersHorizontal, Bell, Sparkles, XCircle, Scissors, Waves, Diamond, PenTool, Droplets, Filter, ChevronRight, Flame, Zap } from "lucide-react";
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { entities } from '@/api/entities';
 import { useLocation } from '@/contexts/LocationContext';
 import MapWithPricePins from '@/components/map/MapWithPricePins';
@@ -28,21 +25,6 @@ const FALLBACK_STYLES = [
   { id: "f5", title: "Cornrows", category: "Coiffure", image_url: "" },
   { id: "f6", title: "Locs", category: "Coiffure", image_url: "" },
 ];
-
-const userIcon = typeof L !== "undefined" ? L.divIcon({
-  className: "",
-  iconSize: [28, 36],
-  iconAnchor: [14, 32],
-  html: `<div style="position:relative;width:28px;height:36px"><div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:#E8732A;border:3px solid white;box-shadow:0 0 0 3px rgba(232,115,42,0.4),0 2px 8px rgba(0,0,0,0.3)"></div><div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #E8732A"></div></div>`,
-}) : null;
-
-function FlyToLocation({ center }) {
-  const map = useMap();
-  useEffect(() => {
-    if (center) map.flyTo(center, map.getZoom(), { duration: 0.5 });
-  }, [center, map]);
-  return null;
-}
 
 export default function Explorer() {
   const navigate = useNavigate();

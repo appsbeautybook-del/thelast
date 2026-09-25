@@ -11,9 +11,24 @@ export default function SellerAuth({ sessionError = '' }) {
   const savedEmail = pendingEmail(sessionStorage, PENDING);
   const [mode, setMode] = useState(savedEmail ? 'verify' : 'login'), [email, setEmail] = useState(savedEmail);
   const [password, setPassword] = useState(''), [confirmation, setConfirmation] = useState(''), [code, setCode] = useState('');
-  const [error, setError] = useState(''), [notice, setNotice] = useState(''), [loading, setLoading] = useState(false), [cooldown, setCooldown] = useState(0);
+  const [error, setError] = useState(''), [notice, setNotice] = useState(''), [loading, setLoading] = useState(false), [cooldown, setCooldown] = useState(0), [googleLoading, setGoogleLoading] = useState(false);
   const redirectTo = `${(import.meta.env.VITE_APP_URL || location.origin).replace(/\/$/, '')}/?auth=confirmed`;
   useEffect(() => { if (!cooldown) return; const timer = setTimeout(() => setCooldown(n => n - 1), 1000); return () => clearTimeout(timer); }, [cooldown]);
+  async function signInWithGoogle() {
+    if (!supabase || googleLoading) return;
+    setGoogleLoading(true); setError(''); setNotice('');
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      });
+      if (error) throw error;
+    } catch (err) {
+      setError(authMessage(err));
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
   function changeMode(next) { setMode(next); setError(''); setNotice(''); setPassword(''); setConfirmation(''); setCode(''); }
   function showConfirmation() { savePendingEmail(sessionStorage, PENDING, email); changeMode('verify'); setCooldown(60); }
   async function submit(event) {
@@ -55,6 +70,7 @@ export default function SellerAuth({ sessionError = '' }) {
         {(error || sessionError) && <Notice>{error || sessionError}</Notice>}{notice && <p role="status" className="success">{notice}</p>}
         <button className="button primary full" disabled={loading}>{loading ? 'Un instant…' : ({ login: 'Se connecter', signup: 'Créer mon compte', verify: 'Confirmer et continuer', reset: 'Envoyer le lien' })[mode]}<ArrowRight size={18} /></button>
       </form>}
+      {configured && <button type="button" className="button full" disabled={googleLoading || loading} onClick={signInWithGoogle} style={{ marginTop: '12px' }}>{googleLoading ? 'Connexion Google…' : 'Continuer avec Google'}</button>}
       <div className="auth-links">
         {mode === 'verify' && <><button disabled={loading || cooldown > 0} onClick={resend}>{cooldown ? `Renvoyer dans ${cooldown} s` : 'Renvoyer l’email de confirmation'}</button><button disabled={loading} onClick={() => { sessionStorage.removeItem(PENDING); changeMode('signup'); }}>Corriger mon adresse email</button></>}
         <button disabled={loading} onClick={() => changeMode(mode === 'login' ? 'signup' : 'login')}>{mode === 'login' ? 'Créer un compte vendeur' : 'Revenir à la connexion'}</button>

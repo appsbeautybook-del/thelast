@@ -1,9 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 import {Capacitor} from '@capacitor/core';
-const url=import.meta.env.VITE_SUPABASE_URL;
-const key=import.meta.env.VITE_SUPABASE_ANON_KEY;
-export const configured=Boolean(url&&key);
-export const supabase=configured?createClient(url,key,{auth:{storageKey:'beautybook-seller-auth',flowType:'pkce',persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
+
+const url = import.meta.env.VITE_SUPABASE_URL || 'https://vimusrczrjvefsbljtmf.supabase.co';
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpbXVzcmN6cmp2ZWZzYmxqdG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE5ODg1MDksImV4cCI6MjA5NzU2NDUwOX0.2fSiqWfYKs3fadwRkS9Nvdq9b9JqnsmtMTHg-wN5m6k';
+
+if (!import.meta.env.VITE_SUPABASE_URL) {
+  console.warn('[Supabase] Using hardcoded fallback credentials for seller. Set VITE_SUPABASE_URL in your .env.local for production.');
+}
+
+export const configured = Boolean(url && key);
+export const supabase = configured ? createClient(url, key, {
+  auth: {
+    storageKey: 'beautybook-seller-auth',
+    flowType: 'pkce',
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+  },
+}) : null;
 
 export async function api(path,{method='GET',body,requestKey}={}){
   const {data:{session}}=await supabase.auth.getSession();
