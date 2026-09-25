@@ -1,38 +1,13 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { MapPin, Navigation } from "lucide-react";
-
-const APPLE_MAPS_TOKEN = "eyJraWQiOiI2SDkyNDI0WDJEIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJHNFpYTkszVTJWIiwiaWF0IjoxNzkwMDM2NDQ3LCJzY29wZSI6ImVtYmVkX2FwaSIsImV4cCI6MTc5MDY2NTE5OX0.FibCotF_o2NCM5DvdhZK_btdTrruc2mdQw1V4lTTORjzQeBZls9n4c5dK06sGqxfjxDSwVkoIkOSntTte3Zx9Q";
-
-let mapkitLoaded = false;
-let mapkitLoading = false;
-const mapkitCallbacks = [];
-
-function loadMapKit(cb) {
-  if (mapkitLoaded) { cb(); return; }
-  mapkitCallbacks.push(cb);
-  if (mapkitLoading) return;
-  mapkitLoading = true;
-  const script = document.createElement("script");
-  script.src = "https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js";
-  script.async = true;
-  script.onload = () => {
-    if (window.mapkit) {
-      window.mapkit.init({
-        authorizationCallback: (done) => done(APPLE_MAPS_TOKEN),
-        language: "fr",
-      });
-      mapkitLoaded = true;
-      mapkitCallbacks.forEach(fn => fn());
-    }
-  };
-  document.head.appendChild(script);
-}
+import { loadAppleMaps } from "@/lib/appleMaps";
 
 export default function MapWithPricePins({ items = [], onSelectItem, height = "h-96" }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const [selected, setSelected] = useState(null);
   const [ready, setReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   const resolvedItems = useMemo(() =>
     items
@@ -63,9 +38,10 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
 
   useEffect(() => {
     if (!mapRef.current) return;
+    let cancelled = false;
 
-    loadMapKit(() => {
-      if (!mapRef.current) return;
+    loadAppleMaps().then((mapkit) => {
+      if (cancelled || !mapRef.current) return;
 
       if (mapInstanceRef.current) {
         // Map is initialized, update annotations
@@ -75,7 +51,7 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
 
           const annotations = resolvedItems.slice(0, 50).map(item => {
             const ann = new window.mapkit.MarkerAnnotation(
-              new window.mapkit.Coordinate(item._lat, item._lng),
+              new mapkit.Coordinate(item._lat, item._lng),
               {
                 title: item.displayTitle,
                 subtitle: item.displayPrice > 0 ? `Dès ${item.displayPrice}€` : item.city || "",
@@ -95,29 +71,31 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
           if (annotations.length > 0) {
             mapInstanceRef.current.addAnnotations(annotations);
             if (annotations.length > 1) {
-              mapInstanceRef.current.showItems(annotations, { animate: true, padding: new window.mapkit.Padding(40, 40, 40, 40) });
+              mapInstanceRef.current.showItems(annotations, { animate: true, padding: new mapkit.Padding(40, 40, 40, 40) });
             }
           }
+          setMapError(false);
         } catch (e) {
           console.warn("[MapWithPricePins] Failed updating annotations:", e);
+          setMapError(true);
         }
         return;
       }
 
       // Initialize map for the first time
       try {
-        const map = new window.mapkit.Map(mapRef.current, {
-          center: new window.mapkit.Coordinate(center.lat, center.lng),
+        const map = new mapkit.Map(mapRef.current, {
+          center: new mapkit.Coordinate(center.lat, center.lng),
           cameraDistance: resolvedItems.length > 0 ? 12000 : 25000,
-          mapType: window.mapkit.Map.MapTypes.Standard,
-          showsCompass: window.mapkit.FeatureVisibility.Hidden,
+          mapType: mapkit.Map.MapTypes.Standard,
+          showsCompass: mapkit.FeatureVisibility.Hidden,
           showsUserLocationControl: true,
           showsZoomControl: true,
         });
 
         const annotations = resolvedItems.slice(0, 50).map(item => {
           const ann = new window.mapkit.MarkerAnnotation(
-            new window.mapkit.Coordinate(item._lat, item._lng),
+            new mapkit.Coordinate(item._lat, item._lng),
             {
               title: item.displayTitle,
               subtitle: item.displayPrice > 0 ? `Dès ${item.displayPrice}€` : item.city || "",
@@ -137,18 +115,27 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
         if (annotations.length > 0) {
           map.addAnnotations(annotations);
           if (annotations.length > 1) {
-            map.showItems(annotations, { animate: false, padding: new window.mapkit.Padding(40, 40, 40, 40) });
+            map.showItems(annotations, { animate: false, padding: new mapkit.Padding(40, 40, 40, 40) });
           }
         }
 
         map.showsUserLocation = true;
         mapInstanceRef.current = map;
         setReady(true);
+        setMapError(false);
       } catch (e) {
         console.warn("[MapWithPricePins] Apple Maps init error:", e);
         setReady(false);
+        setMapError(true);
       }
+    }).catch((error) => {
+      if (cancelled) return;
+      console.error("[MapWithPricePins] Apple Maps unavailable:", error);
+      setReady(false);
+      setMapError(true);
     });
+
+    return () => { cancelled = true; };
   }, [resolvedItems, center, onSelectItem]);
 
   const selectedItem = selected ? resolvedItems.find(it => it.id === selected) : null;
@@ -166,7 +153,7 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
             <MapPin className="w-6 h-6 text-white animate-bounce" />
           </div>
           <p className="text-[13px] font-extrabold" style={{ color: "#FF6B00" }}>
-            Chargement de la carte Apple Maps…
+            {mapError ? "Apple Maps est momentanément indisponible" : "Chargement de la carte Apple Maps…"}
           </p>
         </div>
       )}
@@ -193,4 +180,3 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
     </div>
   );
 }
-

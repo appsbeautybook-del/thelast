@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { X, SlidersHorizontal, Star, Check, MapPin, Navigation, Search } from "lucide-react";
+import { loadAppleMaps } from "@/lib/appleMaps";
 
 const CATEGORIES = ["Tout", "Coiffure", "Esthétique", "Beauté", "Nails", "Massage", "Spa", "Maquillage", "Barbe", "Sourcils"];
 const SORT_OPTIONS = [
@@ -35,39 +36,25 @@ const RATING_OPTIONS = [
 ];
 
 // ── Apple Maps Embed ──────────────────────────────────────────────────────────
-const APPLE_MAPS_TOKEN = "eyJraWQiOiI2SDkyNDI0WDJEIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJHNFpYTkszVTJWIiwiaWF0IjoxNzkwMDM2NDQ3LCJzY29wZSI6ImVtYmVkX2FwaSIsImV4cCI6MTc5MDY2NTE5OX0.FibCotF_o2NCM5DvdhZK_btdTrruc2mdQw1V4lTTORjzQeBZls9n4c5dK06sGqxfjxDSwVkoIkOSntTte3Zx9Q";
-
 function AppleMapsPanel({ pros = [], userLat, userLng }) {
   const mapRef = useRef(null);
   const mapkitRef = useRef(null);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState(false);
 
   useEffect(() => {
-    if (window.mapkit) {
-      initMap();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js";
-    script.async = true;
-    script.onload = () => { initMap(); };
-    document.head.appendChild(script);
-
-    function initMap() {
-      if (!window.mapkit || mapkitRef.current) return;
-      window.mapkit.init({
-        authorizationCallback: (done) => done(APPLE_MAPS_TOKEN),
-        language: "fr",
-      });
+    let cancelled = false;
+    loadAppleMaps().then((mapkit) => {
+      if (cancelled || !mapRef.current || mapkitRef.current) return;
 
       const centerLat = userLat || 48.8566;
       const centerLng = userLng || 2.3522;
 
-      const map = new window.mapkit.Map(mapRef.current, {
-        center: new window.mapkit.Coordinate(centerLat, centerLng),
+      const map = new mapkit.Map(mapRef.current, {
+        center: new mapkit.Coordinate(centerLat, centerLng),
         cameraDistance: 8000,
-        mapType: window.mapkit.Map.MapTypes.Standard,
-        showsCompass: window.mapkit.FeatureVisibility.Hidden,
+        mapType: mapkit.Map.MapTypes.Standard,
+        showsCompass: mapkit.FeatureVisibility.Hidden,
         showsUserLocationControl: true,
         showsZoomControl: false,
       });
@@ -76,8 +63,8 @@ function AppleMapsPanel({ pros = [], userLat, userLng }) {
       // Add pro markers
       const annotations = pros.slice(0, 20).map((pro) => {
         if (!pro.lat || !pro.lng) return null;
-        const ann = new window.mapkit.MarkerAnnotation(
-          new window.mapkit.Coordinate(pro.lat, pro.lng),
+        const ann = new mapkit.MarkerAnnotation(
+          new mapkit.Coordinate(pro.lat, pro.lng),
           {
             title: pro.salon_name || "",
             subtitle: pro.price ? `${pro.price}€` : "",
@@ -90,7 +77,15 @@ function AppleMapsPanel({ pros = [], userLat, userLng }) {
 
       if (annotations.length > 0) map.addAnnotations(annotations);
       setMapReady(true);
-    }
+      setMapError(false);
+    }).catch((error) => {
+      if (cancelled) return;
+      console.error("[AppleMapsPanel] Apple Maps unavailable:", error);
+      setMapReady(false);
+      setMapError(true);
+    });
+
+    return () => { cancelled = true; };
   }, [pros, userLat, userLng]);
 
   return (
@@ -99,7 +94,9 @@ function AppleMapsPanel({ pros = [], userLat, userLng }) {
       {!mapReady && (
         <div className="absolute inset-0 bg-gradient-to-br from-orange-50 to-orange-100 flex flex-col items-center justify-center gap-2">
           <MapPin className="w-8 h-8 text-primary animate-bounce" />
-          <p className="text-[12px] font-bold text-primary">Chargement de la carte...</p>
+          <p className="text-[12px] font-bold text-primary">
+            {mapError ? "Apple Maps est momentanément indisponible" : "Chargement de la carte..."}
+          </p>
         </div>
       )}
     </div>
