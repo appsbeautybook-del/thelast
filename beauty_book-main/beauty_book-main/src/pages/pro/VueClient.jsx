@@ -961,7 +961,10 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                 <div className="flex-1">
                   <p className="text-[13px] font-black text-gray-800">Adresse du Salon</p>
                   <p className="text-[12px] text-gray-500 font-medium mt-0.5">
-                    {[proInfo?.address, proInfo?.city, proInfo?.postal_code].filter(Boolean).join(", ") || "Adresse non renseignée"}
+                    {[proInfo?.address, proInfo?.city, proInfo?.postal_code]
+                      .filter(Boolean)
+                      .filter((p, i, arr) => i === 0 || !arr[0].toLowerCase().includes(p.toLowerCase()))
+                      .join(", ") || "Adresse non renseignée"}
                   </p>
                 </div>
                 <ChevronRight className="w-4 h-4 text-primary mt-1 shrink-0" />

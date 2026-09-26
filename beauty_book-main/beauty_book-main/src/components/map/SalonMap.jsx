@@ -9,13 +9,21 @@ export default function SalonMap({ lat, lng, address, city, postalCode, name, he
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const [status, setStatus] = useState("loading"); // loading | ready | unavailable
-  const [coords, setCoords] = useState(() => {
+  const [coords, setCoords] = useState(null);
+
+  // Synchronise les coordonnées quand les props arrivent (le profil charge après le montage)
+  useEffect(() => {
     const la = Number(lat);
     const ln = Number(lng);
-    return Number.isFinite(la) && Number.isFinite(ln) && la !== 0 && ln !== 0
-      ? { lat: la, lng: ln }
-      : null;
-  });
+    if (Number.isFinite(la) && Number.isFinite(ln) && la !== 0 && ln !== 0) {
+      setCoords((prev) => {
+        if (prev && prev.lat === la && prev.lng === ln) return prev;
+        // Nouvelles coordonnées : on repasse en chargement pour afficher la carte
+        setStatus("loading");
+        return { lat: la, lng: ln };
+      });
+    }
+  }, [lat, lng]);
 
   const parts = [address, postalCode, city].filter(Boolean);
   // Évite "Athis-Mons, Athis-Mons" quand l'adresse contient déjà la ville
@@ -36,6 +44,7 @@ export default function SalonMap({ lat, lng, address, city, postalCode, name, he
           if (cancelled) return;
           const c = !error && data?.results?.length ? data.results[0].coordinate : null;
           if (c && Number.isFinite(c.latitude) && Number.isFinite(c.longitude)) {
+            setStatus("loading");
             setCoords({ lat: c.latitude, lng: c.longitude });
           } else {
             setStatus("unavailable");
