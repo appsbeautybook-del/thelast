@@ -52,14 +52,15 @@ export function formatOpeningHours(ouverture, now = new Date()) {
   parsed.forEach((dayObj) => {
     const hoursStr = dayObj.open && dayObj.start && dayObj.end ? `${dayObj.start} – ${dayObj.end}` : "Fermé";
     const pauseStr = (dayObj.open && dayObj.pause_start && dayObj.pause_end) ? `${dayObj.pause_start} – ${dayObj.pause_end}` : "";
-    const keyStr = `${hoursStr}|${pauseStr}`;
+    const overnight = !!(dayObj.open && dayObj.start && dayObj.end && isOvernight(dayObj.start, dayObj.end));
+    const keyStr = `${hoursStr}|${pauseStr}|${overnight}`;
     if (!currentGroup) {
-      currentGroup = { days: [dayObj], keyStr, open: dayObj.open, hoursStr, pauseStr };
+      currentGroup = { days: [dayObj], keyStr, open: dayObj.open, hoursStr, pauseStr, overnight };
     } else if (currentGroup.keyStr === keyStr) {
       currentGroup.days.push(dayObj);
     } else {
       groups.push(currentGroup);
-      currentGroup = { days: [dayObj], keyStr, open: dayObj.open, hoursStr, pauseStr };
+      currentGroup = { days: [dayObj], keyStr, open: dayObj.open, hoursStr, pauseStr, overnight };
     }
   });
   if (currentGroup) groups.push(currentGroup);
@@ -85,6 +86,7 @@ export function formatOpeningHours(ouverture, now = new Date()) {
       hours: g.hoursStr,
       pause: g.pauseStr,
       open: g.open,
+      overnight: !!g.overnight,
       isToday: g.days.some(d => d.key === todayKey),
     };
   });

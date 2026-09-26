@@ -1034,11 +1034,17 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                         {item.label}
                       </span>
                       {item.isToday && <span className="text-[9px] font-black text-primary bg-primary/10 px-1.5 py-0.5 rounded-full uppercase">Aujourd'hui</span>}
+                      {item.overnight && item.open && (
+                        <span className="text-[9px] font-black text-indigo-500 bg-indigo-50 px-1.5 py-0.5 rounded-full uppercase">🌙 Nuit</span>
+                      )}
                     </div>
                     <div className="text-right">
                       <span className={`text-[13px] font-bold ${!item.open ? "text-red-400" : "text-gray-900"}`}>
                         {item.hours}
                       </span>
+                      {item.overnight && item.open && (
+                        <p className="text-[10px] text-indigo-400 font-medium">jusqu'au lendemain</p>
+                      )}
                       {item.pause && (
                         <p className="text-[10px] text-gray-400 font-medium">Pause {item.pause}</p>
                       )}

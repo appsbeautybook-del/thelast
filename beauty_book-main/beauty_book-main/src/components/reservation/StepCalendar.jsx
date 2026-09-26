@@ -566,7 +566,7 @@ export default function StepCalendar({ selectedDate, selectedTime, selectedSeat,
                     seatsTotal={seatsTotal}
                     duration={dur}
                   />
-                  {travailNuit && slots?.night?.length > 0 && (
+                  {slots?.night?.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2 mt-1">
                         <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">🌙 Mode Nuit</span>
