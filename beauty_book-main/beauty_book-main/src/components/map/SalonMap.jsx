@@ -17,7 +17,9 @@ export default function SalonMap({ lat, lng, address, city, postalCode, name, he
       : null;
   });
 
-  const query = [address, postalCode, city].filter(Boolean).join(", ");
+  const parts = [address, postalCode, city].filter(Boolean);
+  // Évite "Athis-Mons, Athis-Mons" quand l'adresse contient déjà la ville
+  const query = parts.filter((p, i) => i === 0 || !parts[0].toLowerCase().includes(p.toLowerCase())).join(", ");
 
   // 1) Géocodage de l'adresse quand le salon n'a pas de coordonnées en base
   useEffect(() => {
@@ -98,7 +100,31 @@ export default function SalonMap({ lat, lng, address, city, postalCode, name, he
     };
   }, []);
 
-  if (status === "unavailable") return null;
+  if (status === "unavailable") {
+    // Repli : la carte ne doit jamais laisser un vide — affiche l'adresse + bouton itinéraire
+    if (!query && !name) return null;
+    return (
+      <div className="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm">
+        <a
+          href={`https://maps.apple.com/?q=${encodeURIComponent(query || name || "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-start gap-3 p-4 w-full text-left active:bg-orange-50 transition-colors"
+        >
+          <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center shrink-0">
+            <Navigation className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-[13px] font-black text-gray-800">Emplacement du salon</p>
+            <p className="text-[12px] text-gray-500 font-medium mt-0.5">{query || name}</p>
+          </div>
+          <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-orange-50 text-primary uppercase tracking-widest mt-1">
+            Itinéraire
+          </span>
+        </a>
+      </div>
+    );
+  }
 
   const itineraryUrl = coords
     ? `https://maps.apple.com/?daddr=${coords.lat},${coords.lng}&q=${encodeURIComponent(name || query || "Salon")}`

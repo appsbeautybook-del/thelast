@@ -1666,7 +1666,8 @@ export default function DevenirPro() {
             phone: data.phone || "",
             address: data.address || "",
             city: data.city || "",
-            bio: data.bio || "",
+            // Ne jamais écraser une bio existante avec une valeur vide
+            ...(data.bio ? { bio: data.bio } : {}),
             avatar_url: data.avatar_url || (data.gallery || [])[0] || "",
             cover_url: data.cover_url || "",
             status: "actif",
