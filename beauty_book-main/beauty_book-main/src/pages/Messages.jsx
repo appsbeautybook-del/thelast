@@ -270,7 +270,8 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
         .order("created_at", { ascending: true });
       const allById = {};
       for (const m of [...(sent || []), ...(received || [])]) {
-        if (m.type !== "typing") {
+        // Ignorer les signaux "typing" (contenu vide, sans pièce jointe)
+        if (m.content || m.attachment_url || m.file_url) {
           // Normaliser attachment_url et file_url
           if (!m.attachment_url && m.file_url) m.attachment_url = m.file_url;
           if (!m.file_url && m.attachment_url) m.file_url = m.attachment_url;
@@ -302,7 +303,6 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
       sender_email: currentUser.email,
       receiver_email: conversation.other_email,
       content: JSON.stringify({ type: "service_card", ...conversation.service }),
-      type: "service_card",
       read: false,
       is_read: false,
     }).catch(e => console.error("Service card error:", e));
@@ -320,7 +320,8 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
         const isRelevant = (m.sender_email === currentUser.email && m.receiver_email === conversation.other_email) ||
           (m.sender_email === conversation.other_email && m.receiver_email === currentUser.email);
         if (!isRelevant) return;
-        if (m.type === "typing") {
+        // Signal "typing" = ligne sans contenu ni pièce jointe
+        if (!m.content && !m.attachment_url && !m.file_url) {
           setOtherTyping(true);
           clearTimeout(typingTimeoutRef.current);
           typingTimeoutRef.current = setTimeout(() => setOtherTyping(false), 3000);
@@ -359,7 +360,7 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
     clearTimeout(typingTimeoutRef.current);
     supabase.from("MessageChat").insert({
       conversation_id: convId, sender_email: currentUser.email,
-      receiver_email: conversation.other_email, content: "", type: "typing", read: false,
+      receiver_email: conversation.other_email, content: "", read: false,
     }).catch(() => {});
     typingTimeoutRef.current = setTimeout(() => {}, 2500);
   };
@@ -416,7 +417,6 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
       content: content || (fileUrl ? "📷 Image" : ""),
       attachment_url: fileUrl || "",
       file_url: fileUrl || "",
-      type: imageFile ? "image" : "text",
       is_read: false, read: false,
       created_at: now, updated_at: now,
     };
@@ -553,7 +553,7 @@ function ChatView({ conversation, currentUser, onBack, onStartCall }) {
                 <div className={`max-w-[78%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                   {serviceData ? (
                     <div className="w-56"><ServiceCard service={serviceData} navigate={navigate} /></div>
-                  ) : m.type === "image" && (m.attachment_url || m.file_url) ? (
+                  ) : (m.attachment_url || m.file_url) ? (
                     <div>
                       <BeautyImage src={m.attachment_url || m.file_url} alt="image" className="rounded-2xl max-w-full shadow-sm max-h-64 object-cover" loading="lazy" />
                       {m.content && m.content !== "📷 Image" && (
@@ -1009,8 +1009,8 @@ export default function Messages() {
           const m = payload.new;
           if (!m) return;
           if (m.receiver_email !== user.email) return;
-          if (m.type === "typing") return;
-          if (m.is_maria) return;
+          if (!m.content && !m.attachment_url && !m.file_url) return;
+          if (m.sender_email === user.email) return; // ne jamais répondre à ses propres messages (anti-boucle)
           if (processedMsgIds.current.has(m.id)) return;
           if (!mariaAIRef.current) return;
           if (deletedConvIds.current.has(m.conversation_id)) return;
@@ -1044,11 +1044,9 @@ export default function Messages() {
                 conversation_id: convId,
                 sender_email: user.email,
                 receiver_email: m.sender_email,
-                sender_name: user.user_metadata?.full_name || user.full_name || "Réponse auto",
                 content: mariaReply,
                 is_read: true,
                 read: true,
-                is_maria: true,
               });
               if (error) console.error("Maria AI reply error:", error);
             } catch (e) {
@@ -1092,8 +1090,8 @@ export default function Messages() {
       // Grouper par l'autre personne (pas par conversation_id)
       const convMap = {};
       for (const m of allMessages) {
-        // Skip typing messages
-        if (m.type === "typing") continue;
+        // Skip typing signals (contenu vide, sans pièce jointe)
+        if (!m.content && !m.attachment_url && !m.file_url) continue;
         
         const otherEmail = m.sender_email === user.email ? m.receiver_email : m.sender_email;
         if (!otherEmail) continue;
@@ -1113,7 +1111,7 @@ export default function Messages() {
           !msg.read && !msg.is_read &&
           msg.receiver_email === user.email &&
           msg.sender_email === otherEmail &&
-          msg.type !== "typing"
+          (msg.content || msg.attachment_url || msg.file_url)
         ).length;
         
         let lastMessage = m.content || "";
@@ -1121,7 +1119,7 @@ export default function Messages() {
           const p = JSON.parse(m.content); 
           if (p?.type === "service_card") lastMessage = `✂️ ${p.title} — ${p.price}€`; 
         } catch {}
-        if (m.type === "image") lastMessage = "📷 Image";
+        if (m.attachment_url || m.file_url) lastMessage = "📷 Image";
         
         return {
           conversation_id: [user.email, otherEmail].sort().join("_"),
