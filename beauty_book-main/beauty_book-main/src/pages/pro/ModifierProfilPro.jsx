@@ -314,28 +314,17 @@ export default function ModifierProfilPro() {
       }
       if (saveError) throw saveError;
 
+      // NOTE : les colonnes pauses, menu_restaurant, menu_bar et additional_services
+      // n'existent pas dans la table ProfilPro — ne pas les inclure ici,
+      // sinon la requête échoue et la sauvegarde affiche une erreur.
+      // Les pauses sont déjà stockées dans ouverture/horaires (pause_start/pause_end par jour).
       const extra = {
         seats_count: data.seats,
         specialites: data.specialites,
         commodites: data.commodites,
         ouverture: { ...data.hours, conges: data.conges },
         horaires: { ...data.hours, conges: data.conges },
-        pauses: (() => {
-          const pauseMap = {};
-          DAYS_LOW.forEach(day => {
-            const h = data.hours[day] || {};
-            if (h.open && h.pause_start && h.pause_end) {
-              const key = `${h.pause_start}-${h.pause_end}`;
-              if (!pauseMap[key]) pauseMap[key] = { start: h.pause_start, end: h.pause_end, days: [] };
-              pauseMap[key].days.push(day);
-            }
-          });
-          return Object.values(pauseMap);
-        })(),
         galerie_urls: data.galerie_urls || [],
-        menu_restaurant: data.menu_restaurant || [],
-        menu_bar: data.menu_bar || [],
-        additional_services: data.additional_services || [],
         updated_at: new Date().toISOString(),
       };
       if (existing?.id) {
