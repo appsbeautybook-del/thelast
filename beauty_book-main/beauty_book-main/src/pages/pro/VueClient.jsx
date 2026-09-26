@@ -941,9 +941,15 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
             </div>
           </div>
           <div className="px-4 pt-4 pb-4 border-b border-gray-100">
-            <p className="text-[13px] text-gray-600 font-medium leading-relaxed">
-              {proInfo?.bio || "Bienvenue dans notre institut, un sanctuaire dédié à l'excellence et au bien-être. Nos experts vous accueillent dans un cadre raffiné pour sublimer votre éclat naturel."}
-            </p>
+            {proInfo?.bio ? (
+              <p className="text-[13px] text-gray-600 font-medium leading-relaxed">
+                {proInfo.bio}
+              </p>
+            ) : isOwnProfile ? (
+              <p className="text-[13px] text-gray-400 font-medium leading-relaxed italic">
+                Ajoutez votre bio dans « Modifier profil pro » pour présenter votre salon.
+              </p>
+            ) : null}
           </div>
           {/* ── Visite Virtuelle 3D réelle depuis VisiteVirtuelle entity ── */}
           <VisiteVirtuelle3D proEmail={targetEmail} />

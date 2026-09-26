@@ -72,6 +72,7 @@ export default function ModifierProfilPro() {
     email: "",
   });
   const [coords, setCoords] = useState(null);
+  const [profileId, setProfileId] = useState(null); // ID du profil édité (anti-doublons)
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [expanded, setExpanded] = useState({ infos: true });
@@ -93,8 +94,23 @@ export default function ModifierProfilPro() {
 
   useEffect(() => {
     if (!user?.email) return;
-    supabase.from('ProfilPro').select('*').eq('user_email', user.email).maybeSingle()
-      .then(({ data: p }) => {
+    // Anti-doublons : récupère tous les profils et choisit le meilleur
+    // (même priorité que VueClient : actif avec images > actif > avec images > plus récent).
+    // maybeSingle() échouait en cas de doublons et chaque sauvegarde créait un nouveau profil.
+    const pickBest = (profiles) => {
+      if (!profiles || profiles.length === 0) return null;
+      const sorted = [...profiles].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      return (
+        sorted.find(p => p.status === 'actif' && (p.avatar_url || p.cover_url)) ||
+        sorted.find(p => p.status === 'actif') ||
+        sorted.find(p => p.avatar_url || p.cover_url) ||
+        sorted[0]
+      );
+    };
+    supabase.from('ProfilPro').select('*').eq('user_email', user.email).order('created_at', { ascending: false })
+      .then(({ data: profiles }) => {
+        const p = pickBest(profiles);
+        if (p?.id) setProfileId(p.id);
         let profile = p;
         if (!profile) {
           profile = { user_email: user.email };
@@ -287,7 +303,14 @@ export default function ModifierProfilPro() {
         setEmailChanged(true);
       }
 
-      const { data: existing } = await supabase.from('ProfilPro').select('id').eq('user_email', user.email).maybeSingle();
+      // Utilise l'ID du profil chargé (anti-doublons). Si absent, vérifie une dernière fois
+      // avec une requête ordonnée (maybeSingle échouait en cas de doublons).
+      let existingId = profileId;
+      if (!existingId) {
+        const { data: rows } = await supabase.from('ProfilPro').select('id').eq('user_email', user.email).order('created_at', { ascending: false }).limit(1);
+        existingId = rows?.[0]?.id || null;
+        if (existingId) setProfileId(existingId);
+      }
 
       const coords = await geocodeAndSave(data.address, data.city);
 
@@ -304,8 +327,8 @@ export default function ModifierProfilPro() {
       };
 
       let saveError = null;
-      if (existing?.id) {
-        const { error } = await supabase.from('ProfilPro').update(core).eq('id', existing.id);
+      if (existingId) {
+        const { error } = await supabase.from('ProfilPro').update(core).eq('id', existingId);
         saveError = error;
       } else {
         const { user: authUser } = await supabase.auth.getUser();
@@ -327,8 +350,8 @@ export default function ModifierProfilPro() {
         galerie_urls: data.galerie_urls || [],
         updated_at: new Date().toISOString(),
       };
-      if (existing?.id) {
-        const { error: extraError } = await supabase.from('ProfilPro').update(extra).eq('id', existing.id);
+      if (existingId) {
+        const { error: extraError } = await supabase.from('ProfilPro').update(extra).eq('id', existingId);
         if (extraError) throw extraError;
       }
 
