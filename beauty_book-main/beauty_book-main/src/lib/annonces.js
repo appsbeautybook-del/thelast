@@ -5,6 +5,38 @@
 
 const LS_KEY = "bb_annonces_v1";
 const LS_CAND_KEY = "bb_candidatures_v1";
+const LS_FAV_KEY = "bb_annonces_fav_v1";
+
+// Statuts d'annonce : brouillon → publiee → pause → cloturee
+export const ANNONCE_STATUS = {
+  brouillon: { label: "Brouillon", color: "#6B7280", bg: "#F3F4F6" },
+  publiee: { label: "Publiée", color: "#057A55", bg: "#DEF7EC" },
+  pause: { label: "En pause", color: "#92400E", bg: "#FEF3C7" },
+  cloturee: { label: "Clôturée", color: "#B91C1C", bg: "#FEE2E2" },
+};
+
+// Templates de messages automatiques (personnalisables par le salon)
+// Variables : {nom}, {titre}, {salon}, {date_debut}, {remuneration}
+export const DEFAULT_MSG_ACCEPTE = `Bonjour {nom} 🎉
+
+Excellente nouvelle ! Votre candidature pour « {titre} » a été retenue par {salon}.
+
+📅 Début de mission : {date_debut}
+💰 Rémunération : {remuneration}
+
+Prochaine étape : signez votre contrat électronique depuis l'application, puis nous vous contacterons pour les derniers détails.
+
+À très vite !
+L'équipe {salon}`;
+
+export const DEFAULT_MSG_REFUSE = `Bonjour {nom},
+
+Merci pour votre candidature à « {titre} » chez {salon}.
+
+Après étude de votre profil, nous ne pourrons malheureusement pas donner suite cette fois-ci. Nous conservons vos coordonnées et n'hésiterons pas à vous recontacter pour de futures opportunités.
+
+Bonne continuation !
+L'équipe {salon}`;
 
 const CATEGORIES = [
   { id: "coiffure", label: "Coiffure", icon: "Scissors" },
@@ -28,14 +60,23 @@ const TYPES_MISSION = [
 function seedAnnonces() {
   const now = Date.now();
   const day = 86400000;
+  const base = {
+    salon_avatar: "",
+    salon_cover: "",
+    salon_bio: "",
+    salon_tel: "",
+    msg_accepte: DEFAULT_MSG_ACCEPTE,
+    msg_refuse: DEFAULT_MSG_REFUSE,
+  };
   return [
     {
+      ...base,
       id: "ann-001",
       salon_name: "Mamara_hair 91",
       salon_email: "salon@example.com",
-      salon_avatar: "",
       salon_city: "Athis-Mons",
       salon_rating: 4.3,
+      salon_bio: "Salon afro-caribéen convivial depuis 2015. Spécialiste tresses, tissages et soins capillaires.",
       title: "Braideuse experte pour samedi chargé",
       category: "tresses",
       type_mission: "extra",
@@ -48,11 +89,12 @@ function seedAnnonces() {
       places: 2,
       places_prises: 0,
       adresse: "54 Rue de Juvisy, 91200 Athis-Mons",
-      status: "active",
+      status: "publiee",
       vues: 234,
       created_at: new Date(now - 1 * day).toISOString(),
     },
     {
+      ...base,
       id: "ann-002",
       salon_name: "Glow Studio Paris",
       salon_email: "glow@example.com",
@@ -71,7 +113,7 @@ function seedAnnonces() {
       places: 1,
       places_prises: 0,
       adresse: "12 Rue de la Roquette, 75011 Paris",
-      status: "active",
+      status: "publiee",
       vues: 189,
       created_at: new Date(now - 3 * day).toISOString(),
     },
@@ -94,7 +136,7 @@ function seedAnnonces() {
       places: 3,
       places_prises: 1,
       adresse: "8 Place Bellecour, 69002 Lyon",
-      status: "active",
+      status: "publiee",
       vues: 412,
       created_at: new Date(now - 5 * day).toISOString(),
     },
@@ -131,7 +173,7 @@ export function getAnnonces() {
     annonces = seedAnnonces();
     writeLS(LS_KEY, annonces);
   }
-  return annonces.filter(a => a.status === "active");
+  return annonces.filter(a => a.status === "publiee");
 }
 
 export function getAnnonceById(id) {
@@ -142,15 +184,62 @@ export function createAnnonce(data) {
   const annonces = readLS(LS_KEY, seedAnnonces());
   const annonce = {
     id: "ann-" + Date.now().toString(36),
-    status: "active",
+    status: data.status || "brouillon",
     vues: 0,
     places_prises: 0,
+    salon_avatar: "",
+    salon_cover: "",
+    salon_bio: "",
+    salon_tel: "",
+    msg_accepte: DEFAULT_MSG_ACCEPTE,
+    msg_refuse: DEFAULT_MSG_REFUSE,
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     ...data,
   };
   annonces.unshift(annonce);
   writeLS(LS_KEY, annonces);
   return annonce;
+}
+
+export function updateAnnonce(id, data) {
+  const annonces = readLS(LS_KEY, []);
+  const idx = annonces.findIndex(x => x.id === id);
+  if (idx === -1) return null;
+  annonces[idx] = { ...annonces[idx], ...data, updated_at: new Date().toISOString() };
+  writeLS(LS_KEY, annonces);
+  return annonces[idx];
+}
+
+export function deleteAnnonce(id) {
+  const annonces = readLS(LS_KEY, []);
+  writeLS(LS_KEY, annonces.filter(x => x.id !== id));
+  const cands = readLS(LS_CAND_KEY, []);
+  writeLS(LS_CAND_KEY, cands.filter(c => c.annonce_id !== id));
+}
+
+export function setAnnonceStatus(id, status) {
+  return updateAnnonce(id, { status });
+}
+
+// Remplit les variables d'un template de message
+export function fillTemplate(template, vars) {
+  let out = template || "";
+  Object.entries(vars).forEach(([k, v]) => {
+    out = out.replaceAll(`{${k}}`, v ?? "");
+  });
+  return out;
+}
+
+export function getAnnonceStats(id) {
+  const cands = getCandidatures(id);
+  return {
+    total: cands.length,
+    en_attente: cands.filter(c => c.status === "en_attente").length,
+    accepte: cands.filter(c => c.status === "accepte").length,
+    refuse: cands.filter(c => c.status === "refuse").length,
+    contrats_signes: cands.filter(c => c.contrat?.signe).length,
+  };
 }
 
 export function incrementVues(id) {
@@ -189,30 +278,126 @@ export function postuler(annonceId, candidat) {
     candidat_tel: candidat.tel || "",
     message: candidat.message || "",
     status: "en_attente", // en_attente | accepte | refuse
+    reponse_salon: "", // message personnalisé ou automatique du salon
+    suivi: [
+      { etape: "Candidature envoyée", date: new Date().toISOString(), icon: "send" },
+    ],
+    contrat: { signe: false, date: null, nom_signataire: "" },
     created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
   all.unshift(candidature);
   writeLS(LS_CAND_KEY, all);
   return { data: candidature };
 }
 
-export function updateCandidatureStatus(candidatureId, status) {
+function pushSuivi(c, etape, icon) {
+  c.suivi = [...(c.suivi || []), { etape, date: new Date().toISOString(), icon }];
+}
+
+export function updateCandidatureStatus(candidatureId, status, reponse_salon = "") {
   const all = readLS(LS_CAND_KEY, []);
   const c = all.find(x => x.id === candidatureId);
   if (c) {
+    const prevStatus = c.status;
     c.status = status;
-    writeLS(LS_CAND_KEY, all);
-    // Met à jour les places prises
-    if (status === "accepte") {
+    c.reponse_salon = reponse_salon;
+    c.updated_at = new Date().toISOString();
+    if (status === "accepte" && prevStatus !== "accepte") {
+      pushSuivi(c, "Candidature acceptée par le salon", "check");
       const annonces = readLS(LS_KEY, []);
       const a = annonces.find(x => x.id === c.annonce_id);
       if (a) {
         a.places_prises = (a.places_prises || 0) + 1;
         writeLS(LS_KEY, annonces);
       }
+    } else if (status === "refuse" && prevStatus !== "refuse") {
+      pushSuivi(c, "Candidature refusée", "x");
+    } else if (status === "en_attente") {
+      pushSuivi(c, "Candidature en cours d'examen", "eye");
     }
+    writeLS(LS_CAND_KEY, all);
   }
   return c;
+}
+
+// Signature électronique du contrat par le candidat
+export function signerContrat(candidatureId, nomSignataire) {
+  const all = readLS(LS_CAND_KEY, []);
+  const c = all.find(x => x.id === candidatureId);
+  if (c && c.status === "accepte" && !c.contrat?.signe) {
+    c.contrat = { signe: true, date: new Date().toISOString(), nom_signataire: nomSignataire };
+    pushSuivi(c, "Contrat signé électroniquement", "pen");
+    c.updated_at = new Date().toISOString();
+    writeLS(LS_CAND_KEY, all);
+  }
+  return c;
+}
+
+// Génère le texte du contrat de mission
+export function genererContrat(annonce, candidature) {
+  const money = (v) => Number(v || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+  const fmtD = (iso) => iso ? new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : "—";
+  return `CONTRAT DE MISSION — EXTRA
+
+Entre les soussignés :
+
+LE SALON : ${annonce.salon_name}
+Adresse : ${annonce.adresse || annonce.salon_city || "—"}
+Email : ${annonce.salon_email || "—"}
+
+Ci-après « le Salon »,
+
+ET :
+
+LE PRESTATAIRE : ${candidature.candidat_nom}
+Email : ${candidature.candidat_email}
+Téléphone : ${candidature.candidat_tel || "—"}
+
+Ci-après « le Prestataire »,
+
+IL A ÉTÉ CONVENU CE QUI SUIT :
+
+Article 1 — Objet
+Le Salon confie au Prestataire la mission suivante : ${annonce.title}
+Catégorie : ${annonce.category || "—"}
+
+Article 2 — Durée
+La mission se déroulera du ${fmtD(annonce.date_debut)} au ${fmtD(annonce.date_fin)}.
+
+Article 3 — Rémunération
+En contrepartie de la mission, le Prestataire percevra ${money(annonce.remuneration)} ${annonce.remuneration_type === "jour" ? "par jour" : "pour la mission"}.
+
+Article 4 — Obligations
+Le Prestataire s'engage à exécuter la mission avec professionnalisme, ponctualité et dans le respect des règles d'hygiène du Salon.
+
+Article 5 — Signature électronique
+Les parties reconnaissent la validité de la signature électronique apposée via l'application BeautyBook.
+
+Fait le ${new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
+
+Signature du Prestataire : ${candidature.contrat?.nom_signataire || ".............................."}`;
+}
+
+// ─── Favoris ───
+export function getFavoris(email) {
+  const all = readLS(LS_FAV_KEY, {});
+  return all[email] || [];
+}
+
+export function toggleFavori(email, annonceId) {
+  const all = readLS(LS_FAV_KEY, {});
+  const favs = all[email] || [];
+  const idx = favs.indexOf(annonceId);
+  if (idx === -1) favs.push(annonceId);
+  else favs.splice(idx, 1);
+  all[email] = favs;
+  writeLS(LS_FAV_KEY, all);
+  return favs.includes(annonceId);
+}
+
+export function isFavori(email, annonceId) {
+  return getFavoris(email).includes(annonceId);
 }
 
 export function getMesAnnonces(email) {

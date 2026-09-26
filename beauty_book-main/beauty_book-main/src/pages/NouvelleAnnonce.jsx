@@ -1,35 +1,56 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Sparkles, Scissors, Waves, Gem, Paintbrush, Droplets, Hand,
-  Briefcase, CheckCircle2, Wand2, MapPin, CalendarDays, Euro, Users
+  Briefcase, CheckCircle2, Wand2, CalendarDays, Save, Rocket, PencilLine
 } from "lucide-react";
-import { getCategories, getTypesMission, createAnnonce } from "@/lib/annonces";
+import { getCategories, getTypesMission, createAnnonce, updateAnnonce, getAnnonceById } from "@/lib/annonces";
 import "./Annonces.css";
 
 const categoryIcons = { Scissors, Waves, Gem, Paintbrush, Droplets, Hand, Sparkles };
 
+const EMPTY = {
+  title: "",
+  category: "coiffure",
+  type_mission: "extra",
+  description: "",
+  competences: "",
+  date_debut: "",
+  date_fin: "",
+  remuneration: "",
+  remuneration_type: "jour",
+  places: 1,
+  adresse: "",
+  salon_name: "",
+  salon_city: "",
+  salon_bio: "",
+  salon_tel: "",
+};
+
 export default function NouvelleAnnonce() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const editId = params.get("edit");
+  const isEdit = !!editId;
   const categories = getCategories();
   const types = getTypesMission();
 
-  const [form, setForm] = useState({
-    title: "",
-    category: "coiffure",
-    type_mission: "extra",
-    description: "",
-    competences: "",
-    date_debut: "",
-    date_fin: "",
-    remuneration: "",
-    remuneration_type: "jour",
-    places: 1,
-    adresse: "",
-    salon_name: "",
-    salon_city: "",
-  });
+  const [form, setForm] = useState(EMPTY);
   const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    if (isEdit) {
+      const a = getAnnonceById(editId);
+      if (a) {
+        setForm({
+          ...EMPTY,
+          ...a,
+          competences: Array.isArray(a.competences) ? a.competences.join(", ") : (a.competences || ""),
+          remuneration: String(a.remuneration || ""),
+        });
+      }
+    }
+  }, [editId]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -45,19 +66,26 @@ export default function NouvelleAnnonce() {
     setGenerating(false);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (publish) => {
     if (!form.title.trim()) { alert("Le titre est requis"); return; }
     if (!form.description.trim()) { alert("La description est requise"); return; }
     if (!form.salon_name.trim()) { alert("Le nom du salon est requis"); return; }
-    const annonce = createAnnonce({
+    const payload = {
       ...form,
       competences: form.competences.split(",").map(s => s.trim()).filter(Boolean),
       remuneration: Number(form.remuneration) || 0,
       places: Number(form.places) || 1,
       salon_email: (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || "salon@beautybook.app"; } catch { return "salon@beautybook.app"; } })(),
-      salon_rating: 0,
-    });
-    navigate(`/annonces/${annonce.id}`);
+      salon_rating: form.salon_rating || 0,
+      status: publish ? "publiee" : "brouillon",
+    };
+    if (isEdit) {
+      updateAnnonce(editId, payload);
+      navigate(publish ? `/pro/annonces/${editId}` : "/pro/annonces");
+    } else {
+      const annonce = createAnnonce(payload);
+      navigate(publish ? `/annonces/${annonce.id}` : "/pro/annonces");
+    }
   };
 
   return (
@@ -75,8 +103,8 @@ export default function NouvelleAnnonce() {
         <div className="discovery-heading" style={{ marginTop: 12 }}>
           <div>
             <p className="discovery-eyebrow"><Sparkles size={14} /> RECRUTEMENT PRO</p>
-            <h1>Publier une<br /><em>annonce.</em></h1>
-            <p>Trouvez le talent parfait en quelques minutes.</p>
+            <h1>{isEdit ? <>Modifier<br /><em>l'annonce.</em></> : <>Publier une<br /><em>annonce.</em></>}</h1>
+            <p>{isEdit ? "Mettez à jour les détails de votre annonce." : "Trouvez le talent parfait en quelques minutes."}</p>
           </div>
         </div>
       </header>
@@ -98,6 +126,16 @@ export default function NouvelleAnnonce() {
           <div className="annonce-field" style={{ marginTop: 12 }}>
             <label>Adresse</label>
             <input value={form.adresse} onChange={e => set("adresse", e.target.value)} placeholder="54 Rue de Juvisy, 91200 Athis-Mons" />
+          </div>
+          <div className="annonce-form-grid" style={{ marginTop: 12 }}>
+            <div className="annonce-field">
+              <label>Téléphone du salon</label>
+              <input value={form.salon_tel} onChange={e => set("salon_tel", e.target.value)} placeholder="06 12 34 56 78" type="tel" />
+            </div>
+          </div>
+          <div className="annonce-field" style={{ marginTop: 12 }}>
+            <label>Présentation du salon</label>
+            <textarea value={form.salon_bio} onChange={e => set("salon_bio", e.target.value)} placeholder="Présentez votre salon : ambiance, spécialités, équipe..." rows={3} />
           </div>
         </div>
 
@@ -199,9 +237,14 @@ export default function NouvelleAnnonce() {
           </div>
         </div>
 
-        <button className="annonce-cta-btn" onClick={handleSubmit} style={{ marginBottom: 40 }}>
-          <CheckCircle2 size={18} /> Publier l'annonce
-        </button>
+        <div style={{ display: "flex", gap: 10, marginBottom: 40 }}>
+          <button className="annonce-cta-btn" onClick={() => handleSubmit(false)} style={{ background: "#fff", color: "#111827", border: "2px solid #E5E7EB", flex: 1 }}>
+            {isEdit ? <><PencilLine size={18} /> Enregistrer</> : <><Save size={18} /> Brouillon</>}
+          </button>
+          <button className="annonce-cta-btn" onClick={() => handleSubmit(true)} style={{ flex: 2 }}>
+            {isEdit ? <><CheckCircle2 size={18} /> Mettre à jour</> : <><Rocket size={18} /> Publier l'annonce</>}
+          </button>
+        </div>
       </div>
     </div>
   );

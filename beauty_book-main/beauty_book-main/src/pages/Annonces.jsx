@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import {
   Search, SlidersHorizontal, MapPin, Star, X, ArrowUpRight, ArrowRight, Sparkles,
   Scissors, Waves, Gem, Footprints, Paintbrush, Droplets, Hand, LayoutGrid,
-  Briefcase, Clock, Euro, Users, Plus, ChevronRight, Eye, CalendarDays, BadgeCheck
+  Briefcase, Clock, Euro, Users, Plus, ChevronRight, Eye, CalendarDays, BadgeCheck,
+  Send, CheckCircle2, XCircle, FileSignature
 } from "lucide-react";
 import BeautyImage from "@/components/ui/BeautyImage";
-import { getAnnonces, getCategories, getTypesMission } from "@/lib/annonces";
+import { getAnnonces, getCategories, getTypesMission, getMesCandidatures } from "@/lib/annonces";
 import "./Annonces.css";
 
 const categoryIcons = { Scissors, Waves, Gem, Paintbrush, Droplets, Hand, Sparkles };
@@ -98,6 +99,10 @@ export default function Annonces() {
   const [activeCat, setActiveCat] = useState("tous");
   const [activeType, setActiveType] = useState("tous");
   const [showFilters, setShowFilters] = useState(false);
+  const [view, setView] = useState("decouvrir"); // decouvrir | candidatures
+
+  const userEmail = (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || ""; } catch { return ""; } })();
+  const mesCandidatures = useMemo(() => userEmail ? getMesCandidatures(userEmail) : [], [userEmail, view]);
 
   const annonces = useMemo(() => getAnnonces(), []);
   const categories = getCategories();
@@ -207,9 +212,76 @@ export default function Annonces() {
             </button>
           ))}
         </div>
+
+        {/* Onglets Découvrir / Mes candidatures */}
+        <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          <button
+            onClick={() => setView("decouvrir")}
+            className={`annonce-type ${view === "decouvrir" ? "active" : ""}`}
+            style={{ flex: 1, padding: "10px 16px", fontSize: 13 }}
+          >
+            <Search size={13} style={{ marginRight: 5 }} /> Découvrir
+          </button>
+          <button
+            onClick={() => setView("candidatures")}
+            className={`annonce-type ${view === "candidatures" ? "active" : ""}`}
+            style={{ flex: 1, padding: "10px 16px", fontSize: 13 }}
+          >
+            <Send size={13} style={{ marginRight: 5 }} /> Mes candidatures
+            {mesCandidatures.length > 0 && (
+              <span style={{ marginLeft: 6, background: view === "candidatures" ? "#fff" : "#FF6B00", color: view === "candidatures" ? "#FF6B00" : "#fff", fontSize: 10, fontWeight: 800, borderRadius: 999, padding: "1px 7px" }}>{mesCandidatures.length}</span>
+            )}
+          </button>
+        </div>
       </header>
 
-      {/* ── Results ── */}
+      {/* ── Vue Mes candidatures ── */}
+      {view === "candidatures" ? (
+        <main className="annonces-list">
+          <div className="annonces-count">
+            <Send size={14} />
+            <span><strong>{mesCandidatures.length}</strong> candidature{mesCandidatures.length > 1 ? "s" : ""} envoyée{mesCandidatures.length > 1 ? "s" : ""}</span>
+          </div>
+          {mesCandidatures.length === 0 ? (
+            <div className="annonces-empty">
+              <div className="annonces-empty-icon"><Send size={28} /></div>
+              <p className="annonces-empty-title">Aucune candidature</p>
+              <p className="annonces-empty-desc">Explorez les annonces et postulez à votre prochaine mission.</p>
+              <button className="annonce-cta-btn" style={{ marginTop: 16, maxWidth: 260, margin: "16px auto 0" }} onClick={() => setView("decouvrir")}>
+                Découvrir les annonces
+              </button>
+            </div>
+          ) : (
+            mesCandidatures.map(c => {
+              const a = getAnnonces().find(x => x.id === c.annonce_id);
+              if (!a) return null;
+              return (
+                <article key={c.id} className="annonce-card" onClick={() => navigate(`/annonces/${a.id}`)}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div className="annonce-avatar" style={{ width: 46, height: 46 }}>
+                      {a.salon_avatar ? (
+                        <BeautyImage src={a.salon_avatar} alt={a.salon_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{(a.salon_name || "S")[0]}</span>
+                      )}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800 }}>{a.title}</p>
+                      <p style={{ fontSize: 11, color: "#6B7280" }}>{a.salon_name} · {money(a.remuneration)}/{a.remuneration_type === "jour" ? "j" : "m"}</p>
+                    </div>
+                    <CandidatureBadge status={c.status} signe={c.contrat?.signe} />
+                  </div>
+                  {c.status === "accepte" && !c.contrat?.signe && (
+                    <p style={{ fontSize: 12, fontWeight: 700, color: "#057A55", marginTop: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                      <FileSignature size={14} /> Signez votre contrat depuis la page de l'annonce
+                    </p>
+                  )}
+                </article>
+              );
+            })
+          )}
+        </main>
+      ) : (
       <main className="annonces-list">
         <div className="annonces-count">
           <Briefcase size={14} />
@@ -228,6 +300,14 @@ export default function Annonces() {
           ))
         )}
       </main>
+      )}
     </div>
   );
+}
+
+function CandidatureBadge({ status, signe }) {
+  if (signe) return <span className="candidat-status accepte">✓ Contrat signé</span>;
+  if (status === "accepte") return <span className="candidat-status accepte">✓ Acceptée</span>;
+  if (status === "refuse") return <span className="candidat-status refuse">✕ Refusée</span>;
+  return <span className="candidat-status en_attente">En attente</span>;
 }

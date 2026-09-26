@@ -129,6 +129,8 @@ const AIScalingBusiness = safeLazy(() => import('@/pages/AIScalingBusiness'));
 const Annonces = safeLazy(() => import('@/pages/Annonces'));
 const AnnonceDetail = safeLazy(() => import('@/pages/AnnonceDetail'));
 const NouvelleAnnonce = safeLazy(() => import('@/pages/NouvelleAnnonce'));
+const AnnoncesDashboard = safeLazy(() => import('@/pages/pro/AnnoncesDashboard'));
+const AnnonceProDetail = safeLazy(() => import('@/pages/pro/AnnonceProDetail'));
 const OrderTracking = safeLazy(() => import('@/pages/OrderTracking'));
 const Checkout = safeLazy(() => import('@/pages/Checkout'));
 const SupprimerCompte = safeLazy(() => import('@/pages/SupprimerCompte'));
@@ -357,7 +359,8 @@ const AuthenticatedApp = () => {
         <Route path="/annonces" element={<Annonces />} />
         <Route path="/annonces/nouvelle" element={<NouvelleAnnonce />} />
         <Route path="/annonces/:id" element={<AnnonceDetail />} />
-        <Route path="/pro/annonces" element={<Annonces />} />
+        <Route path="/pro/annonces" element={<AnnoncesDashboard />} />
+        <Route path="/pro/annonces/:id" element={<AnnonceProDetail />} />
         <Route path="/recherche" element={<Recherche />} />
         <Route path="/explorer" element={<Navigate to="/recherche" replace />} />
         <Route path="/recherche-approfondie" element={<Recherche />} />
