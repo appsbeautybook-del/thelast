@@ -538,23 +538,21 @@ export default function Recherche() {
               {/* Map Panel */}
               {showMap && (
                 <div className="discovery-map-panel">
+                  <MapWithPricePins 
+                    items={mapped} 
+                    onSelectItem={pro => openPro(pro)} 
+                    height="h-[380px]" 
+                  />
                   {mapped.length ? (
-                    <>
-                      <MapWithPricePins 
-                        items={mapped} 
-                        onSelectItem={pro => openPro(pro)} 
-                        height="h-[380px]" 
-                      />
-                      <p className="discovery-map-caption">
-                        <MapPin size={15} />
-                        {mapped.length} adresse(s) localisée(s) sur Apple Maps. Cliquez sur une épingle de tarif pour voir les détails.
-                      </p>
-                    </>
+                    <p className="discovery-map-caption">
+                      <MapPin size={15} />
+                      {mapped.length} adresse(s) localisée(s) sur Apple Maps. Cliquez sur une épingle de tarif pour voir les détails.
+                    </p>
                   ) : (
-                    <div className="discovery-map-empty">
-                      <MapPin size={26} />
-                      <p>Les professionnels de cette sélection n’ont pas encore renseigné leurs coordonnées sur la carte. Retrouvez leurs fiches ci-dessous.</p>
-                    </div>
+                    <p className="discovery-map-caption">
+                      <MapPin size={15} />
+                      Les professionnels de cette sélection n'ont pas encore renseigné leurs coordonnées sur la carte. Retrouvez leurs fiches ci-dessous.
+                    </p>
                   )}
                 </div>
               )}
