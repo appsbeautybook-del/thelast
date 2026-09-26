@@ -190,7 +190,9 @@ export default function ProfilPro() {
   const nomCommerce = proInfoCurrent?.salon_name || "";
 
   if (activeTab === "client") {
-    return <VueClient onClose={() => setActiveTab("gestion")} />;
+    // Aperçu "Vue client" du pro : on passe explicitement son email pour charger
+    // son vrai profil (stats, badges, services) au lieu d'une page vide 0;0;0.
+    return <VueClient onClose={() => setActiveTab("gestion")} proEmail={user?.email} />;
   }
 
   const allMenuItems = [
