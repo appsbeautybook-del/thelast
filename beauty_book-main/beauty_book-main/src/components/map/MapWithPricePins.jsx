@@ -8,6 +8,7 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
   const [selected, setSelected] = useState(null);
   const [ready, setReady] = useState(false);
   const [mapError, setMapError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   const resolvedItems = useMemo(() =>
     items
@@ -136,7 +137,7 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
     });
 
     return () => { cancelled = true; };
-  }, [resolvedItems, center, onSelectItem]);
+  }, [resolvedItems, center, onSelectItem, retryKey]);
 
   const selectedItem = selected ? resolvedItems.find(it => it.id === selected) : null;
 
@@ -155,6 +156,14 @@ export default function MapWithPricePins({ items = [], onSelectItem, height = "h
           <p className="text-[13px] font-extrabold" style={{ color: "#FF6B00" }}>
             {mapError ? "Apple Maps est momentanément indisponible" : "Chargement de la carte Apple Maps…"}
           </p>
+          {mapError && (
+            <button
+              className="map-retry-btn"
+              onClick={() => { setMapError(false); setReady(false); setRetryKey(k => k + 1); }}
+            >
+              Réessayer
+            </button>
+          )}
         </div>
       )}
 

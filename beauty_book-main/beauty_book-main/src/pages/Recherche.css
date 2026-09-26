@@ -1060,6 +1060,24 @@
   z-index: 10;
 }
 
+/* ── Bouton réessayer sur la carte ── */
+.map-retry-btn {
+  margin-top: 4px;
+  padding: 10px 22px;
+  border-radius: 9999px;
+  background: #FF6B00;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 4px 14px rgba(255, 107, 0, 0.35);
+  transition: transform 0.15s ease;
+  cursor: pointer;
+}
+
+.map-retry-btn:active {
+  transform: scale(0.95);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .discovery-grid {

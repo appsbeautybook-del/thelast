@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { useThemeBg } from "@/hooks/useTheme";
 import { useAuth } from "@/lib/AuthContext";
-import { Search, Heart, Clock, MapPin, Share2, MessageSquare, Star, Send, X, SlidersHorizontal, Plus, Play, Tag, Volume2, VolumeX, Sparkles, Palette, Scissors, Store, User, Zap, Users, LayoutGrid, Droplets, Calendar } from "lucide-react";
+import { Search, Heart, Clock, MapPin, Share2, MessageSquare, Star, Send, X, SlidersHorizontal, Plus, Play, Tag, Volume2, VolumeX, Sparkles, Palette, Scissors, Store, User, Zap, Users, LayoutGrid, Droplets, Calendar, Building2, UserCheck, Package, Paintbrush, Gem, Hand, Leaf, Crown, ArrowUpRight, ArrowRight, Map as MapIcon } from "lucide-react";
 import ProfilSheet from "@/components/salons/ProfilSheet";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
@@ -14,6 +14,8 @@ import MapWithPricePins from "@/components/map/MapWithPricePins";
 import AdvancedFilterSheet from "@/components/filters/AdvancedFilterSheet";
 import FiltreAIModal from "@/components/modals/FiltreAIModal";
 import { useLocation } from '@/contexts/LocationContext';
+import './Recherche.css';
+import './ServicesSalons.css';
 
 
 // ── Images ────────────────────────────────────────────────────────────────────
@@ -144,19 +146,6 @@ function CardMediaSlider({ media, onCardClick }) {
           <span className="text-white text-[10px] font-black">{current + 1}/{media.length}</span>
         </div>
       )}
-    </div>
-  );
-}
-
-function FilterChips({ filters, active, onChange }) {
-  return (
-    <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-1">
-      {filters.map((f) => (
-        <button key={f} onClick={() => onChange(f)}
-          className={`shrink-0 px-4 py-2 rounded-full text-[12px] font-black border transition-all active:scale-95 ${active === f ? "bg-primary text-white border-primary shadow-md shadow-primary/20" : "bg-white text-gray-600 border-gray-200"}`}>
-          {f}
-        </button>
-      ))}
     </div>
   );
 }
@@ -488,11 +477,11 @@ function StylesTab({ activeCategory }) {
           onView={() => { setShowImmobilier(false); navigate("/immobilier"); }}
         />
       )}
-      <div ref={scrollRef} className="overflow-y-scroll hide-scrollbar" style={{ height: "calc(100dvh - 180px - env(safe-area-inset-bottom, 60px))", scrollSnapType: "y mandatory", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}>
+      <div ref={scrollRef} className="overflow-y-scroll hide-scrollbar" style={{ height: "calc(100dvh - 252px - env(safe-area-inset-bottom, 60px))", scrollSnapType: "y mandatory", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}>
         {filteredStyles.map((style, idx) => (
           <React.Fragment key={style.id}>
             {idx > 0 && idx % 5 === 0 && annonces.length > 0 && !hiddenAds.includes(idx) && (
-              <div style={{ scrollSnapAlign: "start", scrollSnapStop: "always", height: "calc(100dvh - 180px - 160px)" }}
+              <div style={{ scrollSnapAlign: "start", scrollSnapStop: "always", height: "calc(100dvh - 252px - 160px)" }}
                 className="bg-gray-50 flex flex-col overflow-hidden">
                 <SponsoredCard annonce={annonces[Math.floor(idx / 5 - 1) % annonces.length]} onClose={() => setHiddenAds(h => [...h, idx])} variant="styles" />
               </div>
@@ -571,7 +560,7 @@ function StyleCard({ style, liked, likeCount, followed, onFollow, onLike, onComm
 
   return (
     <div className="relative w-full shrink-0 overflow-hidden"
-      style={{ height: "calc(100dvh - 180px - env(safe-area-inset-bottom, 60px))", scrollSnapAlign: "start", scrollSnapStop: "always" }}
+      style={{ height: "calc(100dvh - 252px - env(safe-area-inset-bottom, 60px))", scrollSnapAlign: "start", scrollSnapStop: "always" }}
       onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       {allMedia.map((url, i) => (
       <div key={i} className="absolute inset-0 w-full h-full transition-transform duration-300 ease-in-out" style={{ transform: `translateX(${(i - imgIdx) * 100}%)` }}>
@@ -1156,6 +1145,17 @@ function ServicesTab({ activeCategory }) {
 
   return (
     <div className="space-y-4">
+      <div className="px-4 pt-5">
+        <div className="discovery-section-head">
+          <div>
+            <p className="discovery-eyebrow"><Sparkles size={14} /> Prestations à la carte</p>
+            <h2>
+              Les services à découvrir
+              <span>{loading ? "Chargement…" : `${filtered.length} disponible${filtered.length > 1 ? "s" : ""}`}</span>
+            </h2>
+          </div>
+        </div>
+      </div>
       <AdvancedFilterSheet open={showFilters} onClose={() => setShowFilters(false)} onApply={setFilters} initialFilters={filters} />
       {filtreAIStyle && (
         <FiltreAIModal
@@ -1317,146 +1317,76 @@ function ServicesTab({ activeCategory }) {
   );
 }
 
-// ── Carte Profil Pro (Salon / Particulier) ────────────────────────────────────
-function ProfilCard({ item, media, liked, onLike, onSelect, open, badge, minPrice, highlighted }) {
-  const navigate = useNavigate();
+// ── Carte Profil Pro (Salon / Particulier) — design page Recherche ───────────────
+function DiscoveryProfilCard({ item, media, liked, onLike, onSelect, open, badge, minPrice, highlighted, kind }) {
   const city = [item.city, item.postal_code ? String(item.postal_code).slice(0, 2) : null].filter(Boolean).join(", ");
   const hasRating = item.rating > 0 && item.reviews_count > 0;
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const touchStartX = useRef(null);
-
-  const goToDetail = (e) => {
-    if (e) e.stopPropagation();
-    navigate("/pro/vue-client", { state: { proEmail: item.user_email } });
-  };
-
-  const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
-  const handleTouchEnd = (e) => {
-    if (touchStartX.current === null) return;
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) {
-      if (diff > 0) setCurrentSlide(c => Math.min(c + 1, (media?.length || 1) - 1));
-      else setCurrentSlide(c => Math.max(c - 1, 0));
-    }
-    touchStartX.current = null;
-  };
-
-  const images = media?.length > 0 ? media : [""];
   const specialties = item.specialites?.filter(Boolean) || [];
+  const cover = media?.find(Boolean) || item.avatar_url || "";
+  const isSalon = kind !== "particulier";
+  const BadgeIcon = isSalon ? Building2 : UserCheck;
 
   return (
-    <div
+    <article
       onClick={() => onSelect()}
-      className={`w-full bg-white rounded-3xl overflow-hidden shadow-[0_2px_12px_rgba(0,0,0,0.06)] active:scale-[0.98] transition-all ${highlighted ? "ring-2 ring-primary shadow-lg" : ""}`}
+      className={`discovery-salon ${highlighted ? "ring-2 ring-primary" : ""}`}
+      style={{ cursor: "pointer" }}
     >
-      {/* ── Image carousel plein écran ── */}
-      <div
-        className="relative h-[280px] bg-gray-900 overflow-hidden"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {images.map((url, i) => (
-          <div key={i} className="absolute inset-0 transition-transform duration-300 ease-in-out" style={{ transform: `translateX(${(i - currentSlide) * 100}%)` }}>
-            <BeautyImage src={url} alt={item.salon_name} className="w-full h-full object-cover" loading="lazy" />
-          </div>
-        ))}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-
-        {/* Dots */}
-        {images.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            {images.map((_, i) => (
-              <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentSlide(i); }}
-                className={`rounded-full transition-all ${i === currentSlide ? "w-5 h-1.5 bg-white" : "w-1.5 h-1.5 bg-white/50"}`} />
-            ))}
-          </div>
-        )}
-
-        {/* Compteur */}
-        {images.length > 1 && (
-          <div className="absolute top-3 right-4 bg-black/40 rounded-full px-2 py-0.5 z-10">
-            <span className="text-white text-[10px] font-black">{currentSlide + 1}/{images.length}</span>
-          </div>
-        )}
-
-        {/* Coeur like */}
+      <div className="discovery-salon-photo">
+        <BeautyImage src={cover} alt={item.salon_name || item.name || "Professionnel beauté"} loading="lazy" />
+        <div className="discovery-badge-cluster">
+          <span className={`entity-badge ${isSalon ? "salon-badge" : "particulier-badge"}`}>
+            <BadgeIcon size={12} /> {isSalon ? "Salon Pro" : "Particulier"}
+          </span>
+        </div>
         <button
           onClick={(e) => { e.stopPropagation(); onLike(e); }}
-          className={`absolute top-3 left-3 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 ${liked ? "bg-primary shadow-lg shadow-primary/30" : "bg-white/80 backdrop-blur-sm"}`}
+          aria-label="Ajouter aux favoris"
+          className={`absolute top-3 right-3 z-10 w-9 h-9 rounded-full flex items-center justify-center shadow-md transition-all active:scale-90 ${liked ? "bg-primary" : "bg-white/90 backdrop-blur-sm"}`}
         >
-          <Heart className={`w-5 h-5 ${liked ? "text-white fill-white" : "text-gray-600"}`} />
+          <Heart className={`w-4 h-4 ${liked ? "text-white fill-white" : "text-gray-500"}`} />
         </button>
-
-        {/* Status ouvert/fermé */}
         {open === true && (
-          <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 z-10">
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-white/95 rounded-full px-2.5 py-1 z-10">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span className="text-[11px] font-bold text-green-700">Ouvert</span>
+            <span className="text-[10px] font-bold text-green-700">Ouvert</span>
           </div>
         )}
         {open === false && (
-          <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 z-10">
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-white/95 rounded-full px-2.5 py-1 z-10">
             <div className="w-2 h-2 bg-red-500 rounded-full" />
-            <span className="text-[11px] font-bold text-red-500">Fermé</span>
+            <span className="text-[10px] font-bold text-red-500">Fermé</span>
           </div>
         )}
+        <span className="discovery-photo-arrow"><ArrowUpRight size={18} /></span>
       </div>
 
-      {/* ── Info salon ── */}
-      <div className="px-4 pt-3 pb-4">
-        {/* Nom + spécialités */}
-        <div className="flex items-center gap-2.5 mb-2">
-          {item.avatar_url && (
-            <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 border-2 border-white shadow-sm">
-              <BeautyImage src={item.avatar_url} alt="" className="w-full h-full object-cover" />
-            </div>
-          )}
-          <h3 className="text-[16px] font-extrabold text-gray-900 leading-tight">{item.salon_name || "Salon"}</h3>
-        </div>
-        {specialties.length > 0 && (
-          <p className="text-[13px] text-primary font-bold mb-2">{specialties.slice(0, 3).join(" · ")}</p>
-        )}
-
-        {/* Ligne: localisation, badge, statut, note */}
-        <div className="flex items-center gap-2 flex-wrap mb-3">
-          {city && (
-            <span className="flex items-center gap-1 text-[12px] text-gray-400 font-medium">
-              <MapPin className="w-3 h-3" />{city}
-            </span>
-          )}
-          {badge && (
-            <span className="text-[10px] font-black text-primary border border-primary/30 bg-primary/5 px-2 py-0.5 rounded-full">
-              Salon Professionnel
-            </span>
-          )}
-          {!hasRating && (
-            <span className="text-[12px] text-gray-400 italic">Pas de notation</span>
-          )}
+      <div className="discovery-salon-info">
+        <p className="discovery-specialties">
+          {specialties.length > 0 ? specialties.slice(0, 2).join(" · ") : (isSalon ? "Établissement Beauté" : "Prestataire indépendant")}
+        </p>
+        <h3>{item.salon_name || item.name || (isSalon ? "Salon BeautyBook" : "Professionnel à domicile")}</h3>
+        <p className="discovery-city">
+          <MapPin size={14} />
+          {city || (isSalon ? "Paris & Île-de-France" : "Déplacement à domicile")}
           {hasRating && (
-            <span className="flex items-center gap-0.5 text-[12px] font-bold text-amber-500">
-              <Star className="w-3 h-3 fill-amber-400" />{item.rating}
-              <span className="text-gray-400 font-normal">({item.reviews_count})</span>
+            <span className="flex items-center gap-1 ml-2 font-bold text-gray-700">
+              <Star size={13} className="fill-amber-400 text-amber-400" />
+              {item.rating}
+              <span className="font-normal text-gray-400">({item.reviews_count})</span>
             </span>
           )}
-        </div>
-
-        {/* Ligne: Voir le profil + Prix */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={goToDetail}
-            className="text-[13px] font-extrabold text-gray-900 border border-gray-200 rounded-full px-4 py-2 active:scale-95 transition-all hover:bg-gray-50"
-          >
-            Voir le profil →
-          </button>
-          {minPrice != null && minPrice > 0 && (
-            <span className="text-[13px] font-extrabold">
-              <span className="text-gray-400">dès </span>
-              <span className="text-primary">{minPrice}€</span>
-            </span>
-          )}
+        </p>
+        <div className="discovery-salon-bottom">
+          <span>
+            {minPrice != null && minPrice > 0 ? (<>À partir de <strong>{minPrice} €</strong></>) : "Découvrir le profil"}
+          </span>
+          {badge
+            ? <span className="text-[10px] font-black text-primary border border-primary/30 bg-primary/5 px-2 py-0.5 rounded-full uppercase">Pro</span>
+            : <ArrowRight size={18} />}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -1477,13 +1407,15 @@ function isOpenNow(ouverture) {
 // ── Salons Tab ────────────────────────────────────────────────────────────────
 
 function SalonsTab({ activeCategory }) {
-  const { filterByRadius, hasLocation, userLat, userLng } = useLocation();
   const [liked, setLiked] = useState([]);
   const [selectedProfil, setSelectedProfil] = useState(null);
   const [highlightedId, setHighlightedId] = useState(null);
   const [data, setData] = useState({ profils: [], minPricesMap: {} });
   const [loading, setLoading] = useState(true);
+  const [showMap, setShowMap] = useState(true);
+  const [sort, setSort] = useState("recent");
   const listRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -1507,8 +1439,6 @@ function SalonsTab({ activeCategory }) {
     return () => { cancelled = true; };
   }, []);
 
-  const navigate = useNavigate();
-
   const handleCardSelect = (item) => {
     if (!item.user_email) return;
     setHighlightedId(item.id);
@@ -1516,7 +1446,17 @@ function SalonsTab({ activeCategory }) {
   };
 
   const { profils, minPricesMap } = data;
-  let filtered = activeCategory === "Tous" ? profils : profils.filter(p => p.specialites?.some(s => s.toLowerCase().includes(activeCategory.toLowerCase())));
+
+  const filtered = useMemo(() => (
+    activeCategory === "Tous" ? profils : profils.filter(p => p.specialites?.some(s => s.toLowerCase().includes(activeCategory.toLowerCase())))
+  ), [profils, activeCategory]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    if (sort === "price") arr.sort((a, b) => (minPricesMap[a.user_email] ?? 1e9) - (minPricesMap[b.user_email] ?? 1e9));
+    if (sort === "rating") arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    return arr;
+  }, [filtered, sort, minPricesMap]);
 
   const mapItems = useMemo(() => {
     return filtered.map((p, idx) => {
@@ -1546,58 +1486,94 @@ function SalonsTab({ activeCategory }) {
   };
 
   return (
-    <div className="space-y-4">
-      {!loading && (
-        <div className="mx-4 pt-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span className="text-[12px] font-black text-gray-900 uppercase tracking-wider">Carte Apple Maps Salons</span>
-            </div>
-            <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
-              {mapItems.length} salons localisés
-            </span>
-          </div>
-          <MapWithPricePins items={mapItems} onSelectItem={handleMapSelect} height="h-48" />
+    <div className="services-section">
+      <div className="discovery-section-head">
+        <div>
+          <p className="discovery-eyebrow"><Sparkles size={14} /> Carte & adresses</p>
+          <h2>
+            Les salons à découvrir
+            <span>{loading ? "Chargement…" : `${sorted.length} disponible${sorted.length > 1 ? "s" : ""}`}</span>
+          </h2>
         </div>
-      )}
-      <div className="px-4">
-        {loading ? (
-          <div className="flex justify-center py-20"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-20 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
-              <Store className="w-7 h-7 text-gray-300" />
-            </div>
-            <p className="text-[15px] font-bold text-gray-800">Aucun salon trouvé</p>
-            <p className="text-[12px] text-gray-400 font-medium">Essayez une autre catégorie</p>
-          </div>
-        ) : (
-          <div ref={listRef} className="space-y-4">
-            {filtered.map((item) => {
-              const media = [];
-              if (item.galerie_urls?.length > 0) item.galerie_urls.forEach(u => { if (u && !media.includes(u)) media.push(u); });
-              if (media.length === 0 && item.avatar_url) media.push(item.avatar_url);
-              const open = isOpenNow(item.ouverture);
-              return (
-                <div key={item.id} id={`salon-card-${item.id}`}>
-                  <ProfilCard
-                    item={item}
-                    media={media.length > 0 ? media : [""]}
-                    liked={liked.includes(item.id)}
-                    onLike={(e) => { e.stopPropagation(); setLiked(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id]); }}
-                    onSelect={() => handleCardSelect(item)}
-                    open={open}
-                    badge={item.abonnement && item.abonnement !== "free" ? item.abonnement : null}
-                    minPrice={minPricesMap[item.user_email] ?? null}
-                    highlighted={highlightedId === item.id}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        )}
+        <div className="discovery-view-toggle" aria-label="Affichage des résultats">
+          <button aria-label="Afficher en liste" aria-pressed={!showMap} onClick={() => setShowMap(false)}>
+            <LayoutGrid size={17} /><span>Liste</span>
+          </button>
+          <button aria-label="Afficher sur la carte" aria-pressed={showMap} onClick={() => setShowMap(true)}>
+            <MapIcon size={17} /><span>Carte</span>
+          </button>
+        </div>
       </div>
+
+      <div className="discovery-result-tools">
+        <p>Les établissements beauté près de vous.</p>
+        <label>Trier par
+          <select aria-label="Trier les salons" value={sort} onChange={e => setSort(e.target.value)}>
+            <option value="recent">Nouveautés</option>
+            <option value="rating">Meilleures notes</option>
+            <option value="price">Prix croissant</option>
+          </select>
+        </label>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-20"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+      ) : (
+        <>
+          {showMap && (
+            <div className="discovery-map-panel">
+              {mapItems.length > 0 ? (
+                <>
+                  <MapWithPricePins items={mapItems} onSelectItem={handleMapSelect} height="h-[340px]" />
+                  <p className="discovery-map-caption">
+                    <MapPin size={15} />
+                    {mapItems.length} adresse(s) localisée(s) sur Apple Maps. Touchez une épingle pour voir la fiche.
+                  </p>
+                </>
+              ) : (
+                <div className="discovery-empty">
+                  <MapPin size={30} className="text-orange-400" />
+                  <h3>Aucune adresse sur la carte</h3>
+                  <p>Les salons de cette sélection n'ont pas encore renseigné leurs coordonnées.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {sorted.length === 0 ? (
+            <div className="discovery-empty">
+              <Store size={30} className="text-gray-300" />
+              <h3>Aucun salon trouvé</h3>
+              <p>Essayez une autre catégorie.</p>
+            </div>
+          ) : (
+            <div ref={listRef} className="discovery-grid">
+              {sorted.map((item) => {
+                const media = [];
+                if (item.galerie_urls?.length > 0) item.galerie_urls.forEach(u => { if (u && !media.includes(u)) media.push(u); });
+                if (media.length === 0 && item.avatar_url) media.push(item.avatar_url);
+                const open = isOpenNow(item.ouverture);
+                return (
+                  <div key={item.id} id={`salon-card-${item.id}`}>
+                    <DiscoveryProfilCard
+                      item={item}
+                      media={media.length > 0 ? media : [""]}
+                      liked={liked.includes(item.id)}
+                      onLike={(e) => { e.stopPropagation(); setLiked(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id]); }}
+                      onSelect={() => handleCardSelect(item)}
+                      open={open}
+                      badge={item.abonnement && item.abonnement !== "free" ? item.abonnement : null}
+                      minPrice={minPricesMap[item.user_email] ?? null}
+                      highlighted={highlightedId === item.id}
+                      kind="salon"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
       {selectedProfil && <ProfilSheet profil={selectedProfil} onClose={() => { setSelectedProfil(null); setHighlightedId(null); }} />}
     </div>
   );
@@ -1612,6 +1588,8 @@ function ParticuliersTab({ activeCategory }) {
   const [highlightedId, setHighlightedId] = useState(null);
   const [data, setData] = useState({ profils: [], minPricesMap: {} });
   const [loading, setLoading] = useState(true);
+  const [showMap, setShowMap] = useState(true);
+  const [sort, setSort] = useState("recent");
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -1637,10 +1615,19 @@ function ParticuliersTab({ activeCategory }) {
   }, []);
 
   const { profils, minPricesMap } = data;
-  let filtered = activeCategory === "Tous" ? profils : profils.filter(p => p.specialites?.some(s => s.toLowerCase().includes(activeCategory.toLowerCase())));
-  if (hasLocation) {
-    filtered = filterByRadius(filtered, 100);
-  }
+
+  const filtered = useMemo(() => {
+    let list = activeCategory === "Tous" ? profils : profils.filter(p => p.specialites?.some(s => s.toLowerCase().includes(activeCategory.toLowerCase())));
+    if (hasLocation) list = filterByRadius(list, 100);
+    return list;
+  }, [profils, activeCategory, hasLocation, filterByRadius]);
+
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    if (sort === "price") arr.sort((a, b) => (minPricesMap[a.user_email] ?? 1e9) - (minPricesMap[b.user_email] ?? 1e9));
+    if (sort === "rating") arr.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    return arr;
+  }, [filtered, sort, minPricesMap]);
 
   const mapItems = useMemo(() => {
     return filtered.map((p, idx) => {
@@ -1674,53 +1661,92 @@ function ParticuliersTab({ activeCategory }) {
   };
 
   return (
-    <div className="space-y-4">
-      {!loading && (
-        <div className="mx-4 pt-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span className="text-[12px] font-black text-gray-900 uppercase tracking-wider">Carte Apple Maps Particuliers</span>
-            </div>
-            <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
-              {mapItems.length} prestataires localisés
-            </span>
-          </div>
-          <MapWithPricePins items={mapItems} onSelectItem={handleMapSelect} height="h-44" />
+    <div className="services-section">
+      <div className="discovery-section-head">
+        <div>
+          <p className="discovery-eyebrow"><Sparkles size={14} /> À domicile & indépendants</p>
+          <h2>
+            Les particuliers à découvrir
+            <span>{loading ? "Chargement…" : `${sorted.length} disponible${sorted.length > 1 ? "s" : ""}`}</span>
+          </h2>
         </div>
-      )}
+        <div className="discovery-view-toggle" aria-label="Affichage des résultats">
+          <button aria-label="Afficher en liste" aria-pressed={!showMap} onClick={() => setShowMap(false)}>
+            <LayoutGrid size={17} /><span>Liste</span>
+          </button>
+          <button aria-label="Afficher sur la carte" aria-pressed={showMap} onClick={() => setShowMap(true)}>
+            <MapIcon size={17} /><span>Carte</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="discovery-result-tools">
+        <p>Des pros indépendants qui se déplacent chez vous.</p>
+        <label>Trier par
+          <select aria-label="Trier les particuliers" value={sort} onChange={e => setSort(e.target.value)}>
+            <option value="recent">Nouveautés</option>
+            <option value="rating">Meilleures notes</option>
+            <option value="price">Prix croissant</option>
+          </select>
+        </label>
+      </div>
+
       {loading ? (
-        <div className="flex justify-center py-12"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-          <div className="w-20 h-20 rounded-3xl bg-green-50 flex items-center justify-center">
-            <User className="w-10 h-10 text-green-400" />
-          </div>
-          <p className="text-[16px] font-black text-gray-700">Aucun particulier disponible</p>
-        </div>
+        <div className="flex justify-center py-20"><div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
       ) : (
-        <div ref={listRef}>
-          {filtered.map((item) => {
-            const media = [];
-            if (item.galerie_urls?.length > 0) item.galerie_urls.forEach(u => { if (u && !media.includes(u)) media.push(u); });
-            if (media.length === 0 && item.avatar_url) media.push(item.avatar_url);
-            const open = isOpenNow(item.ouverture);
-            return (
-              <div key={item.id} id={`part-card-${item.id}`}>
-                <ProfilCard
-                  item={item}
-                  media={media.length > 0 ? media : [""]}
-                  liked={liked.includes(item.id)}
-                  onLike={(e) => { e.stopPropagation(); setLiked(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id]); }}
-                  onSelect={() => handleCardSelect(item)}
-                  open={open}
-                  minPrice={minPricesMap[item.user_email] ?? null}
-                  highlighted={highlightedId === item.id}
-                />
-              </div>
-            );
-          })}
-        </div>
+        <>
+          {showMap && (
+            <div className="discovery-map-panel">
+              {mapItems.length > 0 ? (
+                <>
+                  <MapWithPricePins items={mapItems} onSelectItem={handleMapSelect} height="h-[340px]" />
+                  <p className="discovery-map-caption">
+                    <MapPin size={15} />
+                    {mapItems.length} prestataire(s) localisé(s) sur Apple Maps. Touchez une épingle pour voir la fiche.
+                  </p>
+                </>
+              ) : (
+                <div className="discovery-empty">
+                  <MapPin size={30} className="text-orange-400" />
+                  <h3>Aucune adresse sur la carte</h3>
+                  <p>Les particuliers de cette sélection n'ont pas encore renseigné leurs coordonnées.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {sorted.length === 0 ? (
+            <div className="discovery-empty">
+              <User size={30} className="text-gray-300" />
+              <h3>Aucun particulier disponible</h3>
+              <p>Essayez une autre catégorie.</p>
+            </div>
+          ) : (
+            <div ref={listRef} className="discovery-grid">
+              {sorted.map((item) => {
+                const media = [];
+                if (item.galerie_urls?.length > 0) item.galerie_urls.forEach(u => { if (u && !media.includes(u)) media.push(u); });
+                if (media.length === 0 && item.avatar_url) media.push(item.avatar_url);
+                const open = isOpenNow(item.ouverture);
+                return (
+                  <div key={item.id} id={`part-card-${item.id}`}>
+                    <DiscoveryProfilCard
+                      item={item}
+                      media={media.length > 0 ? media : [""]}
+                      liked={liked.includes(item.id)}
+                      onLike={(e) => { e.stopPropagation(); setLiked(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id]); }}
+                      onSelect={() => handleCardSelect(item)}
+                      open={open}
+                      minPrice={minPricesMap[item.user_email] ?? null}
+                      highlighted={highlightedId === item.id}
+                      kind="particulier"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
       {selectedProfil && <ProfilSheet profil={selectedProfil} onClose={() => { setSelectedProfil(null); setHighlightedId(null); }} />}
     </div>
@@ -1821,6 +1847,17 @@ function BundlesTab() {
 
   return (
     <div className="space-y-3">
+      <div className="px-4 pt-5">
+        <div className="discovery-section-head">
+          <div>
+            <p className="discovery-eyebrow"><Sparkles size={14} /> Offres combinées</p>
+            <h2>
+              Les bundles à découvrir
+              <span>{loading ? "Chargement…" : `${sorted.length} disponible${sorted.length > 1 ? "s" : ""}`}</span>
+            </h2>
+          </div>
+        </div>
+      </div>
       {/* Icon-based category filters */}
       <div className="px-4 flex items-center gap-2 overflow-x-auto hide-scrollbar">
         {CATEGORY_FILTERS.map(cat => {
@@ -1957,7 +1994,42 @@ function BundlesTab() {
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const TABS = ["STYLES", "SERVICES", "BUNDLES", "SALONS", "PARTICULIERS"];
+// Onglets principaux (style page Recherche : pastille icône + label)
+const TAB_META = [
+  { id: "STYLES", label: "Styles", Icon: Palette },
+  { id: "SERVICES", label: "Services", Icon: Scissors },
+  { id: "BUNDLES", label: "Bundles", Icon: Package },
+  { id: "SALONS", label: "Salons", Icon: Building2 },
+  { id: "PARTICULIERS", label: "Particuliers", Icon: UserCheck },
+];
+
+// Icônes des pastilles de catégories (style page Recherche)
+const CAT_ICONS = {
+  "Tous": Sparkles, "Coiffure": Scissors, "Maquillage": Paintbrush, "Ongles": Gem,
+  "Soin": Droplets, "Barbe": Zap, "Massage": Hand, "Épilation": Sparkles,
+  "Prestige": Gem, "Luxe": Crown, "Bio": Leaf, "Moderne": Zap, "Classique": Star,
+};
+
+function CategoryPills({ cats, active, onChange }) {
+  return (
+    <nav className="discovery-categories" aria-label="Catégories de prestations">
+      {cats.map((cat) => {
+        const Icon = CAT_ICONS[cat] || Sparkles;
+        return (
+          <button
+            key={cat}
+            aria-pressed={active === cat}
+            className={active === cat ? 'selected' : ''}
+            onClick={() => onChange(cat)}
+          >
+            <Icon size={16} />
+            {cat}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
 
 // ── Mini Publication Wizard inline ───────────────────────────────────────────
 function QuickPublishModal({ onClose }) {
@@ -2104,7 +2176,6 @@ export default function ServicesSalons() {
   const catMapped = CAT_MAP[catParam];
 
   const [activeTab, setActiveTab] = useState(catMapped?.tab || initialTab);
-  const [showSearch, setShowSearch] = useState(false);
   const [search, setSearch] = useState("");
   const [showPublish, setShowPublish] = useState(false);
   const [activeCategoryMap, setActiveCategoryMap] = useState({
@@ -2114,61 +2185,75 @@ export default function ServicesSalons() {
     PARTICULIERS: "Tous",
   });
 
-  const closeSearch = () => { setShowSearch(false); setSearch(""); };
+  const closeSearch = () => { setSearch(""); };
+
+  const currentCats = activeTab === "STYLES" ? STYLE_CATEGORIES
+    : activeTab === "SERVICES" ? SERVICE_CATEGORIES
+    : activeTab === "SALONS" ? SALON_CATEGORIES
+    : activeTab === "PARTICULIERS" ? PARTICULIER_CATEGORIES : [];
 
   return (
-    <div className="font-display bg-[#f7f7f7] flex flex-col" style={{ height: "100dvh" }}>
+    <div className="discovery-page services-page font-display flex flex-col" style={{ height: "100dvh" }}>
 
       {showPublish && <QuickPublishModal onClose={() => setShowPublish(false)} />}
 
-      {/* ── Header ── */}
-      <div className="bg-white px-5 pt-4 pb-0 z-40 shadow-sm flex-shrink-0 relative">
-        <div className="flex items-center justify-between mb-3">
-          {showSearch ? (
-            <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-2xl px-3 py-2">
-              <Search className="w-4 h-4 text-gray-400" />
+      {/* ── Header hero (design page Recherche) ── */}
+      <header className="discovery-hero flex-shrink-0 relative z-40">
+        <div className="discovery-topline">
+          <span className="discovery-eyebrow"><span className="pulse-dot" /> Trouvez votre bonheur</span>
+          <span className="discovery-brand">BeautyBook<span className="brand-dot">.</span></span>
+        </div>
+
+        <div className="discovery-heading">
+          <div>
+            <h1>Services & <em>Salons.</em></h1>
+          </div>
+        </div>
+
+        {/* Barre de recherche */}
+        <div className="relative">
+          <div className="discovery-searchbar">
+            <label className="discovery-query">
+              <Search size={20} aria-hidden="true" />
+              <span className="sr-only">Rechercher</span>
               <input
-                autoFocus
+                type="search"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Styles, services, catégories..."
-                className="flex-1 bg-transparent text-[14px] text-gray-700 outline-none"
               />
-              <button onClick={closeSearch} className="text-[12px] font-black text-gray-500">✕</button>
-            </div>
-          ) : (
-            <>
-              <h1 className="text-[22px] font-black text-gray-900">Services & Salons</h1>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setShowSearch(true)} className="w-9 h-9 flex items-center justify-center text-gray-600">
-                  <Search className="w-5 h-5" />
-                </button>
-              </div>
-            </>
-          )}
+            </label>
+          </div>
+          {search.trim().length >= 2 && <SearchResults query={search} onClose={closeSearch} />}
         </div>
 
-        {/* Suggestions dropdown */}
-        {showSearch && <SearchResults query={search} onClose={closeSearch} />}
-
-        {/* Main Tabs */}
-        <div className="flex gap-6 overflow-x-auto hide-scrollbar">
-          {TABS.map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`shrink-0 pb-3 text-[13px] font-black border-b-2 transition-all ${activeTab === tab ? "text-primary border-primary" : "text-gray-400 border-transparent"}`}>
-              {tab}
-            </button>
-          ))}
+        {/* Onglets principaux */}
+        <div className="discovery-entity-tabs-container">
+          <div className="discovery-entity-tabs" role="tablist" aria-label="Onglets Services et Salons">
+            {TAB_META.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={activeTab === id}
+                className={`discovery-entity-tab ${activeTab === id ? 'active' : ''}`}
+                onClick={() => setActiveTab(id)}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* ── Sous-catégories sticky ── */}
-      <div className="bg-white px-4 py-2 border-b border-gray-100 flex-shrink-0">
-        {activeTab === "STYLES" && <FilterChips filters={STYLE_CATEGORIES} active={activeCategoryMap["STYLES"]} onChange={v => setActiveCategoryMap(p => ({ ...p, STYLES: v }))} />}
-        {activeTab === "SERVICES" && <FilterChips filters={SERVICE_CATEGORIES} active={activeCategoryMap["SERVICES"]} onChange={v => setActiveCategoryMap(p => ({ ...p, SERVICES: v }))} />}
-        {activeTab === "SALONS" && <FilterChips filters={SALON_CATEGORIES} active={activeCategoryMap["SALONS"]} onChange={v => setActiveCategoryMap(p => ({ ...p, SALONS: v }))} />}
-        {activeTab === "PARTICULIERS" && <FilterChips filters={PARTICULIER_CATEGORIES} active={activeCategoryMap["PARTICULIERS"]} onChange={v => setActiveCategoryMap(p => ({ ...p, PARTICULIERS: v }))} />}
-      </div>
+        {/* Pastilles catégories */}
+        {currentCats.length > 0 && (
+          <CategoryPills
+            cats={currentCats}
+            active={activeCategoryMap[activeTab]}
+            onChange={v => setActiveCategoryMap(p => ({ ...p, [activeTab]: v }))}
+          />
+        )}
+      </header>
 
       {/* ── Tab Content ── */}
       <div

@@ -1,0 +1,115 @@
+/* ── Services & Salons : variante compacte du design "discovery" (page Recherche) ── */
+
+.services-page .discovery-hero {
+  padding: 14px 16px 4px;
+}
+
+.services-page .discovery-topline {
+  margin-bottom: 2px;
+}
+
+.services-page .discovery-eyebrow {
+  font-size: 10px;
+}
+
+.services-page .discovery-brand {
+  font-size: 14px;
+}
+
+.services-page .discovery-heading {
+  padding: 10px 0 12px;
+  gap: 12px;
+}
+
+.services-page .discovery-heading h1 {
+  font-size: 26px;
+  letter-spacing: -0.8px;
+}
+
+.services-page .discovery-heading p {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.services-page .discovery-searchbar {
+  padding: 6px 6px 6px 14px;
+  border-radius: 16px;
+}
+
+.services-page .discovery-query input {
+  height: 38px;
+  font-size: 14px;
+}
+
+.services-page .discovery-entity-tabs-container {
+  margin-top: 10px;
+}
+
+.services-page .discovery-entity-tab {
+  min-height: 38px;
+  padding: 6px 13px;
+  font-size: 12px;
+}
+
+.services-page .discovery-categories {
+  padding: 8px 2px 10px;
+}
+
+.services-page .discovery-categories button {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* ── Sections des onglets ── */
+.services-section {
+  padding: 18px 16px 24px;
+}
+
+.services-section .discovery-section-head h2 {
+  font-size: 21px;
+}
+
+/* ── États : vide / légende carte ── */
+.services-page .discovery-empty,
+.discovery-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: #6B7280;
+}
+
+.services-page .discovery-empty h3,
+.discovery-empty h3 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.services-page .discovery-empty p,
+.discovery-empty p {
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+.services-page .discovery-map-caption,
+.discovery-map-caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B7280;
+  background: #FFFFFF;
+}
+
+.services-page .discovery-map-caption svg,
+.discovery-map-caption svg {
+  color: #FF6B00;
+  flex-shrink: 0;
+}
