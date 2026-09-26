@@ -560,6 +560,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
   const [progress, setProgress] = useState(0);
   const [showSpeed, setShowSpeed] = useState(false);
   const [showOfferOverlay, setShowOfferOverlay] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
   const keepAliveTimer = useRef(null);
   const lastPositionRef = useRef(0);
 
@@ -810,7 +811,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
       )}
 
       {/* ── Bottom info ── */}
-      <div className="absolute left-4 right-20 z-20 space-y-2" style={{ bottom: "calc(80px + env(safe-area-inset-bottom, 16px))" }}>
+      <div className="absolute left-4 right-20 z-20 space-y-1.5" style={{ bottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}>
         {/* Profile photo + username above legend */}
         <div className="flex items-center gap-2.5">
           <button onClick={() => onAuthorClick?.(reel)} className="shrink-0">
@@ -827,9 +828,21 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
             </button>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <p className="text-white text-[15px] font-medium leading-tight flex-1 line-clamp-2">{reel.title}</p>
-        </div>
+        {/* Titre + bio extensible */}
+        <p className="text-white text-[15px] font-bold leading-tight">{reel.title}</p>
+        {reel.description && (
+          <div className="text-white/90 text-[13px] leading-snug">
+            <span className={descExpanded ? "" : "line-clamp-2"}>{reel.description}</span>
+            {reel.description.length > 90 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setDescExpanded(v => !v); }}
+                className="text-white font-bold ml-1 underline underline-offset-2 decoration-white/50"
+              >
+                {descExpanded ? "Voir moins" : "Voir plus"}
+              </button>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-2">
           {reel.sound && (
             <>

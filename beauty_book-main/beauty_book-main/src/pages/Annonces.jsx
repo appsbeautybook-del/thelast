@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search, SlidersHorizontal, MapPin, Star, X, ArrowUpRight, ArrowRight, Sparkles,
@@ -7,7 +7,8 @@ import {
   Send, CheckCircle2, XCircle, FileSignature
 } from "lucide-react";
 import BeautyImage from "@/components/ui/BeautyImage";
-import { getAnnonces, getCategories, getTypesMission, getMesCandidatures } from "@/lib/annonces";
+import { getAnnonces, getCategories, getTypesMission, getMesCandidatures, checkSalonAccess } from "@/lib/annonces";
+import { supabase } from "@/api/supabaseClient";
 import "./Annonces.css";
 
 const categoryIcons = { Scissors, Waves, Gem, Paintbrush, Droplets, Hand, Sparkles };
@@ -104,6 +105,12 @@ export default function Annonces() {
   const userEmail = (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || ""; } catch { return ""; } })();
   const mesCandidatures = useMemo(() => userEmail ? getMesCandidatures(userEmail) : [], [userEmail, view]);
 
+  // Le bouton "Publier une annonce" n'apparaît que pour les salons professionnels
+  const [isSalon, setIsSalon] = useState(false);
+  useEffect(() => {
+    if (userEmail) checkSalonAccess(supabase, userEmail).then(r => setIsSalon(r.isSalon));
+  }, [userEmail]);
+
   const annonces = useMemo(() => getAnnonces(), []);
   const categories = getCategories();
   const types = getTypesMission();
@@ -143,7 +150,7 @@ export default function Annonces() {
             </h1>
             <p>Les salons recrutent, les talents répondent.</p>
           </div>
-          <button className="discovery-maria" onClick={() => navigate("/annonces/nouvelle")}>
+          <button className="discovery-maria" onClick={() => navigate("/annonces/nouvelle")} style={{ display: isSalon ? undefined : "none" }}>
             <span className="discovery-maria-icon"><Plus size={22} /></span>
             <span>
               <strong>Publier une annonce</strong>

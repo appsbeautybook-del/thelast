@@ -411,22 +411,54 @@ export function getMesCandidatures(email) {
 }
 
 // ─── Accès réservé aux salons professionnels ───
-// La gestion des annonces (dashboard + détail) est réservée aux profils pro
-// dont le type_activite est "Salon" (salon professionnel).
+// La gestion des annonces (dashboard + détail + création) est réservée aux profils
+// pro dont le type_activite est "Salon" (salon professionnel).
+// Sélection du profil avec la même priorité que VueClient (actif avec images >
+// actif > avec images > plus récent) car des doublons ProfilPro existent.
+// Repli sur DemandeProV2 si le profil n'a pas de type_activite.
 // Retourne { loading, isSalon, typeActivite }.
 export async function checkSalonAccess(supabase, email) {
   if (!supabase || !email) return { loading: false, isSalon: false, typeActivite: null };
+  const isSalonValue = (v) => {
+    if (!v || typeof v !== "string") return false;
+    const norm = v.trim().toLowerCase();
+    return norm === "salon" || norm === "salon professionnel" || norm === "salon-professionnel";
+  };
   try {
-    const { data, error } = await supabase
+    const { data: profiles } = await supabase
       .from("ProfilPro")
-      .select("type_activite")
+      .select("id, type_activite, status, avatar_url, cover_url, created_at")
       .eq("user_email", email)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) throw error;
-    const t = data?.type_activite || null;
-    return { loading: false, isSalon: t === "Salon", typeActivite: t };
+      .order("created_at", { ascending: false });
+    let best = null;
+    if (profiles && profiles.length > 0) {
+      best = profiles.find(p => p.status === "actif" && (p.avatar_url || p.cover_url))
+        || profiles.find(p => p.status === "actif")
+        || profiles.find(p => p.avatar_url || p.cover_url)
+        || profiles.find(p => isSalonValue(p.type_activite))
+        || profiles[0];
+    }
+    if (best && isSalonValue(best.type_activite)) {
+      return { loading: false, isSalon: true, typeActivite: best.type_activite };
+    }
+    // Aucun profil avec type Salon ? Chercher dans tous les doublons
+    if (profiles && profiles.some(p => isSalonValue(p.type_activite))) {
+      return { loading: false, isSalon: true, typeActivite: "Salon" };
+    }
+    // Repli : DemandeProV2 (parcours Devenir Pro)
+    try {
+      const { data: demande } = await supabase
+        .from("DemandeProV2")
+        .select("type_activite")
+        .eq("user_email", email)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (demande && isSalonValue(demande.type_activite)) {
+        return { loading: false, isSalon: true, typeActivite: demande.type_activite };
+      }
+    } catch {}
+    return { loading: false, isSalon: false, typeActivite: best?.type_activite || null };
   } catch {
     return { loading: false, isSalon: false, typeActivite: null };
   }

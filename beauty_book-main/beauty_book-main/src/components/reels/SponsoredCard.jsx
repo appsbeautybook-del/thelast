@@ -77,6 +77,7 @@ function AdCountdown({ total = 5, onSkip }) {
 /* ── REELS ── */
 function ReelsAd({ annonce, onClose }) {
   const [showSkip, setShowSkip] = useState(false);
+  const [descExpanded, setDescExpanded] = useState(false);
   const isVideo = !!annonce.video_url;
 
   return (
@@ -124,10 +125,20 @@ function ReelsAd({ annonce, onClose }) {
         </div>
 
         {/* Bottom */}
-        <div className="absolute bottom-0 inset-x-0 px-4 pb-6">
+        <div className="absolute bottom-0 inset-x-0 px-4" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}>
           <h3 className="text-white text-[18px] font-black mb-1 drop-shadow-lg">{annonce.title}</h3>
           {annonce.description && (
-            <p className="text-white/70 text-[13px] leading-snug mb-3 line-clamp-2 drop-shadow">{annonce.description}</p>
+            <div className="text-white/70 text-[13px] leading-snug mb-3 drop-shadow">
+              <span className={descExpanded ? "" : "line-clamp-2"}>{annonce.description}</span>
+              {annonce.description.length > 90 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDescExpanded(v => !v); }}
+                  className="text-white font-bold ml-1 underline underline-offset-2 decoration-white/50"
+                >
+                  {descExpanded ? "Voir moins" : "Voir plus"}
+                </button>
+              )}
+            </div>
           )}
           <button
             onClick={() => { if (annonce.cta_url) window.open(annonce.cta_url, "_blank"); }}
