@@ -50,7 +50,7 @@ function VideoPlayer({ src, poster, className, style }) {
 
   return (
     <video ref={ref} src={src} poster={poster} className={className} style={style}
-      muted playsInline preload="auto" controls={false} />
+      muted playsInline preload="auto" controls={false} loop />
   );
 }
 
@@ -81,11 +81,11 @@ function ReelsAd({ annonce, onClose }) {
 
   return (
     <div className="relative w-full h-full flex flex-col bg-black overflow-hidden">
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-h-0">
         {isVideo ? (
-          <VideoPlayer src={annonce.video_url} poster={annonce.image_url} className="w-full h-full object-cover" style={{ width: "100%", height: "100%" }} />
+          <VideoPlayer src={annonce.video_url} poster={annonce.image_url} className="absolute inset-0 w-full h-full object-cover" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <BeautyImage src={annonce.image_url} alt={annonce.title} className="w-full h-full object-cover" />
+          <BeautyImage src={annonce.image_url} alt={annonce.title} className="absolute inset-0 w-full h-full object-cover" />
         )}
 
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
@@ -181,12 +181,12 @@ function StylesAd({ annonce, onClose }) {
         </div>
       </div>
 
-      {/* Image / Vidéo — redimensionnée pour remplir l'espace entre sponsor et CTA */}
-      <div className="flex-1 relative overflow-hidden">
+      {/* Image / Vidéo — remplit tout l'espace disponible entre sponsor et CTA */}
+      <div className="flex-1 relative overflow-hidden min-h-0">
         {isVideo ? (
-          <VideoPlayer src={annonce.video_url} poster={annonce.image_url} className="w-full h-full object-cover" style={{ width: "100%", height: "100%" }} />
+          <VideoPlayer src={annonce.video_url} poster={annonce.image_url} className="absolute inset-0 w-full h-full object-cover" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
         ) : (
-          <BeautyImage src={annonce.image_url} alt={annonce.title} className="w-full h-full object-cover" />
+          <BeautyImage src={annonce.image_url} alt={annonce.title} className="absolute inset-0 w-full h-full object-cover" />
         )}
       </div>
 
