@@ -17,7 +17,8 @@ import { supabase } from '@/api/supabaseClient';
 import { useCall } from "@/components/call/CallManager";
 import { useTheme } from "@/hooks/useTheme";
 import VTCSection from "@/components/service/VTCSection";
-import { timeToMin, isInTimeRange, isOvernight, isOpenNow, ouvertureFromDemande, DAY_KEYS_JS } from "@/lib/hours";
+import SalonMap from "@/components/map/SalonMap";
+import { isOpenNow, getEffectiveOpening, formatOpeningHours, getOpeningStatus } from "@/lib/hours";
 
 function getBannerGradient(theme) {
   if (theme === "night") return "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 60%, #000000 100%)";
@@ -91,160 +92,6 @@ const SPECIALITE_ICONS = {
   "Épilation": { icon: Sparkles, color: "text-rose-300", bg: "bg-rose-50" },
   "default": { icon: Star, color: "text-primary", bg: "bg-orange-50" },
 };
-
-function getFormattedOpeningHours(rawOuverture) {
-  const daysKeys = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
-  const daysShort = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-  const daysFull = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-
-  const defaultHoraires = {
-    lundi: { open: true, start: "09:00", end: "19:00" },
-    mardi: { open: true, start: "09:00", end: "19:00" },
-    mercredi: { open: true, start: "09:00", end: "19:00" },
-    jeudi: { open: true, start: "09:00", end: "19:00" },
-    vendredi: { open: true, start: "09:00", end: "19:00" },
-    samedi: { open: true, start: "09:00", end: "19:00" },
-    dimanche: { open: false, start: "09:00", end: "19:00" },
-  };
-
-  const ouv = (rawOuverture && typeof rawOuverture === "object" && Object.keys(rawOuverture).length > 0)
-    ? rawOuverture
-    : defaultHoraires;
-
-  const parsed = daysKeys.map((key, index) => {
-    const d = ouv[key] !== undefined ? ouv[key] : defaultHoraires[key];
-    const isOpen = d && d.open !== false;
-    return {
-      key,
-      short: daysShort[index],
-      full: daysFull[index],
-      open: isOpen,
-      start: d?.start || "09:00",
-      end: d?.end || "19:00",
-      pause_start: d?.pause_start || "",
-      pause_end: d?.pause_end || "",
-    };
-  });
-
-  const groups = [];
-  let currentGroup = null;
-
-  parsed.forEach((dayObj) => {
-    const hoursStr = dayObj.open ? `${dayObj.start} – ${dayObj.end}` : "Fermé";
-    const pauseStr = (dayObj.open && dayObj.pause_start && dayObj.pause_end) ? `${dayObj.pause_start} – ${dayObj.pause_end}` : "";
-    const keyStr = `${hoursStr}|${pauseStr}`;
-
-    if (!currentGroup) {
-      currentGroup = { days: [dayObj], keyStr, open: dayObj.open, hoursStr, pauseStr };
-    } else if (currentGroup.keyStr === keyStr) {
-      currentGroup.days.push(dayObj);
-    } else {
-      groups.push(currentGroup);
-      currentGroup = { days: [dayObj], keyStr, open: dayObj.open, hoursStr, pauseStr };
-    }
-  });
-  if (currentGroup) groups.push(currentGroup);
-
-  const todayKeyIndex = (new Date().getDay() + 6) % 7;
-  const todayKey = daysKeys[todayKeyIndex];
-
-  return groups.map(g => {
-    let label = "";
-    if (g.days.length === 1) {
-      label = g.days[0].full;
-    } else if (g.days.length === 5 && g.days[0].key === "lundi" && g.days[4].key === "vendredi") {
-      label = "Lun – Ven";
-    } else if (g.days.length === 6 && g.days[0].key === "lundi" && g.days[5].key === "samedi") {
-      label = "Lun – Sam";
-    } else if (g.days.length === 7) {
-      label = "Tous les jours";
-    } else {
-      label = `${g.days[0].short} – ${g.days[g.days.length - 1].short}`;
-    }
-
-    return {
-      label,
-      hours: g.hoursStr,
-      pause: g.pauseStr,
-      open: g.open,
-      isToday: g.days.some(d => d.key === todayKey)
-    };
-  });
-}
-
-function getOpeningStatus(rawOuverture) {
-  const daysKeys = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-  const now = new Date();
-
-  const defaultHoraires = {
-    lundi: { open: true, start: "09:00", end: "19:00" },
-    mardi: { open: true, start: "09:00", end: "19:00" },
-    mercredi: { open: true, start: "09:00", end: "19:00" },
-    jeudi: { open: true, start: "09:00", end: "19:00" },
-    vendredi: { open: true, start: "09:00", end: "19:00" },
-    samedi: { open: true, start: "09:00", end: "19:00" },
-    dimanche: { open: false, start: "09:00", end: "19:00" },
-  };
-
-  const ouverture = (rawOuverture && typeof rawOuverture === "object" && Object.keys(rawOuverture).length > 0)
-    ? rawOuverture
-    : defaultHoraires;
-
-  const conges = ouverture?.conges || [];
-  const todayTs = now.getTime();
-  const activeConges = conges.find(c => {
-    if (!c.start || !c.end) return false;
-    const s = new Date(c.start + "T00:00:00").getTime();
-    const e = new Date(c.end + "T23:59:59").getTime();
-    return todayTs >= s && todayTs <= e;
-  });
-
-  if (activeConges) {
-    return { status: "conges", label: `En congés (${activeConges.label || "Fermé"})`, color: "bg-amber-50 text-amber-600 border-amber-200" };
-  }
-
-  const curMin = now.getHours() * 60 + now.getMinutes();
-  const todayKey = daysKeys[now.getDay()];
-  const prevKey = daysKeys[(now.getDay() + 6) % 7];
-  const dayData = ouverture?.[todayKey] !== undefined ? ouverture[todayKey] : defaultHoraires[todayKey];
-  const prevData = ouverture?.[prevKey] !== undefined ? ouverture[prevKey] : defaultHoraires[prevKey];
-
-  const checkPause = (d) => {
-    if (!d?.pause_start || !d?.pause_end) return null;
-    const [psh, psm] = d.pause_start.split(":").map(Number);
-    const [peh, pem] = d.pause_end.split(":").map(Number);
-    const pStart = psh * 60 + psm;
-    const pEnd = peh * 60 + pem;
-    if (curMin >= pStart && curMin <= pEnd) {
-      return { status: "pause", label: `En pause (${d.pause_end})`, color: "bg-orange-50 text-orange-500 border-orange-200" };
-    }
-    return null;
-  };
-
-  // 1) Plage du jour (gère les plages de nuit : fin <= début)
-  if (dayData?.open) {
-    const startMin = timeToMin(dayData.start || "09:00");
-    const endMin = timeToMin(dayData.end || "19:00");
-    if (isInTimeRange(curMin, startMin, endMin)) {
-      return checkPause(dayData) || { status: "open", label: `Ouvert · Ferme à ${dayData.end}`, color: "bg-emerald-50 text-emerald-600 border-emerald-200" };
-    }
-  }
-
-  // 2) Débordement : la nuit du jour précédent peut courir jusqu'au matin
-  if (prevData?.open && isOvernight(prevData.start, prevData.end) && curMin <= timeToMin(prevData.end)) {
-    return { status: "open", label: `Ouvert · Ferme à ${prevData.end}`, color: "bg-emerald-50 text-emerald-600 border-emerald-200" };
-  }
-
-  if (!dayData || !dayData.open) {
-    return { status: "closed", label: "Fermé aujourd'hui", color: "bg-red-50 text-red-500 border-red-200" };
-  }
-
-  if (curMin < timeToMin(dayData.start || "09:00")) {
-    return { status: "closed", label: `Fermé · Ouvre à ${dayData.start}`, color: "bg-gray-100 text-gray-600 border-gray-200" };
-  }
-
-  return { status: "closed", label: "Fermé actuellement", color: "bg-red-50 text-red-500 border-red-200" };
-}
 
 // ── Appel réel via numéro de téléphone ───────────────────────────────────────
 function RealCallScreen({ targetName, targetAvatar, phoneNumber, onClose }) {
@@ -738,9 +585,10 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
   const profileUrl = window.location.origin + "/profil-pro";
 
   // Horaires effectifs : section Horaires & Congés (ouverture/horaires),
-  // sinon repli sur les horaires du parcours Devenir Pro (demande approuvée),
-  // pour que la page client affiche toujours la même chose que la section pro.
-  const ouvertureEff = proInfo?.ouverture || proInfo?.horaires || ouvertureFromDemande(demandeInfo);
+  // sinon repli sur les horaires du parcours Devenir Pro (demande approuvée).
+  // getEffectiveOpening ignore les objets vides : l'affichage est toujours
+  // synchronisé avec la section Horaires & Congés.
+  const ouvertureEff = getEffectiveOpening(proInfo, demandeInfo);
 
   useEffect(() => {
     if (!targetEmail) return;
@@ -1120,6 +968,16 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               </button>
             </div>
 
+            {/* Carte Apple Maps — emplacement du salon */}
+            <SalonMap
+              lat={proInfo?.latitude}
+              lng={proInfo?.longitude}
+              address={proInfo?.address}
+              city={proInfo?.city}
+              postalCode={proInfo?.postal_code}
+              name={proInfo?.salon_name}
+            />
+
             {/* Carte Horaires d'ouverture redesignée */}
             <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-sm space-y-4">
               <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-3.5">
@@ -1134,6 +992,13 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                 </div>
                 {(() => {
                   const st = getOpeningStatus(ouvertureEff);
+                  if (!st) {
+                    return (
+                      <span className="text-[10px] font-black px-2.5 py-1 rounded-full border bg-gray-100 text-gray-500 border-gray-200">
+                        ● Non renseigné
+                      </span>
+                    );
+                  }
                   return (
                     <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${st.color}`}>
                       ● {st.label}
@@ -1143,7 +1008,16 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               </div>
 
               <div className="space-y-2.5">
-                {getFormattedOpeningHours(ouvertureEff).map((item, idx) => (
+                {(() => {
+                  const formatted = formatOpeningHours(ouvertureEff);
+                  if (formatted.length === 0) {
+                    return (
+                      <p className="text-[12px] text-gray-400 font-medium text-center py-4">
+                        Le professionnel n'a pas encore renseigné ses horaires
+                      </p>
+                    );
+                  }
+                  return formatted.map((item, idx) => (
                   <div key={idx} className={`flex items-center justify-between p-2.5 rounded-2xl transition-all ${item.isToday ? "bg-orange-50/70 border border-orange-100" : "bg-gray-50/60"}`}>
                     <div className="flex items-center gap-2">
                       {item.isToday && <span className="w-2 h-2 rounded-full bg-primary" />}
@@ -1161,7 +1035,8 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                       )}
                     </div>
                   </div>
-                ))}
+                  ));
+                })()}
               </div>
 
               {ouvertureEff?.conges?.length > 0 && (

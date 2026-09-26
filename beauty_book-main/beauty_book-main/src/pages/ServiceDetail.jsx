@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, Share2, Heart, MapPin, Clock, Star, CheckCircle, ShoppingCart, Play, Calendar, ChevronRight, ChevronDown, Scissors, Sparkles, Wand2, X, ChevronLeft, ArrowUp, Wifi, Car, Thermometer, CreditCard, Accessibility, PawPrint, Baby, Coffee, Package } from "lucide-react";
 import VTCSection from "@/components/service/VTCSection";
+import SalonMap from "@/components/map/SalonMap";
 import CommandeModal from "@/components/restaurant/CommandeModal";
 import PostServiceReview from "@/components/reservation/PostServiceReview";
 import FiltreAIModal from "@/components/modals/FiltreAIModal";
@@ -989,10 +990,26 @@ export default function ServiceDetail() {
               <MapPin className="w-4 h-4 text-primary" />
             </div>
           </button>
+
+          {/* Carte Apple Maps — emplacement du salon */}
+          <div className="mt-3">
+            <SalonMap
+              lat={proData?.latitude}
+              lng={proData?.longitude}
+              address={proData?.address}
+              city={proData?.city}
+              postalCode={proData?.postal_code}
+              name={proData?.salon_name || s.salon}
+            />
+          </div>
         </div>
 
-        {/* VTC & Taxis */}
-        <VTCSection />
+        {/* VTC & Taxis — prix calculés depuis la localisation réelle du salon */}
+        <VTCSection
+          destinationLat={proData?.latitude}
+          destinationLng={proData?.longitude}
+          destinationAddress={[proData?.address, proData?.postal_code, proData?.city].filter(Boolean).join(", ")}
+        />
 
         {/* Services similaires */}
         <div>

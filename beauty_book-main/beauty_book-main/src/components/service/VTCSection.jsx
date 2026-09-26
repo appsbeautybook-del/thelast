@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { MapPin, RefreshCw, ExternalLink } from "lucide-react";
+import { loadAppleMaps } from "@/lib/appleMaps";
 
 const VTC_PROVIDERS = [
   {
@@ -102,6 +103,10 @@ function computeDuration(provider, distanceKm) {
 
 export default function VTCSection({ destinationLat, destinationLng, destinationAddress }) {
   const [userLocation, setUserLocation] = useState(null);
+  // Coordonnées du salon : props directes, sinon géocodage de l'adresse via Apple Maps
+  const [resolvedDest, setResolvedDest] = useState(null);
+  const destLat = destinationLat || resolvedDest?.lat || null;
+  const destLng = destinationLng || resolvedDest?.lng || null;
   const [prices, setPrices] = useState(() =>
     VTC_PROVIDERS.map(p => ({
       id: p.id,
@@ -122,12 +127,31 @@ export default function VTCSection({ destinationLat, destinationLng, destination
     );
   }, []);
 
+  // Géocode l'adresse du salon quand aucune coordonnée n'est fournie :
+  // les prix sont alors calculés depuis la vraie localisation du salon.
+  useEffect(() => {
+    if (destinationLat || destinationLng || !destinationAddress) return;
+    let cancelled = false;
+    loadAppleMaps()
+      .then((mapkit) => {
+        if (cancelled) return;
+        const geocoder = new mapkit.Geocoder();
+        geocoder.lookup(destinationAddress, (error, data) => {
+          if (cancelled || error || !data?.results?.length) return;
+          const coord = data.results[0].coordinate;
+          if (coord) setResolvedDest({ lat: coord.latitude, lng: coord.longitude });
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [destinationLat, destinationLng, destinationAddress]);
+
   const refresh = () => {
     setRefreshing(true);
     setTimeout(() => {
       let dist = distanceKm || 5;
-      if (userLocation && destinationLat && destinationLng) {
-        dist = haversineDistance(userLocation.lat, userLocation.lng, destinationLat, destinationLng);
+      if (userLocation && destLat && destLng) {
+        dist = haversineDistance(userLocation.lat, userLocation.lng, destLat, destLng);
         setDistanceKm(dist);
       }
       setPrices(VTC_PROVIDERS.map(p => {
@@ -145,15 +169,15 @@ export default function VTCSection({ destinationLat, destinationLng, destination
   };
 
   useEffect(() => {
-    if (userLocation && (destinationLat || destinationLng)) {
+    if (destLat || destLng) {
       refresh();
     }
-  }, [userLocation, destinationLat, destinationLng]);
+  }, [userLocation, destLat, destLng]);
 
   useEffect(() => {
     const timer = setInterval(refresh, 60000);
     return () => clearInterval(timer);
-  }, [userLocation, destinationLat, destinationLng, distanceKm]);
+  }, [userLocation, destLat, destLng, distanceKm]);
 
   const timeStr = lastUpdate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 

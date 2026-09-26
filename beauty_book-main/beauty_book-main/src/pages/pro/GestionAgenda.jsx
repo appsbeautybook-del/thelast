@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
+import { summarizeHours, hasHoursData } from "@/lib/hours";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function buildWeek(baseDate) {
@@ -1510,8 +1511,9 @@ function CrmTab({ reservations, proEmail }) {
 }
 
 // ── Gestion Tab ───────────────────────────────────────────────────────────────
-function GestionTab({ onNavigate, travailNuit = false, onToggleNuit }) {
-  const horaires = travailNuit ? "21h – 07h" : "09h – 19h";
+function GestionTab({ onNavigate, travailNuit = false, onToggleNuit, horairesSummary }) {
+  // Sous-titre synchronisé avec la section Horaires & Congés (jamais de 9h-19h en dur)
+  const horaires = horairesSummary || "Non configuré";
   const gestionItems = [
     { icon: Scissors, label: "Services & Tarifs", sub: "Gérer les prestations", color: "text-primary", bg: "bg-orange-50", route: "/pro/catalogue-services" },
     { icon: Users, label: "Équipe & Staff", sub: "Membres de l'équipe", color: "text-primary", bg: "bg-orange-50", route: "/pro/equipe" },
@@ -1552,7 +1554,7 @@ function GestionTab({ onNavigate, travailNuit = false, onToggleNuit }) {
             Mode Nuit
           </p>
           <p className={`text-[11px] font-medium mt-0.5 ${travailNuit ? "text-indigo-400" : "text-indigo-400"}`}>
-            Horaires : {travailNuit ? "21h – 07h ✓ Actif" : "09h – 19h — Désactivé"}
+            Horaires : {horaires}{travailNuit ? " · Mode Nuit ✓ Actif" : ""}
           </p>
           </div>
           <button
@@ -1595,6 +1597,9 @@ export default function GestionAgenda() {
   const [selectedRdv, setSelectedRdv] = useState(null);
   const [travailNuit, setTravailNuit] = useState(false);
   const [profilId, setProfilId] = useState(null);
+  // Horaires réels du pro (section Horaires & Congés) — source de l'affichage,
+  // pour ne plus jamais afficher un "09h – 19h" en dur désynchronisé.
+  const [proOuverture, setProOuverture] = useState(null);
   const [autoAccept, setAutoAccept] = useState(() => {
     return localStorage.getItem(`bb_auto_accept_${user?.email}`) === "true";
   });
@@ -1603,10 +1608,10 @@ export default function GestionAgenda() {
 
   const proEmail = user?.email;
 
-  // Heures d'ouverture selon mode nuit
-  const heureOuverture = travailNuit ? "21:00" : "09:00";
-  const heureFermeture = travailNuit ? "07:00" : "19:00";
-  const horairesLabel = travailNuit ? "09h – 07h (Mode Nuit)" : "09h – 19h";
+  // Heures d'ouverture : toujours les vrais horaires du pro (Horaires & Congés),
+  // jamais une valeur en dur. "Non configuré" si le pro n'a rien renseigné.
+  const horairesSummary = summarizeHours(proOuverture);
+  const horairesLabel = horairesSummary || "Horaires non configurés";
 
   const loadReservations = async () => {
     console.log('[GestionAgenda] loadReservations called, proEmail:', proEmail);
@@ -1629,6 +1634,11 @@ export default function GestionAgenda() {
         }
         setTravailNuit(dbNight);
         setProfilId(profils[0].id);
+        // Synchronise l'affichage avec la section Horaires & Congés
+        const ouv = profils[0].ouverture && hasHoursData(profils[0].ouverture)
+          ? profils[0].ouverture
+          : (hasHoursData(profils[0].horaires) ? profils[0].horaires : null);
+        setProOuverture(ouv);
       }
     } catch (e) {
       console.error('[GestionAgenda] loadReservations error:', e);
@@ -1642,6 +1652,10 @@ export default function GestionAgenda() {
     const unsubProfil = entities.ProfilPro.subscribe((event) => {
       if (event.data?.user_email === proEmail) {
         setTravailNuit(event.data.travail_nuit || false);
+        const ouv = event.data.ouverture && hasHoursData(event.data.ouverture)
+          ? event.data.ouverture
+          : (hasHoursData(event.data.horaires) ? event.data.horaires : null);
+        setProOuverture(ouv);
       }
     });
     // Un seul channel Supabase pour tout le real-time + auto-accept
@@ -1838,7 +1852,7 @@ export default function GestionAgenda() {
               <CrmTab reservations={reservations} proEmail={proEmail} />
             )}
             {activeTab === "gestion" && (
-              <GestionTab onNavigate={navigate} travailNuit={travailNuit} profilId={profilId} onToggleNuit={async (val) => {
+              <GestionTab onNavigate={navigate} travailNuit={travailNuit} profilId={profilId} horairesSummary={horairesSummary} onToggleNuit={async (val) => {
                 setTravailNuit(val);
                 localStorage.setItem("bb_night_mode", String(val));
                 if (proEmail) {
