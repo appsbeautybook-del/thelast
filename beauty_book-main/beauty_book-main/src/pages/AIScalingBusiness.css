@@ -1,0 +1,252 @@
+/* ── AI Scaling Business · dashboard premium ─────────────────────────── */
+.scaling-page {
+  --ink: #111827;
+  --muted: #6B7280;
+  --line: #F3F4F6;
+  --orange: #FF6B00;
+  --orange-hover: #EA580C;
+  --orange-light: #FFF2E8;
+  --orange-glow: rgba(255, 107, 0, 0.28);
+  --surface: #FFFFFF;
+  --bg-canvas: #FAFAFA;
+  color: var(--ink);
+  background: var(--bg-canvas);
+  min-height: 100%;
+}
+.scaling-page button { cursor: pointer; touch-action: manipulation; transition: all .2s ease; }
+.scaling-page button:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+
+/* ── Sélecteur de période ── */
+.scaling-periods {
+  display: flex; gap: 6px; padding: 4px;
+  background: #F3F4F6; border-radius: 16px; width: max-content; max-width: 100%;
+}
+.scaling-periods button {
+  border: none; background: transparent; color: var(--muted);
+  font-size: 12px; font-weight: 800; letter-spacing: .04em;
+  padding: 8px 16px; border-radius: 12px; white-space: nowrap;
+}
+.scaling-periods button.active {
+  background: var(--surface); color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+/* ── Onglets de vue (style entity tabs recherche) ── */
+.scaling-tabs {
+  display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 10px;
+  scrollbar-width: none;
+}
+.scaling-tabs::-webkit-scrollbar { display: none; }
+.scaling-tab {
+  display: flex; align-items: center; gap: 8px;
+  border: 1.5px solid var(--line); background: var(--surface);
+  padding: 10px 16px; border-radius: 999px;
+  font-size: 13px; font-weight: 700; color: var(--muted); white-space: nowrap;
+}
+.scaling-tab.active {
+  background: var(--ink); border-color: var(--ink); color: #fff;
+  box-shadow: 0 6px 16px rgba(17,24,39,.22);
+}
+.scaling-tab.active svg { color: var(--orange); }
+
+/* ── Titres de section ── */
+.scaling-section-head { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 12px; }
+.scaling-eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; letter-spacing: .14em; font-weight: 800;
+  color: var(--orange); text-transform: uppercase;
+}
+.scaling-section-head .link { font-size: 12px; font-weight: 700; color: var(--muted); background: none; border: none; }
+
+/* ── Cartes KPI ── */
+.scaling-kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+@media (min-width: 720px) { .scaling-kpis { grid-template-columns: repeat(3, 1fr); } }
+.scaling-kpi {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+  padding: 14px; position: relative; overflow: hidden;
+}
+.scaling-kpi .kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.scaling-kpi .kpi-icon {
+  width: 34px; height: 34px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+}
+.scaling-kpi .kpi-label { font-size: 10.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.scaling-kpi .kpi-value { font-size: 22px; font-weight: 900; letter-spacing: -.5px; margin-top: 2px; }
+.scaling-delta {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px;
+}
+.scaling-delta.up { background: #ECFDF5; color: #059669; }
+.scaling-delta.down { background: #FEF2F2; color: #DC2626; }
+.scaling-delta.flat { background: #F3F4F6; color: var(--muted); }
+
+/* ── Cartes génériques ── */
+.scaling-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 24px; padding: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.03);
+}
+.scaling-card h3 { font-size: 14px; font-weight: 800; }
+.scaling-card .sub { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+/* ── Hero métrique ── */
+.scaling-hero-metric {
+  position: relative; overflow: hidden; border-radius: 28px;
+  background: linear-gradient(135deg, #111827 0%, #1F2937 55%, #7C2D12 130%);
+  color: #fff; padding: 22px;
+  box-shadow: 0 16px 40px rgba(17,24,39,.25);
+}
+.scaling-hero-metric::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(420px 200px at 85% -10%, rgba(255,107,0,.35), transparent 60%);
+  pointer-events: none;
+}
+.scaling-hero-metric .glow-orb { position: absolute; border-radius: 50%; filter: blur(40px); opacity: .35; pointer-events: none; }
+
+/* ── Anneau de progression ── */
+.scaling-ring { transform: rotate(-90deg); }
+.scaling-ring .track { stroke: #F3F4F6; }
+.scaling-ring .bar { stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(.22,1,.36,1); }
+
+/* ── Barres de progression ── */
+.scaling-progress { height: 8px; background: #F3F4F6; border-radius: 999px; overflow: hidden; }
+.scaling-progress > span {
+  display: block; height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--orange), #FFB25E);
+  transition: width 1s cubic-bezier(.22,1,.36,1);
+}
+
+/* ── Canaux d'acquisition ── */
+.scaling-channel {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 20px; padding: 14px 16px;
+}
+.scaling-channel .ch-icon {
+  width: 46px; height: 46px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  box-shadow: 0 6px 14px rgba(0,0,0,.12);
+}
+.scaling-channel .ch-bar { height: 6px; background: #F3F4F6; border-radius: 999px; overflow: hidden; margin-top: 8px; }
+.scaling-channel .ch-bar > span { display: block; height: 100%; border-radius: 999px; transition: width 1s ease; }
+
+/* ── Entonnoir ── */
+.scaling-funnel-step { position: relative; }
+.scaling-funnel-bar {
+  height: 44px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 14px; color: #fff; font-weight: 800; font-size: 13px;
+  transition: width 1s cubic-bezier(.22,1,.36,1);
+  box-shadow: 0 6px 16px rgba(0,0,0,.1);
+}
+
+/* ── Objectifs ── */
+.scaling-goal {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 22px; padding: 16px;
+  display: flex; gap: 14px; align-items: center;
+}
+.scaling-goal .goal-info { flex: 1; min-width: 0; }
+
+/* ── Équipe ── */
+.scaling-member {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 20px; padding: 12px 14px;
+}
+.scaling-avatar {
+  width: 46px; height: 46px; border-radius: 16px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 16px; color: #fff;
+}
+.scaling-rank {
+  width: 26px; height: 26px; border-radius: 999px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900;
+}
+.scaling-rank.r1 { background: linear-gradient(135deg, #FBBF24, #F59E0B); color: #fff; }
+.scaling-rank.r2 { background: #E5E7EB; color: #6B7280; }
+.scaling-rank.r3 { background: #FED7AA; color: #C2410C; }
+.scaling-rank.rx { background: #F3F4F6; color: #9CA3AF; }
+
+/* ── Insights IA ── */
+.scaling-insight {
+  display: flex; gap: 12px; align-items: flex-start;
+  background: linear-gradient(135deg, #FFFBF5 0%, #FFF7ED 100%);
+  border: 1px solid #FDE9D3; border-radius: 20px; padding: 14px;
+}
+.scaling-insight .in-icon {
+  width: 38px; height: 38px; border-radius: 13px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+}
+
+/* ── État vide ── */
+.scaling-empty {
+  text-align: center; padding: 34px 20px;
+  background: var(--surface); border: 1.5px dashed #E5E7EB; border-radius: 24px;
+}
+.scaling-empty .e-icon {
+  width: 54px; height: 54px; border-radius: 20px; margin: 0 auto 12px;
+  background: var(--orange-light); display: flex; align-items: center; justify-content: center;
+  color: var(--orange);
+}
+
+/* ── Chat ── */
+.scaling-chat-assistant {
+  width: 34px; height: 34px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(135deg, #FF6B00, #FFB25E);
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  box-shadow: 0 4px 12px var(--orange-glow);
+}
+.scaling-quick {
+  border: 1px solid var(--line); border-radius: 20px; padding: 14px;
+  background: var(--surface); text-align: left; width: 100%;
+}
+.scaling-quick:active { transform: scale(.97); }
+.scaling-quick .q-icon {
+  width: 40px; height: 40px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; color: #fff; margin-bottom: 10px;
+}
+
+/* ── Modale objectifs ── */
+.scaling-modal-backdrop {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(17,24,39,.5); backdrop-filter: blur(6px);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+@media (min-width: 720px) { .scaling-modal-backdrop { align-items: center; } }
+.scaling-modal {
+  background: #fff; border-radius: 28px 28px 0 0; width: 100%; max-width: 560px;
+  padding: 22px; max-height: 88vh; overflow-y: auto;
+  animation: scaling-slide-up .3s cubic-bezier(.22,1,.36,1);
+}
+@media (min-width: 720px) { .scaling-modal { border-radius: 28px; } }
+@keyframes scaling-slide-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.scaling-field label { font-size: 12px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.scaling-field input {
+  width: 100%; margin-top: 6px; padding: 12px 14px;
+  border: 1.5px solid var(--line); border-radius: 14px;
+  font-size: 15px; font-weight: 700; color: var(--ink); outline: none;
+}
+.scaling-field input:focus { border-color: var(--orange); }
+
+/* ── Divers ── */
+.scaling-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 800; padding: 6px 12px; border-radius: 999px;
+  background: #F3F4F6; color: var(--muted);
+}
+.scaling-chip.on { background: var(--orange-light); color: var(--orange); }
+.scaling-divider { height: 1px; background: var(--line); margin: 14px 0; }
+.scaling-cta-banner {
+  position: relative; overflow: hidden; border-radius: 24px;
+  background: linear-gradient(120deg, #7C3AED 0%, #A855F7 60%, #D946EF 100%);
+  color: #fff; padding: 18px;
+  box-shadow: 0 12px 30px rgba(139,92,246,.3);
+}
+.scaling-cta-banner::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(300px 160px at 90% 0%, rgba(255,255,255,.18), transparent 60%);
+  pointer-events: none;
+}
+.recharts-wrapper:focus, .recharts-surface:focus { outline: none; }
