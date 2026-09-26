@@ -17,6 +17,7 @@ import { supabase } from '@/api/supabaseClient';
 import { useCall } from "@/components/call/CallManager";
 import { useTheme } from "@/hooks/useTheme";
 import VTCSection from "@/components/service/VTCSection";
+import { timeToMin, isInTimeRange, isOvernight, isOpenNow, ouvertureFromDemande, DAY_KEYS_JS } from "@/lib/hours";
 
 function getBannerGradient(theme) {
   if (theme === "night") return "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 60%, #000000 100%)";
@@ -202,33 +203,43 @@ function getOpeningStatus(rawOuverture) {
     return { status: "conges", label: `En congés (${activeConges.label || "Fermé"})`, color: "bg-amber-50 text-amber-600 border-amber-200" };
   }
 
+  const curMin = now.getHours() * 60 + now.getMinutes();
   const todayKey = daysKeys[now.getDay()];
+  const prevKey = daysKeys[(now.getDay() + 6) % 7];
   const dayData = ouverture?.[todayKey] !== undefined ? ouverture[todayKey] : defaultHoraires[todayKey];
+  const prevData = ouverture?.[prevKey] !== undefined ? ouverture[prevKey] : defaultHoraires[prevKey];
+
+  const checkPause = (d) => {
+    if (!d?.pause_start || !d?.pause_end) return null;
+    const [psh, psm] = d.pause_start.split(":").map(Number);
+    const [peh, pem] = d.pause_end.split(":").map(Number);
+    const pStart = psh * 60 + psm;
+    const pEnd = peh * 60 + pem;
+    if (curMin >= pStart && curMin <= pEnd) {
+      return { status: "pause", label: `En pause (${d.pause_end})`, color: "bg-orange-50 text-orange-500 border-orange-200" };
+    }
+    return null;
+  };
+
+  // 1) Plage du jour (gère les plages de nuit : fin <= début)
+  if (dayData?.open) {
+    const startMin = timeToMin(dayData.start || "09:00");
+    const endMin = timeToMin(dayData.end || "19:00");
+    if (isInTimeRange(curMin, startMin, endMin)) {
+      return checkPause(dayData) || { status: "open", label: `Ouvert · Ferme à ${dayData.end}`, color: "bg-emerald-50 text-emerald-600 border-emerald-200" };
+    }
+  }
+
+  // 2) Débordement : la nuit du jour précédent peut courir jusqu'au matin
+  if (prevData?.open && isOvernight(prevData.start, prevData.end) && curMin <= timeToMin(prevData.end)) {
+    return { status: "open", label: `Ouvert · Ferme à ${prevData.end}`, color: "bg-emerald-50 text-emerald-600 border-emerald-200" };
+  }
 
   if (!dayData || !dayData.open) {
     return { status: "closed", label: "Fermé aujourd'hui", color: "bg-red-50 text-red-500 border-red-200" };
   }
 
-  const [sh, sm] = (dayData.start || "09:00").split(":").map(Number);
-  const [eh, em] = (dayData.end || "19:00").split(":").map(Number);
-  const curMin = now.getHours() * 60 + now.getMinutes();
-  const startMin = sh * 60 + sm;
-  const endMin = eh * 60 + em;
-
-  if (curMin >= startMin && curMin <= endMin) {
-    if (dayData.pause_start && dayData.pause_end) {
-      const [psh, psm] = dayData.pause_start.split(":").map(Number);
-      const [peh, pem] = dayData.pause_end.split(":").map(Number);
-      const pStart = psh * 60 + psm;
-      const pEnd = peh * 60 + pem;
-      if (curMin >= pStart && curMin <= pEnd) {
-        return { status: "pause", label: `En pause (${dayData.pause_end})`, color: "bg-orange-50 text-orange-500 border-orange-200" };
-      }
-    }
-    return { status: "open", label: `Ouvert · Ferme à ${dayData.end}`, color: "bg-emerald-50 text-emerald-600 border-emerald-200" };
-  }
-
-  if (curMin < startMin) {
+  if (curMin < timeToMin(dayData.start || "09:00")) {
     return { status: "closed", label: `Fermé · Ouvre à ${dayData.start}`, color: "bg-gray-100 text-gray-600 border-gray-200" };
   }
 
@@ -726,6 +737,11 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
   const proAddress = proInfo?.address || proInfo?.city || null;
   const profileUrl = window.location.origin + "/profil-pro";
 
+  // Horaires effectifs : section Horaires & Congés (ouverture/horaires),
+  // sinon repli sur les horaires du parcours Devenir Pro (demande approuvée),
+  // pour que la page client affiche toujours la même chose que la section pro.
+  const ouvertureEff = proInfo?.ouverture || proInfo?.horaires || ouvertureFromDemande(demandeInfo);
+
   useEffect(() => {
     if (!targetEmail) return;
     const isOwnProfile = targetEmail === user?.email;
@@ -964,15 +980,9 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
           )}
           {/* Ouvert / Fermé */}
           {(() => {
-            const days = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
-            const now = new Date();
-            const d = proInfo?.ouverture?.[days[now.getDay()]];
-            if (!d) return null;
-            if (!d.open) return <span className="bg-red-50 text-red-500 text-[10px] font-black px-2.5 py-1 rounded-full border border-red-200">● Fermé</span>;
-            const [sh, sm] = (d.start || "00:00").split(":").map(Number);
-            const [eh, em] = (d.end || "23:59").split(":").map(Number);
-            const cur = now.getHours() * 60 + now.getMinutes();
-            return cur >= sh * 60 + sm && cur <= eh * 60 + em
+            const open = isOpenNow(ouvertureEff);
+            if (open === null) return null;
+            return open
               ? <span className="bg-teal-50 text-teal-600 text-[10px] font-black px-2.5 py-1 rounded-full border border-teal-200">● Ouvert</span>
               : <span className="bg-red-50 text-red-500 text-[10px] font-black px-2.5 py-1 rounded-full border border-red-200">● Fermé</span>;
           })()}
@@ -1123,7 +1133,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                   </div>
                 </div>
                 {(() => {
-                  const st = getOpeningStatus(proInfo?.ouverture || proInfo?.horaires);
+                  const st = getOpeningStatus(ouvertureEff);
                   return (
                     <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${st.color}`}>
                       ● {st.label}
@@ -1133,7 +1143,7 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
               </div>
 
               <div className="space-y-2.5">
-                {getFormattedOpeningHours(proInfo?.ouverture || proInfo?.horaires).map((item, idx) => (
+                {getFormattedOpeningHours(ouvertureEff).map((item, idx) => (
                   <div key={idx} className={`flex items-center justify-between p-2.5 rounded-2xl transition-all ${item.isToday ? "bg-orange-50/70 border border-orange-100" : "bg-gray-50/60"}`}>
                     <div className="flex items-center gap-2">
                       {item.isToday && <span className="w-2 h-2 rounded-full bg-primary" />}
@@ -1154,13 +1164,13 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
                 ))}
               </div>
 
-              {proInfo?.ouverture?.conges?.length > 0 && (
+              {ouvertureEff?.conges?.length > 0 && (
                 <div className="pt-1">
                   <div className="bg-amber-50 border border-amber-100 rounded-2xl p-3 flex items-center gap-2.5">
                     <Clock className="w-4 h-4 text-amber-500 shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="text-[11px] font-black text-amber-800 uppercase tracking-wider">Congés programmés</p>
-                      {proInfo.ouverture.conges.slice(0, 2).map((c, i) => (
+                      {ouvertureEff.conges.slice(0, 2).map((c, i) => (
                         <p key={i} className="text-[11px] text-amber-700 font-medium truncate">
                           {c.label || "Fermeture"} : {c.start} au {c.end}
                         </p>

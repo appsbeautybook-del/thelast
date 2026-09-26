@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Clock, Save, Plus, X, Trash2, Loader2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { NIGHT_START, NIGHT_END, DAY_START, DAY_END, isOvernight, ouvertureFromDemande } from "@/lib/hours";
 
 const DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
 const DAY_LABELS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -118,7 +119,7 @@ function HorairesForm({ horaires, onChange }) {
         {DAYS.map((day, i) => {
           const h = horaires[day] || DEFAULT_DAY;
           const hasPause = h.pause_start && h.pause_end;
-          const nightColors = h.start >= "21" || h.start < "05";
+          const nightColors = h.open && isOvernight(h.start, h.end);
           return (
             <div key={day} className={`rounded-2xl p-4 transition-all ${h.open ? nightColors ? "bg-indigo-50 border border-indigo-100" : "bg-white border border-gray-100 shadow-sm" : "bg-gray-50 border border-gray-100"}`}>
               {/* Ligne principale : toggle + jour + horaires */}
@@ -315,7 +316,7 @@ function ModeNuitCard({ travailNuit, onToggle }) {
           Mode Nuit
         </p>
         <p className={`text-[12px] font-medium mt-0.5 ${travailNuit ? "text-indigo-400" : "text-indigo-400"}`}>
-          Horaires : {travailNuit ? "21h – 07h" : "09h – 19h"} — {travailNuit ? "Actif" : "Désactivé"}
+          Horaires : {travailNuit ? "09h – 07h" : "09h – 19h"} — {travailNuit ? "Actif" : "Désactivé"}
         </p>
       </div>
       <button
@@ -350,14 +351,21 @@ export default function HorairesConges() {
       setLoading(false);
       return;
     }
-    supabase.from('ProfilPro').select('*').eq('user_email', user.email).maybeSingle()
-      .then(({ data: row, error }) => {
+    Promise.all([
+      supabase.from('ProfilPro').select('*').eq('user_email', user.email).maybeSingle(),
+      // Dernière demande Devenir Pro : sert de pré-remplissage si aucun horaire n'est encore configuré
+      supabase.from('DemandeProV2').select('days, time_slots, travail_nuit').eq('user_email', user.email).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    ])
+      .then(([{ data: row }, { data: demande }]) => {
         if (row) {
           setProfil(row);
           const ouv = row.ouverture || row.horaires || {};
+          const hasHours = ouv && typeof ouv === "object" && DAYS.some(d => ouv[d] && (ouv[d].open || ouv[d].start || ouv[d].end));
+          // Pré-remplissage depuis le parcours Devenir Pro quand rien n'est configuré
+          const prefill = !hasHours ? ouvertureFromDemande(demande) : null;
           const init = {};
           DAYS.forEach(d => {
-            const existing = ouv[d];
+            const existing = ouv[d] || prefill?.[d];
             if (existing) {
               init[d] = {
                 open: existing.open !== undefined ? existing.open : false,
@@ -372,7 +380,7 @@ export default function HorairesConges() {
           });
           setHoraires(init);
           setConges(row.conges || ouv.conges || []);
-          const dbNight = !!row.travail_nuit;
+          const dbNight = !!row.travail_nuit || (prefill ? !!demande?.travail_nuit : false);
           const localNight = localStorage.getItem("bb_night_mode") === "true";
           if (dbNight !== localNight) {
             localStorage.setItem("bb_night_mode", String(dbNight));
@@ -461,13 +469,15 @@ export default function HorairesConges() {
         if (!saveErr && updatedRows?.[0]) setProfil(updatedRows[0]);
       } else {
         const { user: authUser } = await supabase.auth.getUser();
+        // Upsert plutôt qu'insert : évite les lignes ProfilPro en double
+        // (qui désynchroniseraient la page client)
         const { data: createdRows, error } = await supabase
           .from('ProfilPro')
-          .insert({
+          .upsert({
             user_email: user.email,
             created_by_id: authUser?.id || null,
             ...updateData
-          })
+          }, { onConflict: 'user_email' })
           .select();
         saveErr = error;
         if (createdRows?.[0]) setProfil(createdRows[0]);
@@ -497,9 +507,10 @@ export default function HorairesConges() {
     DAYS.forEach(d => {
       const prev = horaires[d] || DEFAULT_DAY;
       if (val && prev.open) {
-        newHoraires[d] = { ...prev, start: "21:00", end: "07:00" };
+        // Mode Nuit : 9h du matin → 7h le lendemain
+        newHoraires[d] = { ...prev, start: NIGHT_START, end: NIGHT_END };
       } else if (!val && prev.open) {
-        newHoraires[d] = { ...prev, start: "09:00", end: "19:00" };
+        newHoraires[d] = { ...prev, start: DAY_START, end: DAY_END };
       } else {
         newHoraires[d] = prev;
       }

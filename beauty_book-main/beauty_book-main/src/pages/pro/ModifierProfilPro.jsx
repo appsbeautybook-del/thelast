@@ -174,7 +174,8 @@ export default function ModifierProfilPro() {
     DAYS_LOW.forEach(d => {
       const prev = data.hours[d] || DEFAULT_DAY;
       if (val && prev.open) {
-        newHours[d] = { ...prev, start: "21:00", end: "07:00" };
+        // Mode Nuit : 9h du matin → 7h le lendemain
+        newHours[d] = { ...prev, start: "09:00", end: "07:00" };
       } else if (!val && prev.open) {
         newHours[d] = { ...prev, start: "09:00", end: "19:00" };
       } else {

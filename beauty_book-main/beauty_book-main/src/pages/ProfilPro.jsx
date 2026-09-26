@@ -493,7 +493,7 @@ export default function ProfilPro() {
             <Moon className="w-5 h-5 text-indigo-500" />
           </div>
           <div className="flex-1">
-            <p className="text-[14px] font-black text-indigo-700">Mode Nuit (21h–07h)</p>
+            <p className="text-[14px] font-black text-indigo-700">Mode Nuit (09h–07h)</p>
             <p className="text-[11px] font-medium text-indigo-400 mt-0.5">Tarification nocturne active (+15min)</p>
           </div>
           <button

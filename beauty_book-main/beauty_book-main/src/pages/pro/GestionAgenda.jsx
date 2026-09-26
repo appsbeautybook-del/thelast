@@ -1606,7 +1606,7 @@ export default function GestionAgenda() {
   // Heures d'ouverture selon mode nuit
   const heureOuverture = travailNuit ? "21:00" : "09:00";
   const heureFermeture = travailNuit ? "07:00" : "19:00";
-  const horairesLabel = travailNuit ? "21h – 07h (Mode Nuit)" : "09h – 19h";
+  const horairesLabel = travailNuit ? "09h – 07h (Mode Nuit)" : "09h – 19h";
 
   const loadReservations = async () => {
     console.log('[GestionAgenda] loadReservations called, proEmail:', proEmail);

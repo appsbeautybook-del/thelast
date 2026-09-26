@@ -96,30 +96,42 @@ function generateSlotsForDay(date, ouverture, pauses = [], duration = 60, travai
   // Créneaux nocturnes : 21h00 → 07h00 (lendemain, représentés de 21h à 31h en minutes)
   const night = [];
 
-  // Plage journalière normale (ex: 09:00 → 19:00)
+  // Plage journalière (gère les plages de nuit : fin <= début => se termine le lendemain)
   const openMin = timeToMin(dayConfig.start || "09:00");
   const closeMin = timeToMin(dayConfig.end || "18:00");
+  const overnightRange = closeMin <= openMin;
+  // En mode nuit, le curseur parcourt jusqu'au lendemain (ex : 09:00 → 31:00 = 07:00)
+  const endCursor = overnightRange ? closeMin + 24 * 60 : closeMin;
 
     let cursor = openMin;
-    while (cursor + duration <= closeMin) {
-      const slotStr = `${String(Math.floor(cursor / 60)).padStart(2, "0")}:${String(cursor % 60).padStart(2, "0")}`;
+    while (cursor + duration <= endCursor) {
+      const h = Math.floor(cursor / 60) % 24;
+      const m = cursor % 60;
+      const slotStr = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
       const endStr = addMinutes(slotStr, duration);
-      const duringPause = (pauses || []).some(p => {
+      const duringPause = (rawPauses || []).some(p => {
         const pStart = timeToMin(p.start || "00:00");
         const pEnd = timeToMin(p.end || "00:00");
         return timeToMin(slotStr) < pEnd && timeToMin(endStr) > pStart;
       });
-      const isPast = minSlotMin !== null && cursor < minSlotMin;
+      // Filtre des créneaux passés : le segment après minuit (nuit) est à venir sauf tôt le matin
+      const isPast = minSlotMin !== null && (
+        cursor >= 24 * 60
+          ? (minSlotMin < 12 * 60 ? (cursor - 24 * 60) < minSlotMin : false)
+          : cursor < minSlotMin
+      );
       if (!duringPause && !isPast) {
-        if (cursor < 12 * 60) morning.push(slotStr);
+        if (cursor >= 24 * 60) night.push(slotStr);
+        else if (cursor < 12 * 60) morning.push(slotStr);
         else if (cursor < 18 * 60) afternoon.push(slotStr);
         else evening.push(slotStr);
       }
       cursor += interval;
     }
 
-  // Plage nocturne si activée : 21h00 → 07h00 (les minutes > 24h sont représentées mod 24h pour l'affichage)
-  if (travailNuit) {
+  // Plage nocturne supplémentaire si le flag est actif mais que la plage du jour
+  // ne couvre pas déjà la nuit (évite les doublons quand start → end est nocturne)
+  if (travailNuit && !overnightRange) {
     const nightStart = 21 * 60; // 21:00
     const nightEnd = 24 * 60 + 7 * 60; // 31:00 = 07:00 lendemain
     let nightCursor = nightStart;
@@ -557,7 +569,7 @@ export default function StepCalendar({ selectedDate, selectedTime, selectedSeat,
                   {travailNuit && slots?.night?.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-2 mt-1">
-                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">🌙 Mode Nuit — 21h–07h</span>
+                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">🌙 Mode Nuit</span>
                       </div>
                       <TimeSlotGroup
                         label="Nuit"

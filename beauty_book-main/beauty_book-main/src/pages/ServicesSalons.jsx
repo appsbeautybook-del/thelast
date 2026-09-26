@@ -14,6 +14,7 @@ import MapWithPricePins from "@/components/map/MapWithPricePins";
 import AdvancedFilterSheet from "@/components/filters/AdvancedFilterSheet";
 import FiltreAIModal from "@/components/modals/FiltreAIModal";
 import { useLocation } from '@/contexts/LocationContext';
+import { isOpenNow } from "@/lib/hours";
 import './Recherche.css';
 import './ServicesSalons.css';
 
@@ -1391,18 +1392,7 @@ function DiscoveryProfilCard({ item, media, liked, onLike, onSelect, open, badge
 }
 
 // ── Utilitaire ouvert/fermé ───────────────────────────────────────────────────
-function isOpenNow(ouverture) {
-  if (!ouverture || Object.keys(ouverture).length === 0) return null;
-  const days = ["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
-  const now = new Date();
-  const dayKey = days[now.getDay()];
-  const d = ouverture[dayKey];
-  if (!d || !d.open) return false;
-  const [sh, sm] = (d.start || "00:00").split(":").map(Number);
-  const [eh, em] = (d.end || "23:59").split(":").map(Number);
-  const cur = now.getHours() * 60 + now.getMinutes();
-  return cur >= sh * 60 + sm && cur <= eh * 60 + em;
-}
+// ── isOpenNow : voir @/lib/hours (gère les plages de nuit, ex 09:00 → 07:00) ──
 
 // ── Salons Tab ────────────────────────────────────────────────────────────────
 
