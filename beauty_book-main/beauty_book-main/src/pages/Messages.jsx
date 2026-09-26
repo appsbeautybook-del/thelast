@@ -999,68 +999,104 @@ export default function Messages() {
       .then(res => { if (!cancelled) proProfileCache = res[0] || null; })
       .catch(() => {});
 
+    // ── Logique de réponse auto (réutilisable par realtime + polling) ──
+    const processAutoReply = async (m) => {
+      if (!m || cancelled) return;
+      if (m.receiver_email !== user.email) return;
+      if (!m.content && !m.attachment_url && !m.file_url) return;
+      if (m.sender_email === user.email) return; // ne jamais répondre à ses propres messages (anti-boucle)
+      if (processedMsgIds.current.has(m.id)) return;
+      if (!mariaAIRef.current) return;
+      if (deletedConvIds.current.has(m.conversation_id)) return;
+
+      processedMsgIds.current.add(m.id);
+
+      const delay = 600 + Math.random() * 400;
+      setTimeout(async () => {
+        if (cancelled || !mariaAIRef.current) return;
+        try {
+          const convId = m.conversation_id;
+          const clientName = m.sender_name || emailToDisplayName(m.sender_email);
+
+          // Vérifier qu'aucune réponse n'a déjà été envoyée après ce message
+          const { data: newer } = await supabase
+            .from("MessageChat")
+            .select("id")
+            .eq("conversation_id", convId)
+            .eq("sender_email", user.email)
+            .gt("created_at", m.created_at)
+            .limit(1);
+          if (newer && newer.length > 0) return; // déjà répondu
+
+          // Fetch recent conversation history for context
+          const { data: history } = await supabase
+            .from("MessageChat")
+            .select("content, sender_email")
+            .eq("conversation_id", convId)
+            .order("created_at", { ascending: false })
+            .limit(10);
+
+          const conversationHistory = (history || []).reverse();
+
+          const mariaReply = await generateAutoReply({
+            clientMessage: m.content,
+            clientName,
+            proProfile: proProfileCache,
+            conversationHistory,
+          });
+
+          const { error } = await supabase.from("MessageChat").insert({
+            conversation_id: convId,
+            sender_email: user.email,
+            receiver_email: m.sender_email,
+            content: mariaReply,
+            is_read: true,
+            read: true,
+          });
+          if (error) console.error("Maria AI reply error:", error);
+          else loadConversations();
+        } catch (e) {
+          console.error("Maria AI reply error:", e);
+        }
+      }, delay);
+    };
+
     const channelName = `maria-ai-autoreply-${user.email}-${Date.now()}`;
     const channel = supabase
       .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'MessageChat' },
-        async (payload) => {
-          const m = payload.new;
-          if (!m) return;
-          if (m.receiver_email !== user.email) return;
-          if (!m.content && !m.attachment_url && !m.file_url) return;
-          if (m.sender_email === user.email) return; // ne jamais répondre à ses propres messages (anti-boucle)
-          if (processedMsgIds.current.has(m.id)) return;
-          if (!mariaAIRef.current) return;
-          if (deletedConvIds.current.has(m.conversation_id)) return;
-
-          processedMsgIds.current.add(m.id);
-
-          const delay = 600 + Math.random() * 400;
-          setTimeout(async () => {
-            try {
-              const convId = m.conversation_id;
-              const clientName = m.sender_name || emailToDisplayName(m.sender_email);
-
-              // Fetch recent conversation history for context
-              const { data: history } = await supabase
-                .from("MessageChat")
-                .select("content, sender_email")
-                .eq("conversation_id", convId)
-                .order("created_at", { ascending: false })
-                .limit(10);
-
-              const conversationHistory = (history || []).reverse();
-
-              const mariaReply = await generateAutoReply({
-                clientMessage: m.content,
-                clientName,
-                proProfile: proProfileCache,
-                conversationHistory,
-              });
-
-              const { error } = await supabase.from("MessageChat").insert({
-                conversation_id: convId,
-                sender_email: user.email,
-                receiver_email: m.sender_email,
-                content: mariaReply,
-                is_read: true,
-                read: true,
-              });
-              if (error) console.error("Maria AI reply error:", error);
-            } catch (e) {
-              console.error("Maria AI reply error:", e);
-            }
-          }, delay);
-        }
+        async (payload) => { await processAutoReply(payload.new); }
       )
       .subscribe();
+
+    // ── Polling de secours (si le realtime ne capte pas) : toutes les 30s ──
+    const pollInterval = setInterval(async () => {
+      if (cancelled || !mariaAIRef.current || !isPro) return;
+      try {
+        const since = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 dernières minutes
+        const { data: recent } = await supabase
+          .from("MessageChat")
+          .select("*")
+          .eq("receiver_email", user.email)
+          .gt("created_at", since)
+          .order("created_at", { ascending: true })
+          .limit(20);
+        for (const m of (recent || [])) {
+          await processAutoReply(m);
+        }
+      } catch (e) {
+        console.error("Maria AI poll error:", e);
+      }
+    }, 30000);
+
     return () => {
       cancelled = true;
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, isPro]);
 
   const loadConversations = async () => {
     if (!user) return;

@@ -12,11 +12,13 @@ import {
   checkSalonAccess
 } from "@/lib/annonces";
 import { supabase } from "@/api/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import "../Annonces.css";
 
 const money = (v) => Number(v || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
-function getUserEmail() {
+function getUserEmail(authEmail) {
+  if (authEmail) return authEmail;
   try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || "salon@beautybook.app"; }
   catch { return "salon@beautybook.app"; }
 }
@@ -30,6 +32,8 @@ const TABS = [
 export default function AnnonceProDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const email = getUserEmail(user?.email);
   const [annonce, setAnnonce] = useState(null);
   const [candidats, setCandidats] = useState([]);
   const [tab, setTab] = useState("candidats");
@@ -56,8 +60,8 @@ export default function AnnonceProDetail() {
   };
   useEffect(refresh, [id]);
   useEffect(() => {
-    checkSalonAccess(supabase, getUserEmail()).then(setAccess);
-  }, []);
+    checkSalonAccess(supabase, email).then(setAccess);
+  }, [email]);
 
   if (access.loading) {
     return <div className="annonces-page"><div className="annonces-empty"><p>Vérification de votre profil...</p></div></div>;

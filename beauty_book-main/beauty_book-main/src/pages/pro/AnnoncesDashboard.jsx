@@ -10,22 +10,26 @@ import {
   ANNONCE_STATUS, getCategories, getTypesMission, checkSalonAccess
 } from "@/lib/annonces";
 import { supabase } from "@/api/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import "../Annonces.css";
 
 const money = (v) => Number(v || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
-function getUserEmail() {
+function getUserEmail(authEmail) {
+  if (authEmail) return authEmail;
   try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || "salon@beautybook.app"; }
   catch { return "salon@beautybook.app"; }
 }
 
 export default function AnnoncesDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const userEmail = getUserEmail(user?.email);
   const [annonces, setAnnonces] = useState([]);
   const [filter, setFilter] = useState("toutes");
   const [q, setQ] = useState("");
   const [access, setAccess] = useState({ loading: true, isSalon: false });
-  const email = getUserEmail();
+  const email = userEmail;
 
   const refresh = () => setAnnonces(getMesAnnonces(email));
   useEffect(refresh, []);

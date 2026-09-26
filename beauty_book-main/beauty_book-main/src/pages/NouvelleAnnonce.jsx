@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { getCategories, getTypesMission, createAnnonce, updateAnnonce, getAnnonceById, checkSalonAccess } from "@/lib/annonces";
 import { supabase } from "@/api/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import "./Annonces.css";
 
 const categoryIcons = { Scissors, Waves, Gem, Paintbrush, Droplets, Hand, Sparkles };
@@ -40,7 +41,8 @@ export default function NouvelleAnnonce() {
   const [generating, setGenerating] = useState(false);
   const [access, setAccess] = useState({ loading: true, isSalon: false });
 
-  const userEmail = (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || ""; } catch { return ""; } })();
+  const { user } = useAuth();
+  const userEmail = user?.email || (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || ""; } catch { return ""; } })();
   useEffect(() => {
     checkSalonAccess(supabase, userEmail).then(setAccess);
   }, [userEmail]);
@@ -82,7 +84,7 @@ export default function NouvelleAnnonce() {
       competences: form.competences.split(",").map(s => s.trim()).filter(Boolean),
       remuneration: Number(form.remuneration) || 0,
       places: Number(form.places) || 1,
-      salon_email: (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || "salon@beautybook.app"; } catch { return "salon@beautybook.app"; } })(),
+      salon_email: userEmail || "salon@beautybook.app",
       salon_rating: form.salon_rating || 0,
       status: publish ? "publiee" : "brouillon",
     };

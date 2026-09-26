@@ -9,6 +9,7 @@ import {
 import BeautyImage from "@/components/ui/BeautyImage";
 import { getAnnonces, getCategories, getTypesMission, getMesCandidatures, checkSalonAccess } from "@/lib/annonces";
 import { supabase } from "@/api/supabaseClient";
+import { useAuth } from "@/lib/AuthContext";
 import "./Annonces.css";
 
 const categoryIcons = { Scissors, Waves, Gem, Paintbrush, Droplets, Hand, Sparkles };
@@ -102,7 +103,8 @@ export default function Annonces() {
   const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState("decouvrir"); // decouvrir | candidatures
 
-  const userEmail = (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || ""; } catch { return ""; } })();
+  const { user } = useAuth();
+  const userEmail = user?.email || (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || ""; } catch { return ""; } })();
   const mesCandidatures = useMemo(() => userEmail ? getMesCandidatures(userEmail) : [], [userEmail, view]);
 
   // Le bouton "Publier une annonce" n'apparaît que pour les salons professionnels
