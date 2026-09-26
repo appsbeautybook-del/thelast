@@ -27,6 +27,9 @@ const EMPTY = {
   salon_city: "",
   salon_bio: "",
   salon_tel: "",
+  salon_avatar: "",
+  salon_cover: "",
+  salon_rating: 0,
 };
 
 export default function NouvelleAnnonce() {
@@ -46,6 +49,37 @@ export default function NouvelleAnnonce() {
   useEffect(() => {
     checkSalonAccess(supabase, userEmail).then(setAccess);
   }, [userEmail]);
+
+  // ── Pré-remplissage auto depuis le profil pro (Modifier mon profil pro) ──
+  useEffect(() => {
+    if (!userEmail || isEdit) return;
+    (async () => {
+      try {
+        const { data: rows } = await supabase
+          .from("ProfilPro")
+          .select("salon_name, city, address, phone, bio, avatar_url, cover_url, rating")
+          .eq("user_email", userEmail)
+          .order("created_at", { ascending: false });
+        if (!rows || rows.length === 0) return;
+        // Meilleur profil : actif avec images > actif > avec images > plus récent
+        const score = (p) => ((p.status === "actif" ? 2 : 0) + ((p.avatar_url || p.cover_url) ? 1 : 0));
+        const best = [...rows].sort((a, b) => score(b) - score(a))[0];
+        setForm(f => ({
+          ...f,
+          salon_name: f.salon_name || best.salon_name || "",
+          salon_city: f.salon_city || best.city || "",
+          adresse: f.adresse || best.address || "",
+          salon_tel: f.salon_tel || best.phone || "",
+          salon_bio: f.salon_bio || best.bio || "",
+          salon_avatar: f.salon_avatar || best.avatar_url || "",
+          salon_cover: f.salon_cover || best.cover_url || "",
+          salon_rating: f.salon_rating || best.rating || 0,
+        }));
+      } catch (e) {
+        console.error("Pré-remplissage profil pro:", e);
+      }
+    })();
+  }, [userEmail, isEdit]);
 
   useEffect(() => {
     if (isEdit) {

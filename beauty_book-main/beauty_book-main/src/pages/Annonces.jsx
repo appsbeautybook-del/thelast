@@ -102,6 +102,12 @@ export default function Annonces() {
   const [activeType, setActiveType] = useState("tous");
   const [showFilters, setShowFilters] = useState(false);
   const [view, setView] = useState("decouvrir"); // decouvrir | candidatures
+  // Filtres avancés
+  const [minRemu, setMinRemu] = useState(0);
+  const [ville, setVille] = useState("toutes");
+  const [dateMin, setDateMin] = useState("");
+  const [placesDispoOnly, setPlacesDispoOnly] = useState(false);
+  const [tri, setTri] = useState("recent"); // recent | remu_desc | remu_asc | date_debut
 
   const { user } = useAuth();
   const userEmail = user?.email || (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || ""; } catch { return ""; } })();
@@ -117,10 +123,32 @@ export default function Annonces() {
   const categories = getCategories();
   const types = getTypesMission();
 
+  // Villes disponibles dans les annonces
+  const villes = useMemo(() => {
+    const set = new Set();
+    annonces.forEach(a => { if (a.salon_city) set.add(a.salon_city); });
+    return [...set].sort();
+  }, [annonces]);
+
+  // Rémunération max pour le slider
+  const maxRemu = useMemo(() => {
+    return Math.max(200, ...annonces.map(a => Number(a.remuneration) || 0));
+  }, [annonces]);
+
+  const nbFiltresActifs = (minRemu > 0 ? 1 : 0) + (ville !== "toutes" ? 1 : 0) + (dateMin ? 1 : 0) + (placesDispoOnly ? 1 : 0) + (tri !== "recent" ? 1 : 0);
+
+  const resetFiltres = () => {
+    setMinRemu(0); setVille("toutes"); setDateMin(""); setPlacesDispoOnly(false); setTri("recent");
+  };
+
   const filtered = useMemo(() => {
-    return annonces.filter(a => {
+    const list = annonces.filter(a => {
       if (activeCat !== "tous" && a.category !== activeCat) return false;
       if (activeType !== "tous" && a.type_mission !== activeType) return false;
+      if (minRemu > 0 && Number(a.remuneration || 0) < minRemu) return false;
+      if (ville !== "toutes" && a.salon_city !== ville) return false;
+      if (dateMin && (!a.date_debut || a.date_debut < dateMin)) return false;
+      if (placesDispoOnly && ((a.places || 1) - (a.places_prises || 0)) <= 0) return false;
       if (q.trim()) {
         const needle = q.toLowerCase();
         const hay = `${a.title} ${a.description} ${a.salon_name} ${a.salon_city} ${(a.competences || []).join(" ")}`.toLowerCase();
@@ -128,7 +156,14 @@ export default function Annonces() {
       }
       return true;
     });
-  }, [annonces, q, activeCat, activeType]);
+    // Tri
+    const sorted = [...list];
+    if (tri === "remu_desc") sorted.sort((x, y) => (Number(y.remuneration) || 0) - (Number(x.remuneration) || 0));
+    else if (tri === "remu_asc") sorted.sort((x, y) => (Number(x.remuneration) || 0) - (Number(y.remuneration) || 0));
+    else if (tri === "date_debut") sorted.sort((x, y) => (x.date_debut || "").localeCompare(y.date_debut || ""));
+    else sorted.sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
+    return sorted;
+  }, [annonces, q, activeCat, activeType, minRemu, ville, dateMin, placesDispoOnly, tri]);
 
   return (
     <div className="annonces-page">
@@ -174,11 +209,90 @@ export default function Annonces() {
               placeholder="Métier, compétence, ville, salon..."
             />
           </label>
-          <button className="discovery-filter-button" onClick={() => setShowFilters(!showFilters)}>
+          <button className="discovery-filter-button" onClick={() => setShowFilters(!showFilters)} style={{ position: "relative" }}>
             <SlidersHorizontal size={18} />
             <span>Filtres</span>
+            {nbFiltresActifs > 0 && (
+              <span style={{ position: "absolute", top: -6, right: -6, minWidth: 20, height: 20, borderRadius: 999, background: "#FF6B00", color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px" }}>
+                {nbFiltresActifs}
+              </span>
+            )}
           </button>
         </div>
+
+        {/* ── Panneau filtres avancés ── */}
+        {showFilters && (
+          <div className="annonces-filter-panel">
+            <div className="annonces-filter-head">
+              <p><SlidersHorizontal size={15} /> Filtres avancés</p>
+              {nbFiltresActifs > 0 && (
+                <button onClick={resetFiltres} className="annonces-filter-reset">
+                  <X size={13} /> Réinitialiser
+                </button>
+              )}
+            </div>
+
+            {/* Rémunération minimum */}
+            <div className="annonces-filter-group">
+              <label>Rémunération minimum : <strong>{minRemu > 0 ? money(minRemu) : "Toutes"}</strong></label>
+              <input
+                type="range" min={0} max={maxRemu} step={10} value={minRemu}
+                onChange={e => setMinRemu(Number(e.target.value))}
+                className="annonces-range"
+              />
+              <div className="annonces-range-labels"><span>0 €</span><span>{money(maxRemu)}</span></div>
+            </div>
+
+            {/* Ville */}
+            <div className="annonces-filter-group">
+              <label>Ville</label>
+              <div className="annonces-filter-chips">
+                <button className={`annonces-chip ${ville === "toutes" ? "active" : ""}`} onClick={() => setVille("toutes")}>
+                  Toutes
+                </button>
+                {villes.map(v => (
+                  <button key={v} className={`annonces-chip ${ville === v ? "active" : ""}`} onClick={() => setVille(v)}>
+                    <MapPin size={12} /> {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Date + places + tri */}
+            <div className="annonces-filter-row">
+              <div className="annonces-filter-group" style={{ flex: 1 }}>
+                <label>Début après le</label>
+                <input
+                  type="date" value={dateMin} min={new Date().toISOString().slice(0, 10)}
+                  onChange={e => setDateMin(e.target.value)}
+                  className="annonces-date"
+                />
+              </div>
+              <div className="annonces-filter-group" style={{ flex: 1 }}>
+                <label>Trier par</label>
+                <select value={tri} onChange={e => setTri(e.target.value)} className="annonces-select">
+                  <option value="recent">Plus récentes</option>
+                  <option value="remu_desc">Rémunération ↓</option>
+                  <option value="remu_asc">Rémunération ↑</option>
+                  <option value="date_debut">Date de début</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Places dispo */}
+            <button
+              className={`annonces-toggle ${placesDispoOnly ? "active" : ""}`}
+              onClick={() => setPlacesDispoOnly(v => !v)}
+            >
+              <span className="annonces-toggle-dot" />
+              <Users size={14} /> Places disponibles uniquement
+            </button>
+
+            <button className="annonce-cta-btn" onClick={() => setShowFilters(false)} style={{ marginTop: 4 }}>
+              Voir {filtered.length} annonce{filtered.length > 1 ? "s" : ""}
+            </button>
+          </div>
+        )}
 
         {/* Category pills */}
         <div className="annonces-cats">
