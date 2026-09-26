@@ -5,6 +5,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, addMonths,
 import { fr } from "date-fns/locale";
 import { entities } from '@/api/entities';
 import { supabase } from '@/api/supabaseClient';
+import { applyNightMode } from '@/lib/hours';
 
 const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 const DAY_NAMES_FR = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
@@ -262,7 +263,7 @@ export default function StepCalendar({ selectedDate, selectedTime, selectedSeat,
           if (typeof pauses === "string") {
             try { pauses = JSON.parse(pauses); } catch {}
           }
-          setProOuverture(ouverture);
+          setProOuverture(applyNightMode(ouverture, p.travail_nuit || false));
           setProPauses(pauses);
           console.log("[StepCalendar] Horaires chargés:", ouverture);
         } else {

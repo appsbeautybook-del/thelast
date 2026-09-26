@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { format, addDays, startOfWeek, isSameDay, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
-import { summarizeHours, hasHoursData } from "@/lib/hours";
+import { summarizeHours, hasHoursData, applyNightMode } from "@/lib/hours";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function buildWeek(baseDate) {
@@ -1610,7 +1610,8 @@ export default function GestionAgenda() {
 
   // Heures d'ouverture : toujours les vrais horaires du pro (Horaires & Congés),
   // jamais une valeur en dur. "Non configuré" si le pro n'a rien renseigné.
-  const horairesSummary = summarizeHours(proOuverture);
+  // Avec le Mode Nuit actif, affiche les horaires de nuit effectifs.
+  const horairesSummary = summarizeHours(applyNightMode(proOuverture, travailNuit));
   const horairesLabel = horairesSummary || "Horaires non configurés";
 
   const loadReservations = async () => {

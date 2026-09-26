@@ -18,7 +18,7 @@ import { useCall } from "@/components/call/CallManager";
 import { useTheme } from "@/hooks/useTheme";
 import VTCSection from "@/components/service/VTCSection";
 import SalonMap from "@/components/map/SalonMap";
-import { isOpenNow, getEffectiveOpening, formatOpeningHours, getOpeningStatus } from "@/lib/hours";
+import { isOpenNow, getEffectiveOpening, formatOpeningHours, getOpeningStatus, applyNightMode } from "@/lib/hours";
 
 function getBannerGradient(theme) {
   if (theme === "night") return "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 60%, #000000 100%)";
@@ -588,7 +588,12 @@ export default function VueClient({ onClose, proEmail: proEmailProp, proPhone })
   // sinon repli sur les horaires du parcours Devenir Pro (demande approuvée).
   // getEffectiveOpening ignore les objets vides : l'affichage est toujours
   // synchronisé avec la section Horaires & Congés.
-  const ouvertureEff = getEffectiveOpening(proInfo, demandeInfo);
+  // applyNightMode : si le Mode Nuit est actif, les horaires effectifs sont
+  // 09:00 → 07:00 (lendemain) pour les jours ouverts, sans toucher aux horaires de jour.
+  const ouvertureEff = applyNightMode(
+    getEffectiveOpening(proInfo, demandeInfo),
+    proInfo?.travail_nuit || demandeInfo?.travail_nuit
+  );
 
   useEffect(() => {
     if (!targetEmail) return;

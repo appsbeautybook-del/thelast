@@ -3,6 +3,26 @@
 // Gère les plages de nuit (ex : Mode Nuit 09:00 → 07:00 le lendemain,
 // c'est-à-dire une heure de fin <= heure de début).
 
+// ─── Mode Nuit : surcouche sans destruction ───
+// Quand le Mode Nuit est actif, les horaires EFFECTIFS sont 09:00 → 07:00
+// (lendemain) pour tous les jours ouverts, SANS modifier les horaires de jour
+// stockés. Ça évite d'écraser les horaires personnalisés (ex : 08:30 – 20:30)
+// quand on active/désactive le mode nuit.
+export function applyNightMode(ouverture, travailNuit) {
+  if (!travailNuit || !hasHoursData(ouverture)) return ouverture;
+  const night = {};
+  DAY_KEYS.forEach(k => {
+    const d = ouverture[k];
+    if (d && d.open) {
+      night[k] = { ...d, start: NIGHT_START, end: NIGHT_END };
+    } else {
+      night[k] = d;
+    }
+  });
+  if (ouverture.conges) night.conges = ouverture.conges;
+  return night;
+}
+
 // ─── Sélection des horaires effectifs ────
 
 // true si l'objet ouverture contient au moins un jour renseigné.

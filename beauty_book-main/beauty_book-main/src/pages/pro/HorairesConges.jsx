@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { ArrowLeft, Clock, Save, Plus, X, Trash2, Loader2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { NIGHT_START, NIGHT_END, DAY_START, DAY_END, isOvernight, ouvertureFromDemande } from "@/lib/hours";
+import { isOvernight, ouvertureFromDemande, applyNightMode, summarizeHours } from "@/lib/hours";
 
 const DAYS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"];
 const DAY_LABELS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -304,7 +304,8 @@ function CongesSection({ conges, onChange }) {
 }
 
 // ── Mode Nuit Card ─────────────────────────────────────────────────────────────
-function ModeNuitCard({ travailNuit, onToggle }) {
+function ModeNuitCard({ travailNuit, onToggle, horaires }) {
+  const effSummary = summarizeHours(applyNightMode(horaires, travailNuit));
   return (
     <div className={`rounded-3xl p-4 flex items-center gap-4 border active:scale-[0.98] transition-all cursor-pointer ${travailNuit ? "bg-indigo-950 border-indigo-800" : "bg-indigo-50 border-indigo-100"}`}
       onClick={() => onToggle(!travailNuit)}>
@@ -313,10 +314,10 @@ function ModeNuitCard({ travailNuit, onToggle }) {
       </div>
       <div className="flex-1">
         <p className={`text-[15px] font-black ${travailNuit ? "text-indigo-200" : "text-indigo-700"}`}>
-          Mode Nuit
+          Mode Nuit {travailNuit ? "🌙" : ""}
         </p>
         <p className={`text-[12px] font-medium mt-0.5 ${travailNuit ? "text-indigo-400" : "text-indigo-400"}`}>
-          Horaires : {travailNuit ? "09h – 07h" : "09h – 19h"} — {travailNuit ? "Actif" : "Désactivé"}
+          {travailNuit ? `Actif · ${effSummary || "09:00 – 07:00"} (lendemain)` : "Désactivé — horaires de jour"}
         </p>
       </div>
       <button
@@ -503,19 +504,8 @@ export default function HorairesConges() {
   const handleToggleNuit = (val) => {
     setTravailNuit(val);
     localStorage.setItem("bb_night_mode", String(val));
-    const newHoraires = {};
-    DAYS.forEach(d => {
-      const prev = horaires[d] || DEFAULT_DAY;
-      if (val && prev.open) {
-        // Mode Nuit : 9h du matin → 7h le lendemain
-        newHoraires[d] = { ...prev, start: NIGHT_START, end: NIGHT_END };
-      } else if (!val && prev.open) {
-        newHoraires[d] = { ...prev, start: DAY_START, end: DAY_END };
-      } else {
-        newHoraires[d] = prev;
-      }
-    });
-    setHoraires(newHoraires);
+    // Le flag suffit : applyNightMode() applique 09:00 → 07:00 à l'affichage
+    // (client + réservation) sans écraser les horaires de jour personnalisés.
   };
 
   if (loading) {
@@ -553,7 +543,7 @@ export default function HorairesConges() {
         )}
 
         {/* Mode Nuit */}
-        <ModeNuitCard travailNuit={travailNuit} onToggle={handleToggleNuit} />
+        <ModeNuitCard travailNuit={travailNuit} onToggle={handleToggleNuit} horaires={horaires} />
 
         {/* Horaires */}
         <div>

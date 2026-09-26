@@ -54,27 +54,11 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
         <div className="px-4 space-y-1 mb-2">
           {isPro ? (
             <>
-              {/* AI Scaling Business + Annonces suspendu au-dessus, relié par un fil en angle droit */}
-              <div className="relative pt-1">
-                {/* Bouton Annonces au-dessus */}
-                <button
-                  onClick={() => { navigate("/annonces"); onClose(); }}
-                  className="relative z-10 ml-8 flex items-center gap-2 pl-2.5 pr-3.5 py-2 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-500/30 active:scale-95 transition-all"
-                  title="Annonces de recrutement"
-                >
-                  <Paperclip className="w-4 h-4 -rotate-45" />
-                  <span className="text-left">
-                    <span className="block text-[13px] font-black leading-tight">Annonces</span>
-                    <span className="block text-[9px] font-bold opacity-80 leading-tight">Recrutement pro</span>
-                  </span>
-                </button>
-                {/* Fil en angle droit */}
-                <div className="absolute top-[46px] left-[52px] w-[2px] h-[14px] bg-orange-400" />
-                <div className="absolute top-[58px] left-[52px] w-[30px] h-[2px] bg-orange-400" />
-                <div className="absolute top-[54px] left-[78px] w-[10px] h-[10px] rounded-full bg-orange-500 border-2 border-white shadow" />
+              {/* AI Scaling Business + Annonces en dessous, relié par un fil perpendiculaire */}
+              <div>
                 <button
                   onClick={() => { navigate("/ai-scaling-business"); onClose(); }}
-                  className="w-full flex items-center gap-3 px-3 py-3 mt-1 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"
                 >
                   <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
                     <TrendingUp className="w-5 h-5 text-gray-600" />
@@ -84,6 +68,21 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
                     <p className="text-[11px] text-gray-400 font-medium">Pousse ton business avec l'IA</p>
                   </div>
                 </button>
+                {/* Fil perpendiculaire */}
+                <div className="flex justify-end pr-12">
+                  <div className="w-[2px] h-[12px] bg-orange-400" />
+                </div>
+                {/* Bouton Annonces fin, décalé vers la droite */}
+                <div className="flex justify-end pr-3">
+                  <button
+                    onClick={() => { navigate("/annonces"); onClose(); }}
+                    className="flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md shadow-orange-500/30 active:scale-95 transition-all"
+                    title="Annonces de recrutement"
+                  >
+                    <Paperclip className="w-3 h-3 -rotate-45" />
+                    <span className="text-[10px] font-black whitespace-nowrap">Annonces</span>
+                  </button>
+                </div>
               </div>
               {[
                 { icon: Bot, label: "Receptionniste IA", desc: "Accueil & gestion de salon", action: "receptionniste" },
@@ -1219,25 +1218,8 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
           <div className="grid grid-cols-3 gap-2.5 mb-5">
             {isPro ? (
               <>
-                {/* AI Scaling Business + Annonces suspendu par un fil en angle droit */}
-                <div className="relative pt-14">
-                  {/* Bouton Annonces au-dessus */}
-                  <button
-                    onClick={() => navigate("/annonces")}
-                    className="absolute top-0 left-6 z-10 flex items-center gap-2 pl-3 pr-4 py-2 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-xl shadow-orange-500/30 active:scale-95 transition-all"
-                  >
-                    <span className="w-7 h-7 bg-white/25 rounded-xl flex items-center justify-center">
-                      <Paperclip className="w-4 h-4 -rotate-45" />
-                    </span>
-                    <span className="text-left">
-                      <span className="block text-[13px] font-black leading-tight">Annonces</span>
-                      <span className="block text-[9px] font-bold opacity-80 leading-tight">Recrutement pro</span>
-                    </span>
-                  </button>
-                  {/* Fil en angle droit : vertical depuis Annonces, puis horizontal vers la carte */}
-                  <div className="absolute top-11 left-[52px] w-[2px] h-[26px] bg-gradient-to-b from-orange-400 to-orange-300" />
-                  <div className="absolute top-[62px] left-[52px] w-[38px] h-[2px] bg-orange-300" />
-                  <div className="absolute top-[58px] left-[88px] w-[10px] h-[10px] rounded-full bg-orange-400 border-2 border-white shadow" />
+                {/* AI Scaling Business + Annonces en bas, relié par un fil perpendiculaire */}
+                <div>
                   <button
                     onClick={() => navigate("/ai-scaling-business")}
                     className="relative h-44 w-full rounded-3xl overflow-hidden active:scale-[0.98] transition-all"
@@ -1255,6 +1237,20 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                       </div>
                     </div>
                   </button>
+                  {/* Fil perpendiculaire visible reliant la carte au bouton */}
+                  <div className="flex justify-end pr-9">
+                    <div className="w-[2px] h-[18px] bg-gradient-to-b from-orange-400 to-orange-300" />
+                  </div>
+                  {/* Bouton Annonces fin, décalé vers la droite */}
+                  <div className="flex justify-end pr-1">
+                    <button
+                      onClick={() => navigate("/annonces")}
+                      className="flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-md shadow-orange-500/30 active:scale-95 transition-all"
+                    >
+                      <Paperclip className="w-3 h-3 -rotate-45" />
+                      <span className="text-[10px] font-black whitespace-nowrap">Annonces</span>
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={() => navigate("/receptionniste-ia")}
