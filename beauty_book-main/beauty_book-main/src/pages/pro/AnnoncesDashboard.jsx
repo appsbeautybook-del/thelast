@@ -7,8 +7,9 @@ import {
 } from "lucide-react";
 import {
   getMesAnnonces, deleteAnnonce, setAnnonceStatus, getAnnonceStats,
-  ANNONCE_STATUS, getCategories, getTypesMission
+  ANNONCE_STATUS, getCategories, getTypesMission, checkSalonAccess
 } from "@/lib/annonces";
+import { supabase } from "@/api/supabaseClient";
 import "../Annonces.css";
 
 const money = (v) => Number(v || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -23,10 +24,35 @@ export default function AnnoncesDashboard() {
   const [annonces, setAnnonces] = useState([]);
   const [filter, setFilter] = useState("toutes");
   const [q, setQ] = useState("");
+  const [access, setAccess] = useState({ loading: true, isSalon: false });
   const email = getUserEmail();
 
   const refresh = () => setAnnonces(getMesAnnonces(email));
   useEffect(refresh, []);
+  useEffect(() => {
+    checkSalonAccess(supabase, email).then(setAccess);
+  }, [email]);
+
+  if (access.loading) {
+    return <div className="annonces-page"><div className="annonces-empty"><p>Vérification de votre profil...</p></div></div>;
+  }
+  if (!access.isSalon) {
+    return (
+      <div className="annonces-page">
+        <div className="annonces-empty" style={{ padding: "60px 20px" }}>
+          <div className="annonces-empty-icon"><Briefcase size={28} /></div>
+          <p className="annonces-empty-title">Réservé aux salons professionnels</p>
+          <p className="annonces-empty-desc">
+            La publication et la gestion des annonces sont réservées aux profils
+            professionnels ayant le statut de « Salon professionnel ».
+          </p>
+          <button className="annonce-cta-btn" style={{ marginTop: 16, maxWidth: 280, margin: "16px auto 0" }} onClick={() => navigate("/annonces")}>
+            Voir les annonces
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const stats = useMemo(() => {
     let total = annonces.length, publiees = 0, candidatures = 0, enAttente = 0, vues = 0;

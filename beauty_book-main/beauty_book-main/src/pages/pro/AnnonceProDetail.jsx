@@ -8,8 +8,10 @@ import {
 import {
   getAnnonceById, getCandidatures, updateCandidatureStatus, getAnnonceStats,
   ANNONCE_STATUS, updateAnnonce, setAnnonceStatus, deleteAnnonce,
-  fillTemplate, DEFAULT_MSG_ACCEPTE, DEFAULT_MSG_REFUSE, getTypesMission
+  fillTemplate, DEFAULT_MSG_ACCEPTE, DEFAULT_MSG_REFUSE, getTypesMission,
+  checkSalonAccess
 } from "@/lib/annonces";
+import { supabase } from "@/api/supabaseClient";
 import "../Annonces.css";
 
 const money = (v) => Number(v || 0).toLocaleString("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -40,6 +42,8 @@ export default function AnnonceProDetail() {
   const [tplAccepte, setTplAccepte] = useState("");
   const [tplRefuse, setTplRefuse] = useState("");
   const [tplSaved, setTplSaved] = useState(false);
+  // Accès réservé aux salons professionnels
+  const [access, setAccess] = useState({ loading: true, isSalon: false });
 
   const refresh = () => {
     const a = getAnnonceById(id);
@@ -51,6 +55,30 @@ export default function AnnonceProDetail() {
     }
   };
   useEffect(refresh, [id]);
+  useEffect(() => {
+    checkSalonAccess(supabase, getUserEmail()).then(setAccess);
+  }, []);
+
+  if (access.loading) {
+    return <div className="annonces-page"><div className="annonces-empty"><p>Vérification de votre profil...</p></div></div>;
+  }
+  if (!access.isSalon) {
+    return (
+      <div className="annonces-page">
+        <div className="annonces-empty" style={{ padding: "60px 20px" }}>
+          <div className="annonces-empty-icon"><Users size={28} /></div>
+          <p className="annonces-empty-title">Réservé aux salons professionnels</p>
+          <p className="annonces-empty-desc">
+            La gestion des candidatures est réservée aux profils professionnels
+            ayant le statut de « Salon professionnel ».
+          </p>
+          <button className="annonce-cta-btn" style={{ marginTop: 16, maxWidth: 280, margin: "16px auto 0" }} onClick={() => navigate("/annonces")}>
+            Voir les annonces
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!annonce) {
     return <div className="annonces-page"><div className="annonces-empty"><p>Annonce introuvable.</p></div></div>;

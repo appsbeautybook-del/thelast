@@ -4,7 +4,8 @@ import {
   ArrowLeft, Sparkles, Scissors, Waves, Gem, Paintbrush, Droplets, Hand,
   Briefcase, CheckCircle2, Wand2, CalendarDays, Save, Rocket, PencilLine
 } from "lucide-react";
-import { getCategories, getTypesMission, createAnnonce, updateAnnonce, getAnnonceById } from "@/lib/annonces";
+import { getCategories, getTypesMission, createAnnonce, updateAnnonce, getAnnonceById, checkSalonAccess } from "@/lib/annonces";
+import { supabase } from "@/api/supabaseClient";
 import "./Annonces.css";
 
 const categoryIcons = { Scissors, Waves, Gem, Paintbrush, Droplets, Hand, Sparkles };
@@ -37,6 +38,12 @@ export default function NouvelleAnnonce() {
 
   const [form, setForm] = useState(EMPTY);
   const [generating, setGenerating] = useState(false);
+  const [access, setAccess] = useState({ loading: true, isSalon: false });
+
+  const userEmail = (() => { try { return JSON.parse(localStorage.getItem("bb_session") || "{}").email || ""; } catch { return ""; } })();
+  useEffect(() => {
+    checkSalonAccess(supabase, userEmail).then(setAccess);
+  }, [userEmail]);
 
   useEffect(() => {
     if (isEdit) {
@@ -90,6 +97,22 @@ export default function NouvelleAnnonce() {
 
   return (
     <div className="annonces-page">
+      {access.loading ? (
+        <div className="annonces-empty"><p>Vérification de votre profil...</p></div>
+      ) : !access.isSalon ? (
+        <div className="annonces-empty" style={{ padding: "60px 20px" }}>
+          <div className="annonces-empty-icon"><Briefcase size={28} /></div>
+          <p className="annonces-empty-title">Réservé aux salons professionnels</p>
+          <p className="annonces-empty-desc">
+            La publication d'annonces est réservée aux profils professionnels
+            ayant le statut de « Salon professionnel ».
+          </p>
+          <button className="annonce-cta-btn" style={{ marginTop: 16, maxWidth: 280, margin: "16px auto 0" }} onClick={() => navigate("/annonces")}>
+            Voir les annonces
+          </button>
+        </div>
+      ) : (
+      <>
       <header className="discovery-hero">
         <div className="discovery-topline">
           <button
@@ -246,6 +269,8 @@ export default function NouvelleAnnonce() {
           </button>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

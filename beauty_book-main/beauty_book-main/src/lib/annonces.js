@@ -409,3 +409,25 @@ export function getMesCandidatures(email) {
   const all = readLS(LS_CAND_KEY, []);
   return all.filter(c => c.candidat_email === email);
 }
+
+// ─── Accès réservé aux salons professionnels ───
+// La gestion des annonces (dashboard + détail) est réservée aux profils pro
+// dont le type_activite est "Salon" (salon professionnel).
+// Retourne { loading, isSalon, typeActivite }.
+export async function checkSalonAccess(supabase, email) {
+  if (!supabase || !email) return { loading: false, isSalon: false, typeActivite: null };
+  try {
+    const { data, error } = await supabase
+      .from("ProfilPro")
+      .select("type_activite")
+      .eq("user_email", email)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    const t = data?.type_activite || null;
+    return { loading: false, isSalon: t === "Salon", typeActivite: t };
+  } catch {
+    return { loading: false, isSalon: false, typeActivite: null };
+  }
+}
