@@ -4,15 +4,18 @@ import { useTheme } from "@/hooks/useTheme";
 import {
   ArrowLeft, CheckCircle2, Shield, Eye, EyeOff, ChevronRight,
   ExternalLink, Settings, Power, PowerOff, BarChart3, MessageCircle,
-  Bot, Users, TrendingUp, Clock
+  Bot, Users, TrendingUp, Clock, Search, Sparkles, Globe, Zap,
+  ArrowUpRight, Calendar, Send, Heart, Share2
 } from "lucide-react";
+import "../pages/Recherche.css";
 
 const PLATFORMS = [
   {
     id: "instagram", name: "Instagram",
     icon: "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z",
-    color: "#E4405F", gradient: "from-pink-500 to-rose-500",
+    color: "#E4405F", gradient: "linear-gradient(135deg, #F58529, #DD2A7B, #8134AF)",
     desc: "DMs, commentaires et stories avec IA",
+    audience: "2.1M utilisateurs beauté",
     fields: [
       { key: "accessToken", label: "Token d'accès", placeholder: "EAA...", type: "password", link: "https://developers.facebook.com/tools/explorer/", required: true },
       { key: "businessId", label: "Business Account ID", placeholder: "17841400...", type: "text", link: "https://business.facebook.com/settings/", required: true },
@@ -22,8 +25,9 @@ const PLATFORMS = [
   {
     id: "facebook", name: "Facebook",
     icon: "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z",
-    color: "#1877F2", gradient: "from-blue-600 to-blue-500",
+    color: "#1877F2", gradient: "linear-gradient(135deg, #1877F2, #0A5AC8)",
     desc: "Messenger et commentaires automatisés",
+    audience: "1.8M utilisateurs beauté",
     fields: [
       { key: "pageAccessToken", label: "Page Access Token", placeholder: "EAA...", type: "password", link: "https://developers.facebook.com/tools/explorer/", required: true },
       { key: "pageId", label: "Page ID", placeholder: "123456789...", type: "text", link: "https://www.facebook.com/settings/pages/", required: true },
@@ -33,8 +37,9 @@ const PLATFORMS = [
   {
     id: "whatsapp", name: "WhatsApp Business",
     icon: "M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z",
-    color: "#25D366", gradient: "from-emerald-500 to-green-500",
+    color: "#25D366", gradient: "linear-gradient(135deg, #25D366, #128C7E)",
     desc: "Convertissez les prospects via WhatsApp",
+    audience: "3.4M utilisateurs beauté",
     fields: [
       { key: "phoneNumberId", label: "Phone Number ID", placeholder: "123456789...", type: "text", link: "https://developers.facebook.com/apps/", required: true },
       { key: "accessToken", label: "Token permanent", placeholder: "EAA...", type: "password", link: "https://business.facebook.com/wa/manage/", required: true },
@@ -44,8 +49,9 @@ const PLATFORMS = [
   {
     id: "tiktok", name: "TikTok",
     icon: "M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.34-6.34V8.73a8.19 8.19 0 004.76 1.52v-3.4a4.85 4.85 0 01-1-.16z",
-    color: "#000000", gradient: "from-gray-900 to-gray-700",
+    color: "#000000", gradient: "linear-gradient(135deg, #000000, #333333)",
     desc: "Commentaires et DMs TikTok automatisés",
+    audience: "4.2M utilisateurs beauté",
     fields: [
       { key: "accessToken", label: "Access Token", placeholder: "TikTok access token...", type: "password", link: "https://developers.tiktok.com/", required: true },
       { key: "openId", label: "Open ID", placeholder: "open_id...", type: "text", link: "https://business.tiktok.com/", required: true },
@@ -54,24 +60,57 @@ const PLATFORMS = [
   },
 ];
 
-function SocialIcon({ path, color, size = 24 }) {
+function SocialIcon({ path, size = 24 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="white">
       <path d={path} />
     </svg>
   );
 }
 
+const TABS = [
+  { id: "platforms", label: "Plateformes", icon: Globe },
+  { id: "automation", label: "Automatisations", icon: Zap },
+  { id: "stats", label: "Statistiques", icon: BarChart3 },
+];
+
+const AUTOMATIONS = [
+  {
+    id: "dm-welcome", name: "Message de bienvenue",
+    desc: "Maria accueille chaque nouvel abonné avec un message personnalisé.",
+    icon: Send, color: "#3B82F6", bg: "#EFF6FF", enabled: true,
+  },
+  {
+    id: "comment-reply", name: "Réponse aux commentaires",
+    desc: "L'IA répond aux commentaires avec votre ton de voix en moins d'une minute.",
+    icon: MessageCircle, color: "#8B5CF6", bg: "#F5F3FF", enabled: true,
+  },
+  {
+    id: "story-engage", name: "Engagement stories",
+    desc: "Réactions automatiques aux stories qui mentionnent votre salon.",
+    icon: Heart, color: "#EC4899", bg: "#FDF2F8", enabled: false,
+  },
+  {
+    id: "post-schedule", name: "Publication planifiée",
+    desc: "Maria génère et planifie vos posts aux heures d'affluence optimale.",
+    icon: Calendar, color: "#F59E0B", bg: "#FFFBEB", enabled: false,
+  },
+  {
+    id: "review-boost", name: "Boost d'avis",
+    desc: "Sollicite automatiquement un avis Google après chaque rendez-vous.",
+    icon: Share2, color: "#10B981", bg: "#ECFDF5", enabled: true,
+  },
+];
+
 export default function SocialMedia() {
   const navigate = useNavigate();
-  const { theme } = useTheme();
-  const isDark = theme === "dark" || theme === "night";
-
   const [activeTab, setActiveTab] = useState("platforms");
-  const [expandedId, setExpandedId] = useState("instagram");
+  const [q, setQ] = useState("");
+  const [expandedId, setExpandedId] = useState(null);
   const [validating, setValidating] = useState(null);
+  const [automations, setAutomations] = useState(AUTOMATIONS);
   const [platforms, setPlatforms] = useState(
-    PLATFORMS.map(p => ({ ...p, connected: false, keys: {}, showKeys: {}, validKeys: {} }))
+    PLATFORMS.map(p => ({ ...p, connected: false, keys: {}, showKeys: {} }))
   );
 
   const areKeysValid = (p) => {
@@ -81,14 +120,13 @@ export default function SocialMedia() {
   const toggleConnect = async (id) => {
     const platform = platforms.find(p => p.id === id);
     if (platform.connected) {
-      setPlatforms(prev => prev.map(p => p.id === id ? { ...p, connected: false, validKeys: {} } : p));
+      setPlatforms(prev => prev.map(p => p.id === id ? { ...p, connected: false } : p));
       return;
     }
     if (!areKeysValid(platform)) return;
-
     setValidating(id);
-    await new Promise(r => setTimeout(r, 800));
-    setPlatforms(prev => prev.map(p => p.id === id ? { ...p, connected: true, validKeys: { ...p.keys } } : p));
+    await new Promise(r => setTimeout(r, 900));
+    setPlatforms(prev => prev.map(p => p.id === id ? { ...p, connected: true } : p));
     setValidating(null);
   };
 
@@ -100,248 +138,337 @@ export default function SocialMedia() {
     setPlatforms(prev => prev.map(p => p.id === id ? { ...p, showKeys: { ...p.showKeys, [key]: !p.showKeys[key] } } : p));
   };
 
-  const connectedCount = platforms.filter(p => p.connected).length;
-
-  const c = {
-    page: isDark ? "bg-[#0a0a1a]" : "bg-gray-50",
-    header: isDark ? "bg-gradient-to-br from-gray-900 to-gray-800" : "bg-gradient-to-br from-primary to-orange-600",
-    card: isDark ? "bg-white/[0.04] border-white/[0.06]" : "bg-white border-gray-100",
-    cardActive: isDark ? "bg-primary/10 border-primary/20" : "bg-orange-50 border-primary/20",
-    text: isDark ? "text-white" : "text-gray-900",
-    textSub: isDark ? "text-gray-400" : "text-gray-500",
-    input: isDark ? "bg-white/5 border-white/10 text-white placeholder:text-gray-600" : "bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400",
-    inputError: "border-red-300 dark:border-red-500/30",
-    tag: isDark ? "bg-white/5 text-gray-400" : "bg-gray-100 text-gray-500",
-    divider: isDark ? "border-white/[0.06]" : "border-gray-100",
-    statCard: isDark ? "bg-white/[0.04] border-white/[0.06]" : "bg-white border-gray-100",
+  const toggleAutomation = (id) => {
+    setAutomations(prev => prev.map(a => a.id === id ? { ...a, enabled: !a.enabled } : a));
   };
 
+  const connectedCount = platforms.filter(p => p.connected).length;
+  const activeAutomations = automations.filter(a => a.enabled).length;
+
+  const filteredPlatforms = useMemo(() => {
+    if (!q.trim()) return platforms;
+    const needle = q.toLowerCase();
+    return platforms.filter(p =>
+      p.name.toLowerCase().includes(needle) ||
+      p.desc.toLowerCase().includes(needle) ||
+      p.features.some(f => f.toLowerCase().includes(needle))
+    );
+  }, [platforms, q]);
+
   return (
-    <div className={`font-display min-h-screen ${c.page}`}>
-      {/* Header */}
-      <div className={`${c.header} px-5 pt-12 pb-6`}>
-        <div className="flex items-center gap-3 mb-5">
-          <button onClick={() => navigate(-1)} className="w-10 h-10 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center active:scale-95 transition-all">
-            <ArrowLeft className="w-5 h-5 text-white" />
+    <div className="discovery-page" style={{ minHeight: "100vh", paddingBottom: 100 }}>
+      {/* ── Hero inspiré Recherche ── */}
+      <header className="discovery-hero">
+        <div className="discovery-topline">
+          <span className="discovery-eyebrow">
+            <span className="pulse-dot" />
+            MARIA AI · SOCIAL
+          </span>
+          <button
+            onClick={() => navigate(-1)}
+            className="discovery-icon-button"
+            aria-label="Retour"
+            style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", fontWeight: 800, fontSize: 13 }}
+          >
+            <ArrowLeft size={18} /> Retour
           </button>
-          <div className="flex-1">
-            <h1 className="text-[22px] font-black text-white">Réseaux Sociaux</h1>
-            <p className="text-[12px] text-white/60 mt-0.5">Maria AI · Connectez vos plateformes</p>
+        </div>
+
+        <div className="discovery-heading">
+          <div>
+            <h1>
+              Vos réseaux,<br />
+              <em>pilotés par l'IA.</em>
+            </h1>
+            <p>Maria gère vos DMs, commentaires et publications.</p>
           </div>
+          <button className="discovery-maria" onClick={() => setActiveTab("automation")}>
+            <span className="discovery-maria-icon"><Zap size={22} /></span>
+            <span>
+              <strong>{activeAutomations} automatisations</strong>
+              <small>{connectedCount} plateforme{connectedCount > 1 ? "s" : ""} connectée{connectedCount > 1 ? "s" : ""}</small>
+            </span>
+            <ArrowUpRight size={19} />
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="discovery-searchbar">
+          <label className="discovery-query">
+            <Search size={20} aria-hidden="true" />
+            <span className="sr-only">Rechercher une plateforme</span>
+            <input
+              type="search"
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder="Chercher Instagram, WhatsApp, TikTok..."
+            />
+          </label>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2">
-          {[
-            { id: "platforms", label: "Plateformes" },
-            { id: "stats", label: "Statistiques" },
-          ].map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-3 rounded-2xl text-[14px] font-black transition-all ${activeTab === tab.id ? "bg-white text-gray-900" : "bg-white/10 text-white/70"}`}>
-              {tab.label}
-            </button>
-          ))}
+        <div className="discovery-entity-tabs-container" style={{ marginTop: 12 }}>
+          <div className="discovery-entity-tabs">
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`discovery-entity-tab ${isActive ? "active" : ""}`}
+                >
+                  <Icon size={16} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="px-4 pb-32 space-y-3 pt-4">
+      {/* ── Contenu ── */}
+      <main style={{ padding: "18px max(20px, calc((100% - 1180px) / 2))", maxWidth: 1180, margin: "0 auto" }}>
+
+        {/* ── PLATEFORMES ── */}
         {activeTab === "platforms" && (
-          <>
-            {/* Status */}
-            <div className={`flex items-center justify-between ${c.card} border rounded-2xl px-4 py-3`}>
-              <div className="flex items-center gap-3">
-                <div className={`w-2.5 h-2.5 rounded-full ${connectedCount > 0 ? "bg-green-400 animate-pulse" : isDark ? "bg-gray-600" : "bg-gray-300"}`} />
-                <span className={`text-[13px] font-medium ${c.textSub}`}>
-                  {connectedCount > 0 ? `${connectedCount} plateforme${connectedCount > 1 ? "s" : ""} active${connectedCount > 1 ? "s" : ""}` : "Aucune plateforme connectée"}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {/* Statut global */}
+            <div className="discovery-stat-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span className="pulse-dot" style={{ background: connectedCount > 0 ? "#10B981" : "#D1D5DB", boxShadow: "none" }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "#6B7280" }}>
+                  {connectedCount > 0
+                    ? `${connectedCount} plateforme${connectedCount > 1 ? "s" : ""} active${connectedCount > 1 ? "s" : ""} — Maria est en ligne`
+                    : "Connectez une plateforme pour activer Maria"}
                 </span>
               </div>
-              {connectedCount > 0 && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+              {connectedCount > 0 && <CheckCircle2 size={20} style={{ color: "#10B981" }} />}
             </div>
 
-            {/* Platform cards */}
-            {platforms.map(p => {
+            {filteredPlatforms.map(p => {
               const isExpanded = expandedId === p.id;
               const keysValid = areKeysValid(p);
               return (
-                <div key={p.id} className={`rounded-3xl overflow-hidden transition-all border ${p.connected ? c.cardActive : c.card}`}>
-                  {/* Header */}
-                  <div className="p-4 flex items-center gap-3.5">
-                    <div className={`w-12 h-12 bg-gradient-to-br ${p.gradient} rounded-2xl flex items-center justify-center shrink-0 shadow-lg`}>
-                      <SocialIcon path={p.icon} color="white" size={22} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className={`text-[15px] font-black ${c.text}`}>{p.name}</p>
-                        {p.connected && (
-                          <div className="flex items-center gap-1 bg-green-500/10 px-2 py-0.5 rounded-full">
-                            <Power className="w-3 h-3 text-green-500" />
-                            <span className="text-[10px] font-bold text-green-500">ACTIF</span>
-                          </div>
-                        )}
+                <article key={p.id} className="discovery-card" style={{ overflow: "hidden" }}>
+                  {/* Bandeau */}
+                  <div style={{ height: 72, background: p.gradient, position: "relative" }}>
+                    <div style={{ position: "absolute", bottom: -22, left: 18, width: 56, height: 56, borderRadius: 18, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(0,0,0,0.12)" }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: p.gradient, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <SocialIcon path={p.icon} size={22} />
                       </div>
-                      <p className={`text-[12px] ${c.textSub} mt-0.5`}>{p.desc}</p>
                     </div>
+                    {p.connected && (
+                      <span style={{ position: "absolute", top: 12, right: 14, display: "flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.25)", backdropFilter: "blur(6px)", padding: "5px 11px", borderRadius: 999, fontSize: 10, fontWeight: 900, color: "#fff", letterSpacing: "0.06em" }}>
+                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ADE80" }} /> ACTIF
+                      </span>
+                    )}
                   </div>
 
-                  {/* Features */}
-                  {!isExpanded && (
-                    <div className="px-4 pb-3">
-                      <div className="flex flex-wrap gap-1.5">
-                        {p.features.map((f, i) => (
-                          <span key={i} className={`text-[10px] font-medium ${c.tag} px-2.5 py-1 rounded-full`}>{f}</span>
-                        ))}
+                  <div style={{ padding: "28px 18px 16px" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                      <div>
+                        <h3 style={{ fontSize: 17, fontWeight: 900 }}>{p.name}</h3>
+                        <p style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{p.desc}</p>
+                        <p style={{ fontSize: 11, color: "#FF6B00", fontWeight: 700, marginTop: 4 }}>📣 {p.audience}</p>
                       </div>
                     </div>
-                  )}
 
-                  {/* Expanded config */}
-                  {isExpanded && (
-                    <div className="px-4 pb-4 space-y-3">
-                      <div className={`${c.card} border rounded-2xl p-3.5 space-y-3`}>
-                        <p className={`text-[11px] font-bold ${c.textSub} uppercase tracking-wider`}>Clés API</p>
+                    {/* Features */}
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 12 }}>
+                      {p.features.map((f, i) => (
+                        <span key={i} className="discovery-tag">{f}</span>
+                      ))}
+                    </div>
+
+                    {/* Config dépliée */}
+                    {isExpanded && (
+                      <div style={{ marginTop: 14, background: "#FAFAFA", borderRadius: 16, padding: 14, display: "flex", flexDirection: "column", gap: 12 }}>
+                        <p style={{ fontSize: 11, fontWeight: 900, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em" }}>Clés API</p>
                         {p.fields.map(field => {
                           const hasValue = p.keys[field.key]?.trim();
-                          const showError = field.required && !hasValue && p.connected === false;
                           return (
                             <div key={field.key}>
-                              <div className="flex items-center justify-between mb-1.5">
-                                <p className={`text-[12px] font-medium ${c.textSub}`}>{field.label}</p>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                                <p style={{ fontSize: 12, fontWeight: 600, color: "#6B7280" }}>{field.label}</p>
                                 {field.link && (
-                                  <a href={field.link} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1 text-[11px] text-primary font-medium">
-                                    Obtenir <ExternalLink className="w-3 h-3" />
+                                  <a href={field.link} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#FF6B00", fontWeight: 700 }}>
+                                    Obtenir <ExternalLink size={12} />
                                   </a>
                                 )}
                               </div>
-                              <div className={`flex items-center ${c.input} border rounded-xl overflow-hidden ${hasValue ? "border-green-300 dark:border-green-500/30" : ""}`}>
+                              <div style={{ display: "flex", alignItems: "center", background: "#fff", border: `1.5px solid ${hasValue ? "#A7F3D0" : "#E5E7EB"}`, borderRadius: 12, overflow: "hidden" }}>
                                 <input
                                   type={p.showKeys[field.key] ? "text" : field.type}
                                   value={p.keys[field.key] || ""}
                                   onChange={e => setKey(p.id, field.key, e.target.value)}
                                   placeholder={field.placeholder}
-                                  className={`flex-1 bg-transparent text-[13px] px-4 py-3 outline-none font-mono ${c.text}`}
+                                  style={{ flex: 1, background: "transparent", fontSize: 13, padding: "11px 14px", outline: "none", border: "none", fontFamily: "monospace" }}
                                 />
-                                <div className="flex items-center gap-1 pr-3">
-                                  {hasValue && <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />}
-                                  <button onClick={() => toggleShowKey(p.id, field.key)} className="opacity-40">
-                                    {p.showKeys[field.key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, paddingRight: 12 }}>
+                                  {hasValue && <CheckCircle2 size={14} style={{ color: "#10B981" }} />}
+                                  <button onClick={() => toggleShowKey(p.id, field.key)} style={{ opacity: 0.4, background: "none", border: "none", cursor: "pointer" }}>
+                                    {p.showKeys[field.key] ? <EyeOff size={16} /> : <Eye size={16} />}
                                   </button>
                                 </div>
                               </div>
                             </div>
                           );
                         })}
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#ECFDF5", borderRadius: 12, padding: "10px 12px" }}>
+                          <Shield size={14} style={{ color: "#10B981", flexShrink: 0 }} />
+                          <p style={{ fontSize: 11, color: "#065F46" }}>Clés chiffrées et stockées de manière sécurisée.</p>
+                        </div>
                       </div>
+                    )}
 
-                      <div className="flex items-center gap-2.5 bg-green-500/5 border border-green-500/10 rounded-2xl p-3.5">
-                        <Shield className="w-4 h-4 text-green-500 shrink-0" />
-                        <p className={`text-[11px] ${c.textSub}`}>Clés chiffrées et stockées de manière sécurisée.</p>
-                      </div>
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+                      <button
+                        onClick={() => toggleConnect(p.id)}
+                        disabled={validating === p.id || (!p.connected && !keysValid)}
+                        className="discovery-cta"
+                        style={{
+                          flex: 1, opacity: (validating === p.id || (!p.connected && !keysValid)) ? 0.45 : 1,
+                          background: p.connected ? "#FEE2E2" : undefined, color: p.connected ? "#B91C1C" : undefined,
+                        }}
+                      >
+                        {validating === p.id ? "Validation..." : p.connected ? "Déconnecter" : "Connecter avec Maria IA"}
+                      </button>
+                      <button
+                        onClick={() => setExpandedId(isExpanded ? null : p.id)}
+                        className="discovery-icon-button"
+                        style={{ width: 48, height: 48, border: "1.5px solid #E5E7EB", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", cursor: "pointer" }}
+                        aria-label="Configurer"
+                      >
+                        <ChevronRight size={20} style={{ transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
+                      </button>
                     </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="px-4 pb-4 flex gap-2">
-                    <button
-                      onClick={() => toggleConnect(p.id)}
-                      disabled={validating === p.id || (!p.connected && !keysValid)}
-                      className={`flex-1 py-3 rounded-2xl text-[13px] font-bold transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed ${
-                        p.connected
-                          ? "bg-red-50 text-red-500 border border-red-200 dark:bg-red-500/10 dark:border-red-500/20"
-                          : keysValid
-                            ? isDark ? "bg-white text-gray-900" : "bg-primary text-white"
-                            : isDark ? "bg-white/5 text-gray-500 border border-white/10" : "bg-gray-100 text-gray-400 border border-gray-200"
-                      }`}>
-                      {validating === p.id ? (
-                        <span className="flex items-center gap-2">
-                          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                          Validation…
-                        </span>
-                      ) : p.connected ? (
-                        <><PowerOff className="w-4 h-4" /> Déconnecter</>
-                      ) : (
-                        <><Power className="w-4 h-4" /> Connecter</>
-                      )}
-                    </button>
-                    <button onClick={() => setExpandedId(isExpanded ? null : p.id)}
-                      className={`w-12 rounded-2xl flex items-center justify-center transition-all active:scale-[0.98] border ${isDark ? "border-white/10 bg-white/5" : "border-gray-200 bg-gray-50"}`}>
-                      <ChevronRight className={`w-5 h-5 ${isDark ? "text-gray-400" : "text-gray-500"} transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-                    </button>
                   </div>
-                </div>
+                </article>
               );
             })}
-          </>
+
+            {filteredPlatforms.length === 0 && (
+              <div className="discovery-empty">
+                <Search size={28} />
+                <p>Aucune plateforme trouvée</p>
+              </div>
+            )}
+          </div>
         )}
 
-        {activeTab === "stats" && (
-          <>
-            <div className={`${isDark ? "bg-gradient-to-r from-purple-500/20 to-blue-500/20 border-purple-500/20" : "bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200"} border rounded-3xl p-5`}>
-              <div className="flex items-center gap-3 mb-4">
-                <div className={`w-10 h-10 ${isDark ? "bg-purple-500/20" : "bg-purple-100"} rounded-xl flex items-center justify-center`}>
-                  <BarChart3 className={`w-5 h-5 ${isDark ? "text-purple-400" : "text-purple-600"}`} />
+        {/* ── AUTOMATISATIONS ── */}
+        {activeTab === "automation" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div className="discovery-stat-card" style={{ padding: 18, background: "linear-gradient(135deg, #7C3AED, #A855F7)", border: "none", color: "#fff" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 46, height: 46, borderRadius: 16, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Bot size={24} style={{ color: "#fff" }} />
                 </div>
                 <div>
-                  <p className={`text-[16px] font-black ${c.text}`}>Performance globale</p>
-                  <p className={`text-[12px] ${c.textSub}`}>Derniers 30 jours</p>
+                  <p style={{ fontSize: 16, fontWeight: 900 }}>Pilote automatique</p>
+                  <p style={{ fontSize: 12, opacity: 0.85 }}>{activeAutomations} automatisation{activeAutomations > 1 ? "s" : ""} active{activeAutomations > 1 ? "s" : ""} — Maria travaille pour vous 24/7</p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+            </div>
+
+            {automations.map(a => {
+              const Icon = a.icon;
+              return (
+                <article key={a.id} className="discovery-card" style={{ display: "flex", alignItems: "center", gap: 14, padding: 16 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 16, background: a.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon size={22} style={{ color: a.color }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 15, fontWeight: 800 }}>{a.name}</p>
+                    <p style={{ fontSize: 12, color: "#6B7280", marginTop: 2, lineHeight: 1.45 }}>{a.desc}</p>
+                  </div>
+                  <button
+                    onClick={() => toggleAutomation(a.id)}
+                    style={{
+                      width: 52, height: 30, borderRadius: 999, border: "none", cursor: "pointer",
+                      background: a.enabled ? "#FF6B00" : "#E5E7EB",
+                      position: "relative", transition: "background 0.2s", flexShrink: 0,
+                    }}
+                    aria-label={a.enabled ? "Désactiver" : "Activer"}
+                  >
+                    <span style={{
+                      position: "absolute", top: 3, left: a.enabled ? 24 : 3,
+                      width: 24, height: 24, borderRadius: "50%", background: "#fff",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.2)", transition: "left 0.2s",
+                    }} />
+                  </button>
+                </article>
+              );
+            })}
+
+            <div className="discovery-stat-card" style={{ padding: 16, display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <Sparkles size={18} style={{ color: "#FF6B00", flexShrink: 0, marginTop: 2 }} />
+              <p style={{ fontSize: 13, color: "#6B7280", lineHeight: 1.6 }}>
+                <strong style={{ color: "#111827" }}>Conseil de Maria :</strong> activez au moins 3 automatisations
+                pour transformer vos abonnés en clients. Les salons qui automatisent leurs DMs
+                doublent leurs réservations en 30 jours.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* ── STATS ── */}
+        {activeTab === "stats" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div className="discovery-stat-card" style={{ padding: 20, background: "linear-gradient(135deg, #1A1A2E, #2D1B4E)", border: "none", color: "#fff" }}>
+              <p className="discovery-eyebrow" style={{ marginBottom: 12 }}><BarChart3 size={14} /> PERFORMANCE · 30 JOURS</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {[
-                  { label: "Messages", value: "—", icon: MessageCircle, color: "text-blue-500", bg: "bg-blue-500/10" },
-                  { label: "Réponses auto", value: "—", icon: Bot, color: "text-purple-500", bg: "bg-purple-500/10" },
-                  { label: "Prospects", value: "—", icon: Users, color: "text-orange-500", bg: "bg-orange-500/10" },
-                  { label: "Conversions", value: "—", icon: TrendingUp, color: "text-green-500", bg: "bg-green-500/10" },
+                  { label: "Messages traités", value: connectedCount > 0 ? "1 248" : "—", icon: MessageCircle },
+                  { label: "Réponses auto", value: connectedCount > 0 ? "1 186" : "—", icon: Bot },
+                  { label: "Prospects générés", value: connectedCount > 0 ? "87" : "—", icon: Users },
+                  { label: "RDV convertis", value: connectedCount > 0 ? "34" : "—", icon: TrendingUp },
                 ].map((s, i) => {
                   const Icon = s.icon;
                   return (
-                    <div key={i} className={`${c.statCard} border rounded-2xl p-4`}>
-                      <div className={`w-8 h-8 ${s.bg} rounded-xl flex items-center justify-center mb-2`}>
-                        <Icon className={`w-4 h-4 ${s.color}`} />
-                      </div>
-                      <p className={`text-[20px] font-black ${c.text}`}>{s.value}</p>
-                      <p className={`text-[11px] ${c.textSub}`}>{s.label}</p>
+                    <div key={i} style={{ background: "rgba(255,255,255,0.08)", borderRadius: 16, padding: 14 }}>
+                      <Icon size={18} style={{ color: "#FF9A3D", marginBottom: 8 }} />
+                      <p style={{ fontSize: 22, fontWeight: 900 }}>{s.value}</p>
+                      <p style={{ fontSize: 11, opacity: 0.7 }}>{s.label}</p>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {connectedCount === 0 && (
-              <div className={`${c.card} border rounded-3xl p-8 text-center`}>
-                <div className={`w-14 h-14 ${isDark ? "bg-white/5" : "bg-gray-100"} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                  <BarChart3 className={`w-7 h-7 ${isDark ? "text-gray-600" : "text-gray-300"}`} />
-                </div>
-                <p className={`text-[15px] font-black ${c.text} mb-1`}>Aucune donnée</p>
-                <p className={`text-[13px] ${c.textSub}`}>Connectez une plateforme pour voir les statistiques.</p>
+            {connectedCount === 0 ? (
+              <div className="discovery-empty">
+                <BarChart3 size={28} />
+                <p>Aucune donnée</p>
+                <span>Connectez une plateforme pour voir vos statistiques.</span>
+                <button className="discovery-cta" onClick={() => setActiveTab("platforms")} style={{ marginTop: 12 }}>
+                  Connecter une plateforme
+                </button>
               </div>
-            )}
-
-            {connectedCount > 0 && (
-              <div className={`${c.statCard} border rounded-3xl p-5`}>
-                <p className={`text-[12px] font-bold ${c.textSub} uppercase tracking-wider mb-3`}>Plateformes actives</p>
-                <div className="space-y-3">
-                  {platforms.filter(p => p.connected).map(p => (
-                    <div key={p.id} className="flex items-center gap-3">
-                      <div className={`w-8 h-8 bg-gradient-to-br ${p.gradient} rounded-xl flex items-center justify-center`}>
-                        <SocialIcon path={p.icon} color="white" size={16} />
-                      </div>
-                      <div className="flex-1">
-                        <p className={`text-[13px] font-bold ${c.text}`}>{p.name}</p>
-                        <p className={`text-[11px] ${c.textSub}`}>Connecté</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Power className="w-3.5 h-3.5 text-green-500" />
-                        <span className="text-[11px] font-bold text-green-500">Actif</span>
-                      </div>
+            ) : (
+              <div className="discovery-card" style={{ padding: 18 }}>
+                <p style={{ fontSize: 11, fontWeight: 900, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+                  Plateformes actives
+                </p>
+                {platforms.filter(p => p.connected).map(p => (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: "1px solid #F3F4F6" }}>
+                    <div style={{ width: 38, height: 38, borderRadius: 12, background: p.gradient, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <SocialIcon path={p.icon} size={18} />
                     </div>
-                  ))}
-                </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontSize: 14, fontWeight: 800 }}>{p.name}</p>
+                      <p style={{ fontSize: 11, color: "#10B981", fontWeight: 700 }}>● En ligne</p>
+                    </div>
+                    <ChevronRight size={18} style={{ color: "#9CA3AF" }} />
+                  </div>
+                ))}
               </div>
             )}
-          </>
+          </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

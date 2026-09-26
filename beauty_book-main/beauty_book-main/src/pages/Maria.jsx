@@ -54,15 +54,38 @@ function SideDrawer({ open, onClose, onNewChat, recentChats, savedSimulations, o
         <div className="px-4 space-y-1 mb-2">
           {isPro ? (
             <>
+              {/* AI Scaling Business + Annonces (pièce jointe) */}
+              <div className="relative">
+                <button
+                  onClick={() => { navigate("/ai-scaling-business"); onClose(); }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl hover:bg-gray-50 active:scale-[0.98] transition-all"
+                >
+                  <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-[15px] font-black text-gray-800">AI Scaling Business</p>
+                    <p className="text-[11px] text-gray-400 font-medium">Pousse ton business avec l'IA</p>
+                  </div>
+                </button>
+                {/* Pièce jointe : Annonces accrochée au bouton Scaling */}
+                <button
+                  onClick={() => { navigate("/annonces"); onClose(); }}
+                  className="absolute -top-2 right-2 flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg shadow-orange-500/30 active:scale-95 transition-all rotate-[-4deg] hover:rotate-0"
+                  title="Annonces de recrutement"
+                >
+                  <Paperclip className="w-3.5 h-3.5 -rotate-45" />
+                  <span className="text-[11px] font-black">Annonces</span>
+                  <span className="w-4 h-4 bg-white/25 rounded-full flex items-center justify-center text-[9px] font-black">+</span>
+                </button>
+              </div>
               {[
-                { icon: TrendingUp, label: "AI Scaling Business", desc: "Pousse ton business avec l'IA", action: "scaling" },
                 { icon: Bot, label: "Receptionniste IA", desc: "Accueil & gestion de salon", action: "receptionniste" },
                 { icon: Globe, label: "AI Social Media", desc: "Gère tes réseaux sociaux avec IA", action: "social" },
               ].map(({ icon: Icon, label, desc, action }) => (
                 <button
                   key={label}
                   onClick={() => {
-                    if (action === "scaling") { navigate("/ai-scaling-business"); onClose(); }
                     if (action === "receptionniste") { navigate("/receptionniste-ia"); onClose(); }
                     if (action === "social") { navigate("/social-media"); onClose(); }
                   }}
@@ -1206,6 +1229,14 @@ Si l'utilisateur dit "Salut" → réponds normalement SANS action JSON.`;
                       <span className="bg-white/20 border border-white/30 rounded-full px-1.5 py-0.5 text-white text-[8px] font-black uppercase tracking-wider mt-1 inline-block">IA</span>
                     </div>
                   </div>
+                  {/* Pièce jointe Annonces */}
+                  <span
+                    onClick={(e) => { e.stopPropagation(); navigate("/annonces"); }}
+                    className="absolute top-2 -right-1 flex items-center gap-1 pl-2 pr-2.5 py-1 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg rotate-[6deg] active:scale-95 transition-all"
+                  >
+                    <Paperclip className="w-3 h-3 -rotate-45" />
+                    <span className="text-[9px] font-black">Annonces</span>
+                  </span>
                 </button>
                 <button
                   onClick={() => navigate("/receptionniste-ia")}

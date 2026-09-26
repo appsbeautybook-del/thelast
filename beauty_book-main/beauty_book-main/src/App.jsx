@@ -126,6 +126,9 @@ const PromoService = safeLazy(() => import('@/pages/pro/PromoService'));
 const ScanCapillaire = safeLazy(() => import('@/pages/ScanCapillaire'));
 const ReceptionnistIA = safeLazy(() => import('@/pages/ReceptionnistIA'));
 const AIScalingBusiness = safeLazy(() => import('@/pages/AIScalingBusiness'));
+const Annonces = safeLazy(() => import('@/pages/Annonces'));
+const AnnonceDetail = safeLazy(() => import('@/pages/AnnonceDetail'));
+const NouvelleAnnonce = safeLazy(() => import('@/pages/NouvelleAnnonce'));
 const OrderTracking = safeLazy(() => import('@/pages/OrderTracking'));
 const Checkout = safeLazy(() => import('@/pages/Checkout'));
 const SupprimerCompte = safeLazy(() => import('@/pages/SupprimerCompte'));
@@ -351,6 +354,10 @@ const AuthenticatedApp = () => {
         <Route path="/ai-scaling-business" element={<AIScalingBusiness />} />
         <Route path="/pro/ai-scaling-business" element={<AIScalingBusiness />} />
         <Route path="/pro/scaling-business" element={<AIScalingBusiness />} />
+        <Route path="/annonces" element={<Annonces />} />
+        <Route path="/annonces/nouvelle" element={<NouvelleAnnonce />} />
+        <Route path="/annonces/:id" element={<AnnonceDetail />} />
+        <Route path="/pro/annonces" element={<Annonces />} />
         <Route path="/recherche" element={<Recherche />} />
         <Route path="/explorer" element={<Navigate to="/recherche" replace />} />
         <Route path="/recherche-approfondie" element={<Recherche />} />
