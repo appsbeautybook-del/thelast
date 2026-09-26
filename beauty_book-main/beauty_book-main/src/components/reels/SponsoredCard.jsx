@@ -80,6 +80,15 @@ function ReelsAd({ annonce, onClose }) {
   const [descExpanded, setDescExpanded] = useState(false);
   const isVideo = !!annonce.video_url;
 
+  const descSentences = (() => {
+    const t = (annonce.description || "").trim();
+    if (!t) return [];
+    const m = t.match(/[^.!?…]+[.!?…]+["»\s]*/g);
+    return (m ? m.map(s => s.trim()).filter(Boolean) : [t]);
+  })();
+  const descPreview = descSentences.slice(0, 2).join(" ");
+  const descHasMore = descSentences.length > 2;
+
   return (
     <div className="relative w-full h-full flex flex-col bg-black overflow-hidden">
       <div className="flex-1 relative min-h-0">
@@ -125,15 +134,15 @@ function ReelsAd({ annonce, onClose }) {
         </div>
 
         {/* Bottom */}
-        <div className="absolute bottom-0 inset-x-0 px-4" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}>
+        <div className="absolute bottom-0 inset-x-0 px-4" style={{ paddingBottom: "calc(112px + env(safe-area-inset-bottom, 16px))" }}>
           <h3 className="text-white text-[18px] font-black mb-1 drop-shadow-lg">{annonce.title}</h3>
           {annonce.description && (
             <div className="text-white/70 text-[13px] leading-snug mb-3 drop-shadow">
-              <span className={descExpanded ? "" : "line-clamp-2"}>{annonce.description}</span>
-              {annonce.description.length > 90 && (
+              <span>{descExpanded || !descHasMore ? annonce.description : descPreview}</span>
+              {descHasMore && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setDescExpanded(v => !v); }}
-                  className="text-white font-bold ml-1 underline underline-offset-2 decoration-white/50"
+                  className="text-white font-bold ml-1.5 underline underline-offset-2 decoration-white/50 whitespace-nowrap"
                 >
                   {descExpanded ? "Voir moins" : "Voir plus"}
                 </button>

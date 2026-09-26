@@ -564,6 +564,16 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
   const keepAliveTimer = useRef(null);
   const lastPositionRef = useRef(0);
 
+  // Découpe la description en phrases ; aperçu = 2 premières phrases + "Voir plus"
+  const descSentences = (() => {
+    const t = (reel.description || "").trim();
+    if (!t) return [];
+    const m = t.match(/[^.!?…]+[.!?…]+["»\s]*/g);
+    return (m ? m.map(s => s.trim()).filter(Boolean) : [t]);
+  })();
+  const descPreview = descSentences.slice(0, 2).join(" ");
+  const descHasMore = descSentences.length > 2;
+
   const hasMusicTrack = !!reel.sound_preview_url;
 
   // Autoplay when active
@@ -811,7 +821,7 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
       )}
 
       {/* ── Bottom info ── */}
-      <div className="absolute left-4 right-20 z-20 space-y-1.5" style={{ bottom: "calc(96px + env(safe-area-inset-bottom, 16px))" }}>
+      <div className="absolute left-4 right-20 z-20 space-y-1.5" style={{ bottom: "calc(112px + env(safe-area-inset-bottom, 16px))" }}>
         {/* Profile photo + username above legend */}
         <div className="flex items-center gap-2.5">
           <button onClick={() => onAuthorClick?.(reel)} className="shrink-0">
@@ -828,15 +838,15 @@ function ReelCard({ reel, isActive, muted, onMuteToggle, liked, onLike, repub, o
             </button>
           )}
         </div>
-        {/* Titre + bio extensible */}
+        {/* Titre + bio extensible (Voir plus après la 2e phrase) */}
         <p className="text-white text-[15px] font-bold leading-tight">{reel.title}</p>
         {reel.description && (
           <div className="text-white/90 text-[13px] leading-snug">
-            <span className={descExpanded ? "" : "line-clamp-2"}>{reel.description}</span>
-            {reel.description.length > 90 && (
+            <span>{descExpanded || !descHasMore ? reel.description : descPreview}</span>
+            {descHasMore && (
               <button
                 onClick={(e) => { e.stopPropagation(); setDescExpanded(v => !v); }}
-                className="text-white font-bold ml-1 underline underline-offset-2 decoration-white/50"
+                className="text-white font-bold ml-1.5 underline underline-offset-2 decoration-white/50 whitespace-nowrap"
               >
                 {descExpanded ? "Voir moins" : "Voir plus"}
               </button>
